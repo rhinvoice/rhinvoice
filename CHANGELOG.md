@@ -5,6 +5,12 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.4.2] – 2026-10-12
+
+### Changed
+- A new logo: an invoice page with the Rhine and its four countries. It is the favicon and the
+  home-screen icon on phones, and appears in the app, on rhinvoice.com and in the previews.
+
 ## [0.4.1] – 2026-10-12
 
 ### Changed

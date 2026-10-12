@@ -5,6 +5,16 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.4.3] – 2026-10-12
+
+### Added
+- Customers keep the date they became customers: the import reads it from a column such as
+  "Kunde seit", "Angelegt am" or "Created" (14.03.2019, 2019-03-14, also with a time), also when
+  updating customers already imported. The customer page shows it next to the number.
+- The Swiss VAT rates of 2011 to 2017 (8 / 2.5 / 3.8 %): article lists of older programs with
+  "8" as their rate import, so do documents with a supply in those years.
+- Article units such as "monatlich", "pro Monat", "jährlich" or "wöchentlich".
+
 ## [0.4.2] – 2026-10-12
 
 ### Changed

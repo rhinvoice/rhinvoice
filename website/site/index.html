@@ -286,6 +286,10 @@ docker compose up -d
 
 <span class="c"># open http://rhinvoice.localhost:8000, the first visit sets up the first user</span>
 
+<span class="c"># optional, next to other installations: a name and a port of its own</span>
+<span class="c"># (in .env: RHINVOICE_PORT=8100, then add -p rhinvoice-test to every docker compose command)</span>
+docker compose -p rhinvoice-test up -d
+
 <span class="c"># optional, only on your own laptop: the short address http://rhinvoice:8000</span>
 echo "127.0.0.1 rhinvoice" | sudo tee -a /etc/hosts
 <span class="c"># and in .env: RHINVOICE_COOKIE_SECURE=false, then docker compose up -d again</span></pre>

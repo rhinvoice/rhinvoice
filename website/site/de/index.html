@@ -286,6 +286,10 @@ docker compose up -d
 
 <span class="c"># http://rhinvoice.localhost:8000 öffnen, beim ersten Besuch den ersten Benutzer anlegen</span>
 
+<span class="c"># optional, neben anderen Installationen: eigener Name und eigener Port</span>
+<span class="c"># (in .env: RHINVOICE_PORT=8100, danach bei jedem docker-compose-Befehl -p rhinvoice-test angeben)</span>
+docker compose -p rhinvoice-test up -d
+
 <span class="c"># optional, nur auf dem eigenen Laptop: die kurze Adresse http://rhinvoice:8000</span>
 echo "127.0.0.1 rhinvoice" | sudo tee -a /etc/hosts
 <span class="c"># und in .env: RHINVOICE_COOKIE_SECURE=false, dann nochmals docker compose up -d</span></pre>

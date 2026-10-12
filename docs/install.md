@@ -11,8 +11,8 @@ and the backup. You only need
 
 ```bash
 mkdir rhinvoice && cd rhinvoice
-curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.3.0/deploy/compose.yml
-curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.3.0/.env.example -o .env
+curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.4.0/deploy/compose.yml
+curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.4.0/.env.example -o .env
 ```
 
 ## 2. Configure
@@ -22,7 +22,7 @@ Edit `.env`:
 | Setting | Value |
 |---|---|
 | `POSTGRES_PASSWORD` | a long random value, letters and digits only (e.g. `openssl rand -hex 24`) |
-| `RHINVOICE_VERSION` | the version to run, e.g. `0.3.0` – pinned versions only change when you change them |
+| `RHINVOICE_VERSION` | the version to run, e.g. `0.4.0` – pinned versions only change when you change them |
 | `RHINVOICE_PORT` | port on this machine, default `8000` |
 | `RHINVOICE_COOKIE_SECURE` | keep `true`; use `false` only for plain HTTP in a trusted network (not needed for `localhost`) |
 

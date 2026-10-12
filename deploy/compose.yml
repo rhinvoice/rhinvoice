@@ -1,7 +1,7 @@
 # Rhinvoice for production use: runs the published image, no source code needed.
 #
-#   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.3.0/deploy/compose.yml
-#   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.3.0/.env.example -o .env
+#   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.4.0/deploy/compose.yml
+#   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.4.0/.env.example -o .env
 #   # edit .env: POSTGRES_PASSWORD and RHINVOICE_VERSION
 #   docker compose up -d
 #

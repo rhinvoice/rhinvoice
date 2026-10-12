@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.4.0] – 2026-10-12
+
 ### Added
 - PDF output through Gotenberg with a live paper preview in the editor; issued documents keep
   their first PDF (SHA-256).

@@ -105,6 +105,8 @@ export const en: Catalog<MessageKey> = {
     other: "{count} fields need to be corrected",
   },
 
+  "error.demo_import_too_large": "Files in the demo may have at most 200 KB.",
+  "error.demo_import_too_many_rows": "Imports in the demo may have at most 200 rows.",
   "error.demo_locked": "This is not possible in the public demo.",
   "error.generic": "Something went wrong. Please try again.",
   "error.network": "No connection to the server. Please check your connection.",
@@ -914,6 +916,8 @@ export const en: Catalog<MessageKey> = {
   },
   "import.choose.customers": "CSV or Excel file with customers",
   "import.choose.articles": "CSV or Excel file with articles",
+  "import.formatsDemo":
+    "CSV (UTF-8 or Windows-1252), Excel .xlsx and .xls; in the demo at most 200 KB and 200 rows.",
   "import.formats":
     "CSV (UTF-8 or Windows-1252), Excel .xlsx and .xls, at most 5 MB and {rows} rows.",
   "import.rows": { zero: "no rows", one: "1 row", other: "{count} rows" },

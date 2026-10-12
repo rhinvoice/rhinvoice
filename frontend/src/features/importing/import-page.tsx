@@ -64,6 +64,7 @@ import {
   type RowFilter,
   type RowStatus,
 } from "@/features/importing/import-model";
+import { demoQuery } from "@/features/shared/demo-api";
 import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { cn } from "@/lib/cn";
@@ -238,6 +239,8 @@ function FilePicker({
   readonly onChoose: (file: File | undefined) => void;
 }) {
   const { t, locale } = useI18n();
+  // The public demo takes small files only (the server says so too).
+  const demo = useQuery(demoQuery).data?.enabled === true;
   const inputId = useId();
   const details =
     run === undefined
@@ -264,7 +267,10 @@ function FilePicker({
             {chosen === null ? t(`import.choose.${target}`) : chosen.file.name}
           </p>
           <p id={`${inputId}-details`} className="text-sm text-muted-foreground">
-            {details ?? t("import.formats", { rows: formatNumber("10000", locale, 0) })}
+            {details ??
+              (demo
+                ? t("import.formatsDemo")
+                : t("import.formats", { rows: formatNumber("10000", locale, 0) }))}
           </p>
         </div>
         {/* The browser's own file button cannot be translated or styled; the label is the button. */}

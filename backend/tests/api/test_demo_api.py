@@ -138,3 +138,13 @@ def test_the_demo_slows_down_floods(demo_app: FastAPI) -> None:
         assert limited.json()["error"]["code"] == "rate_limited"
         # Reading goes on.
         assert client.get("/api/demo").status_code == 200
+
+
+def test_the_demo_takes_small_imports_only(demo_client: TestClient) -> None:
+    rows = "Nachname\n" + "\n".join(f"Muster {n}" for n in range(201))
+    response = demo_client.post(
+        "/api/imports/customers/preview",
+        files={"file": ("kunden.csv", rows.encode(), "text/csv")},
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "demo_import_too_many_rows"

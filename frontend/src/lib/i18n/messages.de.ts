@@ -108,6 +108,8 @@ export const de = {
     other: "{count} Angaben müssen korrigiert werden",
   },
 
+  "error.demo_import_too_large": "In der Demo darf eine Datei höchstens 200 KB gross sein.",
+  "error.demo_import_too_many_rows": "In der Demo sind höchstens 200 Zeilen pro Import möglich.",
   "error.demo_locked": "In der öffentlichen Demo ist das nicht möglich.",
   "error.generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
   "error.network": "Keine Verbindung zum Server. Bitte prüfen Sie Ihre Verbindung.",
@@ -945,6 +947,8 @@ export const de = {
   },
   "import.choose.customers": "CSV- oder Excel-Datei mit Kunden",
   "import.choose.articles": "CSV- oder Excel-Datei mit Artikeln",
+  "import.formatsDemo":
+    "CSV (UTF-8 oder Windows-1252), Excel .xlsx und .xls; in der Demo höchstens 200 KB und 200 Zeilen.",
   "import.formats":
     "CSV (UTF-8 oder Windows-1252), Excel .xlsx und .xls, höchstens 5 MB und {rows} Zeilen.",
   "import.rows": { zero: "keine Zeilen", one: "1 Zeile", other: "{count} Zeilen" },

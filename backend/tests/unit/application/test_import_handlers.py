@@ -9,8 +9,10 @@ import pytest
 from rhinvoice.application.errors import ConflictError, NotFoundError
 from rhinvoice.application.importing.fields import ImportTarget
 from rhinvoice.application.importing.handlers import (
+    DEMO_IMPORT_LIMITS,
     DuplicateStrategy,
     ImportHandlers,
+    ImportLimits,
     ImportRequest,
     RowProblem,
     RowStatus,
@@ -373,6 +375,25 @@ def test_the_company_must_be_set_up_first(store: Store, clock: FixedClock) -> No
     with raises_exactly(ConflictError, "set up the company before importing") as caught:
         handlers.run(customers_request())
     assert caught.value.code == "company_not_set_up"
+
+
+def test_the_demo_takes_small_imports_only(store: Store, clock: FixedClock) -> None:
+    store.company = factories.company()
+    demo = ImportHandlers(
+        uow=lambda: InMemoryUnitOfWork(store),
+        clock=clock,
+        reader=SemicolonReader(),
+        limits=ImportLimits(max_bytes=2048, max_rows=2),
+    )
+    assert demo.run(customers_request(content=lines("Nachname", "A", "B"))).outcomes
+    with raises_exactly(ValidationError, "imports in the demo may have at most 2 rows") as rows:
+        demo.run(customers_request(content=lines("Nachname", "A", "B", "C")))
+    assert (rows.value.field, rows.value.code) == ("file", "demo_import_too_many_rows")
+    big = lines("Nachname", "x" * 2048)
+    with raises_exactly(ValidationError, "files in the demo may have at most 2 KB") as size:
+        demo.run(customers_request(content=big))
+    assert (size.value.field, size.value.code) == ("file", "demo_import_too_large")
+    assert ImportLimits(max_bytes=200 * 1024, max_rows=200) == DEMO_IMPORT_LIMITS
 
 
 ARTICLES = lines(

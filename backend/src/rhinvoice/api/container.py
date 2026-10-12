@@ -16,7 +16,7 @@ from rhinvoice.application.document.handlers import DocumentHandlers
 from rhinvoice.application.document.printing import PrintHandlers
 from rhinvoice.application.dunning.handlers import DunningHandlers
 from rhinvoice.application.identity.handlers import IdentityHandlers
-from rhinvoice.application.importing.handlers import ImportHandlers
+from rhinvoice.application.importing.handlers import DEMO_IMPORT_LIMITS, ImportHandlers
 from rhinvoice.application.mail.handlers import MailHandlers
 from rhinvoice.application.numbering.handlers import NumberingHandlers
 from rhinvoice.application.onboarding.handlers import OnboardingHandlers
@@ -117,7 +117,12 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
         texts=TextHandlers(uow=uow),
         printing=printing,
         backup=BackupHandlers(uow=uow, clock=effective_clock),
-        imports=ImportHandlers(uow=uow, clock=effective_clock, reader=SpreadsheetReader()),
+        imports=ImportHandlers(
+            uow=uow,
+            clock=effective_clock,
+            reader=SpreadsheetReader(),
+            limits=DEMO_IMPORT_LIMITS if settings.demo else None,
+        ),
         onboarding=OnboardingHandlers(uow=uow, clock=effective_clock),
         dunning=DunningHandlers(uow=uow, clock=effective_clock, documents=documents),
         demo=DemoHandlers(

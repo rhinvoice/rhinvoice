@@ -157,13 +157,39 @@ _PLACEHOLDER_NUMBER = "0"
 
 
 @dataclass(frozen=True, slots=True)
+class ImportLimits:
+    """Tighter limits than the reader's own, for the public demo."""
+
+    max_bytes: int
+    max_rows: int
+
+
+DEMO_IMPORT_LIMITS = ImportLimits(max_bytes=200 * 1024, max_rows=200)
+"""Enough to try the import, too little to fill a shared demo with junk."""
+
+
+@dataclass(frozen=True, slots=True)
 class ImportHandlers:
     uow: UnitOfWorkFactory
     clock: Clock
     reader: TableReader
+    limits: ImportLimits | None = None
 
     def run(self, request: ImportRequest) -> ImportRun:
+        limits = self.limits
+        if limits is not None and len(request.content) > limits.max_bytes:
+            raise ValidationError(
+                "file",
+                f"files in the demo may have at most {limits.max_bytes // 1024} KB",
+                code="demo_import_too_large",
+            )
         table = self.reader.read(request.content)
+        if limits is not None and len(table.rows) > limits.max_rows:
+            raise ValidationError(
+                "file",
+                f"imports in the demo may have at most {limits.max_rows} rows",
+                code="demo_import_too_many_rows",
+            )
         if request.mapping is None:
             mapping = suggest_mapping(table.headers, request.target)
         else:

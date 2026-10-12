@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.5.0] – 2026-10-13
+
 ### Added
 - Old invoices come over from the program used before, with their original PDFs: a list (CSV or
   Excel) and the folder of PDF files, single files or ZIP files. Each becomes a locked invoice with

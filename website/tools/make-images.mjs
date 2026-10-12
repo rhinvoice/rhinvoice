@@ -12,7 +12,7 @@
   Needs cwebp and avifenc (brew install webp libavif) for the screenshots.
 */
 import { execFileSync } from "node:child_process";
-import { copyFileSync, mkdirSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -25,7 +25,6 @@ const site = resolve(tools, "../site");
 const img = join(site, "assets/img");
 const shots = join(img, "shots");
 const screenshots = resolve(tools, "../../docs/screenshots");
-const favicon = pathToFileURL(join(img, "favicon.svg")).href;
 
 const browser = await chromium.launch();
 
@@ -41,20 +40,22 @@ const og = pathToFileURL(join(tools, "og.html")).href;
 await render(og, 1200, 630, join(img, "og.png"));
 await render(`${og}?lang=de`, 1200, 630, join(img, "og-de.png"));
 
-// The icon on a square ground; "inset" leaves the margin maskable icons need.
-async function icon(size, path, inset) {
+// App icons are full-bleed squares (the system rounds the corners); the maskable one
+// keeps the mark inside the safe zone Android crops to.
+const logo = readFileSync(join(img, "favicon.svg"), "utf8").replace('rx="8"', 'rx="0"');
+const maskable = logo.replace('<g id="mark">', '<g id="mark" transform="translate(3.2 3.2) scale(0.8)">');
+async function icon(svg, size, path) {
   const page = await browser.newPage({ viewport: { width: size, height: size } });
-  const pad = Math.round(size * inset);
   await page.setContent(
-    `<body style="margin:0;background:#2f5d8a"><img src="${favicon}" style="display:block;width:${size - 2 * pad}px;height:${size - 2 * pad}px;margin:${pad}px"></body>`,
+    `<body style="margin:0">${svg.replace("<svg ", `<svg width="${size}" height="${size}" `)}</body>`,
   );
   await page.screenshot({ path });
   await page.close();
 }
-await icon(192, join(img, "icon-192.png"), 0);
-await icon(512, join(img, "icon-512.png"), 0);
-await icon(512, join(img, "icon-512-maskable.png"), 0.1);
-await icon(180, join(img, "apple-touch-icon.png"), 0);
+await icon(logo, 192, join(img, "icon-192.png"));
+await icon(logo, 512, join(img, "icon-512.png"));
+await icon(maskable, 512, join(img, "icon-512-maskable.png"));
+await icon(logo, 180, join(img, "apple-touch-icon.png"));
 
 await browser.close();
 

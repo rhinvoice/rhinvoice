@@ -5,6 +5,18 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Added
+- Old invoices come over from the program used before, with their original PDFs: a list (CSV or
+  Excel) and the folder of PDF files, single files or ZIP files. Each becomes a locked invoice with
+  its number, date, customer and amounts, and its PDF as the invoice; reminders, corrections and
+  copies of the same number are kept as attachments. Customers are found by number or name, unknown
+  ones are created and archived. Imported invoices appear in lists (marked "Taken over"), search,
+  the customer's history and the revenue, and open ones can be paid. The invoice sequence continues
+  behind the imported numbers. See docs/import.md and ADR 0019.
+- An imported invoice without PDF takes its PDF later on its page; further files become attachments.
+- Uninstalling: how to remove the containers, data and images (docs/install.md), and the
+  installation's name in `.env` (`COMPOSE_PROJECT_NAME`).
+
 ## [0.4.3] – 2026-10-12
 
 ### Added

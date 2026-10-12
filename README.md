@@ -51,7 +51,8 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 
 **Everyday work**
 - Customers and articles with archive and document history
-- Import from CSV, XLSX and XLS with column mapping, test run and saved templates
+- Import from CSV, XLSX and XLS with column mapping, test run and saved templates; old invoices
+  come over with their original PDFs ([moving from another program](docs/import.md))
 - Dashboard: revenue against last year, open and overdue amounts, open quotes, best customers,
   expected payments
 - Command palette (⌘K / Ctrl+K), keyboard shortcuts, light and dark mode

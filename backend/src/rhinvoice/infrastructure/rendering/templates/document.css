@@ -1,0 +1,546 @@
+/*
+ * A4 document. Positions follow DIN 5008 form B for the window envelope
+ * (address field 45 mm from the top, 20 mm from the left), which also fits
+ * Swiss C5 envelopes with a left window.
+ */
+@page {
+  size: A4;
+  /* The bottom margin holds the footer (margin boxes, see the template). */
+  margin: 14mm 16mm 30mm 20mm;
+}
+
+@page :first {
+  margin-top: 12mm;
+}
+
+:root {
+  --ink: #1d2230;
+  --muted: #5b6273;
+  --line: #d9dce3;
+  --accent: #23548a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: #ffffff;
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 9.5pt;
+  line-height: 1.42;
+  font-feature-settings: "cv11", "tnum";
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.page {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 12mm 16mm 34mm 20mm;
+}
+
+.watermark {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.watermark span {
+  transform: rotate(-30deg);
+  font-size: 72pt;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: rgba(35, 84, 138, 0.07);
+  text-transform: uppercase;
+}
+
+.head {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 6mm;
+  /* Fixed height: the address field must stay in the envelope window. */
+  height: 26mm;
+  overflow: hidden;
+}
+
+.head .identity {
+  text-align: right;
+}
+
+.head .identity .name {
+  font-size: 13pt;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.head .identity .lines {
+  color: var(--muted);
+  font-size: 8pt;
+}
+
+.head img {
+  max-width: 45mm;
+  max-height: 22mm;
+  object-fit: contain;
+}
+
+.address-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10mm;
+  margin-top: 7mm;
+  min-height: 40mm;
+}
+
+.address {
+  width: 85mm;
+}
+
+.sender {
+  display: inline-block;
+  max-width: 85mm;
+  padding-bottom: 0.8mm;
+  margin-bottom: 2.5mm;
+  border-bottom: 0.3mm solid var(--line);
+  color: var(--muted);
+  font-size: 7pt;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recipient div {
+  font-size: 10pt;
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-content: start;
+  column-gap: 6mm;
+  row-gap: 0.6mm;
+  margin: 0;
+  font-size: 8.5pt;
+}
+
+.meta dt {
+  color: var(--muted);
+}
+
+.meta dd {
+  margin: 0;
+  text-align: right;
+}
+
+.pending {
+  color: var(--muted);
+  font-style: italic;
+}
+
+h1 {
+  margin: 8mm 0 1mm;
+  font-size: 18pt;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+h1 .number {
+  color: var(--accent);
+}
+
+.subject {
+  margin: 0 0 4mm;
+  font-weight: 600;
+}
+
+.text {
+  margin: 0 0 4mm;
+  white-space: pre-line;
+}
+
+table.lines {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2mm 0 3mm;
+}
+
+.lines th {
+  padding: 1.6mm 1.2mm;
+  border-bottom: 0.4mm solid var(--ink);
+  color: var(--muted);
+  font-size: 7.5pt;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.lines td {
+  padding: 2mm 1.2mm;
+  border-bottom: 0.25mm solid var(--line);
+  vertical-align: top;
+}
+
+.lines tr {
+  break-inside: avoid;
+}
+
+.lines .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.lines .pos {
+  width: 9mm;
+  color: var(--muted);
+}
+
+.lines .details {
+  display: block;
+  color: var(--muted);
+  font-size: 8.5pt;
+  white-space: pre-line;
+}
+
+.lines tr.text td {
+  padding-top: 3.5mm;
+  font-weight: 600;
+}
+
+.lines tr[data-line] {
+  cursor: default;
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 8mm;
+  row-gap: 0.8mm;
+  width: 95mm;
+  margin: 0 0 6mm auto;
+  break-inside: avoid;
+}
+
+.totals .value {
+  text-align: right;
+}
+
+.totals .grand {
+  margin-top: 1mm;
+  padding-top: 1.4mm;
+  border-top: 0.4mm solid var(--ink);
+  font-size: 11pt;
+  font-weight: 700;
+}
+
+.prices-gross {
+  margin: -4mm 0 5mm;
+  color: var(--muted);
+  font-size: 8pt;
+  text-align: right;
+}
+
+.notice {
+  margin: 0 0 4mm;
+  padding-left: 3mm;
+  border-left: 0.8mm solid var(--accent);
+  font-weight: 500;
+  white-space: pre-line;
+}
+
+.notice + .notice {
+  margin-top: -2mm;
+}
+
+.payment {
+  display: flex;
+  align-items: flex-start;
+  /* The EPC QR code sits on the right also without a payment text (reminders). */
+  justify-content: flex-end;
+  gap: 8mm;
+}
+
+.payment .text {
+  flex: 1;
+}
+
+.epc {
+  flex: none;
+  margin: 0 0 4mm;
+  width: 30mm;
+  text-align: center;
+  break-inside: avoid;
+}
+
+.epc svg {
+  display: block;
+  width: 30mm;
+  height: 30mm;
+}
+
+.epc .placeholder {
+  width: 30mm;
+  height: 30mm;
+  border: 0.4mm dashed #b6bcc6;
+  background: #f4f5f7;
+}
+
+.epc figcaption {
+  margin-top: 1mm;
+  color: var(--muted);
+  font-size: 6.5pt;
+  line-height: 1.3;
+}
+
+/* Swiss QR-bill: its own page, the payment part at the bottom (SIX, 210 x 105 mm). */
+.payment-page {
+  display: flex;
+  align-items: flex-end;
+  height: 297mm;
+  padding: 0;
+  overflow: hidden;
+}
+
+.qr-bill {
+  position: relative;
+}
+
+/* Drawn at the size of the library (210 x 106 mm incl. the cutting line), never scaled. */
+.qr-bill svg {
+  display: block;
+  width: 210mm;
+  height: auto;
+}
+
+.qr-bill.pending {
+  display: grid;
+  place-items: center;
+  width: 210mm;
+  height: 105mm;
+  border-top: 0.4mm dashed #b6bcc6;
+  background: #f4f5f7;
+  color: var(--muted);
+  font-size: 10pt;
+}
+
+.qr-bill.pending p {
+  margin: 0;
+  font-style: normal;
+}
+
+@page payment {
+  margin: 0;
+
+  @bottom-left {
+    content: none;
+  }
+
+  @bottom-center {
+    content: none;
+  }
+
+  @bottom-right {
+    content: none;
+  }
+}
+
+.cancels {
+  margin: 0 0 4mm;
+  font-weight: 500;
+}
+
+footer {
+  position: absolute;
+  left: 20mm;
+  right: 16mm;
+  bottom: 10mm;
+  display: flex;
+  justify-content: space-between;
+  gap: 6mm;
+  padding-top: 2.5mm;
+  border-top: 0.25mm solid var(--line);
+  color: var(--muted);
+  font-size: 7pt;
+  line-height: 1.45;
+}
+
+footer .company span:first-child,
+footer .bank span:first-child {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+footer span {
+  display: block;
+  white-space: nowrap;
+}
+
+@media screen {
+  /* Sheets on a grey table, like the PDF. */
+  html {
+    background: #e7eaee;
+  }
+
+  body {
+    background: transparent;
+  }
+
+  .page {
+    background: #ffffff;
+  }
+
+  .page + .page {
+    margin-top: 8mm;
+  }
+}
+
+@media print {
+  /* On paper the page margins come from @page, so each page has them. */
+  .page {
+    width: auto;
+    min-height: auto;
+    padding: 0;
+  }
+
+  /* The footer element is for the screen; paper uses the page margin boxes. */
+  footer {
+    display: none;
+  }
+
+  .watermark {
+    position: fixed;
+  }
+
+  .lines thead {
+    display: table-header-group;
+  }
+
+  .payment-page {
+    page: payment;
+    break-before: page;
+    height: 297mm;
+  }
+
+  /* The fixed watermark of the first sheet repeats on every page already. */
+  .payment-page .watermark {
+    display: none;
+  }
+}
+
+/* --- Layout choices (Settings > Print template) ----------------------------------- */
+
+.logo-left .head {
+  flex-direction: row-reverse;
+  justify-content: space-between;
+}
+
+.logo-small .head img {
+  max-width: 32mm;
+  max-height: 14mm;
+}
+
+.logo-large .head img {
+  max-width: 70mm;
+  max-height: 26mm;
+}
+
+.head .identity .contact {
+  margin-top: 0.4mm;
+}
+
+/* Classic: a rule under the head, a grey band over the positions, a quiet title. */
+.template-classic .head {
+  border-bottom: 0.3mm solid var(--ink);
+}
+
+.template-classic h1 {
+  font-size: 13pt;
+}
+
+.template-classic h1 .number {
+  color: inherit;
+}
+
+.template-classic .lines th {
+  border-bottom: 0;
+  background: #e6e8ec;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.template-classic .notice {
+  padding-left: 0;
+  border-left: 0;
+}
+
+/* Modern: the company colour under the head, in the title and around the total. */
+.template-modern .head {
+  border-bottom: 0.8mm solid var(--accent);
+}
+
+.template-modern .lines th {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+}
+
+/* One band across label and amount: no gap between the two columns. */
+.template-modern .totals {
+  column-gap: 0;
+}
+
+.template-modern .totals .grand {
+  padding: 1.6mm 2mm;
+  border-top: 0;
+  background: color-mix(in oklab, var(--accent) 12%, white);
+}
+
+/* Plain: hairlines, small capitals over the positions, a light title. */
+.template-plain h1 {
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.template-plain h1 .number {
+  color: inherit;
+}
+
+.template-plain .lines th {
+  border-bottom: 0.2mm solid var(--ink);
+  font-size: 6.5pt;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.template-plain .totals .grand {
+  border-top-width: 0.2mm;
+  font-weight: 600;
+}
+
+.template-plain .notice {
+  border-left-color: var(--line);
+}
+
+/* The serif is for text; numbers keep their columns in the sans. */
+.font-serif .lines .num,
+.font-serif .totals,
+.font-serif .meta dd {
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+}
+
+.sender.hidden {
+  visibility: hidden;
+}
+
+.template-classic .watermark span,
+.template-plain .watermark span {
+  color: rgba(29, 34, 48, 0.06);
+}

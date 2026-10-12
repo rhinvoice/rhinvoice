@@ -1,0 +1,9 @@
+# Development overrides: expose the database on localhost:5433 and Gotenberg on 3010.
+services:
+  db:
+    ports:
+      - "127.0.0.1:5433:5432"
+
+  gotenberg:
+    ports:
+      - "127.0.0.1:3010:3000"

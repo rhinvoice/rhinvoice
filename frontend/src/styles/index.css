@@ -1,0 +1,242 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/inter";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design tokens, see docs/design/principles.md (section 3).
+ * Contrast ratios are verified by src/lib/contrast.test.ts.
+ */
+:root {
+  color-scheme: light;
+  --accent-hue: 250;
+  --neutral-hue: var(--accent-hue);
+
+  --background: oklch(0.975 0.006 var(--neutral-hue));
+  --foreground: oklch(0.205 0.015 var(--neutral-hue));
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+  --muted: oklch(0.962 0.008 var(--neutral-hue));
+  --muted-foreground: oklch(0.5 0.022 var(--neutral-hue));
+  --secondary: var(--muted);
+  --secondary-foreground: var(--foreground);
+  --accent: oklch(0.955 0.02 var(--accent-hue));
+  --accent-foreground: oklch(0.4 0.11 var(--accent-hue));
+  --border: oklch(0.925 0.008 var(--neutral-hue));
+  /* Filled form fields (style "Weich"): a soft fill plus a bottom stroke in --input. */
+  --field: oklch(0.962 0.008 var(--neutral-hue));
+  --field-hover: oklch(0.945 0.01 var(--neutral-hue));
+  --input: oklch(0.62 0.015 var(--neutral-hue));
+  --ring: oklch(0.56 0.13 var(--accent-hue));
+  --primary: oklch(0.5 0.12 var(--accent-hue));
+  --primary-foreground: oklch(0.985 0.003 var(--accent-hue));
+  --destructive: oklch(0.53 0.19 27);
+  --destructive-foreground: oklch(0.985 0 0);
+  --success: oklch(0.5 0.12 150);
+  --success-foreground: oklch(0.985 0 0);
+  --warning: oklch(0.555 0.125 60);
+  --warning-foreground: oklch(1 0 0);
+  --info: oklch(0.52 0.11 235);
+  --info-foreground: oklch(0.985 0 0);
+  /* Charts: marks on cards need 3:1 (WCAG 1.4.11); --chart-1 the bars, --chart-2 comparisons. */
+  --chart-1: oklch(0.6 0.09 var(--accent-hue));
+  --chart-2: oklch(0.56 0.02 var(--neutral-hue));
+
+  --status-draft-fg: oklch(0.45 0.015 var(--neutral-hue));
+  --status-draft-bg: oklch(0.955 0.005 var(--neutral-hue));
+  --status-sent-fg: oklch(0.45 0.09 235);
+  --status-sent-bg: oklch(0.955 0.02 235);
+  --status-issued-fg: oklch(0.45 0.12 250);
+  --status-issued-bg: oklch(0.955 0.02 250);
+  --status-partially-paid-fg: oklch(0.47 0.095 70);
+  --status-partially-paid-bg: oklch(0.96 0.028 70);
+  --status-paid-fg: oklch(0.45 0.12 150);
+  --status-paid-bg: oklch(0.96 0.035 150);
+  --status-accepted-fg: oklch(0.45 0.09 165);
+  --status-accepted-bg: oklch(0.96 0.03 165);
+  --status-overdue-fg: oklch(0.48 0.17 27);
+  --status-overdue-bg: oklch(0.955 0.02 27);
+  --status-declined-fg: oklch(0.47 0.15 10);
+  --status-declined-bg: oklch(0.955 0.02 10);
+  --status-expired-fg: oklch(0.47 0.1 55);
+  --status-expired-bg: oklch(0.96 0.022 55);
+  --status-cancelled-fg: oklch(0.45 0.015 var(--neutral-hue));
+  --status-cancelled-bg: oklch(0.955 0.005 var(--neutral-hue));
+
+  --radius: 0.75rem;
+
+  --shadow-xs: 0 1px 2px 0 oklch(0 0 0 / 0.05);
+  --shadow-sm:
+    0 1px 2px oklch(0.3 0.04 var(--neutral-hue) / 0.05),
+    0 10px 30px -12px oklch(0.3 0.05 var(--neutral-hue) / 0.16);
+  --shadow-md: 0 4px 12px -2px oklch(0 0 0 / 0.1), 0 2px 4px -2px oklch(0 0 0 / 0.06);
+  --shadow-lg: 0 16px 40px -8px oklch(0 0 0 / 0.18), 0 4px 12px -4px oklch(0 0 0 / 0.08);
+
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 250ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --topbar-height: 3.5rem;
+  --bottombar-height: 4rem;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.16 0.012 var(--neutral-hue));
+  --foreground: oklch(0.955 0.004 var(--neutral-hue));
+  --card: oklch(0.205 0.014 var(--neutral-hue));
+  --popover: oklch(0.225 0.014 var(--neutral-hue));
+  --muted: oklch(0.25 0.016 var(--neutral-hue));
+  --muted-foreground: oklch(0.72 0.015 var(--neutral-hue));
+  --accent: oklch(0.27 0.04 var(--accent-hue));
+  --accent-foreground: oklch(0.85 0.07 var(--accent-hue));
+  --border: oklch(0.29 0.014 var(--neutral-hue));
+  --field: oklch(0.255 0.016 var(--neutral-hue));
+  --field-hover: oklch(0.28 0.016 var(--neutral-hue));
+  --input: oklch(0.56 0.015 var(--neutral-hue));
+  --ring: oklch(0.68 0.12 var(--accent-hue));
+  --primary: oklch(0.72 0.11 var(--accent-hue));
+  --primary-foreground: oklch(0.17 0.02 var(--accent-hue));
+  --destructive: oklch(0.65 0.19 25);
+  --destructive-foreground: oklch(0.17 0.008 var(--neutral-hue));
+  --success: oklch(0.72 0.14 150);
+  --success-foreground: oklch(0.17 0.008 var(--neutral-hue));
+  --warning: oklch(0.8 0.14 80);
+  --warning-foreground: oklch(0.22 0.04 60);
+  --info: oklch(0.72 0.11 235);
+  --info-foreground: oklch(0.17 0.008 var(--neutral-hue));
+  --chart-1: oklch(0.58 0.09 var(--accent-hue));
+  --chart-2: oklch(0.62 0.02 var(--neutral-hue));
+
+  --status-draft-fg: oklch(0.8 0.012 var(--neutral-hue));
+  --status-draft-bg: oklch(0.26 0.01 var(--neutral-hue));
+  --status-sent-fg: oklch(0.82 0.09 235);
+  --status-sent-bg: oklch(0.28 0.05 235);
+  --status-issued-fg: oklch(0.82 0.09 250);
+  --status-issued-bg: oklch(0.28 0.05 250);
+  --status-partially-paid-fg: oklch(0.84 0.11 70);
+  --status-partially-paid-bg: oklch(0.29 0.05 70);
+  --status-paid-fg: oklch(0.82 0.13 150);
+  --status-paid-bg: oklch(0.28 0.05 150);
+  --status-accepted-fg: oklch(0.82 0.11 165);
+  --status-accepted-bg: oklch(0.28 0.045 165);
+  --status-overdue-fg: oklch(0.8 0.11 27);
+  --status-overdue-bg: oklch(0.29 0.07 27);
+  --status-declined-fg: oklch(0.8 0.1 10);
+  --status-declined-bg: oklch(0.28 0.06 10);
+  --status-expired-fg: oklch(0.82 0.09 55);
+  --status-expired-bg: oklch(0.28 0.045 55);
+  --status-cancelled-fg: oklch(0.78 0.012 var(--neutral-hue));
+  --status-cancelled-bg: oklch(0.26 0.01 var(--neutral-hue));
+
+  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.4), 0 10px 30px -12px oklch(0 0 0 / 0.5);
+  --shadow-md: 0 4px 12px -2px oklch(0 0 0 / 0.5);
+  --shadow-lg: 0 16px 40px -8px oklch(0 0 0 / 0.6);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-field: var(--field);
+  --color-field-hover: var(--field-hover);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  --color-status-draft-fg: var(--status-draft-fg);
+  --color-status-draft-bg: var(--status-draft-bg);
+  --color-status-sent-fg: var(--status-sent-fg);
+  --color-status-sent-bg: var(--status-sent-bg);
+  --color-status-issued-fg: var(--status-issued-fg);
+  --color-status-issued-bg: var(--status-issued-bg);
+  --color-status-partially-paid-fg: var(--status-partially-paid-fg);
+  --color-status-partially-paid-bg: var(--status-partially-paid-bg);
+  --color-status-paid-fg: var(--status-paid-fg);
+  --color-status-paid-bg: var(--status-paid-bg);
+  --color-status-accepted-fg: var(--status-accepted-fg);
+  --color-status-accepted-bg: var(--status-accepted-bg);
+  --color-status-overdue-fg: var(--status-overdue-fg);
+  --color-status-overdue-bg: var(--status-overdue-bg);
+  --color-status-declined-fg: var(--status-declined-fg);
+  --color-status-declined-bg: var(--status-declined-bg);
+  --color-status-expired-fg: var(--status-expired-fg);
+  --color-status-expired-bg: var(--status-expired-bg);
+  --color-status-cancelled-fg: var(--status-cancelled-fg);
+  --color-status-cancelled-bg: var(--status-cancelled-bg);
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  --ease-out: var(--ease-out);
+  --ease-in: var(--ease-in);
+  --ease-in-out: var(--ease-in-out);
+}
+
+@layer base {
+  html {
+    scroll-padding-top: calc(var(--topbar-height) + 1rem);
+    scroll-padding-bottom: calc(var(--bottombar-height) + 1rem);
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    font-feature-settings: "cv11";
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  :focus-visible {
+    @apply ring-2 ring-ring ring-offset-2 ring-offset-background outline-none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

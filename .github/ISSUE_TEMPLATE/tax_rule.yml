@@ -1,0 +1,42 @@
+name: Tax or legal rule
+description: A tax rate, notice or mandatory detail does not match the law.
+labels: ["tax-rule"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Rhinvoice gives no tax advice, but its rules should match the law. Please always name the
+        official source, so the rule can be checked and cited in the code.
+  - type: dropdown
+    id: country
+    attributes:
+      label: Country
+      options: ["Switzerland", "Liechtenstein", "Germany", "Austria", "Cross-border"]
+    validations:
+      required: true
+  - type: textarea
+    id: case
+    attributes:
+      label: The case
+      description: Company country, customer country, business or private customer, goods or services.
+    validations:
+      required: true
+  - type: textarea
+    id: wrong
+    attributes:
+      label: What Rhinvoice does
+    validations:
+      required: true
+  - type: textarea
+    id: right
+    attributes:
+      label: What the law requires
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Official source
+      description: Law text with article, or a page of ESTV, Steuerverwaltung FL, BMF DE or BMF AT.
+    validations:
+      required: true

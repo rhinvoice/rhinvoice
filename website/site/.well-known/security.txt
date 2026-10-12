@@ -1,0 +1,7 @@
+# Report vulnerabilities in Rhinvoice privately, never in a public issue.
+Contact: https://github.com/rhinvoice/rhinvoice/security/advisories/new
+Contact: mailto:hello@rhinvoice.com
+Expires: 2027-10-12T00:00:00.000Z
+Policy: https://github.com/rhinvoice/rhinvoice/blob/main/SECURITY.md
+Preferred-Languages: en, de
+Canonical: https://rhinvoice.com/.well-known/security.txt

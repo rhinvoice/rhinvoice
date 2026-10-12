@@ -1,0 +1,4 @@
+/* Applied while taking screenshots: hide what changes on its own. */
+[data-app-version] {
+  visibility: hidden;
+}

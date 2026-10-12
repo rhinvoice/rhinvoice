@@ -1,0 +1,70 @@
+{#- Invoices, quotes and cancellations. A theme folder may replace this file. -#}
+{% extends "layout.html.j2" %}
+{% block content %}
+  <h1>{{ title }}{% if number %} <span class="number">{{ number }}</span>{% endif %}</h1>
+  {% if subject %}<p class="subject">{{ subject }}</p>{% endif %}
+  {% if cancels %}<p class="cancels">{{ cancels }}</p>{% endif %}
+  {% if intro %}<p class="text">{{ intro }}</p>{% endif %}
+
+  {% if lines %}
+  <table class="lines">
+    <thead>
+      <tr>
+        {% if position_numbers %}<th class="pos">{{ labels.position }}</th>{% endif %}
+        <th>{{ labels.description }}</th>
+        <th class="num">{{ labels.quantity }}</th>
+        <th class="num">{{ labels.price }}</th>
+        {% if show_rate %}<th class="num">%</th>{% endif %}
+        <th class="num">{{ labels.amount }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in lines %}
+      {% if line.kind == "text" %}
+      <tr class="text" data-line="{{ line.line_id }}" data-index="{{ loop.index0 }}">
+        {% if position_numbers %}<td></td>{% endif %}
+        <td colspan="{{ 4 if show_rate else 3 }}">{{ line.description }}{% if line.details %}<span class="details">{{ line.details }}</span>{% endif %}</td>
+        <td></td>
+      </tr>
+      {% else %}
+      <tr data-line="{{ line.line_id }}" data-index="{{ loop.index0 }}">
+        {% if position_numbers %}<td class="pos">{{ line.position }}</td>{% endif %}
+        <td>{{ line.description }}{% if line.details %}<span class="details">{{ line.details }}</span>{% endif %}</td>
+        <td class="num">{{ line.quantity }}</td>
+        <td class="num">{{ line.price }}</td>
+        {% if show_rate %}<td class="num">{{ line.rate }}</td>{% endif %}
+        <td class="num">{{ line.amount }}</td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    {% for row in totals %}
+    <span class="{{ 'grand' if row.emphasis else '' }}">{{ row.label }}</span>
+    <span class="value {{ 'grand' if row.emphasis else '' }}">{{ row.value }}</span>
+    {% endfor %}
+  </div>
+  {% if prices_gross %}<p class="prices-gross">{{ prices_gross }}</p>{% endif %}
+  {% endif %}
+
+  {% for notice in notices %}<p class="notice">{{ notice }}</p>{% endfor %}
+  {% if payment or epc_qr or epc_pending %}
+  <div class="payment">
+    {% if payment %}<p class="text">{{ payment }}</p>{% endif %}
+    {% if epc_qr %}
+    <figure class="epc">
+      {{ epc_qr }}
+      <figcaption>{{ labels.epc_caption }}</figcaption>
+    </figure>
+    {% elif epc_pending %}
+    <figure class="epc pending">
+      <div class="placeholder"></div>
+      <figcaption>{{ labels.epc_pending }}</figcaption>
+    </figure>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% if closing %}<p class="text">{{ closing }}</p>{% endif %}
+{% endblock %}

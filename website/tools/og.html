@@ -1,0 +1,45 @@
+<!doctype html>
+<!-- The social preview (Open Graph) of rhinvoice.com, 1200 x 630. Rendered by make-images.mjs;
+     ?lang=de gives the German one. Uses the site's own fonts and the demo screenshot. -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@font-face { font-family: "Inter"; font-weight: 100 900; src: url("../site/assets/fonts/inter-latin.woff2") format("woff2"); }
+@font-face { font-family: "Source Serif 4"; font-weight: 600; src: url("../site/assets/fonts/source-serif-4-latin-600.woff2") format("woff2"); }
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+body { background: #f6f8fb; color: #142233; font-family: "Inter", sans-serif; display: grid; grid-template-columns: 560px 1fr; }
+.copy { padding: 64px 0 56px 64px; display: flex; flex-direction: column; gap: 26px; }
+.brand { display: flex; align-items: center; gap: 14px; font-size: 30px; font-weight: 600; }
+.brand img { width: 46px; height: 46px; }
+h1 { margin: 0; font-family: "Source Serif 4", serif; font-weight: 600; font-size: 50px; line-height: 1.1; letter-spacing: -0.01em; }
+.countries { margin-top: auto; display: flex; gap: 10px; }
+.countries span { font-weight: 600; font-size: 20px; color: #1f62a3; background: #e4eef8; border-radius: 999px; padding: 6px 16px; }
+.foot { color: #566476; font-size: 20px; }
+.shot { position: relative; }
+.shot img { position: absolute; left: 24px; top: 70px; width: 980px; border-radius: 16px; border: 1px solid #dbe2ea; box-shadow: 0 24px 60px -20px rgb(20 34 51 / 0.35); }
+svg { position: absolute; left: 0; bottom: 0; width: 1200px; height: 120px; }
+svg path { fill: none; stroke-linecap: round; }
+</style>
+</head>
+<body>
+<div class="copy">
+  <div class="brand"><img src="../site/assets/img/favicon.svg" alt="">Rhinvoice</div>
+  <h1 id="title"></h1>
+  <div class="countries"><span>CH</span><span id="li"></span><span>AT</span><span>DE</span></div>
+  <div class="foot" id="foot"></div>
+</div>
+<div class="shot"><img src="../../docs/screenshots/dashboard.png" alt=""></div>
+<script>
+  const de = new URLSearchParams(location.search).get("lang") === "de";
+  document.getElementById("title").textContent = de
+    ? "Rechnungen für die Schweiz, Liechtenstein, Deutschland und Österreich."
+    : "Invoicing for Switzerland, Liechtenstein, Germany and Austria.";
+  document.getElementById("li").textContent = de ? "FL" : "LI";
+  document.getElementById("foot").textContent = de
+    ? "Open Source · selbst gehostet · rhinvoice.com"
+    : "Open source · self-hosted · rhinvoice.com";
+</script>
+</body>
+</html>

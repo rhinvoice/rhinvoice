@@ -1,0 +1,82 @@
+{#- The page around a document: head, address, footer and the Swiss payment part.
+    document.html.j2 and reminder.html.j2 fill in the content. -#}
+<!doctype html>
+<html lang="{{ language }}">
+<head>
+<meta charset="utf-8">
+<title>{{ title }}{% if number %} {{ number }}{% endif %}</title>
+<style>
+{% for font in fonts %}
+@font-face { font-family: "{{ font.family }}"; font-style: normal; font-weight: {{ font.weight }}; font-display: block; src: url("{{ font.source }}") format("woff2"); unicode-range: {{ font.unicode_range }}; }
+{% endfor %}
+{% include "document.css" %}
+:root {
+  --accent: {{ accent }};
+  --font: {{ font_stack }};
+}
+/* On paper the footer is printed into the bottom margin of every page. */
+@page {
+{% for box, text in footer_boxes %}
+  @{{ box }} {
+    content: "{{ text }}";
+    padding-top: 3mm;
+    border-top: 0.25mm solid #d9dce3;
+    color: #5b6273;
+    font-family: {{ font_stack }};
+    font-size: 7pt;
+    line-height: 1.45;
+    white-space: pre;
+    text-align: left;
+    vertical-align: top;
+  }
+{% endfor %}
+}
+</style>
+</head>
+<body class="{{ page_class }}">
+<main class="page">
+  {% if draft %}<div class="watermark" aria-hidden="true"><span>{{ draft_label }}</span></div>{% endif %}
+  <header class="head">
+    <div class="identity">
+      <div class="name">{{ company }}</div>
+      <div class="lines">{{ company_lines | join(" · ") }}</div>
+      {% if head_contact %}<div class="lines contact">{{ head_contact | join(" · ") }}</div>{% endif %}
+    </div>
+    {% if logo %}<img src="{{ logo }}" alt="{{ company }}">{% endif %}
+  </header>
+
+  <section class="address-row">
+    <div class="address">
+      {#- Hidden, not left out: the address stays where the envelope window is. -#}
+      <div class="sender{% if not show_sender_line %} hidden{% endif %}">{{ sender_line }}</div>
+      <div class="recipient">
+        {% for line in recipient %}<div>{{ line }}</div>{% endfor %}
+      </div>
+    </div>
+    <dl class="meta">
+      {% for label, value in meta %}
+      <dt>{{ label }}</dt><dd{% if loop.first and number_pending %} class="pending"{% endif %}>{{ value }}</dd>
+      {% endfor %}
+    </dl>
+  </section>
+
+{% block content %}{% endblock %}
+
+  <footer>
+    {% for kind, column in footer %}
+    <div class="{{ kind }}">{% for line in column %}<span>{{ line }}</span>{% endfor %}</div>
+    {% endfor %}
+  </footer>
+</main>
+{% if qr_bill or qr_bill_pending %}
+<section class="page payment-page" aria-label="{{ labels.payment_part }}">
+  {% if qr_bill %}
+  <div class="qr-bill">{{ qr_bill }}</div>
+  {% else %}
+  <div class="watermark" aria-hidden="true"><span>{{ draft_label }}</span></div>
+  <div class="qr-bill pending"><p>{{ labels.payment_part_pending }}</p></div>
+  {% endif %}
+</section>
+{% endif %}
+</body>
+</html>

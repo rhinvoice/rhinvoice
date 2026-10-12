@@ -1,0 +1,59 @@
+name: Bug report
+description: Something does not work as described.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting. **Never paste real customer, invoice or bank data** – make up
+        names and use example IBANs. Security issues go through a
+        [private report](https://github.com/rhinvoice/rhinvoice/security/advisories/new).
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The image tag you run (`RHINVOICE_VERSION` in `.env`).
+      placeholder: "0.4.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: country
+    attributes:
+      label: Country of the company
+      options: ["Switzerland", "Liechtenstein", "Germany", "Austria", "Does not matter"]
+    validations:
+      required: true
+  - type: dropdown
+    id: setup
+    attributes:
+      label: How Rhinvoice runs
+      options: ["Docker image (deploy/compose.yml)", "Built from source", "Public demo", "Other"]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Click …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead
+      description: Error messages, screenshots, and the app log if there is one (`docker compose logs app`).
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: "Firefox 140 on macOS, Safari on iPhone"

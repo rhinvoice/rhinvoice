@@ -1,0 +1,69 @@
+# Backup and restore test: fresh database, production images, local restic repository.
+# Usage: make backup-test
+name: rhinvoice-backup-test
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: rhinvoice
+      POSTGRES_USER: rhinvoice
+      POSTGRES_PASSWORD: backup-test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rhinvoice -d rhinvoice"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build: .
+    image: rhinvoice:backup-test
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      RHINVOICE_DATABASE_URL: postgresql+psycopg://rhinvoice:backup-test@db:5432/rhinvoice
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2)"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  backup:
+    build:
+      context: .
+      dockerfile: backup/Dockerfile
+    image: rhinvoice-backup:backup-test
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGDATABASE: rhinvoice
+      PGUSER: rhinvoice
+      PGPASSWORD: backup-test
+      TZ: Europe/Zurich
+      RESTIC_REPOSITORY: /repository
+      RESTIC_PASSWORD: backup-test
+      # The daily backup is due at once; requests start after 2 seconds of quiet.
+      BACKUP_DAILY_AT: "00:00"
+      BACKUP_QUIET_SECONDS: "2"
+      BACKUP_POLL_SECONDS: "1"
+    volumes:
+      - repository:/repository
+      - rclone:/rclone
+    # Hardened like deploy/compose.yml.
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /cache:uid=10001,gid=10001
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  repository:
+  rclone:

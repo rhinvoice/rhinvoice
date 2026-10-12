@@ -1,0 +1,115 @@
+# Rhinvoice for production use: runs the published image, no source code needed.
+#
+#   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.3.0/deploy/compose.yml
+#   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.3.0/.env.example -o .env
+#   # edit .env: POSTGRES_PASSWORD and RHINVOICE_VERSION
+#   docker compose up -d
+#
+# See docs/install.md for updates and reverse proxies, docs/backup.md for backups.
+name: rhinvoice
+
+services:
+  app:
+    image: ghcr.io/rhinvoice/rhinvoice:${RHINVOICE_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      gotenberg:
+        condition: service_started
+    environment:
+      RHINVOICE_GOTENBERG_URL: http://gotenberg:3000
+      RHINVOICE_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rhinvoice}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-rhinvoice}
+      RHINVOICE_COOKIE_SECURE: ${RHINVOICE_COOKIE_SECURE:-true}
+      RHINVOICE_TIMEZONE: ${RHINVOICE_TIMEZONE:-Europe/Zurich}
+      RHINVOICE_RUN_MIGRATIONS: ${RHINVOICE_RUN_MIGRATIONS:-true}
+      RHINVOICE_RECURRING: ${RHINVOICE_RECURRING:-true}
+      RHINVOICE_RECURRING_INTERVAL: ${RHINVOICE_RECURRING_INTERVAL:-600}
+    command: ["rhinvoice", "serve", "--forwarded-allow-ips", "${RHINVOICE_FORWARDED_ALLOW_IPS:-127.0.0.1}"]
+    # A recurring invoice being written (and mailed) may finish before the container stops.
+    stop_grace_period: 40s
+    ports:
+      - "${RHINVOICE_BIND:-127.0.0.1}:${RHINVOICE_PORT:-8000}:8000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  # Turns the document pages into PDFs (headless Chromium). Only the app talks to it.
+  gotenberg:
+    image: gotenberg/gotenberg:8.37.0
+    restart: unless-stopped
+    command:
+      - gotenberg
+      # Documents are self-contained (fonts and logo inline): no outside requests.
+      - --chromium-deny-list=^(?!file:///tmp/).*
+      - --chromium-disable-javascript=true
+      - --api-timeout=60s
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /home/gotenberg
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rhinvoice}
+      POSTGRES_USER: ${POSTGRES_USER:-rhinvoice}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Backs up the database with restic: daily and shortly after documents are issued.
+  # Without RESTIC_REPOSITORY and RESTIC_PASSWORD in .env it only reports that
+  # backups are not set up. See docs/backup.md.
+  backup:
+    image: ghcr.io/rhinvoice/rhinvoice-backup:${RHINVOICE_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # Every variable of .env, so any restic backend can be configured there
+    # (e.g. AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY for S3).
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PGHOST: db
+      PGDATABASE: ${POSTGRES_DB:-rhinvoice}
+      PGUSER: ${POSTGRES_USER:-rhinvoice}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      TZ: ${RHINVOICE_TIMEZONE:-Europe/Zurich}
+    volumes:
+      - backup-cache:/cache
+      # For RESTIC_REPOSITORY=/repository: a folder of this machine (e.g. a synced
+      # cloud folder) via BACKUP_LOCAL_DIR, otherwise a Docker volume.
+      - ${BACKUP_LOCAL_DIR:-backup-repository}:/repository
+      # For RESTIC_REPOSITORY=rclone:...: the rclone configuration (Dropbox, Google
+      # Drive ...). Writable: rclone saves renewed access tokens there.
+      - backup-rclone:/rclone
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  db-data:
+  backup-cache:
+  backup-repository:
+  backup-rclone:

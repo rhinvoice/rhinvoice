@@ -1,0 +1,242 @@
+[project]
+name = "rhinvoice"
+version = "0.3.0"
+description = "Self-hosted invoicing for CH, LI, DE and AT"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "AGPL-3.0-or-later"
+dependencies = [
+    "alembic>=1.20.0",
+    "argon2-cffi>=25.1.0",
+    "defusedxml>=0.7.1",
+    "fastapi>=0.143.0",
+    "httpx>=0.28",
+    "jinja2>=3.1.6",
+    "openpyxl>=3.1.5",
+    "psycopg[binary]>=3.3.6",
+    "pydantic>=2.14.0",
+    "pydantic-settings>=2.15.0",
+    "pyotp>=2.10.0",
+    "pypdf>=6.20.0",
+    "python-multipart>=0.0.32",
+    "qrbill>=1.1",
+    "segno>=1.6",
+    "sqlalchemy>=2",
+    "uvicorn[standard]>=0.54.0",
+    "xlrd>=2.0.2",
+]
+
+[project.scripts]
+rhinvoice = "rhinvoice.api.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rhinvoice"]
+
+[dependency-groups]
+dev = [
+    "aiosmtpd>=1.4.6",
+    "httpx2>=2.13.1",
+    "hypothesis>=6.168.5",
+    "import-linter>=2.15",
+    "mutmut>=3.8.0",
+    "mypy>=2.4.0",
+    "pip-audit>=2.10.1",
+    "pyright>=1.1.414",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.10",
+    "schemathesis>=4.30.0",
+    "testcontainers[postgres]>=4.15.0",
+    "trustme>=1.2.1",
+    "types-openpyxl>=3.1.5.20260827",
+    "types-qrbill>=1.2.0.20260518",
+    "types-xlrd>=2.0.0.20260518",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+extend-exclude = ["mutants"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    # Formatter conflicts (recommended by ruff docs).
+    "COM812",
+    "ISC001",
+    # Docstrings are required for public modules only where they add value;
+    # self-explanatory classes/functions stay undocumented.
+    "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107",
+    # Conflicting pydocstyle conventions: we use D211 + D213.
+    "D203", "D212",
+    # No per-file copyright headers; licensing lives in LICENSE.
+    "CPY001",
+    # Exception messages are domain messages; f-strings in them are fine.
+    "EM101", "EM102", "TRY003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",     # assert is the pytest idiom
+    "PLR2004",  # literal values are the point of a test
+    "S105", "S106",  # test passwords are not secrets
+    "FBT001",   # hypothesis passes booleans positionally
+    "PLR0913",  # test builders take many keyword-only options
+]
+"src/rhinvoice/infrastructure/db/migrations/**" = ["INP001"]
+"scripts/**" = ["INP001"]
+
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = [
+    "pydantic.BaseModel",
+    "pydantic_settings.BaseSettings",
+    "rhinvoice.api.schemas.ApiModel",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.mypy]
+strict = true
+python_version = "3.13"
+mypy_path = "src"
+packages = ["rhinvoice", "tests"]
+explicit_package_bases = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["testcontainers.*", "pyotp.*", "schemathesis.*"]
+ignore_missing_imports = true
+
+[tool.pyright]
+include = ["src", "tests", "scripts"]
+exclude = ["mutants", ".venv"]
+typeCheckingMode = "strict"
+pythonVersion = "3.13"
+venvPath = "."
+venv = ".venv"
+reportMissingTypeStubs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-markers", "--import-mode=importlib"]
+pythonpath = ["."]
+markers = ["db: requires a PostgreSQL database (testcontainers)"]
+filterwarnings = ["error", "ignore::DeprecationWarning:testcontainers.*"]
+
+[tool.coverage.run]
+branch = true
+source = ["rhinvoice"]
+omit = ["src/rhinvoice/infrastructure/db/migrations/*"]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+skip_covered = true
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "\\.\\.\\.",
+    "if __name__ == .__main__.:",
+]
+
+[tool.importlinter]
+root_package = "rhinvoice"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Layers: api -> infrastructure -> application -> domain"
+type = "layers"
+layers = [
+    "rhinvoice.api",
+    "rhinvoice.infrastructure",
+    "rhinvoice.application",
+    "rhinvoice.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Domain is pure Python"
+type = "forbidden"
+source_modules = ["rhinvoice.domain"]
+forbidden_modules = [
+    "sqlalchemy",
+    "fastapi",
+    "pydantic",
+    "pydantic_settings",
+    "starlette",
+    "uvicorn",
+    "alembic",
+    "psycopg",
+    "argon2",
+    "pyotp",
+    "qrbill",
+    "segno",
+    "rhinvoice.infrastructure",
+    "rhinvoice.application",
+    "rhinvoice.api",
+]
+
+[[tool.importlinter.contracts]]
+name = "Application does not know infrastructure or api"
+type = "forbidden"
+source_modules = ["rhinvoice.application"]
+forbidden_modules = [
+    "rhinvoice.infrastructure",
+    "rhinvoice.api",
+    "sqlalchemy",
+    "fastapi",
+    "pydantic",
+    "pydantic_settings",
+    "starlette",
+    "uvicorn",
+    "alembic",
+    "psycopg",
+    "argon2",
+    "pyotp",
+    "qrbill",
+    "segno",
+]
+
+[[tool.importlinter.contracts]]
+# Each country profile stands alone; what countries share lives in a shared module
+# (e.g. domain.country.swiss for Switzerland and Liechtenstein).
+name = "Country profiles are independent"
+type = "independence"
+modules = [
+    "rhinvoice.domain.country.ch",
+    "rhinvoice.domain.country.li",
+    "rhinvoice.domain.country.de",
+    "rhinvoice.domain.country.at",
+]
+
+[[tool.importlinter.contracts]]
+name = "Only the registry knows the country profiles"
+type = "forbidden"
+source_modules = ["rhinvoice"]
+forbidden_modules = [
+    "rhinvoice.domain.country.ch",
+    "rhinvoice.domain.country.li",
+    "rhinvoice.domain.country.de",
+    "rhinvoice.domain.country.at",
+]
+ignore_imports = ["rhinvoice.domain.country.registry -> rhinvoice.domain.country.*"]
+
+[tool.mutmut]
+# The whole package is copied so that tests can import every layer; only the
+# domain and application layers are mutated (quality gate: >= 90 %).
+source_paths = ["src/rhinvoice/"]
+# Ports are pure interfaces (Protocols) without behaviour to mutate.
+do_not_mutate = [
+    "src/rhinvoice/api/*",
+    "src/rhinvoice/infrastructure/*",
+    "src/rhinvoice/__init__.py",
+    "src/rhinvoice/application/*/ports.py",
+    "src/rhinvoice/application/uow.py",
+]
+pytest_add_cli_args_test_selection = ["tests/unit/"]

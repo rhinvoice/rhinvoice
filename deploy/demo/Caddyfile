@@ -1,0 +1,27 @@
+# HTTPS for the three demos; Caddy fetches and renews the certificates itself.
+{
+	email {$ACME_EMAIL}
+}
+
+(demo) {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+	request_body {
+		max_size 8MB
+	}
+}
+
+ch.{$DEMO_DOMAIN} {
+	import demo
+	reverse_proxy app-ch:8000
+}
+
+de.{$DEMO_DOMAIN} {
+	import demo
+	reverse_proxy app-de:8000
+}
+
+at.{$DEMO_DOMAIN} {
+	import demo
+	reverse_proxy app-at:8000
+}

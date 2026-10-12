@@ -1,0 +1,68 @@
+# End-to-end test stack: fresh database, production image, Playwright runner.
+# Usage: make e2e   (or: docker compose -f compose.e2e.yml up --build --exit-code-from e2e)
+name: rhinvoice-e2e
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: rhinvoice
+      POSTGRES_USER: rhinvoice
+      POSTGRES_PASSWORD: e2e
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rhinvoice -d rhinvoice"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  gotenberg:
+    extends:
+      file: deploy/compose.yml
+      service: gotenberg
+
+  # Takes the mails the tests send (SMTP on 1025) and shows them over HTTP (8025).
+  mailpit:
+    image: axllent/mailpit:v1.31.5
+
+  app:
+    build: .
+    image: rhinvoice:e2e
+    # Not reachable as "app": .app is an HSTS-preloaded TLD, so browsers force HTTPS.
+    hostname: rhinvoice
+    networks:
+      default:
+        aliases: [rhinvoice]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      RHINVOICE_DATABASE_URL: postgresql+psycopg://rhinvoice:e2e@db:5432/rhinvoice
+      RHINVOICE_GOTENBERG_URL: http://gotenberg:3000
+      # The runner reaches the app via http://rhinvoice:8000, which is not a secure context.
+      RHINVOICE_COOKIE_SECURE: "false"
+      # Plans the tests create start today: no background run may issue them meanwhile.
+      RHINVOICE_RECURRING: "false"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2)"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.64.0-noble
+    depends_on:
+      app:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    working_dir: /work
+    environment:
+      E2E_BASE_URL: http://rhinvoice:8000
+      E2E_MAILPIT_URL: http://mailpit:8025
+      CI: ${CI:-}
+    volumes:
+      - ./frontend:/work
+    command: ["npx", "playwright", "test"]
+    ipc: host

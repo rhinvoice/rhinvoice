@@ -1,0 +1,139 @@
+# The public demo of Rhinvoice: one instance per country (CH, DE, AT) behind Caddy,
+# which fetches the HTTPS certificates. Each instance empties its database at the start
+# and every hour and fills it with demo data (RHINVOICE_DEMO). See README.md here.
+#
+#   cp .env.example .env    # set DEMO_DOMAIN, ACME_EMAIL, POSTGRES_PASSWORD, RHINVOICE_IMAGE
+#   docker compose up -d
+name: rhinvoice-demo
+
+x-app: &app
+  # A released version with the demo mode (0.4.0 or later); older images ignore
+  # RHINVOICE_DEMO and would start an empty installation open to the first visitor.
+  image: ${RHINVOICE_IMAGE:?set RHINVOICE_IMAGE in .env, e.g. ghcr.io/rhinvoice/rhinvoice:0.4.0}
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+    gotenberg:
+      condition: service_started
+  # The apps are only reachable through Caddy on the internal network.
+  command: ["rhinvoice", "serve", "--forwarded-allow-ips", "*"]
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  mem_limit: 512m
+  # Internal only: the apps reach the database and Gotenberg, never the internet.
+  networks: [internal]
+
+x-env: &env
+  RHINVOICE_DEMO: "true"
+  RHINVOICE_GOTENBERG_URL: http://gotenberg:3000
+  RHINVOICE_COOKIE_SECURE: "true"
+  RHINVOICE_DEMO_RESET_INTERVAL: ${DEMO_RESET_INTERVAL:-3600}
+  RHINVOICE_DEMO_LINKS: CH=https://ch.${DEMO_DOMAIN:?set DEMO_DOMAIN in .env},DE=https://de.${DEMO_DOMAIN},AT=https://at.${DEMO_DOMAIN}
+
+services:
+  app-ch:
+    <<: *app
+    environment:
+      <<: *env
+      RHINVOICE_DEMO_COUNTRY: CH
+      RHINVOICE_TIMEZONE: Europe/Zurich
+      RHINVOICE_DATABASE_URL: postgresql+psycopg://demo_ch:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/demo_ch
+
+  app-de:
+    <<: *app
+    environment:
+      <<: *env
+      RHINVOICE_DEMO_COUNTRY: DE
+      RHINVOICE_TIMEZONE: Europe/Berlin
+      RHINVOICE_DATABASE_URL: postgresql+psycopg://demo_de:${POSTGRES_PASSWORD}@db:5432/demo_de
+
+  app-at:
+    <<: *app
+    environment:
+      <<: *env
+      RHINVOICE_DEMO_COUNTRY: AT
+      RHINVOICE_TIMEZONE: Europe/Vienna
+      RHINVOICE_DATABASE_URL: postgresql+psycopg://demo_at:${POSTGRES_PASSWORD}@db:5432/demo_at
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on: [app-ch, app-de, app-at]
+    environment:
+      DEMO_DOMAIN: ${DEMO_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    # The only service on the internet; it reaches the apps on the internal network.
+    networks: [internet, internal]
+
+  gotenberg:
+    image: gotenberg/gotenberg:8.37.0
+    restart: unless-stopped
+    command:
+      - gotenberg
+      - --chromium-deny-list=^(?!file:///tmp/).*
+      - --chromium-disable-javascript=true
+      - --api-timeout=60s
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /home/gotenberg
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 1g
+    networks: [internal]
+
+  # One server, one database and one role per country (created by init-databases.sh).
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rhinvoice
+      POSTGRES_USER: rhinvoice
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+      - db-data:/var/lib/postgresql/data
+    # Over TCP and with a query: ready only after the init script and its databases.
+    healthcheck:
+      test: ["CMD-SHELL", "PGPASSWORD=$${POSTGRES_PASSWORD} psql -h 127.0.0.1 -U demo_at -d demo_at -tAc 'select 1'"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    mem_limit: 512m
+    networks: [internal]
+
+networks:
+  internet:
+  internal:
+    internal: true
+
+volumes:
+  db-data:
+  caddy-data:
+  caddy-config:

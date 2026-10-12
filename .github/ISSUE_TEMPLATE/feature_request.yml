@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest something Rhinvoice should do.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Rhinvoice stays deliberately small and calm. Describe the problem you have; the best
+        solution may look different from the first idea.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      placeholder: "Every month I have to …"
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+  - type: textarea
+    id: today
+    attributes:
+      label: How you solve it today

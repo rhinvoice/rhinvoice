@@ -1,0 +1,648 @@
+"""The document aggregate: quotes, invoices and cancellation invoices.
+
+Content can only change while a document is a draft. From the moment it is
+issued (invoices, cancellations) or sent (quotes), lines, tax rates, totals
+and the company/customer/bank data are frozen (GoBD, OR 958f, BAO 131);
+corrections are made with a cancellation invoice (Storno).
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass, field, replace
+from datetime import date, timedelta
+from enum import StrEnum
+from typing import TYPE_CHECKING
+
+from rhinvoice.domain.country.registry import profile_of
+from rhinvoice.domain.document.calculation import CalculationInput, Totals, calculate
+from rhinvoice.domain.document.lines import Discount, DocumentLine, LineKind, PriceMode
+from rhinvoice.domain.numbering.sequence import SequenceKind
+from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
+from rhinvoice.domain.shared.identifier import new_id
+from rhinvoice.domain.shared.money import Money
+from rhinvoice.domain.shared.text import clean_multiline, clean_text
+from rhinvoice.domain.tax.supply import line_treatment
+from rhinvoice.domain.tax.treatment import TaxTreatment
+
+if TYPE_CHECKING:
+    from datetime import datetime
+    from decimal import Decimal
+    from uuid import UUID
+
+    from rhinvoice.domain.company.bank_account import BankAccount
+    from rhinvoice.domain.company.company import Company
+    from rhinvoice.domain.company.print_layout import PrintLayout
+    from rhinvoice.domain.customer.customer import Customer
+    from rhinvoice.domain.shared.country import Country
+    from rhinvoice.domain.shared.language import Language
+    from rhinvoice.domain.shared.money import Currency
+
+MAX_LINES = 500
+_NOT_FOR_GOODS = frozenset({TaxTreatment.EXPORT})
+_SHA256 = re.compile(r"[0-9a-f]{64}")
+MAX_SUBJECT = 200
+MAX_REFERENCE = 100
+MAX_TEXT = 4000
+MAX_NOTE = 500
+MAX_EVENT_DETAIL = 500
+DEFAULT_QUOTE_VALIDITY = timedelta(days=30)
+
+
+class DocumentType(StrEnum):
+    QUOTE = "quote"
+    INVOICE = "invoice"
+    CANCELLATION = "cancellation"
+
+    @property
+    def sequence(self) -> SequenceKind:
+        return SequenceKind(self.value)
+
+
+class DocumentStatus(StrEnum):
+    DRAFT = "draft"
+    SENT = "sent"
+    ACCEPTED = "accepted"
+    DECLINED = "declined"
+    ISSUED = "issued"
+    PARTIALLY_PAID = "partially_paid"
+    PAID = "paid"
+    CANCELLED = "cancelled"
+
+
+class DisplayStatus(StrEnum):
+    """Stored status plus the derived states "overdue" and "expired"."""
+
+    DRAFT = "draft"
+    SENT = "sent"
+    ACCEPTED = "accepted"
+    DECLINED = "declined"
+    EXPIRED = "expired"
+    ISSUED = "issued"
+    PARTIALLY_PAID = "partially_paid"
+    OVERDUE = "overdue"
+    PAID = "paid"
+    CANCELLED = "cancelled"
+
+
+OPEN_INVOICE_STATUSES = frozenset({DocumentStatus.ISSUED, DocumentStatus.PARTIALLY_PAID})
+
+
+class EventKind(StrEnum):
+    CREATED = "created"
+    CREATED_FROM = "created_from"
+    ISSUED = "issued"
+    SENT = "sent"
+    ACCEPTED = "accepted"
+    DECLINED = "declined"
+    CONVERTED = "converted"
+    PAYMENT_ADDED = "payment_added"
+    PAYMENT_REMOVED = "payment_removed"
+    CANCELLED = "cancelled"
+    TAX_OVERRIDDEN = "tax_overridden"
+    REMINDED = "reminded"
+    EMAILED = "emailed"
+    """Sent by mail; the detail names the recipients."""
+    REMINDER_EMAILED = "reminder_emailed"
+    """A reminder of the invoice sent by mail; the detail is "<level> <recipients>"."""
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentEvent:
+    at: datetime
+    kind: EventKind
+    detail: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class Payment:
+    id: UUID
+    paid_on: date
+    amount: Money
+    recorded_at: datetime
+    note: str = ""
+
+    def __post_init__(self) -> None:
+        if self.amount.amount <= 0:
+            raise ValidationError("amount", "a payment must be a positive amount")
+        if self.amount != self.amount.round_to_minor():
+            raise ValidationError("amount", "a payment has at most two decimal places")
+        object.__setattr__(self, "note", clean_text(self.note, "note", max_length=MAX_NOTE))
+
+
+@dataclass(frozen=True, slots=True)
+class IssueSnapshot:
+    """Company, customer and bank account exactly as they were when issuing."""
+
+    company: Company
+    customer: Customer
+    bank_account: BankAccount | None
+    notice: str | None = None
+    """Legal notice of the tax treatment (e.g. reverse charge), in the wording of that day.
+
+    None for documents issued before version 0.4, which did not store it.
+    """
+    layout: PrintLayout | None = None
+    """The print layout of that day; None before version 0.5 (the current one is used)."""
+    accounts: tuple[BankAccount, ...] | None = None
+    """Every bank account of that day, for footers listing all; None before version 0.5."""
+    goods_notice: str | None = None
+    """Notice of the goods lines' own treatment (e.g. export delivery), when they have one."""
+
+
+@dataclass(frozen=True, slots=True)
+class DraftContent:
+    """Everything a user can edit on a draft."""
+
+    customer_id: UUID
+    currency: Currency
+    language: Language
+    price_mode: PriceMode
+    lines: tuple[DocumentLine, ...]
+    treatment: TaxTreatment
+    """Treatment of the document and its services."""
+    treatment_overridden: bool = False
+    discount: Discount = field(default_factory=Discount.none)
+    issue_date: date | None = None
+    due_date: date | None = None
+    service_from: date | None = None
+    service_to: date | None = None
+    subject: str = ""
+    reference: str = ""
+    intro_text: str = ""
+    payment_text: str = ""
+    """Payment terms, printed after the totals."""
+    closing_text: str = ""
+    goods_treatment: TaxTreatment | None = None
+    """Treatment of the goods lines; None: the document's (documents before 0.4)."""
+
+    def __post_init__(self) -> None:
+        if self.treatment.goods_only:
+            raise ValidationError(
+                "treatment_override",
+                "goods get this treatment from reverse charge or an export",
+                code="goods_only_treatment",
+            )
+        if self.goods_treatment in _NOT_FOR_GOODS:
+            raise ValidationError("treatment_override", "this treatment does not apply to goods")
+        if len(self.lines) > MAX_LINES:
+            raise ValidationError("lines", f"a document has at most {MAX_LINES} lines")
+        object.__setattr__(
+            self, "subject", clean_text(self.subject, "subject", max_length=MAX_SUBJECT)
+        )
+        object.__setattr__(
+            self, "reference", clean_text(self.reference, "reference", max_length=MAX_REFERENCE)
+        )
+        object.__setattr__(
+            self, "intro_text", clean_multiline(self.intro_text, "intro_text", max_length=MAX_TEXT)
+        )
+        object.__setattr__(
+            self,
+            "payment_text",
+            clean_multiline(self.payment_text, "payment_text", max_length=MAX_TEXT),
+        )
+        object.__setattr__(
+            self,
+            "closing_text",
+            clean_multiline(self.closing_text, "closing_text", max_length=MAX_TEXT),
+        )
+        if self.service_from and self.service_to and self.service_from > self.service_to:
+            raise ValidationError("service_to", "the service period ends before it starts")
+        if self.issue_date and self.due_date and self.due_date < self.issue_date:
+            raise ValidationError("due_date", "the due date is before the document date")
+
+    @property
+    def tax_date(self) -> date | None:
+        """Date of supply; it decides the VAT rate (falls back to the document date)."""
+        return self.service_to or self.service_from or self.issue_date
+
+    def treatment_of(self, line: DocumentLine) -> TaxTreatment:
+        return line_treatment(line.supply, self.treatment, self.goods_treatment)
+
+    @property
+    def treatments(self) -> tuple[TaxTreatment, ...]:
+        """The treatments of the positions, the document's first; each with its notice."""
+        found = dict.fromkeys(self.treatment_of(line) for line in self.lines if line.is_item)
+        ordered = sorted(found, key=lambda treatment: treatment is not self.treatment)
+        return tuple(ordered) or (self.treatment,)
+
+    @property
+    def charges_vat(self) -> bool:
+        """Whether any position is taxed (then the rates are printed)."""
+        return any(treatment.charges_vat for treatment in self.treatments)
+
+
+@dataclass(frozen=True, slots=True)
+class Document:
+    id: UUID
+    type: DocumentType
+    status: DocumentStatus
+    content: DraftContent
+    created_at: datetime
+    number: str | None = None
+    issued_at: datetime | None = None
+    snapshot: IssueSnapshot | None = None
+    issued_totals: Totals | None = None
+    payments: tuple[Payment, ...] = ()
+    events: tuple[DocumentEvent, ...] = ()
+    source_id: UUID | None = None
+    """The quote an invoice was created from, or the invoice a cancellation cancels."""
+    cancelled_by_id: UUID | None = None
+    converted_to_id: UUID | None = None
+    """The invoice a quote was turned into."""
+    pdf_sha256: str | None = None
+    """SHA-256 of the archived PDF, set once after issuing (GoBD, OR 958f)."""
+
+    # --- Factories -------------------------------------------------------------
+
+    @classmethod
+    def new_draft(
+        cls,
+        document_id: UUID,
+        document_type: DocumentType,
+        content: DraftContent,
+        now: datetime,
+        *,
+        override_reason: str = "",
+    ) -> Document:
+        if document_type is DocumentType.CANCELLATION:
+            raise ValidationError("type", "cancellations are created by cancelling an invoice")
+        events = [DocumentEvent(now, EventKind.CREATED)]
+        if content.treatment_overridden:
+            events.append(_override_event(now, content, override_reason))
+        return cls(
+            id=document_id,
+            type=document_type,
+            status=DocumentStatus.DRAFT,
+            content=content,
+            created_at=now,
+            events=tuple(events),
+        )
+
+    def copy_as_draft(
+        self,
+        document_id: UUID,
+        document_type: DocumentType,
+        now: datetime,
+    ) -> Document:
+        """Duplicate or convert (quote → invoice): same content, new draft, fresh dates."""
+        content = replace(
+            self.content,
+            lines=tuple(replace(line, id=new_id(), tax_rate=None) for line in self.content.lines),
+            issue_date=None,
+            due_date=None,
+        )
+        return replace(
+            Document.new_draft(document_id, document_type, content, now),
+            source_id=self.id if document_type is not self.type else None,
+            events=(DocumentEvent(now, EventKind.CREATED_FROM, self.number or str(self.id)),),
+        )
+
+    # --- Queries -----------------------------------------------------------------
+
+    @property
+    def is_draft(self) -> bool:
+        return self.status is DocumentStatus.DRAFT
+
+    @property
+    def cancellation_id(self) -> UUID:
+        """The cancellation invoice of a cancelled invoice."""
+        if self.cancelled_by_id is None:
+            raise InvalidStateError("the document has not been cancelled")
+        return self.cancelled_by_id
+
+    @property
+    def issued_number(self) -> str:
+        if self.number is None:
+            raise InvalidStateError("the document has no number yet")
+        return self.number
+
+    @property
+    def issued_snapshot(self) -> IssueSnapshot:
+        if self.snapshot is None:
+            raise InvalidStateError("the document has not been issued yet")
+        return self.snapshot
+
+    @property
+    def paid_amount(self) -> Money:
+        return sum((payment.amount for payment in self.payments), Money.zero(self.content.currency))
+
+    def display_status(self, today: date) -> DisplayStatus:
+        """Status for display; a cancellation invoice settles its invoice and is never late."""
+        due = self.content.due_date
+        late = due is not None and due < today and self.type is not DocumentType.CANCELLATION
+        if self.status in OPEN_INVOICE_STATUSES and late:
+            return DisplayStatus.OVERDUE
+        if self.status is DocumentStatus.SENT and late:
+            return DisplayStatus.EXPIRED
+        return DisplayStatus(self.status.value)
+
+    def totals(self, company_country: Country, *, cash_rounding: bool, today: date) -> Totals:
+        """Frozen totals of issued documents, current ones of drafts.
+
+        Drafts without service period or date use the rates valid ``today``,
+        the date they would be issued on.
+        """
+        if self.issued_totals is not None:
+            return self.issued_totals
+        tax_date = self.content.tax_date or today
+
+        def rate_for(line: DocumentLine) -> Decimal:
+            if line.tax_rate is not None:
+                return line.tax_rate
+            return profile_of(company_country).rates_on(tax_date).rate(line.tax_category)
+
+        return calculate(
+            CalculationInput(
+                currency=self.content.currency,
+                price_mode=self.content.price_mode,
+                lines=self.content.lines,
+                discount=self.content.discount,
+                treatment=self.content.treatment,
+                rate_for=rate_for,
+                cash_rounding=cash_rounding,
+                goods_treatment=self.content.goods_treatment,
+            ),
+        )
+
+    def open_amount(self) -> Money:
+        if self.issued_totals is None or self.status is DocumentStatus.CANCELLED:
+            return Money.zero(self.content.currency)
+        return self.issued_totals.total - self.paid_amount
+
+    # --- Commands ------------------------------------------------------------------
+
+    def _require(self, *statuses: DocumentStatus, action: str) -> None:
+        if self.status not in statuses:
+            raise InvalidStateError(f"a {self.status} {self.type} cannot be {action}")
+
+    def _with_event(
+        self, now: datetime, kind: EventKind, detail: str = ""
+    ) -> tuple[DocumentEvent, ...]:
+        return (*self.events, DocumentEvent(now, kind, detail))
+
+    def archive_pdf(self, sha256: str) -> Document:
+        """Record the hash of the PDF that is kept as the issued document; only once."""
+        if self.is_draft:
+            raise InvalidStateError("drafts have no archived PDF")
+        if self.pdf_sha256 is not None:
+            raise InvalidStateError("the PDF of this document is already archived")
+        if not _SHA256.fullmatch(sha256):
+            raise ValidationError("pdf_sha256", "a SHA-256 hash has 64 lowercase hex digits")
+        return replace(self, pdf_sha256=sha256)
+
+    def edit(self, content: DraftContent, now: datetime, *, override_reason: str = "") -> Document:
+        self._require(DocumentStatus.DRAFT, action="changed")
+        events = self.events
+        newly_overridden = content.treatment_overridden and (
+            not self.content.treatment_overridden or content.treatment is not self.content.treatment
+        )
+        if newly_overridden:
+            events = (*events, _override_event(now, content, override_reason))
+        return replace(self, content=content, events=events)
+
+    def issue(
+        self,
+        *,
+        number: str,
+        issue_date: date,
+        due_date: date,
+        snapshot: IssueSnapshot,
+        now: datetime,
+    ) -> Document:
+        """Assign the number and freeze content, tax rates, totals and parties."""
+        self._require(DocumentStatus.DRAFT, action="issued")
+        if not any(line.kind is LineKind.ITEM for line in self.content.lines):
+            raise ValidationError(
+                "lines",
+                "the document needs at least one position with an amount",
+                code="no_positions",
+            )
+        if due_date < issue_date:
+            raise ValidationError(
+                "due_date", "the due date is before the document date", code="due_before_issue"
+            )
+        if (
+            self.content.treatment is TaxTreatment.REVERSE_CHARGE
+            and snapshot.customer.vat_number is None
+        ):
+            raise ValidationError(
+                "treatment",
+                "reverse charge needs the customer's VAT number",
+                code="reverse_charge_needs_vat_number",
+            )
+        company = snapshot.company
+        tax_date = self.content.service_to or self.content.service_from or issue_date
+        rates = profile_of(company.country).rates_on(tax_date)
+        # Lines with a rate keep it: a cancellation reverses its invoice at the
+        # invoice's rates, even when the rates changed in between.
+        frozen_lines = tuple(
+            replace(line, tax_rate=rates.rate(line.tax_category))
+            if line.kind is LineKind.ITEM and line.tax_rate is None
+            else line
+            for line in self.content.lines
+        )
+        content = replace(
+            self.content, lines=frozen_lines, issue_date=issue_date, due_date=due_date
+        )
+        issuing = replace(self, content=content)
+        totals = issuing.totals(
+            company.country, cash_rounding=company.cash_rounding, today=issue_date
+        )
+        if self.type is DocumentType.INVOICE and not totals.total.amount > 0:
+            # Credits are cancellations; an invoice of zero or less could never be paid.
+            raise ValidationError(
+                "lines", "the total of an invoice must be positive", code="non_positive_total"
+            )
+        quote = self.type is DocumentType.QUOTE
+        if self.type is DocumentType.INVOICE:
+            profile_of(company.country).check_invoice(company, snapshot.customer, totals.total)
+            if TaxTreatment.INTRA_COMMUNITY in content.treatments:
+                _check_intra_community(company, snapshot.customer)
+        return replace(
+            issuing,
+            status=DocumentStatus.SENT if quote else DocumentStatus.ISSUED,
+            number=number,
+            issued_at=now,
+            snapshot=snapshot,
+            issued_totals=totals,
+            events=self._with_event(now, EventKind.SENT if quote else EventKind.ISSUED, number),
+        )
+
+    def accept(self, now: datetime) -> Document:
+        self._require(DocumentStatus.SENT, action="accepted")
+        return replace(
+            self, status=DocumentStatus.ACCEPTED, events=self._with_event(now, EventKind.ACCEPTED)
+        )
+
+    def decline(self, now: datetime) -> Document:
+        self._require(DocumentStatus.SENT, action="declined")
+        return replace(
+            self, status=DocumentStatus.DECLINED, events=self._with_event(now, EventKind.DECLINED)
+        )
+
+    def convert_check(self) -> None:
+        """Only sent or accepted quotes become an invoice, and only once."""
+        if self.type is not DocumentType.QUOTE:
+            raise InvalidStateError("only quotes can be turned into invoices")
+        self._require(DocumentStatus.SENT, DocumentStatus.ACCEPTED, action="turned into an invoice")
+        if self.converted_to_id is not None:
+            raise InvalidStateError(
+                "this quote has already been turned into an invoice", code="already_converted"
+            )
+
+    def mark_converted(self, invoice_id: UUID, now: datetime) -> Document:
+        """Record that a quote became an invoice; a sent quote counts as accepted."""
+        self.convert_check()
+        return replace(
+            self,
+            status=DocumentStatus.ACCEPTED,
+            converted_to_id=invoice_id,
+            events=self._with_event(now, EventKind.CONVERTED, str(invoice_id)),
+        )
+
+    def add_payment(self, payment: Payment, now: datetime) -> Document:
+        self._require(*OPEN_INVOICE_STATUSES, action="paid")
+        if payment.amount.currency is not self.content.currency:
+            raise ValidationError("amount", f"the payment must be in {self.content.currency}")
+        open_amount = self.open_amount()
+        if payment.amount > open_amount:
+            raise ValidationError(
+                "amount",
+                f"the payment exceeds the open amount of {open_amount}",
+                code="payment_exceeds_open_amount",
+            )
+        payments = (*self.payments, payment)
+        paid = payment.amount == open_amount
+        return replace(
+            self,
+            payments=payments,
+            status=DocumentStatus.PAID if paid else DocumentStatus.PARTIALLY_PAID,
+            events=self._with_event(now, EventKind.PAYMENT_ADDED, _amount_detail(payment)),
+        )
+
+    def pay_in_full(self, payment_id: UUID, paid_on: date, now: datetime) -> Document:
+        """Record a payment of the whole open amount."""
+        self._require(*OPEN_INVOICE_STATUSES, action="paid")
+        payment = Payment(
+            id=payment_id, paid_on=paid_on, amount=self.open_amount(), recorded_at=now
+        )
+        return self.add_payment(payment, now)
+
+    def remove_payment(self, payment_id: UUID, now: datetime) -> Document:
+        self._require(DocumentStatus.PARTIALLY_PAID, DocumentStatus.PAID, action="changed")
+        removed = next((payment for payment in self.payments if payment.id == payment_id), None)
+        if removed is None:
+            raise ValidationError("payment", "this payment does not belong to the document")
+        payments = tuple(payment for payment in self.payments if payment.id != payment_id)
+        return replace(
+            self,
+            payments=payments,
+            status=DocumentStatus.PARTIALLY_PAID if payments else DocumentStatus.ISSUED,
+            events=self._with_event(now, EventKind.PAYMENT_REMOVED, _amount_detail(removed)),
+        )
+
+    def record_reminder(self, level: int, now: datetime) -> Document:
+        """Note a payment reminder of the given level in the history."""
+        self._require(*OPEN_INVOICE_STATUSES, action="reminded")
+        return replace(self, events=self._with_event(now, EventKind.REMINDED, str(level)))
+
+    def record_mail(self, kind: EventKind, detail: str, now: datetime) -> Document:
+        """Note in the history that the document (or a reminder of it) went out by mail."""
+        if kind not in {EventKind.EMAILED, EventKind.REMINDER_EMAILED}:
+            raise ValidationError("kind", "only mails are recorded this way")
+        if self.is_draft:
+            raise InvalidStateError("drafts are not sent; issue the document first")
+        return replace(self, events=self._with_event(now, kind, detail[:MAX_EVENT_DETAIL]))
+
+    def cancel_check(self) -> None:
+        if self.type is not DocumentType.INVOICE:
+            raise InvalidStateError("only invoices can be cancelled")
+        self._require(*OPEN_INVOICE_STATUSES, DocumentStatus.PAID, action="cancelled")
+
+    def cancel(self, cancellation: Document, now: datetime) -> Document:
+        """Mark this invoice as cancelled by an issued cancellation invoice."""
+        self.cancel_check()
+        if cancellation.source_id != self.id:
+            raise InvalidStateError("the cancellation does not belong to this invoice")
+        if (
+            cancellation.issued_totals is None
+            or self.issued_totals is None
+            or cancellation.issued_totals.total != -self.issued_totals.total
+        ):
+            raise InvalidStateError("the cancellation must reverse the invoice exactly")
+        return replace(
+            self,
+            status=DocumentStatus.CANCELLED,
+            cancelled_by_id=cancellation.id,
+            events=self._with_event(now, EventKind.CANCELLED, cancellation.issued_number),
+        )
+
+    def cancellation_draft(self, cancellation_id: UUID, now: datetime) -> Document:
+        """Build a cancellation invoice with negated quantities, referring to this invoice."""
+        self.cancel_check()
+        negated = tuple(
+            replace(line, id=new_id(), quantity=-line.quantity)
+            if line.kind is LineKind.ITEM
+            else replace(line, id=new_id())
+            for line in self.content.lines
+        )
+        # The invoice's intro and payment terms ask for payment; a cancellation does not.
+        content = replace(
+            self.content,
+            lines=negated,
+            issue_date=None,
+            due_date=None,
+            intro_text="",
+            payment_text="",
+        )
+        return Document(
+            id=cancellation_id,
+            type=DocumentType.CANCELLATION,
+            status=DocumentStatus.DRAFT,
+            content=content,
+            created_at=now,
+            source_id=self.id,
+            events=(DocumentEvent(now, EventKind.CREATED_FROM, self.issued_number),),
+        )
+
+    def delete_check(self) -> None:
+        """Only drafts may be deleted; issued documents are kept forever."""
+        self._require(DocumentStatus.DRAFT, action="deleted")
+
+
+def _check_intra_community(company: Company, customer: Customer) -> None:
+    """§ 14a Abs. 3 UStG (DE), Art. 11 Abs. 2 UStG (AT): both VAT IDs on the invoice."""
+    if company.vat_number is None:
+        raise ValidationError(
+            "company",
+            "an intra-Community supply states the VAT ID of the company",
+            code="company_vat_id_missing",
+        )
+    if customer.vat_number is None:
+        raise ValidationError(
+            "customer_id",
+            "an intra-Community supply states the VAT ID of the customer",
+            code="customer_vat_id_missing",
+        )
+
+
+def _amount_detail(payment: Payment) -> str:
+    """Plain decimal ("97.80"), formatted by the client in the document's currency."""
+    return f"{payment.amount.amount:.2f}"
+
+
+def _override_event(now: datetime, content: DraftContent, reason: str) -> DocumentEvent:
+    """Log entry for a manually chosen tax treatment (CLAUDE.md §4)."""
+    detail = f"{content.treatment}: {reason.strip()}" if reason.strip() else str(content.treatment)
+    return DocumentEvent(now, EventKind.TAX_OVERRIDDEN, detail)
+
+
+def default_due_date(
+    document_type: DocumentType, issue_date: date, payment_terms_days: int
+) -> date:
+    if document_type is DocumentType.QUOTE:
+        return issue_date + DEFAULT_QUOTE_VALIDITY
+    if document_type is DocumentType.CANCELLATION:
+        return issue_date
+    return issue_date + timedelta(days=payment_terms_days)

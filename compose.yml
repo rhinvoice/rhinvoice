@@ -1,0 +1,46 @@
+# Rhinvoice built from this source tree (deploy/compose.yml uses the published image).
+#   cp .env.example .env && docker compose up -d --build
+name: rhinvoice
+
+services:
+  app:
+    extends:
+      file: deploy/compose.yml
+      service: app
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+      gotenberg:
+        condition: service_started
+
+  gotenberg:
+    extends:
+      file: deploy/compose.yml
+      service: gotenberg
+
+  db:
+    extends:
+      file: deploy/compose.yml
+      service: db
+
+  backup:
+    extends:
+      file: deploy/compose.yml
+      service: backup
+    build:
+      context: .
+      dockerfile: backup/Dockerfile
+    image: rhinvoice-backup:local
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  backup-cache:
+  backup-repository:
+  backup-rclone:

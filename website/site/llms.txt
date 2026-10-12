@@ -1,0 +1,75 @@
+# Rhinvoice
+
+> Rhinvoice is a free, open-source invoicing program for small businesses in Switzerland, Liechtenstein, Germany and Austria. It writes quotes, invoices, cancellation invoices and payment reminders with the VAT rules, legal notices, payment codes and e-invoice formats of each of these four countries. It is self-hosted with Docker, licensed under the GNU AGPL v3, and made by webberz, a software company in Balgach in the Swiss Rhine Valley.
+
+## Facts
+
+- Name: Rhinvoice (from Rhine and invoice: the Rhine connects Switzerland, Liechtenstein, Austria and Germany)
+- Website: https://rhinvoice.com/ (English), https://rhinvoice.com/de/ (German)
+- Source code: https://github.com/rhinvoice/rhinvoice
+- Licence: GNU Affero General Public License v3.0 or later (AGPL-3.0); contributions under a contributor licence agreement
+- Price: free; there is no paid version and no hosted service
+- Countries of the issuing company: Switzerland (CH), Liechtenstein (LI), Germany (DE), Austria (AT); customers can be anywhere
+- Languages: interface in German (Swiss, German and Austrian variants) and English; documents in German or English
+- Runs on: Docker on Linux, macOS or Windows (servers, NAS, Raspberry Pi 4/5, laptops); images for amd64 and arm64
+- Status: beta (0.x)
+- Made by: webberz, Balgach, Switzerland (https://www.webberz.ch/)
+
+## What Rhinvoice does
+
+- **Documents:** quotes, invoices and cancellation invoices with a live paper preview; numbers assigned without gaps when a document is issued; issued documents cannot be changed (GoBD, Swiss OR 958f, Austrian BAO), corrections only by cancellation.
+- **VAT per country:** dated rates for CH, LI, DE and AT; the tax treatment (domestic, reverse charge, intra-Community supply of goods, export, small business, exempt) follows from the countries of company and customer, with the legally required notice on the invoice; goods and services are treated separately.
+- **Payment codes:** Swiss QR-bill (QR or creditor reference) for Switzerland and Liechtenstein; EPC QR code (GiroCode) for euro invoices.
+- **E-invoices:** ZUGFeRD / Factur-X (EN 16931) embedded in every PDF (PDF/A-3b); XRechnung 3.0 for German public authorities; validated with the KoSIT validator and Mustang.
+- **Payments and reminders:** partial payments, overdue invoices, three reminder levels with fees.
+- **Recurring invoices:** monthly, quarterly, half-yearly or yearly, as draft, issued, or issued and sent.
+- **E-mail:** sending documents through the company's own mail server (SMTP).
+- **Import:** customers and articles from CSV and Excel.
+- **Backups:** encrypted, deduplicated backups with restic to S3, SFTP, a folder, Dropbox or Google Drive.
+- **Security:** login with optional two-factor authentication; data stays on the user's own server.
+
+## What Rhinvoice is not
+
+- Not a hosted service or SaaS: everyone runs it on their own server or computer. A hosted version is only conceivable if the community asks for it and sponsors carry the running costs.
+- Not an accounting program: no bookkeeping, no ledger, no VAT returns, no payroll.
+- Not tax advice: rates and rules are checked against official sources (ESTV, Liechtenstein tax administration, German and Austrian ministries of finance) and provided without warranty.
+- Not for countries other than CH, LI, DE and AT as the issuing company's country yet; new countries can be added as country profiles (see the guide below).
+- Not a web shop or point-of-sale system.
+
+## Install
+
+```bash
+mkdir rhinvoice && cd rhinvoice
+curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/deploy/compose.yml
+curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/.env.example -o .env
+# in .env, set POSTGRES_PASSWORD to a long random value
+docker compose up -d
+```
+
+Then open http://rhinvoice.localhost:8000; the first visit sets up the first user.
+
+## Demo
+
+Public demos, reset every hour, one per country:
+
+- Switzerland: https://ch.demo.rhinvoice.com
+- Germany: https://de.demo.rhinvoice.com
+- Austria: https://at.demo.rhinvoice.com
+
+## Pages
+
+- [Rhinvoice (English)](https://rhinvoice.com/): overview, features, install
+- [Rhinvoice (Deutsch)](https://rhinvoice.com/de/): the same in German
+- [README](https://github.com/rhinvoice/rhinvoice#readme): features, countries, quickstart
+- [Install guide](https://github.com/rhinvoice/rhinvoice/blob/main/docs/install.md): server setup, e-mail, updates, security
+- [Backups](https://github.com/rhinvoice/rhinvoice/blob/main/docs/backup.md)
+- [Adding a country](https://github.com/rhinvoice/rhinvoice/blob/main/docs/adding-a-country.md)
+- [Architecture decisions](https://github.com/rhinvoice/rhinvoice/tree/main/docs/adr)
+- [Changelog](https://github.com/rhinvoice/rhinvoice/blob/main/CHANGELOG.md)
+
+## Contact
+
+- Questions and ideas: https://github.com/rhinvoice/rhinvoice/discussions
+- Bugs: https://github.com/rhinvoice/rhinvoice/issues
+- Security: https://github.com/rhinvoice/rhinvoice/security/advisories/new
+- Commercial licence, partnership or taking over the project: hello@rhinvoice.com

@@ -1,0 +1,42 @@
+{#- Payment reminders and dunning letters. A theme folder may replace this file. -#}
+{% extends "layout.html.j2" %}
+{% block content %}
+  <h1>{{ title }}</h1>
+  {% if intro %}<p class="text">{{ intro }}</p>{% endif %}
+  <table class="lines">
+    <thead>
+      <tr>
+        <th>{{ labels.invoice }}</th>
+        <th>{{ labels.invoice_date }}</th>
+        <th>{{ labels.due_invoice }}</th>
+        <th class="num">{{ labels.amount }}</th>
+        <th class="num">{{ labels.paid }}</th>
+        <th class="num">{{ labels.open }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ reminder_invoice.number }}</td>
+        <td>{{ reminder_invoice.date }}</td>
+        <td>{{ reminder_invoice.due }}</td>
+        <td class="num">{{ reminder_invoice.total }}</td>
+        <td class="num">{{ reminder_invoice.paid }}</td>
+        <td class="num">{{ reminder_invoice.open }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="totals">
+    {% for row in totals %}
+    <span class="{{ 'grand' if row.emphasis else '' }}">{{ row.label }}</span>
+    <span class="value {{ 'grand' if row.emphasis else '' }}">{{ row.value }}</span>
+    {% endfor %}
+  </div>
+  {% if epc_qr %}
+  <div class="payment">
+    <figure class="epc">
+      {{ epc_qr }}
+      <figcaption>{{ labels.epc_caption }}</figcaption>
+    </figure>
+  </div>
+  {% endif %}
+{% endblock %}

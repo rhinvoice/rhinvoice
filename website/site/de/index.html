@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<!--
+
+██████╗ ██╗  ██╗██╗███╗   ██╗██╗   ██╗ ██████╗ ██╗ ██████╗███████╗
+██╔══██╗██║  ██║██║████╗  ██║██║   ██║██╔═══██╗██║██╔════╝██╔════╝
+██████╔╝███████║██║██╔██╗ ██║██║   ██║██║   ██║██║██║     █████╗
+██╔══██╗██╔══██║██║██║╚██╗██║╚██╗ ██╔╝██║   ██║██║██║     ██╔══╝
+██║  ██║██║  ██║██║██║ ╚████║ ╚████╔╝ ╚██████╔╝██║╚██████╗███████╗
+╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝  ╚═══╝   ╚═════╝ ╚═╝ ╚═════╝╚══════╝
+
+   Du liest den Quelltext. Dann ist der eigentliche spannender:
+
+       https://github.com/rhinvoice/rhinvoice      (AGPL-3.0)
+
+   Fehlermeldungen, Steuerregeln mit Quelle und Pull Requests sind willkommen.
+   Was du hier nicht findest: Framework, Tracker, Cookies, Anfragen an
+   Dritte. Eine Seite, ein Stylesheet, ein kleines Skript.
+
+   made by webberz, Balgach, im St. Galler Rheintal · www.webberz.ch
+
+-->
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'self'; object-src 'none'; manifest-src 'self'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+
+<title>Rhinvoice — Open-Source-Rechnungsprogramm für die Schweiz, Liechtenstein, Deutschland und Österreich</title>
+<meta name="description" content="Kostenloses, selbst gehostetes Rechnungsprogramm für CH, FL, DE und AT: MWST/USt. pro Land, QR-Rechnung, GiroCode, ZUGFeRD und XRechnung. AGPL.">
+<link rel="canonical" href="https://rhinvoice.com/de/">
+<link rel="alternate" hreflang="en" href="https://rhinvoice.com/">
+<link rel="alternate" hreflang="de" href="https://rhinvoice.com/de/">
+<link rel="alternate" hreflang="x-default" href="https://rhinvoice.com/">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Rhinvoice">
+<meta property="og:locale" content="de_DE">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:url" content="https://rhinvoice.com/de/">
+<meta property="og:title" content="Rhinvoice — Open-Source-Rechnungsprogramm für CH, FL, DE und AT">
+<meta property="og:description" content="Kostenloses, selbst gehostetes Rechnungsprogramm für CH, FL, DE und AT: MWST/USt. pro Land, QR-Rechnung, GiroCode, ZUGFeRD und XRechnung. AGPL.">
+<meta property="og:image" content="https://rhinvoice.com/assets/img/og-de.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Rhinvoice: Open-Source-Rechnungsprogramm für die Schweiz, Liechtenstein, Deutschland und Österreich">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Rhinvoice — Open-Source-Rechnungsprogramm für CH, FL, DE und AT">
+<meta name="twitter:description" content="Kostenloses, selbst gehostetes Rechnungsprogramm für CH, FL, DE und AT: MWST/USt. pro Land, QR-Rechnung, GiroCode, ZUGFeRD und XRechnung. AGPL.">
+<meta name="twitter:image" content="https://rhinvoice.com/assets/img/og-de.png">
+
+<meta name="theme-color" content="#f6f8fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1520" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/main.css">
+<script src="/assets/js/main.js" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://rhinvoice.com/#software",
+      "name": "Rhinvoice",
+      "description": "Kostenloses, selbst gehostetes Rechnungsprogramm für CH, FL, DE und AT: MWST/USt. pro Land, QR-Rechnung, GiroCode, ZUGFeRD und XRechnung. AGPL.",
+      "url": "https://rhinvoice.com/",
+      "applicationCategory": "BusinessApplication",
+      "applicationSubCategory": "Invoicing",
+      "operatingSystem": "Linux, macOS, Windows (Docker)",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "CHF"
+      },
+      "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+      "isAccessibleForFree": true,
+      "inLanguage": [
+        "en",
+        "de"
+      ],
+      "countriesSupported": [
+        "CH",
+        "LI",
+        "DE",
+        "AT"
+      ],
+      "featureList": [
+        "Angebote, Rechnungen, Stornos",
+        "Steuerfälle pro Land",
+        "Waren und Dienstleistungen",
+        "Swiss QR-Rechnung und GiroCode",
+        "ZUGFeRD und XRechnung",
+        "Mahnwesen",
+        "Wiederkehrende Rechnungen",
+        "Versand per E-Mail",
+        "Import",
+        "Backups",
+        "Tastatur zuerst",
+        "Auf dem Handy"
+      ],
+      "screenshot": "https://rhinvoice.com/assets/img/shots/dashboard.png",
+      "image": "https://rhinvoice.com/assets/img/og-de.png",
+      "sameAs": [
+        "https://github.com/rhinvoice/rhinvoice"
+      ],
+      "author": {
+        "@id": "https://www.webberz.ch/#firma"
+      },
+      "publisher": {
+        "@id": "https://www.webberz.ch/#firma"
+      }
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "@id": "https://rhinvoice.com/#source",
+      "name": "Rhinvoice",
+      "codeRepository": "https://github.com/rhinvoice/rhinvoice",
+      "programmingLanguage": [
+        "Python",
+        "TypeScript"
+      ],
+      "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+      "targetProduct": {
+        "@id": "https://rhinvoice.com/#software"
+      },
+      "author": {
+        "@id": "https://www.webberz.ch/#firma"
+      }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://www.webberz.ch/#firma",
+      "name": "webberz",
+      "url": "https://www.webberz.ch/"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://rhinvoice.com/#website",
+      "name": "Rhinvoice",
+      "url": "https://rhinvoice.com/",
+      "inLanguage": [
+        "en",
+        "de"
+      ],
+      "publisher": {
+        "@id": "https://www.webberz.ch/#firma"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://rhinvoice.com/de/#webpage",
+      "url": "https://rhinvoice.com/de/",
+      "name": "Rhinvoice — Open-Source-Rechnungsprogramm für die Schweiz, Liechtenstein, Deutschland und Österreich",
+      "description": "Kostenloses, selbst gehostetes Rechnungsprogramm für CH, FL, DE und AT: MWST/USt. pro Land, QR-Rechnung, GiroCode, ZUGFeRD und XRechnung. AGPL.",
+      "inLanguage": "de",
+      "isPartOf": {
+        "@id": "https://rhinvoice.com/#website"
+      },
+      "about": {
+        "@id": "https://rhinvoice.com/#software"
+      },
+      "primaryImageOfPage": "https://rhinvoice.com/assets/img/og-de.png"
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#content">Zum Inhalt springen</a>
+
+<header class="wrap top" id="top">
+  <a class="brand" href="https://rhinvoice.com/de/"><img src="/assets/img/favicon.svg" alt="" width="30" height="30">Rhinvoice</a>
+  <div class="top-end">
+    <nav aria-label="Hauptnavigation"><a href="#features">Funktionen</a><a href="#install">Installation</a><a href="https://github.com/rhinvoice/rhinvoice">GitHub</a></nav>
+    <nav class="lang" aria-label="Sprache">
+      <a href="https://rhinvoice.com/" hreflang="en" lang="en">EN</a>
+      <a href="https://rhinvoice.com/de/" hreflang="de" lang="de" aria-current="true">DE</a>
+    </nav>
+  </div>
+</header>
+
+<main id="content">
+  <div class="wrap hero">
+    <div class="copy">
+      <p class="eyebrow">Open Source · Selbst gehostet</p>
+      <h1>Rechnungen für die Schweiz, Liechtenstein, Deutschland und Österreich.</h1>
+      <p class="lead">Rhinvoice folgt dem Rhein von der Schweiz entlang Liechtenstein und Österreich bis nach Deutschland und kennt die Anforderungen an Rechnungen in allen vier Ländern. Open Source. Selbst gehostet.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="#demo">Demo ausprobieren</a>
+        <a class="btn btn-ghost" href="#install">Mit Docker installieren</a>
+      </div>
+      <ul class="proof" aria-label="Das Wichtigste">
+        <li>Swiss QR-Rechnung</li>
+        <li>ZUGFeRD &amp; XRechnung</li>
+        <li>AGPL-3.0</li>
+      </ul>
+    </div>
+    <picture>
+        <source srcset="/assets/img/shots/dashboard.avif" type="image/avif">
+        <source srcset="/assets/img/shots/dashboard.webp" type="image/webp">
+        <img class="shot" src="/assets/img/shots/dashboard.png" alt="Die Übersicht von Rhinvoice: Umsatz gegenüber dem Vorjahr, offene und überfällige Beträge, offene Angebote" width="1440" height="900" fetchpriority="high">
+      </picture>
+  </div>
+
+  <section id="demo" class="river" aria-labelledby="countries-title">
+    <div class="wrap">
+      <h2 id="countries-title" class="eyebrow">Vier Länder am Rhein</h2>
+      <svg viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <path class="bank" d="M0 70 C 120 20, 200 110, 320 64 S 520 20, 640 70 S 860 110, 1000 50"></path>
+        <path class="flow" d="M0 70 C 120 20, 200 110, 320 64 S 520 20, 640 70 S 860 110, 1000 50"></path>
+      </svg>
+      <ul class="stations">
+        <li><strong><abbr title="Schweiz">CH</abbr></strong><span>MWST 8.1 % · QR-Rechnung</span><a href="https://ch.demo.rhinvoice.com">Demo öffnen <span aria-hidden="true">→</span></a></li>
+        <li><strong><abbr title="Liechtenstein">FL</abbr></strong><span>Schweizer MWST per Zollvertrag</span></li>
+        <li><strong><abbr title="Österreich">AT</abbr></strong><span>USt. 20 % · GiroCode</span><a href="https://at.demo.rhinvoice.com">Demo öffnen <span aria-hidden="true">→</span></a></li>
+        <li><strong><abbr title="Deutschland">DE</abbr></strong><span>USt. 19 % · XRechnung</span><a href="https://de.demo.rhinvoice.com">Demo öffnen <span aria-hidden="true">→</span></a></li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-label="Bildschirmfotos">
+    <div class="wrap shots">
+      <picture>
+        <source srcset="/assets/img/shots/editor.avif" type="image/avif">
+        <source srcset="/assets/img/shots/editor.webp" type="image/webp">
+        <img class="shot" src="/assets/img/shots/editor.png" alt="Der Rechnungseditor mit Live-Vorschau auf Papier" width="1440" height="900" loading="lazy" decoding="async">
+      </picture>
+      <picture>
+        <source srcset="/assets/img/shots/dashboard-dark.avif" type="image/avif">
+        <source srcset="/assets/img/shots/dashboard-dark.webp" type="image/webp">
+        <img class="shot" src="/assets/img/shots/dashboard-dark.png" alt="Die Übersicht einer deutschen Firma im dunklen Modus" width="1440" height="900" loading="lazy" decoding="async">
+      </picture>
+    </div>
+  </section>
+
+  <section id="features" aria-labelledby="features-title">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Funktionen</p><h2 id="features-title">Alles, womit ein kleines Unternehmen Rechnungen schreibt</h2></div>
+      <ul class="features">
+        <li><strong>Angebote, Rechnungen, Stornos</strong><span>Live-Vorschau, Nummern ohne Lücken, ausgestellte Dokumente unveränderlich</span></li>
+        <li><strong>Steuerfälle pro Land</strong><span>Inland, Reverse Charge, innergemeinschaftlich, Export, Kleinunternehmer</span></li>
+        <li><strong>Waren und Dienstleistungen</strong><span>sauber getrennt, auch auf gemischten Rechnungen</span></li>
+        <li><strong>Swiss QR-Rechnung und GiroCode</strong><span>der richtige Code für Währung und Kunde</span></li>
+        <li><strong>ZUGFeRD und XRechnung</strong><span>geprüft mit KoSIT und Mustang</span></li>
+        <li><strong>Mahnwesen</strong><span>drei Stufen, Gebühren, neue Fristen</span></li>
+        <li><strong>Wiederkehrende Rechnungen</strong><span>monatlich bis jährlich, als Entwurf, ausgestellt oder versendet</span></li>
+        <li><strong>Versand per E-Mail</strong><span>über den eigenen Mailserver</span></li>
+        <li><strong>Import</strong><span>CSV und Excel mit Spaltenzuordnung und Testlauf</span></li>
+        <li><strong>Backups</strong><span>verschlüsselt mit restic, nach S3, SFTP, Dropbox oder Google Drive</span></li>
+        <li><strong>Tastatur zuerst</strong><span>⌘K, Tastenkürzel, hell und dunkel</span></li>
+        <li><strong>Auf dem Handy</strong><span>Status prüfen, als bezahlt markieren, PDF teilen</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="free" aria-labelledby="free-title">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Kostenlos, und das bleibt so</p><h2 id="free-title">Open Source, ohne geplante Bezahlversion</h2></div>
+      <div class="grid">
+        <article class="card"><h3>Kein Hosting-Dienst geplant</h3><p>Rhinvoice darf unter der AGPL kostenlos genutzt, verändert und weitergegeben werden. Ein Bezahldienst ist nicht geplant.</p></article>
+        <article class="card"><h3>Lieber gehostet?</h3><p>Sag es uns in den <a href="https://github.com/rhinvoice/rhinvoice/discussions">GitHub Discussions</a>. Wenn genug Sponsoren die Betriebskosten tragen, ist ein gehostetes Rhinvoice denkbar.</p></article>
+        <article class="card"><h3>Kommerzielles Interesse</h3><p>Interesse an einer kommerziellen Lizenz, einer Partnerschaft oder an der Übernahme des Projekts? Schreib uns an <span class="tabular">hello@rhinvoice.com</span>.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" aria-labelledby="install-title">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Installation</p><h2 id="install-title">In fünf Minuten startklar.</h2><p class="lead">Auf einem Server, einem NAS, einem Raspberry Pi oder dem eigenen Laptop mit Docker Desktop (macOS, Windows, Linux).</p></div>
+<pre class="code"><span class="c"># ein eigener Ordner</span>
+mkdir rhinvoice &amp;&amp; cd rhinvoice
+
+<span class="c"># Compose-Datei und Einstellungen</span>
+curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/deploy/compose.yml
+curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/.env.example -o .env
+
+<span class="c"># in .env POSTGRES_PASSWORD auf einen langen Zufallswert setzen, dann starten</span>
+docker compose up -d
+
+<span class="c"># http://rhinvoice.localhost:8000 öffnen, beim ersten Besuch den ersten Benutzer anlegen</span>
+
+<span class="c"># optional, nur auf dem eigenen Laptop: die kurze Adresse http://rhinvoice:8000</span>
+echo "127.0.0.1 rhinvoice" | sudo tee -a /etc/hosts
+<span class="c"># und in .env: RHINVOICE_COOKIE_SECURE=false, dann nochmals docker compose up -d</span></pre>
+      <p class="note install-note">Auf einem Server: HTTPS und Backup, siehe <a href="https://github.com/rhinvoice/rhinvoice/blob/main/docs/install.md">Installationsanleitung</a>.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Rhinvoice · AGPL-3.0 · Keine Steuerberatung</span>
+    <nav aria-label="Footer"><a href="https://github.com/rhinvoice/rhinvoice">GitHub</a><a href="https://github.com/rhinvoice/rhinvoice/blob/main/docs/install.md">Doku</a><a href="/llms.txt">llms.txt</a><a href="https://www.webberz.ch/">made by webberz</a></nav>
+  </div>
+</footer>
+
+<a class="to-top" href="#top" aria-label="Nach oben">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5"></path><path d="m5 12 7-7 7 7"></path></svg>
+</a>
+</body>
+</html>

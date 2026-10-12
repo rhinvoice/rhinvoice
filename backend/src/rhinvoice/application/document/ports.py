@@ -13,9 +13,11 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
     from rhinvoice.application.common import Page
+    from rhinvoice.domain.document.attachment import Attachment
     from rhinvoice.domain.document.document import (
         DisplayStatus,
         Document,
+        DocumentOrigin,
         DocumentStatus,
         DocumentType,
     )
@@ -49,6 +51,8 @@ class DocumentQuery:
     statuses: frozenset[DisplayStatus] = frozenset()
     """Empty: all statuses. "overdue" and "expired" are derived from the due date."""
     customer_id: UUID | None = None
+    origin: DocumentOrigin | None = None
+    """None: written here and imported ones."""
     year: int | None = None
     """Calendar year of the issue date (drafts: of the creation date)."""
     zone: ZoneInfo = DEFAULT_TIMEZONE
@@ -75,6 +79,8 @@ class DocumentSummary:
     total: Money
     open_amount: Money
     created_at: datetime
+    imported: bool = False
+    """Issued by a program used before (see DocumentOrigin)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -155,6 +161,15 @@ class DocumentRepository(Protocol):
         """Return the e-invoice embedded in the archived PDF, if there is one."""
         ...
 
+    def add_attachment(self, attachment: Attachment, content: bytes) -> None:
+        """Store a further file of an issued document; it can never be replaced."""
+        ...
+
+    def attachments(self, document_id: UUID) -> list[Attachment]: ...
+    def get_attachment(
+        self, document_id: UUID, attachment_id: UUID
+    ) -> tuple[Attachment, bytes] | None: ...
+
     def figures(self, today: date) -> list[CurrencyFigures]: ...
     def revenue_by_month(self, since: date) -> list[MonthlyRevenue]: ...
     def revenue_by_customer(self, since: date) -> list[CustomerRevenue]:
@@ -166,9 +181,12 @@ class DocumentRepository(Protocol):
         ...
 
     def days_to_pay(self, since: date) -> list[tuple[Currency, int]]:
-        """Days from issuing to the last payment of the invoices fully paid since."""
+        """Days from issuing to the last payment of the invoices fully paid since.
+
+        Imported invoices are left out: their payment dates are not known.
+        """
         ...
 
     def recent_events(self, limit: int, today: date) -> list[tuple[DocumentSummary, str, datetime]]:
-        """Latest events across all documents: (document, event kind, time)."""
+        """Latest events across all documents, without imports: (document, event kind, time)."""
         ...

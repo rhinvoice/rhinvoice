@@ -30,7 +30,14 @@ MAX_BODY_BYTES = 2 * 1024 * 1024
 """Largest accepted request body (the logo upload is limited to 1 MB)."""
 MAX_IMPORT_BODY_BYTES = 6 * 1024 * 1024
 """Import files may have 5 MB, plus the form around them."""
+MAX_INVOICE_IMPORT_BODY_BYTES = 210 * 1024 * 1024
+"""Invoices come with their PDF files: 200 MB, plus the list and the form."""
+MAX_FILE_BODY_BYTES = 21 * 1024 * 1024
+"""A PDF added to an imported invoice: 20 MB, plus the form."""
 IMPORT_PATH = "/api/imports/"
+DOCUMENTS_PATH = "/api/documents/"
+FILES_SUFFIX = "/files"
+INVOICE_IMPORT_PATH = "/api/imports/invoices"
 HEALTH_PATH = "/api/health"
 LOGIN_PATH = "/api/auth/login"
 SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
@@ -93,7 +100,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 "csrf_rejected",
                 f"missing {CLIENT_HEADER} header",
             )
-        elif _declared_size(request) > _body_limit(request):
+        elif _declared_size(request) > _body_limit(request, demo=self._limits is not None):
             response = error_response(
                 status.HTTP_413_CONTENT_TOO_LARGE,
                 "too_large",
@@ -122,8 +129,14 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         return not self._limits.changes.allow(client)
 
 
-def _body_limit(request: Request) -> int:
-    return MAX_IMPORT_BODY_BYTES if request.url.path.startswith(IMPORT_PATH) else MAX_BODY_BYTES
+def _body_limit(request: Request, *, demo: bool = False) -> int:
+    path = request.url.path
+    if path.startswith(INVOICE_IMPORT_PATH):
+        # The demo takes 200 KB of files; it never reads hundreds of MB.
+        return MAX_IMPORT_BODY_BYTES if demo else MAX_INVOICE_IMPORT_BODY_BYTES
+    if path.startswith(DOCUMENTS_PATH) and path.endswith(FILES_SUFFIX):
+        return MAX_FILE_BODY_BYTES
+    return MAX_IMPORT_BODY_BYTES if path.startswith(IMPORT_PATH) else MAX_BODY_BYTES
 
 
 def _declared_size(request: Request) -> int:

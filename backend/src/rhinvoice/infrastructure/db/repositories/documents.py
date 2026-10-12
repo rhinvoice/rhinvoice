@@ -34,10 +34,12 @@ from rhinvoice.application.document.ports import (
     MonthlyRevenue,
 )
 from rhinvoice.domain.catalog.unit import Unit
+from rhinvoice.domain.document.attachment import Attachment
 from rhinvoice.domain.document.document import (
     DisplayStatus,
     Document,
     DocumentEvent,
+    DocumentOrigin,
     DocumentStatus,
     DocumentType,
     DraftContent,
@@ -64,6 +66,7 @@ from rhinvoice.infrastructure.db.serialization import (
     totals_to_json,
 )
 from rhinvoice.infrastructure.db.tables import (
+    document_attachments,
     document_events,
     document_lines,
     document_payments,
@@ -121,6 +124,7 @@ FROZEN_COLUMNS = frozenset(
         "source_id",
         "snapshot",
         "issued_totals",
+        "origin",
     }
 )
 """Columns of issued documents that never change (see the trigger protect_document)."""
@@ -159,6 +163,7 @@ def _document_values(document: Document, index: DocumentIndex) -> dict[str, Any]
         "cancelled_by_id": document.cancelled_by_id,
         "converted_to_id": document.converted_to_id,
         "pdf_sha256": document.pdf_sha256,
+        "origin": document.origin.value,
         "snapshot": None if document.snapshot is None else snapshot_to_json(document.snapshot),
         "issued_totals": (
             None if document.issued_totals is None else totals_to_json(document.issued_totals)
@@ -207,6 +212,17 @@ def _line_from_row(row: RowMapping) -> DocumentLine:
     )
 
 
+def _attachment(row: RowMapping) -> Attachment:
+    return Attachment(
+        id=row["id"],
+        document_id=row["document_id"],
+        file_name=row["file_name"],
+        sha256=row["sha256"],
+        size=row["size"],
+        added_at=row["added_at"],
+    )
+
+
 def _display_status(
     document_type: str, status: str, due: date | None, today: date
 ) -> DisplayStatus:
@@ -236,6 +252,7 @@ def _summary(row: RowMapping, today: date) -> DocumentSummary:
         total=Money(Decimal(row["total_amount"]), currency),
         open_amount=Money(Decimal(row["open_amount"]), currency),
         created_at=row["created_at"],
+        imported=row["origin"] == DocumentOrigin.IMPORTED.value,
     )
 
 
@@ -286,6 +303,8 @@ def _conditions(query: DocumentQuery, *, with_status: bool) -> list[ColumnElemen
         conditions.append(or_(*(_status_condition(s, query.today) for s in query.statuses)))
     if query.customer_id is not None:
         conditions.append(documents.c.customer_id == query.customer_id)
+    if query.origin is not None:
+        conditions.append(documents.c.origin == query.origin.value)
     if query.year is not None:
         conditions.append(_document_date(query.zone) >= date(query.year, 1, 1))
         conditions.append(_document_date(query.zone) < date(query.year + 1, 1, 1))
@@ -390,6 +409,7 @@ class SqlDocumentRepository:
             cancelled_by_id=row["cancelled_by_id"],
             converted_to_id=row["converted_to_id"],
             pdf_sha256=row["pdf_sha256"],
+            origin=DocumentOrigin(row["origin"]),
         )
 
     def number_exists(self, document_type: DocumentType, number: str) -> bool:
@@ -541,6 +561,47 @@ class SqlDocumentRepository:
                 document_id=document.id, content=content, e_invoice=e_invoice
             ),
         )
+
+    def add_attachment(self, attachment: Attachment, content: bytes) -> None:
+        # The trigger checks the content against the hash and refuses drafts.
+        self._connection.execute(
+            insert(document_attachments).values(
+                id=attachment.id,
+                document_id=attachment.document_id,
+                file_name=attachment.file_name,
+                sha256=attachment.sha256,
+                content=content,
+                added_at=attachment.added_at,
+            ),
+        )
+
+    def attachments(self, document_id: UUID) -> list[Attachment]:
+        statement = (
+            select(
+                document_attachments.c.id,
+                document_attachments.c.document_id,
+                document_attachments.c.file_name,
+                document_attachments.c.sha256,
+                func.length(document_attachments.c.content).label("size"),
+                document_attachments.c.added_at,
+            )
+            .where(document_attachments.c.document_id == document_id)
+            .order_by(document_attachments.c.file_name, document_attachments.c.id)
+        )
+        return [_attachment(row) for row in self._connection.execute(statement).mappings()]
+
+    def get_attachment(
+        self, document_id: UUID, attachment_id: UUID
+    ) -> tuple[Attachment, bytes] | None:
+        statement = select(
+            document_attachments,
+            func.length(document_attachments.c.content).label("size"),
+        ).where(
+            document_attachments.c.id == attachment_id,
+            document_attachments.c.document_id == document_id,
+        )
+        row = self._connection.execute(statement).mappings().first()
+        return None if row is None else (_attachment(row), bytes(row["content"]))
 
     def facets(self, query: DocumentQuery) -> DocumentFacets:
         return DocumentFacets(
@@ -740,6 +801,8 @@ class SqlDocumentRepository:
             .where(
                 documents.c.type == DocumentType.INVOICE.value,
                 documents.c.status == DocumentStatus.PAID.value,
+                # Imported invoices were paid on a day the program did not tell.
+                documents.c.origin == DocumentOrigin.RHINVOICE.value,
                 last_payment.c.paid_on >= since,
             )
             .order_by(last_payment.c.paid_on, documents.c.id)
@@ -757,6 +820,8 @@ class SqlDocumentRepository:
                 document_events.c.at.label("event_at"),
             )
             .join(document_events, document_events.c.document_id == documents.c.id)
+            # An import of hundreds of old invoices is no news of the day.
+            .where(document_events.c.kind != EventKind.IMPORTED.value)
             .order_by(document_events.c.at.desc(), document_events.c.id.desc())
             .limit(limit)
         )

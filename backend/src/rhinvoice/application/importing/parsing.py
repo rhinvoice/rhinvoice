@@ -305,6 +305,31 @@ def parse_language(text: str) -> Language | None:
     return language
 
 
+_TITLE_WORDS = frozenset(
+    {"rechnung", "rechnungsnr", "invoice", "faktura", "facture", "fattura", "nr", "no", ""}
+)
+_DATE_WORDS = frozenset({"vom", "from", "du", "del", "dated"})
+_DATE_TOKEN = re.compile(r"\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2}")
+
+
+def parse_document_number(text: str) -> str:
+    """Read the invoice number of a cell such as "Rechnung R20150001" or "Nr. 2015-001".
+
+    Exports often put the number into a title: the words before it and a date after it are
+    left out; a number of several words ("RE 2015 001") stays whole.
+    """
+    words = text.split()
+    # Leading words of a title: "Rechnung", "Invoice", "Nr.", "#".
+    while len(words) > 1 and normalize(words[0]) in _TITLE_WORDS:
+        words = words[1:]
+    # A date after the number: "R2015-1 vom 12.03.2015".
+    for index, word in enumerate(words[1:], start=1):
+        if normalize(word) in _DATE_WORDS or _DATE_TOKEN.fullmatch(word):
+            words = words[:index]
+            break
+    return " ".join(words).strip(".,:;()#")
+
+
 def parse_currency(text: str) -> Currency | None:
     value = re.sub(r"^S?FR\.?$", "CHF", text.strip().upper().replace("€", "EUR"))
     if not value:

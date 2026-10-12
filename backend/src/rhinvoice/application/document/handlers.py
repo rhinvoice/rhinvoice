@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, replace
 from decimal import Decimal
 from typing import TYPE_CHECKING
@@ -13,6 +14,7 @@ from rhinvoice.application.numbering.handlers import allocate_number
 from rhinvoice.application.text.handlers import effective_notice
 from rhinvoice.domain.catalog.unit import Unit
 from rhinvoice.domain.country.registry import profile_of
+from rhinvoice.domain.document.attachment import Attachment
 from rhinvoice.domain.document.document import (
     DisplayStatus,
     Document,
@@ -61,6 +63,10 @@ if TYPE_CHECKING:
     from rhinvoice.domain.shared.clock import Clock
     from rhinvoice.domain.shared.language import Language
     from rhinvoice.domain.text.template import TextTemplate
+
+
+MAX_ADDED_FILE_BYTES = 20 * 1024 * 1024
+"""A PDF added to an imported invoice; scans of many pages stay below."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -412,6 +418,51 @@ class DocumentHandlers:
             return document.remove_payment(payment_id, self.clock.now())
 
         return self._change(document_id, apply)
+
+    # --- Files of imported invoices ------------------------------------------------------
+
+    def attachments(self, document_id: UUID) -> list[Attachment]:
+        with self.uow() as uow:
+            self._require(uow, document_id)
+            return uow.documents.attachments(document_id)
+
+    def attachment(self, document_id: UUID, attachment_id: UUID) -> tuple[Attachment, bytes]:
+        with self.uow() as uow:
+            found = uow.documents.get_attachment(document_id, attachment_id)
+        if found is None:
+            raise NotFoundError("attachment not found")
+        return found
+
+    def add_file(self, document_id: UUID, file_name: str, content: bytes) -> DocumentView:
+        """Add a PDF to an imported invoice: its original if it has none, else an attachment.
+
+        Neither can be replaced or removed afterwards (GoBD, OR 958f).
+        """
+        if not content.startswith(b"%PDF-"):
+            raise ValidationError("file", "the file is no PDF", code="not_a_pdf")
+        if len(content) > MAX_ADDED_FILE_BYTES:
+            raise ValidationError("file", "the file is larger than 20 MB", code="file_too_large")
+        sha256 = hashlib.sha256(content).hexdigest()
+        now = self.clock.now()
+        with self.uow() as uow:
+            document = self._require(uow, document_id, for_update=True).record_file(file_name, now)
+            if document.pdf_sha256 is None:
+                document = document.archive_pdf(sha256)
+                view = self._save(uow, document, new=False)
+                uow.documents.archive_pdf(document, content)
+            else:
+                view = self._save(uow, document, new=False)
+                attachment = Attachment(
+                    id=new_id(),
+                    document_id=document_id,
+                    file_name=file_name,
+                    sha256=sha256,
+                    size=len(content),
+                    added_at=now,
+                )
+                uow.documents.add_attachment(attachment, content)
+            uow.commit()
+        return view
 
     # --- Helpers ------------------------------------------------------------------------
 

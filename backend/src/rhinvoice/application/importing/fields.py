@@ -16,6 +16,8 @@ from rhinvoice.application.importing.parsing import normalize
 class ImportTarget(StrEnum):
     CUSTOMERS = "customers"
     ARTICLES = "articles"
+    INVOICES = "invoices"
+    """Invoices of a program used before, with their PDF files (ADR 0019)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -264,9 +266,117 @@ ARTICLE_FIELDS: tuple[ImportField, ...] = (
     ),
 )
 
+INVOICE_FIELDS: tuple[ImportField, ...] = (
+    ImportField(
+        "number",
+        (
+            "Rechnungsnummer",
+            "Rechnungs-Nr.",
+            "Rechnung Nr",
+            "RechNr",
+            "Re-Nr",
+            "ReNr",
+            "Belegnummer",
+            "Beleg-Nr.",
+            "Nummer",
+            "Nr",
+            "Invoice number",
+            "Invoice no",
+            "Invoice",
+            "Number",
+        ),
+        required=True,
+    ),
+    ImportField(
+        "issue_date",
+        (
+            "Rechnungsdatum",
+            "Datum",
+            "Belegdatum",
+            "Ausstellungsdatum",
+            "Invoice date",
+            "Issue date",
+            "Date",
+        ),
+        required=True,
+    ),
+    ImportField(
+        "due_date",
+        ("Fälligkeit", "Fällig", "Fällig am", "Fälligkeitsdatum", "Zahlbar bis", "Due date"),
+    ),
+    ImportField(
+        "customer_number",
+        (
+            "Kundennummer",
+            "Kunden-Nr.",
+            "KdNr",
+            "Kd-Nr",
+            "KndNr",
+            "KundenNr",
+            "Debitor",
+            "Customer number",
+            "Customer no",
+            "Customer ID",
+        ),
+    ),
+    ImportField(
+        "customer_name",
+        (
+            "Kunde",
+            "Kundenname",
+            "KundeName",
+            "Kunde Name",
+            "Firma",
+            "Empfänger",
+            "Name",
+            "Customer",
+            "Customer name",
+            "Recipient",
+        ),
+    ),
+    ImportField(
+        "street",
+        ("Strasse", "Straße", "KundeAdresse", "KndAdrr", "Adresse", "Street", "Address"),
+    ),
+    ImportField("postal_code", ("PLZ", "KndPlz", "Postleitzahl", "Postal code", "ZIP")),
+    ImportField("city", ("Ort", "KndOrt", "Stadt", "City", "Town")),
+    ImportField("postal_city", ("PLZ Ort", "PLZ/Ort", "Postal code and city")),
+    ImportField("country", ("Land", "KndLand", "Country")),
+    ImportField("currency", ("Währung", "Waehrung", "Currency")),
+    ImportField(
+        "net_amount",
+        ("Netto", "Nettobetrag", "Summe netto", "GesSumNetto", "Net", "Net amount"),
+    ),
+    ImportField(
+        "tax_amount",
+        ("MwSt-Betrag", "MWST-Betrag", "USt-Betrag", "Steuerbetrag", "TotMwst", "VAT amount"),
+    ),
+    ImportField(
+        "total_amount",
+        (
+            "Brutto",
+            "Bruttobetrag",
+            "Gesamtbetrag",
+            "Rechnungsbetrag",
+            "Betrag",
+            "Total",
+            "Summe",
+            "Amount",
+            "Total amount",
+        ),
+        required=True,
+    ),
+    ImportField(
+        "open_amount",
+        ("Offen", "Offener Betrag", "OffeneBetrag", "Restbetrag", "Saldo", "Open", "Balance"),
+    ),
+    ImportField("subject", ("Betreff", "Titel", "Bezeichnung", "Subject", "Title")),
+)
+
 FIELDS: dict[ImportTarget, tuple[ImportField, ...]] = {
     ImportTarget.CUSTOMERS: CUSTOMER_FIELDS,
     ImportTarget.ARTICLES: ARTICLE_FIELDS,
+    ImportTarget.INVOICES: INVOICE_FIELDS,
 }
 
 

@@ -51,6 +51,9 @@ def test_preview_then_import(user_client: TestClient) -> None:
         "name": "Bergbahnen Muster AG",
         "detail": "9470 Buchs SG",
         "problem": None,
+        "file": None,
+        "attachments": 0,
+        "new_customer": False,
     }
     problem = body["rows"][1]["problem"]
     assert (problem["field"], problem["code"], problem["value"]) == ("postal_code", "required", "")

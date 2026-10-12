@@ -245,6 +245,7 @@ documents = Table(
     # Deleting the invoice draft frees the quote for another conversion.
     Column("converted_to_id", Uuid(), ForeignKey("documents.id", ondelete="SET NULL")),
     Column("pdf_sha256", String(64)),
+    Column("origin", String(20), nullable=False, server_default="rhinvoice"),
     Column("snapshot", JSONB),
     Column("issued_totals", JSONB),
     # Denormalised values for lists, sorting, search and the dashboard.
@@ -348,6 +349,24 @@ document_pdfs = Table(
     Column("e_invoice", LargeBinary),
 )
 
+# Further files of issued invoices (reminders, copies of another program); only added.
+document_attachments = Table(
+    "document_attachments",
+    metadata,
+    Column("id", Uuid(), primary_key=True),
+    Column(
+        "document_id",
+        Uuid(),
+        ForeignKey("documents.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    ),
+    Column("file_name", String(255), nullable=False),
+    Column("sha256", String(64), nullable=False),
+    Column("content", LargeBinary, nullable=False),
+    Column("added_at", DateTime(timezone=True), nullable=False),
+)
+
 # Written by the app (requests) and by the backup container (runs, see backup/).
 backup_requests = Table(
     "backup_requests",
@@ -390,7 +409,7 @@ import_templates = Table(
     Column("name", String(60), nullable=False),
     Column("columns", JSONB(), nullable=False),
     Column("created_at", DateTime(timezone=True), nullable=False),
-    CheckConstraint("target IN ('customers', 'articles')", name="target"),
+    CheckConstraint("target IN ('customers', 'articles', 'invoices')", name="target"),
     UniqueConstraint("target", "name", name="uq_import_templates_target_name"),
 )
 

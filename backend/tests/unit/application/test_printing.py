@@ -362,7 +362,7 @@ def test_the_e_invoice_status(printing: PrintHandlers, store: Store) -> None:
 def test_only_invoices_are_e_invoices(printing: PrintHandlers) -> None:
     handlers, _ = e_invoicing(printing)
     quote = issue(handlers, DocumentType.QUOTE)
-    with raises_exactly(ConflictError, "quotes are no e-invoices") as caught:
+    with raises_exactly(ConflictError, "quotes and imported invoices are no e-invoices") as caught:
         handlers.e_invoice_status(quote)
     assert caught.value.code == "not_an_e_invoice"
     draft_id = handlers.documents.create(DocumentType.INVOICE, draft()).document.id

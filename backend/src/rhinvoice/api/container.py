@@ -71,6 +71,12 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
         return SqlUnitOfWork(engine)
 
     documents = DocumentHandlers(uow=uow, clock=effective_clock)
+    imports = ImportHandlers(
+        uow=uow,
+        clock=effective_clock,
+        reader=SpreadsheetReader(),
+        limits=DEMO_IMPORT_LIMITS if settings.demo else None,
+    )
     company = CompanyHandlers(uow=uow)
     customers = CustomerHandlers(uow=uow, clock=effective_clock)
     articles = ArticleHandlers(uow=uow, clock=effective_clock)
@@ -117,12 +123,7 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
         texts=TextHandlers(uow=uow),
         printing=printing,
         backup=BackupHandlers(uow=uow, clock=effective_clock),
-        imports=ImportHandlers(
-            uow=uow,
-            clock=effective_clock,
-            reader=SpreadsheetReader(),
-            limits=DEMO_IMPORT_LIMITS if settings.demo else None,
-        ),
+        imports=imports,
         onboarding=OnboardingHandlers(uow=uow, clock=effective_clock),
         dunning=DunningHandlers(uow=uow, clock=effective_clock, documents=documents),
         demo=DemoHandlers(
@@ -133,6 +134,7 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
             customers=customers,
             articles=articles,
             documents=documents,
+            imports=imports,
         ),
         mail=mail,
         recurring=RecurringHandlers(

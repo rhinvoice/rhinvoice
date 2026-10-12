@@ -11,15 +11,17 @@ from rhinvoice.application.errors import ConflictError, NotFoundError
 from rhinvoice.application.importing.fields import ImportTarget
 from rhinvoice.application.importing.handlers import (
     DEMO_IMPORT_LIMITS,
-    DuplicateStrategy,
     ImportHandlers,
     ImportLimits,
     ImportRequest,
-    RowProblem,
-    RowStatus,
     SaveTemplate,
 )
 from rhinvoice.application.importing.ports import ImportTable
+from rhinvoice.application.importing.results import (
+    DuplicateStrategy,
+    RowProblem,
+    RowStatus,
+)
 from rhinvoice.domain.customer.customer import CustomerKind
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.country import CountryCode

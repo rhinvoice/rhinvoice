@@ -4,12 +4,12 @@ from typing import Annotated, Any, Self
 from urllib.parse import quote
 from uuid import UUID
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, File, Query, UploadFile, status
 from fastapi.responses import HTMLResponse, Response
 from pydantic import Field
 
 from rhinvoice.api.container import Container
-from rhinvoice.api.dependencies import ContainerDep, CurrentUser
+from rhinvoice.api.dependencies import NOT_IN_DEMO, ContainerDep, CurrentUser
 from rhinvoice.api.schemas import (
     DECIMAL_PATTERN,
     ERROR_RESPONSES,
@@ -26,6 +26,7 @@ from rhinvoice.application.common import SortDirection
 from rhinvoice.application.document.dashboard import Dashboard
 from rhinvoice.application.document.einvoice import EInvoiceProblem
 from rhinvoice.application.document.handlers import (
+    MAX_ADDED_FILE_BYTES,
     DocumentPreview,
     DocumentView,
     DraftInput,
@@ -39,6 +40,7 @@ from rhinvoice.application.document.ports import (
     DocumentSort,
     DocumentSummary,
 )
+from rhinvoice.domain.document.attachment import Attachment
 from rhinvoice.domain.document.calculation import Totals
 from rhinvoice.domain.document.document import (
     MAX_LINES,
@@ -301,6 +303,10 @@ class DocumentResponse(ApiModel):
     converted_to_id: UUID | None
     created_at: datetime
     issued_at: datetime | None
+    imported: bool
+    """Issued by a program used before: its PDF is the invoice, it has no lines."""
+    has_pdf: bool
+    """The PDF is archived (always once printed; imported invoices may lack one)."""
 
     @classmethod
     def of(cls, view: DocumentView) -> Self:
@@ -386,6 +392,27 @@ class DocumentResponse(ApiModel):
             converted_to_id=document.converted_to_id,
             created_at=document.created_at,
             issued_at=document.issued_at,
+            imported=document.is_imported,
+            has_pdf=document.pdf_sha256 is not None,
+        )
+
+
+class AttachmentResponse(ApiModel):
+    id: UUID
+    file_name: str
+    """With the folders it came from."""
+    size: int
+    sha256: str
+    added_at: datetime
+
+    @classmethod
+    def of(cls, attachment: Attachment) -> Self:
+        return cls(
+            id=attachment.id,
+            file_name=attachment.file_name,
+            size=attachment.size,
+            sha256=attachment.sha256,
+            added_at=attachment.added_at,
         )
 
 
@@ -443,6 +470,7 @@ class SummaryResponse(ApiModel):
     total: str
     open_amount: str
     created_at: datetime
+    imported: bool
 
     @classmethod
     def of(cls, summary: DocumentSummary) -> Self:
@@ -461,6 +489,7 @@ class SummaryResponse(ApiModel):
             total=amount(summary.total),
             open_amount=amount(summary.open_amount),
             created_at=summary.created_at,
+            imported=summary.imported,
         )
 
 
@@ -803,6 +832,69 @@ def document_pdf(
     if file.sha256 is not None:
         headers["ETag"] = f'"{file.sha256}"'
     return Response(content=file.content, media_type="application/pdf", headers=headers)
+
+
+@router.get("/documents/{document_id}/attachments")
+def list_attachments(
+    document_id: UUID, _user: CurrentUser, container: ContainerDep
+) -> list[AttachmentResponse]:
+    """Further files of an imported invoice: reminders, corrected copies, versions."""
+    return [AttachmentResponse.of(item) for item in container.documents.attachments(document_id)]
+
+
+ATTACHMENT_FILE: dict[int | str, dict[str, Any]] = {
+    200: {
+        "description": "The file as it was added",
+        "content": {"application/pdf": {"schema": {"type": "string", "format": "binary"}}},
+    },
+}
+
+
+@router.get(
+    "/documents/{document_id}/attachments/{attachment_id}",
+    response_class=Response,
+    responses=ATTACHMENT_FILE,
+)
+def attachment_file(
+    document_id: UUID,
+    attachment_id: UUID,
+    _user: CurrentUser,
+    container: ContainerDep,
+    download: bool = False,  # noqa: FBT001, FBT002 - a query flag
+) -> Response:
+    """Return an attachment, shown in the browser or (``download``) saved as a file."""
+    attachment, content = container.documents.attachment(document_id, attachment_id)
+    name = attachment.file_name.rsplit("/", 1)[-1]
+    fallback = name.encode("ascii", "replace").decode().replace("?", "_").replace('"', "_")
+    disposition = "attachment" if download else "inline"
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f"{disposition}; filename=\"{fallback}\"; filename*=UTF-8''{quote(name)}"
+            ),
+            "Cache-Control": "private, max-age=31536000",
+            "ETag": f'"{attachment.sha256}"',
+        },
+    )
+
+
+@router.post("/documents/{document_id}/files", dependencies=[NOT_IN_DEMO])
+def add_file(
+    document_id: UUID,
+    file: Annotated[UploadFile, File(description="A PDF, at most 20 MB")],
+    _user: CurrentUser,
+    container: ContainerDep,
+) -> DocumentResponse:
+    """Add a PDF to an imported invoice: its original if it has none, else an attachment.
+
+    Neither can be replaced or removed afterwards.
+    """
+    # Synchronous on purpose (thread pool); one byte more lets the handler refuse large files.
+    content = file.file.read(MAX_ADDED_FILE_BYTES + 1)
+    name = (file.filename or "").replace("\\", "/").rsplit("/", 1)[-1] or "document.pdf"
+    return DocumentResponse.of(container.documents.add_file(document_id, name, content))
 
 
 @router.get("/documents/{document_id}")

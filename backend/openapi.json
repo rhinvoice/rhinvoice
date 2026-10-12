@@ -571,6 +571,42 @@
         "title": "ArticleSort",
         "type": "string"
       },
+      "AttachmentResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "added_at": {
+            "format": "date-time",
+            "title": "Added At",
+            "type": "string"
+          },
+          "file_name": {
+            "title": "File Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "file_name",
+          "size",
+          "sha256",
+          "added_at"
+        ],
+        "title": "AttachmentResponse",
+        "type": "object"
+      },
       "BackupReason": {
         "enum": [
           "daily",
@@ -856,6 +892,21 @@
         "title": "Body_company_upload_logo",
         "type": "object"
       },
+      "Body_documents_add_file": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "A PDF, at most 20 MB",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_documents_add_file",
+        "type": "object"
+      },
       "Body_imports_preview_import": {
         "properties": {
           "duplicates": {
@@ -867,6 +918,16 @@
             "description": "CSV (UTF-8 or Windows-1252), XLSX or XLS, at most 5 MB",
             "title": "File",
             "type": "string"
+          },
+          "files": {
+            "default": [],
+            "description": "Invoices: their PDF files, one by one or as ZIP files; the invoice number in the file name tells the invoice. At most 200 MB together.",
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
           },
           "mapping": {
             "anyOf": [
@@ -898,6 +959,16 @@
             "description": "CSV (UTF-8 or Windows-1252), XLSX or XLS, at most 5 MB",
             "title": "File",
             "type": "string"
+          },
+          "files": {
+            "default": [],
+            "description": "Invoices: their PDF files, one by one or as ZIP files; the invoice number in the file name tells the invoice. At most 200 MB together.",
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
           },
           "mapping": {
             "anyOf": [
@@ -2387,10 +2458,18 @@
               }
             ]
           },
+          "has_pdf": {
+            "title": "Has Pdf",
+            "type": "boolean"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "imported": {
+            "title": "Imported",
+            "type": "boolean"
           },
           "intro_text": {
             "title": "Intro Text",
@@ -2574,7 +2653,9 @@
           "cancelled_by_id",
           "converted_to_id",
           "created_at",
-          "issued_at"
+          "issued_at",
+          "imported",
+          "has_pdf"
         ],
         "title": "DocumentResponse",
         "type": "object"
@@ -3033,7 +3114,9 @@
           "tax_overridden",
           "reminded",
           "emailed",
-          "reminder_emailed"
+          "reminder_emailed",
+          "imported",
+          "file_added"
         ],
         "title": "EventKind",
         "type": "string"
@@ -3202,13 +3285,32 @@
       "ImportRowResponse": {
         "additionalProperties": false,
         "properties": {
+          "attachments": {
+            "title": "Attachments",
+            "type": "integer"
+          },
           "detail": {
             "title": "Detail",
             "type": "string"
           },
+          "file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File"
+          },
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "new_customer": {
+            "title": "New Customer",
+            "type": "boolean"
           },
           "number": {
             "title": "Number",
@@ -3238,7 +3340,10 @@
           "number",
           "name",
           "detail",
-          "problem"
+          "problem",
+          "file",
+          "attachments",
+          "new_customer"
         ],
         "title": "ImportRowResponse",
         "type": "object"
@@ -3310,6 +3415,17 @@
             "title": "Missing",
             "type": "array"
           },
+          "next_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Number"
+          },
           "rows": {
             "items": {
               "$ref": "#/components/schemas/ImportRowResponse"
@@ -3329,6 +3445,13 @@
           },
           "target": {
             "$ref": "#/components/schemas/ImportTarget"
+          },
+          "unused_files": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unused Files",
+            "type": "array"
           }
         },
         "required": [
@@ -3343,7 +3466,9 @@
           "counts",
           "rows",
           "committed",
-          "missing"
+          "missing",
+          "unused_files",
+          "next_number"
         ],
         "title": "ImportRunResponse",
         "type": "object"
@@ -3351,7 +3476,8 @@
       "ImportTarget": {
         "enum": [
           "customers",
-          "articles"
+          "articles",
+          "invoices"
         ],
         "title": "ImportTarget",
         "type": "string"
@@ -5220,6 +5346,10 @@
             "title": "Id",
             "type": "string"
           },
+          "imported": {
+            "title": "Imported",
+            "type": "boolean"
+          },
           "issue_date": {
             "anyOf": [
               {
@@ -5276,7 +5406,8 @@
           "currency",
           "total",
           "open_amount",
-          "created_at"
+          "created_at",
+          "imported"
         ],
         "title": "SummaryResponse",
         "type": "object"
@@ -10083,6 +10214,229 @@
         ]
       }
     },
+    "/api/documents/{document_id}/attachments": {
+      "get": {
+        "description": "Further files of an imported invoice: reminders, corrected copies, versions.",
+        "operationId": "documents_list_attachments",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AttachmentResponse"
+                  },
+                  "title": "Response Documents List Attachments",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "List Attachments",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/documents/{document_id}/attachments/{attachment_id}": {
+      "get": {
+        "description": "Return an attachment, shown in the browser or (``download``) saved as a file.",
+        "operationId": "documents_attachment_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attachment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Attachment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "download",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Download",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The file as it was added"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Attachment File",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
     "/api/documents/{document_id}/cancel": {
       "post": {
         "description": "Issue a cancellation invoice (Storno) and return the cancelled invoice.",
@@ -10573,6 +10927,115 @@
         "summary": "E Invoice Status",
         "tags": [
           "e-invoices"
+        ]
+      }
+    },
+    "/api/documents/{document_id}/files": {
+      "post": {
+        "description": "Add a PDF to an imported invoice: its original if it has none, else an attachment.\n\nNeither can be replaced or removed afterwards.",
+        "operationId": "documents_add_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_documents_add_file"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Add File",
+        "tags": [
+          "documents"
         ]
       }
     },

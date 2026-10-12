@@ -14,13 +14,12 @@ from rhinvoice.application.customer.handlers import CustomerHandlers, SaveCustom
 from rhinvoice.application.customer.ports import CustomerQuery
 from rhinvoice.application.importing.fields import ImportTarget
 from rhinvoice.application.importing.handlers import (
-    DuplicateStrategy,
     ImportHandlers,
     ImportRequest,
-    RowStatus,
     SaveTemplate,
 )
 from rhinvoice.application.importing.ports import ImportTemplate
+from rhinvoice.application.importing.results import DuplicateStrategy, RowStatus
 from rhinvoice.domain.customer.customer import CustomerKind
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.identifier import new_id

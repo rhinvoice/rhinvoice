@@ -15,7 +15,6 @@ and house number change together.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from enum import StrEnum
 from typing import TYPE_CHECKING, Protocol
 
 from rhinvoice.application.catalog.handlers import (
@@ -35,11 +34,14 @@ from rhinvoice.application.importing.fields import (
     field_keys,
     suggest_mapping,
 )
+from rhinvoice.application.importing.files import FileIndex, matching_count
+from rhinvoice.application.importing.invoices import InvoiceRows
 from rhinvoice.application.importing.parsing import (
     parse_amount,
     parse_country,
     parse_currency,
     parse_date,
+    parse_document_number,
     parse_flag,
     parse_language,
     parse_supply,
@@ -49,7 +51,15 @@ from rhinvoice.application.importing.parsing import (
     split_postal_city,
     split_street,
 )
-from rhinvoice.application.importing.ports import ImportTemplate
+from rhinvoice.application.importing.ports import ImportTable, ImportTemplate
+from rhinvoice.application.importing.results import (
+    FIRST_DATA_ROW,
+    PLACEHOLDER_NUMBER,
+    DuplicateStrategy,
+    RowOutcome,
+    RowStatus,
+    error_outcome,
+)
 from rhinvoice.domain.catalog.unit import DEFAULT_UNIT_CODE
 from rhinvoice.domain.country.profile import NumberStyle
 from rhinvoice.domain.country.registry import profile_of
@@ -63,7 +73,8 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
     from uuid import UUID
 
-    from rhinvoice.application.importing.ports import ImportTable, TableReader
+    from rhinvoice.application.importing.files import ImportFile
+    from rhinvoice.application.importing.ports import TableReader
     from rhinvoice.application.uow import UnitOfWork, UnitOfWorkFactory
     from rhinvoice.domain.catalog.article import Article
     from rhinvoice.domain.company.company import Company
@@ -73,45 +84,6 @@ if TYPE_CHECKING:
     from rhinvoice.domain.shared.clock import Clock
 
 MAX_TEMPLATE_NAME = 60
-FIRST_DATA_ROW = 2
-"""Row numbers as in the spreadsheet: row 1 holds the column names."""
-
-
-class DuplicateStrategy(StrEnum):
-    SKIP = "skip"
-    UPDATE = "update"
-    CREATE = "create"
-    """Create a second record; a number that is taken gets the next free one."""
-
-
-class RowStatus(StrEnum):
-    NEW = "new"
-    UPDATED = "updated"
-    SKIPPED = "skipped"
-    ERROR = "error"
-
-
-@dataclass(frozen=True, slots=True)
-class RowProblem:
-    field: str
-    code: str
-    """required, invalid, or a specific rule such as invalid_amount or unknown_unit."""
-    message: str
-    value: str = ""
-    """The cell's text, if the file has one for the field."""
-
-
-@dataclass(frozen=True, slots=True)
-class RowOutcome:
-    row: int
-    """Row number in the file (the column names are row 1)."""
-    status: RowStatus
-    number: str
-    """Number of the record (new ones: the number they get); empty for errors without one."""
-    name: str
-    detail: str
-    """Postal code and city of a customer, the price of an article."""
-    problem: RowProblem | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,6 +95,8 @@ class ImportRequest:
     """Field key -> column index; None: suggested from the column names."""
     commit: bool = False
     """False: a test run that changes nothing."""
+    files: tuple[ImportFile, ...] = ()
+    """Invoices: the PDF files, found by the invoice number in their names."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,6 +109,10 @@ class ImportRun:
     missing: tuple[tuple[str, ...], ...] = ()
     """Columns no row can do without, each as alternatives ("company_name", "last_name");
     a test run with missing columns reports them instead of rows."""
+    unused_files: tuple[str, ...] = ()
+    """Invoices: files that belong to no invoice of the file."""
+    next_number: str | None = None
+    """Invoices: the number the next invoice written here gets."""
 
     def count(self, status: RowStatus) -> int:
         return sum(1 for outcome in self.outcomes if outcome.status is status)
@@ -152,9 +130,13 @@ REQUIRED_COLUMNS: dict[ImportTarget, tuple[tuple[str, ...], ...]] = {
     # be missing in a file that only updates (new rows without it are reported).
     ImportTarget.CUSTOMERS: (("number", "company_name", "last_name"),),
     ImportTarget.ARTICLES: (("number", "name"),),
+    ImportTarget.INVOICES: (
+        ("number",),
+        ("issue_date",),
+        ("total_amount",),
+        ("customer_number", "customer_name"),
+    ),
 }
-_PLACEHOLDER_NUMBER = "0"
-"""Validates a new record before its number is taken from the sequence."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,6 +149,9 @@ class ImportLimits:
 
 DEMO_IMPORT_LIMITS = ImportLimits(max_bytes=200 * 1024, max_rows=200)
 """Enough to try the import, too little to fill a shared demo with junk."""
+MAX_FILES = 5000
+MAX_FILE_BYTES = 20 * 1024 * 1024
+"""Of one PDF; scanned invoices of many pages stay below."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -177,24 +162,8 @@ class ImportHandlers:
     limits: ImportLimits | None = None
 
     def run(self, request: ImportRequest) -> ImportRun:
-        limits = self.limits
-        if limits is not None and len(request.content) > limits.max_bytes:
-            raise ValidationError(
-                "file",
-                f"files in the demo may have at most {limits.max_bytes // 1024} KB",
-                code="demo_import_too_large",
-            )
-        table = self.reader.read(request.content)
-        if limits is not None and len(table.rows) > limits.max_rows:
-            raise ValidationError(
-                "file",
-                f"imports in the demo may have at most {limits.max_rows} rows",
-                code="demo_import_too_many_rows",
-            )
-        if request.mapping is None:
-            mapping = suggest_mapping(table.headers, request.target)
-        else:
-            mapping = _checked_mapping(request.mapping, request.target, len(table.headers))
+        table = self._read(request)
+        mapping = _mapping(request, table)
         missing = missing_columns(mapping, request.target)
         if missing:
             if request.commit:
@@ -210,18 +179,54 @@ class ImportHandlers:
                 raise ConflictError(
                     "set up the company before importing", code="company_not_set_up"
                 )
-            importer: _Rows = (
-                _CustomerRows.load(uow, self.clock, company, request.duplicates)
-                if request.target is ImportTarget.CUSTOMERS
-                else _ArticleRows.load(uow, self.clock, company, request.duplicates)
-            )
+            importer: _Rows
+            if request.target is ImportTarget.INVOICES:
+                importer = InvoiceRows.load(
+                    uow, self.clock, company, request.files, store_files=request.commit
+                )
+            elif request.target is ImportTarget.CUSTOMERS:
+                importer = _CustomerRows.load(uow, self.clock, company, request.duplicates)
+            else:
+                importer = _ArticleRows.load(uow, self.clock, company, request.duplicates)
             outcomes = tuple(
                 importer.row(index + FIRST_DATA_ROW, _cells(mapping, row))
                 for index, row in enumerate(table.rows)
             )
+            unused: tuple[str, ...] = ()
+            next_number = None
+            if isinstance(importer, InvoiceRows):
+                unused = tuple(importer.files.unused)
+                next_number = importer.continue_numbering()
             if request.commit:
                 uow.commit()
-        return ImportRun(request.target, table, mapping, outcomes, committed=request.commit)
+        return ImportRun(
+            request.target,
+            table,
+            mapping,
+            outcomes,
+            committed=request.commit,
+            unused_files=unused,
+            next_number=next_number,
+        )
+
+    def _read(self, request: ImportRequest) -> ImportTable:
+        """Read the file within the limits (and the tighter ones of the demo)."""
+        limits = self.limits
+        if limits is not None and len(request.content) > limits.max_bytes:
+            raise ValidationError(
+                "file",
+                f"files in the demo may have at most {limits.max_bytes // 1024} KB",
+                code="demo_import_too_large",
+            )
+        _check_files(request.files, limits)
+        table = self.reader.read(request.content)
+        if limits is not None and len(table.rows) > limits.max_rows:
+            raise ValidationError(
+                "file",
+                f"imports in the demo may have at most {limits.max_rows} rows",
+                code="demo_import_too_many_rows",
+            )
+        return table
 
     def templates(self, target: ImportTarget) -> list[ImportTemplate]:
         with self.uow() as uow:
@@ -260,6 +265,59 @@ class ImportHandlers:
             uow.commit()
 
 
+def _mapping(request: ImportRequest, table: ImportTable) -> dict[str, int]:
+    """Check the chosen mapping, or suggest one (for invoices: by the file names too)."""
+    if request.mapping is not None:
+        return _checked_mapping(request.mapping, request.target, len(table.headers))
+    mapping = suggest_mapping(table.headers, request.target)
+    if request.target is ImportTarget.INVOICES and request.files:
+        return number_column(mapping, table, FileIndex(request.files))
+    return mapping
+
+
+def _check_files(files: tuple[ImportFile, ...], limits: ImportLimits | None) -> None:
+    if len(files) > MAX_FILES:
+        raise ValidationError(
+            "files", f"at most {MAX_FILES} files per import", code="too_many_files"
+        )
+    for file in files:
+        if len(file.content) > MAX_FILE_BYTES:
+            raise ValidationError(
+                "files", f"{file.name} is larger than 20 MB", code="file_too_large"
+            )
+        if not file.content.startswith(b"%PDF-"):
+            raise ValidationError("files", f"{file.name} is no PDF file", code="not_a_pdf")
+    if limits is not None and sum(len(file.content) for file in files) > limits.max_bytes:
+        raise ValidationError(
+            "files",
+            f"files in the demo may have at most {limits.max_bytes // 1024} KB",
+            code="demo_import_too_large",
+        )
+
+
+def number_column(
+    mapping: Mapping[str, int], table: ImportTable, files: FileIndex
+) -> dict[str, int]:
+    """Take the column whose values name the most files as the invoice numbers.
+
+    Programs often export a counter as "Rechnungsnummer" and the number itself in a
+    title ("Rechnung R20150001"); the files tell which is meant.
+    """
+
+    def score(column: int) -> int:
+        numbers = (parse_document_number(row[column]) for row in table.rows)
+        return matching_count(numbers, files)
+
+    scores = [score(column) for column in range(len(table.headers))]
+    best = max(range(len(scores)), key=lambda column: (scores[column], -column))
+    current = mapping.get("number")
+    if scores[best] == 0 or (current is not None and scores[best] <= scores[current]):
+        return dict(mapping)
+    # The column cannot be two fields at once: whatever held it gives it up.
+    kept = {key: column for key, column in mapping.items() if column != best}
+    return {**kept, "number": best}
+
+
 def missing_columns(
     mapping: Mapping[str, int], target: ImportTarget
 ) -> tuple[tuple[str, ...], ...]:
@@ -290,31 +348,6 @@ def _cells(mapping: Mapping[str, int], row: tuple[str, ...]) -> dict[str, str]:
     """Collect the non-empty values of the mapped columns by field key."""
     values = {key: row[index].strip() for key, index in mapping.items()}
     return {key: value for key, value in values.items() if value}
-
-
-# Domain fields that the import fills from another column.
-_SOURCE_COLUMNS = {
-    "postal_code": "postal_city",
-    "city": "postal_city",
-    "house_number": "street",
-}
-
-
-def _error(row: int, error: ValidationError, cells: Mapping[str, str]) -> RowOutcome:
-    name = cells.get("company_name") or cells.get("last_name") or cells.get("name", "")
-    value = cells.get(error.field) or cells.get(_SOURCE_COLUMNS.get(error.field, ""), "")
-    code = error.code
-    if code == ValidationError.code:
-        # The domain's general code: say whether the value is missing or wrong.
-        code = "invalid" if value else "required"
-    return RowOutcome(
-        row=row,
-        status=RowStatus.ERROR,
-        number=cells.get("number", ""),
-        name=name,
-        detail="",
-        problem=RowProblem(field=error.field, code=code, message=error.message, value=value),
-    )
 
 
 class _Rows(Protocol):
@@ -357,7 +390,7 @@ class _CustomerRows:
         try:
             return self._import(row, cells)
         except ValidationError as error:
-            return _error(row, error, cells)
+            return error_outcome(row, error, cells)
 
     def _import(self, row: int, cells: Mapping[str, str]) -> RowOutcome:
         postal_code, city, prefix_country = self._place(cells)
@@ -396,7 +429,7 @@ class _CustomerRows:
             status = RowStatus.UPDATED
         else:
             # Validate first: a row with errors must not use up a number.
-            probe = build_customer(new_id(), _PLACEHOLDER_NUMBER, command, now=now, existing=None)
+            probe = build_customer(new_id(), PLACEHOLDER_NUMBER, command, now=now, existing=None)
             if not number or number in self.by_number:
                 number = next_free_customer_number(self.uow, self.clock.today())
             customer = replace(probe, number=number)
@@ -578,7 +611,7 @@ class _ArticleRows:
         try:
             return self._import(row, cells)
         except ValidationError as error:
-            return _error(row, self._price_column(error, cells), cells)
+            return error_outcome(row, self._price_column(error, cells), cells)
 
     def _price_column(self, error: ValidationError, cells: Mapping[str, str]) -> ValidationError:
         """Name the column a price came from ("price" or "price_chf") instead of "prices.CHF"."""
@@ -614,7 +647,7 @@ class _ArticleRows:
             self.uow.articles.update(article)
             status = RowStatus.UPDATED
         else:
-            probe = build_article(new_id(), _PLACEHOLDER_NUMBER, command, now=now, existing=None)
+            probe = build_article(new_id(), PLACEHOLDER_NUMBER, command, now=now, existing=None)
             if not number or number in self.by_number:
                 number = next_free_article_number(self.uow, self.clock.today())
             article = replace(probe, number=number)

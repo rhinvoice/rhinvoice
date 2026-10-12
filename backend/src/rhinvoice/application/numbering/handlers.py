@@ -16,9 +16,25 @@ if TYPE_CHECKING:
     from rhinvoice.domain.shared.clock import Clock
 
 
+DOCUMENT_KINDS = frozenset({SequenceKind.INVOICE, SequenceKind.QUOTE, SequenceKind.CANCELLATION})
+"""Customers and articles look for free numbers themselves (``next_free_*_number``)."""
+MAX_SKIPPED_NUMBERS = 100_000
+
+
 def allocate_number(uow: UnitOfWork, kind: SequenceKind, on: date) -> str:
-    """Take the next number for the date ``on`` in the caller's transaction (row lock, gapless)."""
+    """Take the next number for the date ``on`` in the caller's transaction (row lock, gapless).
+
+    Numbers in use are passed over: invoices taken over from another program may hold
+    numbers the counter has not reached yet (ADR 0019).
+    """
     number, advanced = uow.sequences.lock(kind).allocate(on)
+    if kind in DOCUMENT_KINDS:
+        for _ in range(MAX_SKIPPED_NUMBERS):
+            if not number_in_use(uow, kind, number):
+                break
+            number, advanced = advanced.allocate(on)
+        else:
+            raise ConflictError("no free number found, please check the number sequence")
     uow.sequences.save(advanced)
     return number
 

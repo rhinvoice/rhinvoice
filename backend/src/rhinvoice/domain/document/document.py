@@ -86,6 +86,14 @@ class DisplayStatus(StrEnum):
 
 
 OPEN_INVOICE_STATUSES = frozenset({DocumentStatus.ISSUED, DocumentStatus.PARTIALLY_PAID})
+MAX_NUMBER = 30
+
+
+class DocumentOrigin(StrEnum):
+    RHINVOICE = "rhinvoice"
+    """Written and issued here."""
+    IMPORTED = "imported"
+    """Issued by a program used before and taken over with its original PDF (ADR 0019)."""
 
 
 class EventKind(StrEnum):
@@ -105,6 +113,10 @@ class EventKind(StrEnum):
     """Sent by mail; the detail names the recipients."""
     REMINDER_EMAILED = "reminder_emailed"
     """A reminder of the invoice sent by mail; the detail is "<level> <recipients>"."""
+    IMPORTED = "imported"
+    """Taken over from a program used before; the detail names the original PDF."""
+    FILE_ADDED = "file_added"
+    """A file of an imported invoice added afterwards; the detail is its name."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -252,6 +264,7 @@ class Document:
     """The invoice a quote was turned into."""
     pdf_sha256: str | None = None
     """SHA-256 of the archived PDF, set once after issuing (GoBD, OR 958f)."""
+    origin: DocumentOrigin = DocumentOrigin.RHINVOICE
 
     # --- Factories -------------------------------------------------------------
 
@@ -279,6 +292,100 @@ class Document:
             events=tuple(events),
         )
 
+    @classmethod
+    def imported(  # noqa: PLR0913 - an invoice of another program is described by all of these
+        cls,
+        document_id: UUID,
+        *,
+        number: str,
+        content: DraftContent,
+        snapshot: IssueSnapshot,
+        net: Money,
+        total: Money,
+        open_amount: Money,
+        now: datetime,
+        source: str = "",
+    ) -> Document:
+        """Take over an invoice another program issued, with the amounts it states.
+
+        Its lines are not taken over: the original PDF is the invoice (``archive_pdf``).
+        What was paid of it becomes one payment on the due date (at the latest today),
+        since the program's payment dates are not known.
+        """
+        number = clean_text(number, "number", max_length=MAX_NUMBER, required=True)
+        issue_date = content.issue_date
+        if issue_date is None:
+            raise ValidationError("issue_date", "issue_date is required")
+        due_date = content.due_date or issue_date
+        currency = content.currency
+        if {net.currency, total.currency, open_amount.currency} != {currency}:
+            raise ValidationError("currency", f"the amounts must be in {currency}")
+        for field_name, amount in (("total", total), ("net", net), ("open_amount", open_amount)):
+            if amount != amount.round_to_minor():
+                raise ValidationError(field_name, "an amount has at most two decimal places")
+        if not total.amount > 0:
+            raise ValidationError(
+                "total", "the total of an invoice must be positive", code="non_positive_total"
+            )
+        if net.amount < 0 or net > total:
+            raise ValidationError(
+                "net", "the net amount lies between zero and the total", code="net_above_total"
+            )
+        if open_amount.amount < 0 or open_amount > total:
+            raise ValidationError(
+                "open_amount",
+                "the open amount lies between zero and the total",
+                code="open_above_total",
+            )
+        # Written as amounts are ("8.00", not "8"), like the totals of invoices written here.
+        net, total, open_amount = (
+            net.round_to_minor(),
+            total.round_to_minor(),
+            open_amount.round_to_minor(),
+        )
+        zero = Money.zero(currency).round_to_minor()
+        totals = Totals(
+            currency=currency,
+            lines=(),
+            groups=(),
+            subtotal=net,
+            discount=zero,
+            net=net,
+            tax=total - net,
+            gross=total,
+            rounding=zero,
+            total=total,
+        )
+        paid = total - open_amount
+        # Paid by the due date, but not after the day of the import.
+        paid_on = min(due_date, now.date())
+        payments = (
+            (Payment(id=new_id(), paid_on=paid_on, amount=paid, recorded_at=now),)
+            if paid.amount > 0
+            else ()
+        )
+        status = (
+            DocumentStatus.PAID
+            if not open_amount.amount
+            else DocumentStatus.PARTIALLY_PAID
+            if payments
+            else DocumentStatus.ISSUED
+        )
+        return cls(
+            id=document_id,
+            type=DocumentType.INVOICE,
+            status=status,
+            content=replace(content, lines=(), due_date=due_date),
+            created_at=now,
+            number=number,
+            issued_at=now,
+            snapshot=snapshot,
+            issued_totals=totals,
+            payments=payments,
+            events=(DocumentEvent(now, EventKind.IMPORTED, source[:MAX_EVENT_DETAIL]),),
+            origin=DocumentOrigin.IMPORTED,
+        )
+
     def copy_as_draft(
         self,
         document_id: UUID,
@@ -286,6 +393,7 @@ class Document:
         now: datetime,
     ) -> Document:
         """Duplicate or convert (quote → invoice): same content, new draft, fresh dates."""
+        self._require_own("copied")
         content = replace(
             self.content,
             lines=tuple(replace(line, id=new_id(), tax_rate=None) for line in self.content.lines),
@@ -305,6 +413,10 @@ class Document:
         return self.status is DocumentStatus.DRAFT
 
     @property
+    def is_imported(self) -> bool:
+        return self.origin is DocumentOrigin.IMPORTED
+
+    @property
     def cancellation_id(self) -> UUID:
         """The cancellation invoice of a cancelled invoice."""
         if self.cancelled_by_id is None:
@@ -322,6 +434,13 @@ class Document:
         if self.snapshot is None:
             raise InvalidStateError("the document has not been issued yet")
         return self.snapshot
+
+    @property
+    def frozen_totals(self) -> Totals:
+        """The totals fixed when issuing (or taken over with an imported invoice)."""
+        if self.issued_totals is None:
+            raise InvalidStateError("the document has not been issued yet")
+        return self.issued_totals
 
     @property
     def paid_amount(self) -> Money:
@@ -376,6 +495,13 @@ class Document:
         if self.status not in statuses:
             raise InvalidStateError(f"a {self.status} {self.type} cannot be {action}")
 
+    def _require_own(self, action: str) -> None:
+        """Refuse what needs lines: an imported invoice consists of its PDF."""
+        if self.is_imported:
+            raise InvalidStateError(
+                f"an imported invoice cannot be {action}", code="imported_document"
+            )
+
     def _with_event(
         self, now: datetime, kind: EventKind, detail: str = ""
     ) -> tuple[DocumentEvent, ...]:
@@ -390,6 +516,16 @@ class Document:
         if not _SHA256.fullmatch(sha256):
             raise ValidationError("pdf_sha256", "a SHA-256 hash has 64 lowercase hex digits")
         return replace(self, pdf_sha256=sha256)
+
+    def record_file(self, file_name: str, now: datetime) -> Document:
+        """Note a file added to an imported invoice (its PDF or an attachment)."""
+        if not self.is_imported:
+            raise InvalidStateError(
+                "files are added to imported invoices only", code="not_imported"
+            )
+        return replace(
+            self, events=self._with_event(now, EventKind.FILE_ADDED, file_name[:MAX_EVENT_DETAIL])
+        )
 
     def edit(self, content: DraftContent, now: datetime, *, override_reason: str = "") -> Document:
         self._require(DocumentStatus.DRAFT, action="changed")
@@ -558,6 +694,7 @@ class Document:
     def cancel_check(self) -> None:
         if self.type is not DocumentType.INVOICE:
             raise InvalidStateError("only invoices can be cancelled")
+        self._require_own("cancelled")
         self._require(*OPEN_INVOICE_STATUSES, DocumentStatus.PAID, action="cancelled")
 
     def cancel(self, cancellation: Document, now: datetime) -> Document:

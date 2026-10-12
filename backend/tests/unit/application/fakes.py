@@ -30,11 +30,13 @@ from rhinvoice.domain.catalog.article import Article
 from rhinvoice.domain.company.bank_account import BankAccount
 from rhinvoice.domain.company.print_layout import PrintLayout
 from rhinvoice.domain.customer.customer import Customer
+from rhinvoice.domain.document.attachment import Attachment
 from rhinvoice.domain.document.document import (
     OPEN_INVOICE_STATUSES,
     DisplayStatus,
     DocumentStatus,
     DocumentType,
+    EventKind,
 )
 from rhinvoice.domain.dunning.reminder import DEFAULT_LEVELS, DunningLevel, Reminder
 from rhinvoice.domain.identity.session import Session
@@ -92,6 +94,9 @@ class Store:
     text_templates: dict[UUID, TextTemplate] = field(default_factory=dict[UUID, TextTemplate])
     pdfs: dict[UUID, bytes] = field(default_factory=dict[UUID, bytes])
     e_invoices: dict[UUID, bytes] = field(default_factory=dict[UUID, bytes])
+    attachments: dict[UUID, tuple[Attachment, bytes]] = field(
+        default_factory=dict[UUID, tuple[Attachment, bytes]]
+    )
     legal_notices: dict[tuple[TaxTreatment, Language], str] = field(
         default_factory=dict[tuple[TaxTreatment, Language], str],
     )
@@ -355,6 +360,7 @@ def _selected(stored: StoredDocument, query: DocumentQuery, *, with_status: bool
         document.type in query.types
         and (not with_status or not query.statuses or status in query.statuses)
         and (customer is None or document.content.customer_id == customer)
+        and (query.origin is None or document.origin is query.origin)
         and (query.year is None or _document_date(document, query.zone).year == query.year)
         and all(_matches(word, [stored.index.search_text]) for word in query.search.split())
     )
@@ -366,10 +372,12 @@ class InMemoryDocumentRepository:
         data: dict[UUID, StoredDocument],
         pdfs: dict[UUID, bytes],
         e_invoices: dict[UUID, bytes],
+        attachments: dict[UUID, tuple[Attachment, bytes]],
     ) -> None:
         self.data = data
         self.pdfs = pdfs
         self.e_invoices = e_invoices
+        self.saved_attachments = attachments
         self.locked: list[UUID] = []
 
     def get(self, document_id: UUID, *, for_update: bool = False) -> Document | None:
@@ -420,6 +428,7 @@ class InMemoryDocumentRepository:
             total=stored.index.total,
             open_amount=stored.index.open_amount,
             created_at=document.created_at,
+            imported=document.is_imported,
         )
 
     def search(self, query: DocumentQuery) -> Page[DocumentSummary]:
@@ -452,6 +461,27 @@ class InMemoryDocumentRepository:
         self.pdfs[document.id] = content
         if e_invoice is not None:
             self.e_invoices[document.id] = e_invoice
+
+    def add_attachment(self, attachment: Attachment, content: bytes) -> None:
+        # Like the database trigger: issued documents only, and the content must match.
+        assert not self.data[attachment.document_id].document.is_draft
+        assert attachment.sha256 == hashlib.sha256(content).hexdigest()
+        assert attachment.id not in self.saved_attachments
+        self.saved_attachments[attachment.id] = (attachment, content)
+
+    def attachments(self, document_id: UUID) -> list[Attachment]:
+        found = [
+            attachment
+            for attachment, _ in self.saved_attachments.values()
+            if attachment.document_id == document_id
+        ]
+        return sorted(found, key=lambda attachment: (attachment.file_name, str(attachment.id)))
+
+    def get_attachment(
+        self, document_id: UUID, attachment_id: UUID
+    ) -> tuple[Attachment, bytes] | None:
+        stored = self.saved_attachments.get(attachment_id)
+        return stored if stored is not None and stored[0].document_id == document_id else None
 
     def facets(self, query: DocumentQuery) -> DocumentFacets:
         totals: dict[Currency, CurrencyTotals] = {}
@@ -583,6 +613,7 @@ class InMemoryDocumentRepository:
             if (
                 document.type is not DocumentType.INVOICE
                 or document.status is not DocumentStatus.PAID
+                or document.is_imported
                 or issue_date is None
             ):
                 continue
@@ -599,6 +630,7 @@ class InMemoryDocumentRepository:
             (self._summary(stored, today), event.kind.value, event.at)
             for stored in reversed(self.data.values())
             for event in reversed(stored.document.events)
+            if event.kind is not EventKind.IMPORTED
         ]
         events.sort(key=lambda entry: entry[2], reverse=True)
         return events[:limit]
@@ -836,7 +868,10 @@ class InMemoryUnitOfWork:
         self.articles = InMemoryArticleRepository(dict(self.store.articles))
         self.sequences = InMemoryNumberSequenceRepository(dict(self.store.sequences))
         self.documents = InMemoryDocumentRepository(
-            dict(self.store.documents), dict(self.store.pdfs), dict(self.store.e_invoices)
+            dict(self.store.documents),
+            dict(self.store.pdfs),
+            dict(self.store.e_invoices),
+            dict(self.store.attachments),
         )
         self.text_templates = InMemoryTextTemplateRepository(dict(self.store.text_templates))
         self.legal_notices = InMemoryLegalNoticeRepository(dict(self.store.legal_notices))
@@ -875,6 +910,7 @@ class InMemoryUnitOfWork:
         self.store.documents = dict(self.documents.data)
         self.store.pdfs = dict(self.documents.pdfs)
         self.store.e_invoices = dict(self.documents.e_invoices)
+        self.store.attachments = dict(self.documents.saved_attachments)
         self.store.text_templates = dict(self.text_templates.data)
         self.store.legal_notices = dict(self.legal_notices.data)
         self.store.backup_requests = list(self.backups.requests)

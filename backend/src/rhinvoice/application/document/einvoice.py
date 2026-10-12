@@ -81,8 +81,8 @@ _COUNTRY_PREFIX = re.compile(r"[A-Z]{2}")
 
 
 def is_e_invoice_type(document: Document) -> bool:
-    """Invoices and cancellations (also as drafts); quotes never are."""
-    return document.type in E_INVOICE_TYPES
+    """Invoices and cancellations (also as drafts); quotes and imported invoices never are."""
+    return document.type in E_INVOICE_TYPES and not document.is_imported
 
 
 def is_e_invoice(document: Document) -> bool:

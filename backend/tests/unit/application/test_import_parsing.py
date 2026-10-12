@@ -11,6 +11,7 @@ from rhinvoice.application.importing.parsing import (
     parse_country,
     parse_currency,
     parse_date,
+    parse_document_number,
     parse_flag,
     parse_language,
     parse_supply,
@@ -353,3 +354,23 @@ def test_what_is_no_date_is_reported(text: str) -> None:
     with raises_exactly(ValidationError, f"'{text}' is not a date") as caught:
         parse_date(text, "customer_since")
     assert (caught.value.field, caught.value.code) == ("customer_since", "invalid_date")
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("R20150001", "R20150001"),
+        ("Rechnung R20150001", "R20150001"),
+        ("Rechnung Nr. 2015-001", "2015-001"),
+        ("Invoice #1042", "1042"),
+        ("  Nr.  R1  ", "R1"),
+        ("RE 2015 001", "RE 2015 001"),
+        ("Rechnung R2015-1 vom 12.03.2015", "R2015-1"),
+        ("Invoice 2015-001 dated 2015-03-12", "2015-001"),
+        ("R2015-1 12/03/15", "R2015-1"),
+        ("Rechnung", "Rechnung"),
+        ("", ""),
+    ],
+)
+def test_invoice_numbers_are_read_from_titles(text: str, expected: str) -> None:
+    assert parse_document_number(text) == expected

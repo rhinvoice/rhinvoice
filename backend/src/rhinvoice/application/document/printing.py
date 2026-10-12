@@ -24,7 +24,7 @@ from rhinvoice.application.document.handlers import DraftInput, LineInput
 from rhinvoice.application.document.ports import DocumentQuery
 from rhinvoice.application.errors import ConflictError, NotFoundError, UnavailableError
 from rhinvoice.domain.company.print_layout import PrintLayout
-from rhinvoice.domain.document.document import DocumentType, default_due_date
+from rhinvoice.domain.document.document import DocumentOrigin, DocumentType, default_due_date
 from rhinvoice.domain.document.lines import LineKind
 
 if TYPE_CHECKING:
@@ -151,7 +151,13 @@ class PrintHandlers:
     """None: PDFs without e-invoice, no XRechnung."""
 
     def html(self, document_id: UUID) -> str:
-        return self.renderer.html(self.model(self.documents.get(document_id)))
+        view = self.documents.get(document_id)
+        if view.document.is_imported:
+            raise ConflictError(
+                "an imported invoice is its PDF; it cannot be rendered",
+                code="imported_document",
+            )
+        return self.renderer.html(self.model(view))
 
     def preview_html(self, document_type: DocumentType, draft: DraftInput) -> str:
         """Render a draft without saving it, for the live preview in the editor."""
@@ -164,7 +170,12 @@ class PrintHandlers:
         """
         with self.uow() as uow:
             invoices = uow.documents.search(
-                DocumentQuery(today=self.clock.today(), types=_INVOICES, page=_ONE)
+                DocumentQuery(
+                    today=self.clock.today(),
+                    types=_INVOICES,
+                    origin=DocumentOrigin.RHINVOICE,
+                    page=_ONE,
+                )
             ).items
             customers = uow.customers.search(CustomerQuery(page=_ONE)).items
         if invoices:
@@ -213,6 +224,8 @@ class PrintHandlers:
             stored = uow.documents.get_pdf(document_id)
         if stored is not None:
             return PdfFile(content=stored, document=document, sha256=document.pdf_sha256)
+        if document.is_imported:
+            raise ConflictError("the imported invoice has no PDF yet", code="imported_without_pdf")
         content, e_invoice = self._render(view)
         with self.uow() as uow:
             locked = uow.documents.get(document_id, for_update=True)
@@ -277,7 +290,9 @@ class PrintHandlers:
             raise UnavailableError("e-invoices are not configured")
         view = self.documents.get(document_id)
         if not is_e_invoice_type(view.document):
-            raise ConflictError("quotes are no e-invoices", code="not_an_e_invoice")
+            raise ConflictError(
+                "quotes and imported invoices are no e-invoices", code="not_an_e_invoice"
+            )
         model = self.model(view)
         embedded = None
         if view.document.pdf_sha256 is not None:

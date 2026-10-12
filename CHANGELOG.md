@@ -5,6 +5,12 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.4.1] – 2026-10-12
+
+### Changed
+- The public demo takes imports of at most 200 KB and 200 rows, so it cannot be filled with junk;
+  the import page says so. Installations of your own keep their limits (5 MB, 10'000 rows).
+
 ## [0.4.0] – 2026-10-12
 
 ### Added

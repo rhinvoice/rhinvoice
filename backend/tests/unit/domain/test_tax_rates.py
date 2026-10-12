@@ -23,6 +23,8 @@ from rhinvoice.domain.tax.vat_code import VatCode, vat_code
     [
         (Country.CH, date(2024, 1, 1), "8.1", "2.6", "3.8"),
         (Country.CH, date(2023, 12, 31), "7.7", "2.5", "3.7"),
+        (Country.CH, date(2017, 12, 31), "8", "2.5", "3.8"),
+        (Country.CH, date(2011, 1, 1), "8", "2.5", "3.8"),
         (Country.LI, date(2026, 6, 1), "8.1", "2.6", "3.8"),
         (Country.DE, date(2020, 6, 30), "19", "7", None),
         (Country.DE, date(2020, 7, 1), "16", "5", None),
@@ -55,8 +57,8 @@ def test_rates_on_date_of_supply(
 
 def test_unknown_dates_are_rejected() -> None:
     with pytest.raises(ValidationError) as error:
-        profile_of(Country.CH).rates_on(date(2017, 12, 31))
-    assert error.value.details == {"service_date": "no VAT rates known on 2017-12-31"}
+        profile_of(Country.CH).rates_on(date(2010, 12, 31))
+    assert error.value.details == {"service_date": "no VAT rates known on 2010-12-31"}
 
 
 def test_rate_periods_are_contiguous() -> None:

@@ -4,7 +4,8 @@ Liechtenstein applies the Swiss VAT law through the customs treaty (Zollvertrag)
 Sources (checked 2026-10):
 
 - Rates: ESTV, "MWST-Sätze ab 1. Januar 2024" (8.1 / 2.6 / 3.8 %); 2018-2023:
-  7.7 / 2.5 / 3.7 %. Liechtenstein: Steuerverwaltung, identical under the treaty.
+  7.7 / 2.5 / 3.7 %; 2011-2017: 8 / 2.5 / 3.8 % (ESTV, "Entwicklung der MWST-Sätze").
+  Liechtenstein: Steuerverwaltung, identical under the treaty.
 - Invoices: Art. 26 Abs. 2 lit. a MWSTG, the number under which the supplier is
   registered (UID).
 - Services to EU businesses: no Swiss wording is required; the recipient's country
@@ -34,6 +35,8 @@ if TYPE_CHECKING:
 SWISS_VAT = VatRules(VatSystem.SWISS, frozenset({"CH", "LI"}))
 
 SWISS_RATES = (
+    # Kept for imports from older programs and documents with a supply before 2018.
+    TaxRateSet(date(2011, 1, 1), date(2017, 12, 31), Decimal(8), Decimal("2.5"), Decimal("3.8")),
     TaxRateSet(
         date(2018, 1, 1), date(2023, 12, 31), Decimal("7.7"), Decimal("2.5"), Decimal("3.7")
     ),

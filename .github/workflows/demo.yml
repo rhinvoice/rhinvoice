@@ -1,0 +1,107 @@
+name: Demo
+
+# Puts a released version on the public demo server (ch., de. and at.rhinvoice.com):
+# automatically once a release has built its images, or by hand with a version.
+#
+# Repository secrets (Settings → Secrets and variables → Actions):
+#   DEMO_SSH_KEY          private key of a deploy key whose public half is in root's authorized_keys
+#   DEMO_KNOWN_HOSTS      output of: ssh-keyscan <server address>
+#   DEMO_POSTGRES_PASSWORD  letters and digits, long and random
+#   DEMO_ACME_EMAIL       address Let's Encrypt writes to about certificates
+# Repository variables:
+#   DEMO_HOST             the server's address, e.g. 2.31.56.71
+#   DEMO_DOMAIN           rhinvoice.com (the demos answer at ch., de. and at.)
+
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to deploy, e.g. 0.4.0"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy the demo
+    if: >-
+      github.repository == 'rhinvoice/rhinvoice' &&
+      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-24.04
+    environment:
+      name: demo
+      url: https://ch.rhinvoice.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: version
+        env:
+          INPUT: ${{ inputs.version }}
+          TAG: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          version="${INPUT:-${TAG#v}}"
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "not a version: '$version'" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: SSH
+        env:
+          KEY: ${{ secrets.DEMO_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEMO_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+
+      - name: Settings
+        env:
+          DOMAIN: ${{ vars.DEMO_DOMAIN }}
+          EMAIL: ${{ secrets.DEMO_ACME_EMAIL }}
+          PASSWORD: ${{ secrets.DEMO_POSTGRES_PASSWORD }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          umask 077
+          {
+            echo "DEMO_DOMAIN=$DOMAIN"
+            echo "ACME_EMAIL=$EMAIL"
+            echo "POSTGRES_PASSWORD=$PASSWORD"
+            echo "DEMO_RESET_INTERVAL=3600"
+            echo "RHINVOICE_IMAGE=ghcr.io/rhinvoice/rhinvoice:$VERSION"
+          } > deploy/demo/.env
+
+      - name: Deploy
+        env:
+          HOST: ${{ vars.DEMO_HOST }}
+        run: |
+          ssh "root@$HOST" "mkdir -p /opt/rhinvoice-demo"
+          scp deploy/demo/compose.yml deploy/demo/Caddyfile deploy/demo/init-databases.sh \
+            deploy/demo/deploy.sh deploy/demo/.env "root@$HOST:/opt/rhinvoice-demo/"
+          ssh "root@$HOST" "sh /opt/rhinvoice-demo/deploy.sh"
+
+      - name: Check
+        env:
+          DOMAIN: ${{ vars.DEMO_DOMAIN }}
+        run: |
+          for country in ch de at; do
+            for attempt in $(seq 1 30); do
+              if curl -fsS "https://$country.$DOMAIN/api/demo" | grep -q '"enabled":true'; then
+                echo "$country.$DOMAIN is up"
+                continue 2
+              fi
+              sleep 10
+            done
+            echo "$country.$DOMAIN did not come up" >&2
+            exit 1
+          done

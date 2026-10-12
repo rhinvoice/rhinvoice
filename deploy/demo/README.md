@@ -60,6 +60,23 @@ Docker. Keep the demo off servers that hold real data: anyone on the internet ca
 
 Then open `https://ch.<domain>`.
 
+## Automatic deployment
+
+The workflow `.github/workflows/demo.yml` deploys every release to the server once its images
+are built, and can be started by hand (Actions → Demo → Run workflow) with a version. It copies
+this folder and a generated `.env` to `/opt/rhinvoice-demo` and runs `deploy.sh`, which installs
+Docker on first use, enables the firewall (22, 80, 443), turns on security updates and starts
+the stack. One Postgres, one Gotenberg and one Caddy serve all three countries.
+
+Once per server:
+
+1. A deploy key: `ssh-keygen -t ed25519 -f ~/.ssh/rhinvoice-deploy -N "" -C rhinvoice-deploy`,
+   then `ssh-copy-id -i ~/.ssh/rhinvoice-deploy.pub root@SERVER`.
+2. In the repository, Settings → Secrets and variables → Actions:
+   - secrets `DEMO_SSH_KEY` (the private key file), `DEMO_KNOWN_HOSTS` (output of
+     `ssh-keyscan SERVER`), `DEMO_POSTGRES_PASSWORD` (letters and digits), `DEMO_ACME_EMAIL`;
+   - variables `DEMO_HOST` (the server's address) and `DEMO_DOMAIN` (e.g. `rhinvoice.com`).
+
 ## Operation
 
 - **Update:** change `RHINVOICE_IMAGE` in `.env`, then run `docker compose up -d`. The new

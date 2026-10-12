@@ -296,6 +296,8 @@ const DETAIL: DocumentDetail = {
   converted_to_id: null,
   created_at: "2026-01-05T08:00:00Z",
   issued_at: null,
+  imported: false,
+  has_pdf: false,
 };
 
 describe("conversion", () => {

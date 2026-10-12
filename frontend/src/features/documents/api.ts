@@ -1,7 +1,15 @@
-import { keepPreviousData, queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  queryOptions,
+  useMutation,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 
-import { api, unwrap, type components } from "@/api/client";
+import { api, CLIENT_HEADER, unwrap, type components } from "@/api/client";
+import { fetchFile } from "@/features/documents/file-download";
 import { markItemsPaid } from "@/features/documents/paid-rows";
+import { toApiError } from "@/lib/api-error";
 
 export type DocumentDetail = components["schemas"]["DocumentResponse"];
 export type DocumentSummary = components["schemas"]["SummaryResponse"];
@@ -17,6 +25,7 @@ export type ArticleOption = components["schemas"]["ArticleResponse"];
 export type DocumentPage = components["schemas"]["DocumentPage"];
 export type CurrencyTotals = components["schemas"]["CurrencyTotalsResponse"];
 export type RecordedPayment = components["schemas"]["RecordedPaymentSchema"];
+export type Attachment = components["schemas"]["AttachmentResponse"];
 
 export interface DocumentListParams {
   readonly types: readonly DocumentType[];
@@ -343,5 +352,81 @@ export function remindersQuery(documentId: string) {
           params: { path: { document_id: documentId } },
         }),
       ),
+  });
+}
+
+/** Further files of an invoice taken over from another program. */
+export function attachmentsQuery(documentId: string) {
+  return queryOptions({
+    queryKey: ["documents", "attachments", documentId] as const,
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/documents/{document_id}/attachments", {
+          params: { path: { document_id: documentId } },
+        }),
+      ),
+  });
+}
+
+export function attachmentUrl(documentId: string, attachmentId: string, download = false): string {
+  const document = encodeURIComponent(documentId);
+  const attachment = encodeURIComponent(attachmentId);
+  return `/api/documents/${document}/attachments/${attachment}${download ? "?download=true" : ""}`;
+}
+
+/** The archived PDF of a document as a local address for a frame (the API's may not be framed).
+
+Whoever shows it releases it with ``releaseDocumentPdf``.
+*/
+export function documentPdfQuery(documentId: string) {
+  return queryOptions({
+    queryKey: ["documents", "pdf", documentId] as const,
+    queryFn: async () => {
+      const file = await fetchFile(documentPdfUrl(documentId), "document.pdf");
+      return URL.createObjectURL(file.blob);
+    },
+    staleTime: Infinity,
+  });
+}
+
+/** Free the local copy of a PDF shown on a page that is left. */
+export function releaseDocumentPdf(client: QueryClient, documentId: string): void {
+  const { queryKey } = documentPdfQuery(documentId);
+  const url = client.getQueryData(queryKey);
+  if (url !== undefined) URL.revokeObjectURL(url);
+  client.removeQueries({ queryKey });
+}
+
+/** Add a PDF to an imported invoice: its original when it has none, else an attachment. */
+export function useAddFile(documentId: string) {
+  const onChanged = useOnChanged();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const body = new FormData();
+      body.append("file", file);
+      let response: Response;
+      try {
+        response = await fetch(`/api/documents/${encodeURIComponent(documentId)}/files`, {
+          method: "POST",
+          body,
+          credentials: "same-origin",
+          headers: { [CLIENT_HEADER]: "web" },
+        });
+      } catch {
+        throw toApiError(0, undefined);
+      }
+      if (!response.ok) {
+        throw toApiError(response.status, await response.json().catch(() => undefined));
+      }
+      return (await response.json()) as DocumentDetail;
+    },
+    onSuccess: (document) => {
+      const before = client.getQueryData<DocumentDetail>(documentKeys.detail(documentId));
+      onChanged(document);
+      void client.invalidateQueries({ queryKey: attachmentsQuery(documentId).queryKey });
+      // The original has just been added: show it.
+      if (before?.has_pdf !== true) releaseDocumentPdf(client, documentId);
+    },
   });
 }

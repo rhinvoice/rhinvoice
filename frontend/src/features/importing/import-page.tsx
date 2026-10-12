@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { DownloadIcon, FileSpreadsheetIcon, UploadIcon } from "lucide-react";
+import {
+  DownloadIcon,
+  FileSpreadsheetIcon,
+  FilesIcon,
+  FolderOpenIcon,
+  UploadIcon,
+  XIcon,
+} from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -48,10 +55,14 @@ import {
   type DuplicateStrategy,
 } from "@/features/importing/api";
 import {
+  MAX_UPLOAD_FILES,
   fieldLabelKey,
   fieldOfColumn,
   filterRows,
   importableCount,
+  invoiceFiles,
+  sizeText,
+  uploadProblem,
   mappingFromTemplate,
   problemKey,
   reportCsv,
@@ -68,7 +79,8 @@ import { demoQuery } from "@/features/shared/demo-api";
 import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { cn } from "@/lib/cn";
-import { formatNumber } from "@/lib/format";
+import { formatMoney, formatNumber } from "@/lib/format";
+import type { Locale } from "@/lib/locale";
 
 /** More rows would slow the page down; the CSV report holds all of them. */
 const SHOWN_ROWS = 500;
@@ -88,6 +100,17 @@ interface ChosenFile {
   readonly key: number;
 }
 
+interface ChosenPdfs {
+  readonly files: readonly File[];
+  readonly key: number;
+}
+
+const LIST_PATHS = {
+  customers: "/customers",
+  articles: "/articles",
+  invoices: "/invoices",
+} as const;
+
 export function ImportPage({ target }: { readonly target: ImportTarget }) {
   const { t } = useI18n();
   useDocumentTitle(t("app.pageTitle", { title: t(`import.title.${target}`) }));
@@ -98,14 +121,17 @@ export function ImportPage({ target }: { readonly target: ImportTarget }) {
   const [mapping, setMapping] = useState<Mapping | null>(null);
   const [templateId, setTemplateId] = useState("");
   const [done, setDone] = useState<ImportRun | null>(null);
+  const [pdfs, setPdfs] = useState<ChosenPdfs | null>(null);
+  const files = pdfs?.files ?? [];
+  const tooMuch = uploadProblem(files);
 
   const preview = useQuery({
-    queryKey: ["import-preview", target, chosen?.key, duplicates, mapping],
-    queryFn: () => {
+    queryKey: ["import-preview", target, chosen?.key, duplicates, mapping, pdfs?.key],
+    queryFn: ({ signal }) => {
       if (chosen === null) throw new Error("no file chosen");
-      return runImport(target, { file: chosen.file, duplicates, mapping }, false);
+      return runImport(target, { file: chosen.file, duplicates, mapping, files }, false, signal);
     },
-    enabled: chosen !== null && done === null,
+    enabled: chosen !== null && done === null && tooMuch === null,
     retry: false,
     gcTime: 0,
     // While a new mapping is checked the last result stays; a new file starts empty.
@@ -115,12 +141,19 @@ export function ImportPage({ target }: { readonly target: ImportTarget }) {
   const importing = useMutation({
     mutationFn: () => {
       if (chosen === null) throw new Error("no file chosen");
-      return runImport(target, { file: chosen.file, duplicates, mapping }, true);
+      return runImport(target, { file: chosen.file, duplicates, mapping, files }, true);
     },
     onSuccess: (run) => {
       setDone(run);
       toast.success(t(`import.done.${target}`, { count: importableCount(run) }));
       void client.invalidateQueries({ queryKey: [target] });
+      if (target === "invoices") {
+        // New invoices, customers and a moved number sequence.
+        void client.invalidateQueries({ queryKey: ["documents"] });
+        void client.invalidateQueries({ queryKey: ["customers"] });
+        void client.invalidateQueries({ queryKey: ["dashboard"] });
+        void client.invalidateQueries({ queryKey: ["numbering"] });
+      }
     },
     onError: (caught) => toast.error(errorMessage(caught) ?? t("error.generic")),
   });
@@ -130,6 +163,13 @@ export function ImportPage({ target }: { readonly target: ImportTarget }) {
     setMapping(null);
     setTemplateId("");
     setDone(null);
+    if (file === undefined) setPdfs(null);
+  };
+  const choosePdfs = (chosenFiles: readonly File[] | null) => {
+    setPdfs(chosenFiles === null ? null : { files: chosenFiles, key: Date.now() });
+    // The files may tell another column of the numbers.
+    setMapping(null);
+    setTemplateId("");
   };
   const run = chosen === null ? undefined : preview.data;
   const count = run === undefined ? 0 : importableCount(run);
@@ -155,11 +195,15 @@ export function ImportPage({ target }: { readonly target: ImportTarget }) {
     <>
       <PageHeader
         title={t(`import.title.${target}`)}
-        description={t("import.description")}
+        description={
+          target === "invoices" ? t("import.descriptionInvoices") : t("import.description")
+        }
         actions={
           run === undefined || done !== null ? undefined : (
             <Button
-              disabled={count === 0 || preview.isFetching || importing.isPending}
+              disabled={
+                count === 0 || preview.isFetching || importing.isPending || tooMuch !== null
+              }
               onClick={() => {
                 importing.mutate();
               }}
@@ -185,6 +229,18 @@ export function ImportPage({ target }: { readonly target: ImportTarget }) {
         ) : (
           <>
             <FilePicker target={target} chosen={chosen} run={run} onChoose={choose} />
+            {target === "invoices" ? (
+              <PdfPicker files={files} disabled={importing.isPending} onChoose={choosePdfs} />
+            ) : null}
+            <FormAlert
+              message={
+                tooMuch === null
+                  ? null
+                  : tooMuch === "tooMany"
+                    ? t("import.pdfs.tooMany", { max: MAX_UPLOAD_FILES })
+                    : t("import.pdfs.tooLarge")
+              }
+            />
             <FormAlert message={preview.isError ? errorMessage(preview.error) : null} />
             {run === undefined || run.missing.length === 0 ? null : (
               <FormAlert message={summaryOf(run)} />
@@ -211,7 +267,7 @@ export function ImportPage({ target }: { readonly target: ImportTarget }) {
                 {run.missing.length > 0 ? null : (
                   <ImportResult
                     // A new file, mapping or choice starts with the fitting row filter.
-                    key={`${String(chosen.key)}-${JSON.stringify(mapping)}-${duplicates}`}
+                    key={`${String(chosen.key)}-${JSON.stringify(mapping)}-${duplicates}-${String(pdfs?.key)}`}
                     run={run}
                     target={target}
                     busy={preview.isFetching}
@@ -408,25 +464,29 @@ function ImportSettings({
             </AlertDialog>
           </div>
         </div>
-        <fieldset className="flex flex-col gap-1.5">
-          <legend className="mb-1.5 text-sm font-medium">{t("import.duplicates")}</legend>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {(["skip", "update", "create"] as const).map((value) => (
-              <RadioCard
-                key={value}
-                id={`duplicates-${value}`}
-                name="duplicates"
-                value={value}
-                checked={duplicates === value}
-                label={t(`import.duplicates.${value}`)}
-                onChange={() => {
-                  onDuplicates(value);
-                }}
-              />
-            ))}
-          </div>
-          <p className="text-sm text-muted-foreground">{t(`import.duplicatesHint.${target}`)}</p>
-        </fieldset>
+        {target === "invoices" ? (
+          <p className="text-sm text-muted-foreground">{t("import.skippedInvoices")}</p>
+        ) : (
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="mb-1.5 text-sm font-medium">{t("import.duplicates")}</legend>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {(["skip", "update", "create"] as const).map((value) => (
+                <RadioCard
+                  key={value}
+                  id={`duplicates-${value}`}
+                  name="duplicates"
+                  value={value}
+                  checked={duplicates === value}
+                  label={t(`import.duplicates.${value}`)}
+                  onChange={() => {
+                    onDuplicates(value);
+                  }}
+                />
+              ))}
+            </div>
+            <p className="text-sm text-muted-foreground">{t(`import.duplicatesHint.${target}`)}</p>
+          </fieldset>
+        )}
       </div>
       <details
         className="group rounded-lg border border-border/70"
@@ -667,22 +727,151 @@ function ImportResult({
         </p>
       ) : null}
       <p className="text-sm text-muted-foreground">{t("import.errorsLeftOut")}</p>
+      {target === "invoices" ? <InvoiceNotes run={run} /> : null}
+    </Card>
+  );
+}
+
+/** Files without an invoice, and the number the next invoice gets. */
+function InvoiceNotes({ run }: { readonly run: ImportRun }) {
+  const { t } = useI18n();
+  return (
+    <>
+      {run.unused_files.length === 0 ? null : (
+        <details className="rounded-lg border border-border/70">
+          <summary className="flex min-h-11 cursor-pointer items-center px-4 text-sm font-medium">
+            {t("import.unused", { count: run.unused_files.length })}
+          </summary>
+          <div className="flex flex-col gap-2 border-t border-border/70 p-4 text-sm">
+            <p className="text-muted-foreground">{t("import.unusedHint")}</p>
+            <ul className="flex flex-col gap-1 break-all">
+              {run.unused_files.slice(0, SHOWN_ROWS).map((path) => (
+                <li key={path}>{path}</li>
+              ))}
+            </ul>
+          </div>
+        </details>
+      )}
+      {run.next_number === null ? null : (
+        <p className="text-sm text-muted-foreground">
+          {t("import.nextNumber", { number: run.next_number })}
+        </p>
+      )}
+    </>
+  );
+}
+
+/** The PDF files of the invoices: a whole folder, or single PDF and ZIP files. */
+function PdfPicker({
+  files,
+  disabled,
+  onChoose,
+}: {
+  readonly files: readonly File[];
+  readonly disabled: boolean;
+  readonly onChoose: (files: readonly File[] | null) => void;
+}) {
+  const { t, locale } = useI18n();
+  const id = useId();
+  const folder = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    // Not in React's types: the attribute that lets the browser pick a folder.
+    folder.current?.setAttribute("webkitdirectory", "");
+  }, []);
+  const bytes = files.reduce((sum, file) => sum + file.size, 0);
+  const pick = (list: FileList | null) => {
+    onChoose(invoiceFiles(list ?? []));
+  };
+  const labelClass = cn(
+    buttonVariants({ variant: "outline" }),
+    "cursor-pointer has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-background",
+    disabled && "pointer-events-none opacity-50",
+  );
+  return (
+    <Card aria-labelledby={`${id}-title`}>
+      <div className="flex flex-wrap items-center gap-4">
+        <FilesIcon className="size-8 text-muted-foreground" aria-hidden="true" />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <h2 id={`${id}-title`} className="text-sm font-medium">
+            {t("import.pdfs.title")}
+          </h2>
+          <p id={`${id}-state`} className="text-sm text-muted-foreground">
+            {files.length === 0 && bytes === 0
+              ? t("import.pdfs.none")
+              : t("import.pdfs.chosen", { count: files.length, size: sizeText(bytes, locale) })}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <label className={labelClass}>
+            <FolderOpenIcon aria-hidden="true" />
+            {t("import.pdfs.folder")}
+            <input
+              ref={folder}
+              type="file"
+              multiple
+              className="sr-only"
+              disabled={disabled}
+              aria-describedby={`${id}-state`}
+              onChange={(event) => {
+                pick(event.target.files);
+                event.target.value = "";
+              }}
+            />
+          </label>
+          <label className={labelClass}>
+            <FilesIcon aria-hidden="true" />
+            {t("import.pdfs.files")}
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.zip,application/pdf,application/zip"
+              className="sr-only"
+              disabled={disabled}
+              aria-describedby={`${id}-state`}
+              onChange={(event) => {
+                pick(event.target.files);
+                event.target.value = "";
+              }}
+            />
+          </label>
+          {files.length === 0 ? null : (
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={disabled}
+              aria-label={t("import.pdfs.clear")}
+              onClick={() => {
+                onChoose(null);
+              }}
+            >
+              <XIcon aria-hidden="true" />
+            </Button>
+          )}
+        </div>
+      </div>
+      <p className="text-sm text-muted-foreground">{t("import.pdfs.description")}</p>
     </Card>
   );
 }
 
 function ResultRow({ row, cells }: { readonly row: ImportRow; readonly cells: readonly string[] }) {
   const { t } = useI18n();
-  const [line, , number, name, detail, problem] = cells;
+  const [line, , number, name, detail, ...rest] = cells;
+  const problem = rest.at(-1);
   return (
     <TableRow>
       <TableCell className="tabular-nums">{line}</TableCell>
       <TableCell>
         <StatusBadge tone={TONES[row.status]} label={t(`import.status.${row.status}`)} />
       </TableCell>
-      <TableCell className="tabular-nums">{number}</TableCell>
+      <TableCell className="whitespace-nowrap tabular-nums">{number}</TableCell>
       <TableCell>{name}</TableCell>
-      <TableCell>{detail}</TableCell>
+      <TableCell className="whitespace-nowrap tabular-nums">{detail}</TableCell>
+      {rest.length > 1 ? (
+        <TableCell className="max-w-72">
+          <PdfCell row={row} />
+        </TableCell>
+      ) : null}
       <TableCell className={row.problem === null ? undefined : "text-status-overdue-fg"}>
         {problem}
       </TableCell>
@@ -690,16 +879,43 @@ function ResultRow({ row, cells }: { readonly row: ImportRow; readonly cells: re
   );
 }
 
+/** The PDF of an invoice row: its name, below it the folder and the attachments. */
+function PdfCell({ row }: { readonly row: ImportRow }) {
+  const { t } = useI18n();
+  if (row.status !== "new") return null;
+  if (row.file === null) {
+    return <span className="text-muted-foreground">{t("import.noPdf")}</span>;
+  }
+  const slash = row.file.lastIndexOf("/");
+  const folder = slash < 0 ? "" : row.file.slice(0, slash);
+  const details = [
+    folder,
+    row.attachments === 0 ? "" : t("import.attachments", { count: row.attachments }),
+  ].filter((part) => part !== "");
+  return (
+    <>
+      <span className="block break-words">{row.file.slice(slash + 1)}</span>
+      {details.length === 0 ? null : (
+        <span className="block text-xs break-words text-muted-foreground">
+          {details.join(" · ")}
+        </span>
+      )}
+    </>
+  );
+}
+
 /** Column headers and cell texts of the result, shared by the table and the CSV report. */
 function useRowText(target: ImportTarget) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const invoices = target === "invoices";
   return {
     headers: [
       t("import.row"),
       t("import.statusTitle"),
       t("import.number"),
-      t("import.name"),
+      invoices ? t("import.customer") : t("import.name"),
       t(`import.detail.${target}`),
+      ...(invoices ? [t("import.pdf")] : []),
       t("import.problemTitle"),
     ],
     cells: (row: ImportRow): readonly string[] => {
@@ -714,13 +930,35 @@ function useRowText(target: ImportTarget) {
           value: problem.value,
         };
         text = problem.value ? t("import.problemValue", values) : t("import.problemText", values);
+      } else if (row.new_customer) {
+        text = t("import.newCustomer");
       }
+      if (!invoices) {
+        return [
+          String(row.row),
+          t(`import.status.${row.status}`),
+          row.number,
+          row.name,
+          row.detail,
+          text,
+        ];
+      }
+      const pdf =
+        row.status !== "new"
+          ? ""
+          : [
+              row.file ?? t("import.noPdf"),
+              row.attachments === 0 ? "" : t("import.attachments", { count: row.attachments }),
+            ]
+              .filter((part) => part !== "")
+              .join(" ");
       return [
         String(row.row),
         t(`import.status.${row.status}`),
         row.number,
         row.name,
-        row.detail,
+        amountText(row.detail, locale),
+        pdf,
         text,
       ];
     },
@@ -757,11 +995,12 @@ function ImportDone({
           })}
         </CardDescription>
       </CardHeader>
+      {run.next_number === null ? null : (
+        <p className="text-sm">{t("import.nextNumber", { number: run.next_number })}</p>
+      )}
       <div className="flex flex-wrap gap-2">
         <Button asChild>
-          <Link to={target === "customers" ? "/customers" : "/articles"}>
-            {t(`import.show.${target}`)}
-          </Link>
+          <Link to={LIST_PATHS[target]}>{t(`import.show.${target}`)}</Link>
         </Button>
         <Button variant="outline" onClick={onAgain}>
           {t("import.again")}
@@ -769,4 +1008,12 @@ function ImportDone({
       </div>
     </Card>
   );
+}
+
+/** "CHF 1296.00" from the server, written in the page's language ("CHF 1'296.00"). */
+function amountText(detail: string, locale: Locale): string {
+  const match = /^([A-Z]{3}) (-?\d+(?:\.\d+)?)$/.exec(detail);
+  if (match === null) return detail;
+  const [, currency = "", amount = ""] = match;
+  return formatMoney(amount, currency, locale);
 }

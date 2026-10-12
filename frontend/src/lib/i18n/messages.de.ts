@@ -135,7 +135,7 @@ export const de = {
   "error.invalid_recipient": "Eine Empfängeradresse ist ungültig.",
   "error.mail_partly_refused":
     "Der Mailserver hat einen Teil der Empfänger abgelehnt; die übrigen haben die E-Mail erhalten (im Verlauf vermerkt).",
-  "error.mail_too_large": "Die E-Mail ist grösser, als der Mailserver annimmt.",
+  "error.mail_too_large": "Die E-Mail ist größer, als der Mailserver annimmt.",
   "error.mail_utf8_unsupported":
     "Der Mailserver nimmt keine Adressen mit Umlauten oder Akzenten an.",
   "error.mail_login_needs_tls":
@@ -608,6 +608,8 @@ export const de = {
   "event.cancelled": "Storniert",
   "event.tax_overridden": "Steuerfall manuell gewählt",
   "event.reminded": "Mahnung geschrieben",
+  "event.imported": "Aus früherem Programm übernommen",
+  "event.file_added": "Datei hinzugefügt",
 
   "treatment.domestic": "Inland (steuerpflichtig)",
   "treatment.reverse_charge": "Reverse Charge",
@@ -687,6 +689,29 @@ export const de = {
   "documents.viewMode": "Darstellung",
   "documents.viewDocument": "Dokument",
   "documents.viewDetails": "Details",
+  "documents.imported": "Übernommen",
+  "documents.importedHint":
+    "Aus einem früheren Programm übernommen. Das PDF ist die Rechnung; Positionen gibt es keine.",
+  "documents.originalPdf": "Original-PDF",
+  "documents.noPdf": "Noch kein PDF",
+  "documents.noPdfHint":
+    "Zu dieser Rechnung wurde beim Übernehmen kein PDF gefunden. Füge es hinzu, damit sie vollständig ist. Danach lässt es sich nicht mehr ersetzen.",
+  "documents.addPdf": "PDF hinzufügen",
+  "documents.attachmentsTitle": "Anhänge",
+  "documents.attachmentsHint": "Mahnungen, Korrekturen und Kopien aus dem früheren Programm.",
+  "documents.attachmentsEmpty": "Keine Anhänge.",
+  "documents.addPdfTitle": "PDF hinzufügen?",
+  "documents.addAttachmentTitle": "Datei anhängen?",
+  "documents.addFileConfirm":
+    "«{name}» wird dauerhaft bei dieser Rechnung aufbewahrt. Danach lässt sie sich weder ersetzen noch entfernen.",
+  "documents.addAttachment": "Datei anhängen",
+  "documents.fileAdded": "Datei hinzugefügt.",
+  "documents.pdfAdded": "PDF hinzugefügt.",
+  "documents.addFileHint":
+    "Nur PDF, höchstens 20 MB. Hinzugefügte Dateien lassen sich nicht mehr entfernen.",
+  "documents.paidOnUnknown":
+    "Zahlungsdatum aus dem früheren Programm nicht bekannt; als Fälligkeit übernommen.",
+  "documents.pdfLoading": "PDF wird geladen …",
   "documents.previewEmpty":
     "Die Vorschau erscheint, sobald ein Kunde und eine Position erfasst sind.",
   "documents.previewTitle": "Vorschau: {title}",
@@ -1055,9 +1080,83 @@ export const de = {
   "import.show.customers": "Zu den Kunden",
   "import.show.articles": "Zu den Artikeln",
   "import.again": "Weitere Datei importieren",
-  "error.unreadable_file": "Die Datei lässt sich nicht lesen. Ist es eine CSV- oder Excel-Datei?",
+  "import.title.invoices": "Alte Rechnungen übernehmen",
+  "import.descriptionInvoices":
+    "Rechnungen eines früheren Programms mit ihren Original-PDFs. Sie bleiben, wie sie waren: gesperrt, mit Nummer, Betrag und PDF.",
+  "import.run.invoices": {
+    zero: "Keine Rechnungen zu übernehmen",
+    one: "1 Rechnung übernehmen",
+    other: "{count} Rechnungen übernehmen",
+  },
+  "import.done.invoices": {
+    zero: "Keine Rechnungen übernommen.",
+    one: "1 Rechnung übernommen.",
+    other: "{count} Rechnungen übernommen.",
+  },
+  "import.choose.invoices": "Liste der Rechnungen (CSV oder Excel)",
+  "import.required.invoices":
+    "Nötig sind Rechnungsnummer, Datum, Betrag und Kundennummer oder Kundenname. Die Spalte mit den Nummern erkennt Rhinvoice an den PDF-Dateien.",
+  "import.reportFile.invoices": "import-rechnungen.csv",
+  "import.detail.invoices": "Betrag",
+  "import.show.invoices": "Zu den Rechnungen",
+  "import.skippedInvoices":
+    "Rechnungen, deren Nummer es schon gibt, werden übersprungen: Eine ausgestellte Rechnung ändert sich nie.",
+  "import.customer": "Kunde",
+  "import.pdf": "PDF",
+  "import.noPdf": "kein PDF",
+  "import.attachments": { zero: "keine Anhänge", one: "+ 1 Anhang", other: "+ {count} Anhänge" },
+  "import.newCustomer": "Kunde neu angelegt (archiviert)",
+  "import.pdfs.title": "PDF-Dateien",
+  "import.pdfs.description":
+    "Den Ordner mit den Rechnungen wählen (mit Unterordnern) oder einzelne PDF- und ZIP-Dateien. Rhinvoice sucht die Rechnungsnummer im Dateinamen; weitere Dateien derselben Nummer (Mahnungen, Kopien) kommen als Anhang dazu.",
+  "import.pdfs.none": "Noch keine PDF-Dateien gewählt; die Rechnungen kommen dann ohne PDF.",
+  "import.pdfs.chosen": {
+    zero: "Keine PDF-Dateien im gewählten Ordner",
+    one: "1 PDF-Datei · {size}",
+    other: "{count} PDF-Dateien · {size}",
+  },
+  "import.pdfs.folder": "Ordner wählen",
+  "import.pdfs.files": "Dateien wählen",
+  "import.pdfs.clear": "PDF-Dateien entfernen",
+  "import.pdfs.tooMany":
+    "Mehr als {max} Dateien: Bitte den Ordner als ZIP-Datei packen und diese wählen.",
+  "import.pdfs.tooLarge": "Zusammen größer als 200 MB: Bitte in mehreren Teilen übernehmen.",
+  "import.unused": {
+    zero: "Alle Dateien gehören zu einer Rechnung",
+    one: "1 Datei gehört zu keiner Rechnung der Liste",
+    other: "{count} Dateien gehören zu keiner Rechnung der Liste",
+  },
+  "import.unusedHint":
+    "Fehlt eine Rechnung in der Liste, oder steht ihre Nummer nicht im Dateinamen? Ein PDF lässt sich später auch auf der Rechnung selbst hinzufügen.",
+  "import.nextNumber":
+    "Die nächste Rechnung, die du in Rhinvoice schreibst, bekommt die Nummer {number}.",
+  "import.problem.non_positive_total": "Betrag ist null oder negativ",
+  "import.problem.net_above_total": "Netto größer als der Gesamtbetrag",
+  "import.problem.open_above_total": "offener Betrag größer als der Gesamtbetrag",
+  "import.field.issue_date": "Rechnungsdatum",
+  "import.field.due_date": "Fälligkeit",
+  "import.field.customer_number": "Kundennummer",
+  "import.field.customer_name": "Kundenname",
+  "import.field.currency": "Währung",
+  "import.field.net_amount": "Nettobetrag",
+  "import.field.tax_amount": "Steuerbetrag",
+  "import.field.total_amount": "Gesamtbetrag",
+  "import.field.open_amount": "Offener Betrag",
+  "import.field.subject": "Betreff",
+  "import.field.total": "Gesamtbetrag",
+  "import.field.net": "Nettobetrag",
+  "error.unreadable_file":
+    "Die Datei lässt sich nicht lesen. Ist es eine CSV-, Excel- oder ZIP-Datei?",
   "error.empty_file": "Die Datei ist leer.",
-  "error.file_too_large": "Die Datei ist größer als 5 MB.",
+  "error.file_too_large":
+    "Die Datei ist zu groß: Listen höchstens 5 MB, ein PDF höchstens 20 MB, alle PDFs zusammen höchstens 200 MB.",
+  "error.not_a_pdf": "Das ist keine PDF-Datei.",
+  "error.too_many_files":
+    "Zu viele Dateien auf einmal. Bitte als ZIP-Datei oder in mehreren Teilen übernehmen.",
+  "error.imported_without_pdf": "Zu dieser übernommenen Rechnung gibt es noch kein PDF.",
+  "error.imported_document":
+    "Eine übernommene Rechnung besteht aus ihrem PDF; das geht mit ihr nicht.",
+  "error.not_imported": "Dateien lassen sich nur an übernommene Rechnungen anhängen.",
   "error.too_many_rows":
     "Die Datei hat zu viele Zeilen. Bitte in Dateien mit höchstens zehntausend Zeilen teilen.",
   "error.too_many_columns": "Die Datei hat mehr als 100 Spalten.",

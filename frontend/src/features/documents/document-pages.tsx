@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
+  ArchiveIcon,
   ArrowLeftIcon,
   BanIcon,
   Building2Icon,
@@ -33,6 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -65,6 +67,7 @@ import { defaultTexts } from "@/features/documents/document-texts";
 import { DocumentEditor, type EditableType } from "@/features/documents/document-editor";
 import { documentToForm, emptyDocument } from "@/features/documents/document-form-model";
 import { DocumentView } from "@/features/documents/document-view";
+import { AttachmentsCard, ImportedPdf } from "@/features/documents/imported-document";
 import { PaperPreview } from "@/components/paper-preview";
 import { PaymentDialog } from "@/features/documents/payment-dialog";
 import { fetchFile, saveFile } from "@/features/documents/file-download";
@@ -334,7 +337,11 @@ function IssuedPage({ document, company }: PageProps) {
     if (payable) setPaymentOpen(true);
   });
   const [view, setView] = useDocumentViewMode();
-  const html = useQuery({ ...documentHtmlQuery(document.id), enabled: view === "document" });
+  const html = useQuery({
+    ...documentHtmlQuery(document.id),
+    // An imported invoice is its PDF: there is no page to render.
+    enabled: view === "document" && !document.imported,
+  });
 
   return (
     <>
@@ -343,7 +350,15 @@ function IssuedPage({ document, company }: PageProps) {
         title={documentTitle(t, document)}
         description={`${document.recipient?.name ?? ""} · ${money(document.totals.total)}`}
         actions={
-          <DocumentStatusBadge status={document.display_status} dueDate={document.due_date} />
+          <div className="flex flex-wrap items-center gap-2">
+            {document.imported ? (
+              <Badge title={t("documents.importedHint")}>
+                <ArchiveIcon aria-hidden="true" />
+                {t("documents.imported")}
+              </Badge>
+            ) : null}
+            <DocumentStatusBadge status={document.display_status} dueDate={document.due_date} />
+          </div>
         }
       />
       <div className="flex flex-wrap items-center gap-2">
@@ -392,7 +407,7 @@ function IssuedPage({ document, company }: PageProps) {
             </Button>
           </>
         ) : null}
-        <OutputActions documentId={document.id} />
+        <OutputActions documentId={document.id} printable={!document.imported} />
         <MailAction document={document} title={documentTitle(t, document)} />
         <RelatedLinks document={document} />
         <div className="ml-auto">
@@ -424,13 +439,23 @@ function IssuedPage({ document, company }: PageProps) {
           </Button>
         ))}
       </div>
-      {view === "document" ? (
+      {view === "document" && document.imported ? (
+        <div className="mx-auto w-full max-w-3xl">
+          <ImportedPdf document={document} title={documentTitle(t, document)} />
+        </div>
+      ) : null}
+      {view === "document" && !document.imported ? (
         <div className="mx-auto w-full max-w-3xl">
           <PaperPreview
             html={html.data}
             title={documentTitle(t, document)}
             busy={html.isFetching}
           />
+        </div>
+      ) : null}
+      {document.imported ? (
+        <div className="mx-auto w-full max-w-3xl">
+          <AttachmentsCard document={document} />
         </div>
       ) : null}
       {view === "details" ? (
@@ -529,14 +554,18 @@ function MoreActions({ document }: { readonly document: DocumentDetail }) {
     document.type === "quote" &&
     (document.status === "sent" || document.status === "accepted") &&
     document.converted_to_id === null;
+  // An imported invoice is its PDF: nothing can be built from its lines.
+  const own = !document.imported;
   const canCancel =
+    own &&
     document.type === "invoice" &&
     (document.status === "issued" ||
       document.status === "partially_paid" ||
       document.status === "paid");
-  const canDuplicate = document.type !== "cancellation";
+  const canDuplicate = own && document.type !== "cancellation";
+  const canRecur = own && document.type === "invoice";
   const canDelete = document.status === "draft";
-  if (!canConvert && !canCancel && !canDuplicate && !canDelete) return null;
+  if (!canConvert && !canCancel && !canDuplicate && !canDelete && !canRecur) return null;
 
   return (
     <>
@@ -579,7 +608,7 @@ function MoreActions({ document }: { readonly document: DocumentDetail }) {
               {t("documents.duplicate")}
             </DropdownMenuItem>
           ) : null}
-          {document.type === "invoice" ? (
+          {canRecur ? (
             <DropdownMenuItem
               onSelect={() => {
                 void navigate({ to: "/recurring/new", search: { from: document.id } });
@@ -695,7 +724,10 @@ function MailAction({
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const eInvoice = useQuery({ ...eInvoiceQuery(document.id), enabled: document.type !== "quote" });
+  const eInvoice = useQuery({
+    ...eInvoiceQuery(document.id),
+    enabled: document.type !== "quote" && !document.imported,
+  });
   return (
     <>
       <Button
@@ -720,7 +752,14 @@ function MailAction({
 }
 
 /** PDF in the browser, as a download, and printing (the same page as the PDF). */
-function OutputActions({ documentId }: { readonly documentId: string }) {
+function OutputActions({
+  documentId,
+  printable,
+}: {
+  readonly documentId: string;
+  /** Imported invoices have no page to print: the PDF is the invoice. */
+  readonly printable: boolean;
+}) {
   const { t } = useI18n();
   const client = useQueryClient();
   const errorMessage = useErrorMessage();
@@ -778,15 +817,17 @@ function OutputActions({ documentId }: { readonly documentId: string }) {
         <DownloadIcon aria-hidden="true" />
         {t("documents.download")}
       </Button>
-      <Button
-        variant="outline"
-        onClick={() => {
-          client.query(documentHtmlQuery(documentId)).then(printPage, fail);
-        }}
-      >
-        <PrinterIcon aria-hidden="true" />
-        {t("documents.print")}
-      </Button>
+      {printable ? (
+        <Button
+          variant="outline"
+          onClick={() => {
+            client.query(documentHtmlQuery(documentId)).then(printPage, fail);
+          }}
+        >
+          <PrinterIcon aria-hidden="true" />
+          {t("documents.print")}
+        </Button>
+      ) : null}
     </>
   );
 }

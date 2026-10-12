@@ -134,6 +134,16 @@ const FIELD_KEYS = [
   "price_eur",
   "tax_category",
   "supply",
+  "issue_date",
+  "due_date",
+  "customer_number",
+  "customer_name",
+  "currency",
+  "net_amount",
+  "tax_amount",
+  "total_amount",
+  "open_amount",
+  "subject",
 ] as const;
 type FieldKey = (typeof FIELD_KEYS)[number];
 
@@ -141,6 +151,8 @@ type FieldKey = (typeof FIELD_KEYS)[number];
 const FIELD_ALIASES: Readonly<Record<string, FieldKey>> = {
   "prices.CHF": "price_chf",
   "prices.EUR": "price_eur",
+  total: "total_amount",
+  net: "net_amount",
 };
 
 function isFieldKey(field: string): field is FieldKey {
@@ -166,6 +178,9 @@ const PROBLEM_CODES = [
   "unknown_language",
   "unknown_currency",
   "unknown_country_prefix",
+  "non_positive_total",
+  "net_above_total",
+  "open_above_total",
 ] as const;
 type ProblemCode = (typeof PROBLEM_CODES)[number];
 
@@ -174,4 +189,49 @@ export function problemKey(code: string): `import.problem.${ProblemCode}` | null
   return (PROBLEM_CODES as readonly string[]).includes(code)
     ? (`import.problem.${code}` as `import.problem.${ProblemCode}`)
     : null;
+}
+
+/** Browsers send at most this many files in one request to the server (Starlette's limit). */
+export const MAX_UPLOAD_FILES = 1000;
+/** All PDF files of one import together (the server's limit). */
+export const MAX_UPLOAD_BYTES = 200 * 1024 * 1024;
+
+/** The name a file is sent with: its folders too, when a folder was chosen. */
+export function uploadName(file: Pick<File, "name" | "webkitRelativePath">): string {
+  return file.webkitRelativePath || file.name;
+}
+
+/** PDF and ZIP files of a choice; a folder's other files (pictures, .DS_Store) stay out. */
+export function invoiceFiles<T extends Pick<File, "name" | "webkitRelativePath">>(
+  files: Iterable<T>,
+): T[] {
+  return [...files].filter((file) => {
+    const parts = uploadName(file).split("/");
+    const hidden = parts.some((part) => part.startsWith(".") || part === "__MACOSX");
+    return !hidden && /\.(pdf|zip)$/i.test(file.name);
+  });
+}
+
+/** Why the chosen files cannot be sent, or null. */
+export function uploadProblem(files: readonly Pick<File, "size">[]): "tooMany" | "tooLarge" | null {
+  if (files.length > MAX_UPLOAD_FILES) return "tooMany";
+  const bytes = files.reduce((sum, file) => sum + file.size, 0);
+  return bytes > MAX_UPLOAD_BYTES ? "tooLarge" : null;
+}
+
+/** Size for people: "8.8 MB", "512 KB". */
+export function sizeText(bytes: number, locale: string): string {
+  const units = ["byte", "kilobyte", "megabyte"] as const;
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return new Intl.NumberFormat(locale, {
+    style: "unit",
+    unit: units[unit],
+    unitDisplay: "short",
+    maximumFractionDigits: unit === 2 ? 1 : 0,
+  }).format(value);
 }

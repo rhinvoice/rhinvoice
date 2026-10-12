@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_FILES,
   fieldLabelKey,
+  invoiceFiles,
+  sizeText,
+  uploadName,
+  uploadProblem,
   fieldOfColumn,
   filterRows,
   importableCount,
@@ -22,6 +28,9 @@ function row(overrides: Partial<ImportRow>): ImportRow {
     name: "Muster AG",
     detail: "3000 Bern",
     problem: null,
+    file: null,
+    attachments: 0,
+    new_customer: false,
     ...overrides,
   };
 }
@@ -116,5 +125,58 @@ describe("labels", () => {
   it("name known problems", () => {
     expect(problemKey("required")).toBe("import.problem.required");
     expect(problemKey("validation_error")).toBeNull();
+  });
+});
+
+describe("invoice files", () => {
+  const file = (path: string, size = 1) => {
+    const name = path.split("/").at(-1) ?? path;
+    return { name, webkitRelativePath: path.includes("/") ? path : "", size };
+  };
+
+  it("sends a file with its folders", () => {
+    expect(uploadName(file("IN/2016 CH/Rechnung R1.pdf"))).toBe("IN/2016 CH/Rechnung R1.pdf");
+    expect(uploadName(file("Rechnung R1.pdf"))).toBe("Rechnung R1.pdf");
+  });
+
+  it("takes PDF and ZIP files only", () => {
+    const chosen = [
+      file("IN/2016/R1.pdf"),
+      file("IN/2016/R2.PDF"),
+      file("Archiv.zip"),
+      file("IN/2026/zeit/zeit-05-26.png"),
+      file("IN/.DS_Store"),
+      file("IN/.hidden/R3.pdf"),
+      file("__MACOSX/IN/._R4.pdf"),
+      file("IN/Liste.xlsx"),
+    ];
+    expect(invoiceFiles(chosen).map(uploadName)).toEqual([
+      "IN/2016/R1.pdf",
+      "IN/2016/R2.PDF",
+      "Archiv.zip",
+    ]);
+  });
+
+  it("names what the server would refuse", () => {
+    expect(uploadProblem([file("a.pdf", 10)])).toBeNull();
+    expect(uploadProblem(Array.from({ length: MAX_UPLOAD_FILES + 1 }, () => file("a.pdf")))).toBe(
+      "tooMany",
+    );
+    expect(uploadProblem([file("a.pdf", MAX_UPLOAD_BYTES), file("b.pdf", 1)])).toBe("tooLarge");
+  });
+
+  it("writes sizes for people", () => {
+    expect(sizeText(512, "de-CH")).toBe("512 Byte");
+    expect(sizeText(2048, "de-CH")).toBe("2 kB");
+    expect(sizeText(9_227_468, "de-CH")).toBe("8.8 MB");
+    expect(sizeText(9_227_468, "de-DE")).toBe("8,8 MB");
+    expect(sizeText(9_227_468, "en")).toBe("8.8 MB");
+  });
+
+  it("names the fields and problems of invoices", () => {
+    expect(fieldLabelKey("total")).toBe("import.field.total_amount");
+    expect(fieldLabelKey("net")).toBe("import.field.net_amount");
+    expect(fieldLabelKey("customer_name")).toBe("import.field.customer_name");
+    expect(problemKey("non_positive_total")).toBe("import.problem.non_positive_total");
   });
 });

@@ -320,6 +320,14 @@ const customerImportRoute = createRoute({
   },
 });
 
+const invoiceImportRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/invoices/import",
+  component: function InvoiceImportRoute() {
+    return <ImportPage target="invoices" />;
+  },
+});
+
 const articleImportRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/articles/import",
@@ -419,6 +427,7 @@ const routeTree = rootRoute.addChildren([
     dashboardRoute,
     invoicesRoute,
     newInvoiceRoute,
+    invoiceImportRoute,
     quotesRoute,
     newQuoteRoute,
     documentRoute,

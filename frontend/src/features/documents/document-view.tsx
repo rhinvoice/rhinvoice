@@ -90,7 +90,12 @@ export function DocumentView({ document, taxName, onRemovePayment }: DocumentVie
               {document.reference === "" ? null : (
                 <Meta label={t("documents.reference")} value={document.reference} />
               )}
-              <Meta label={t("documents.treatment")} value={t(`treatment.${document.treatment}`)} />
+              {document.imported ? null : (
+                <Meta
+                  label={t("documents.treatment")}
+                  value={t(`treatment.${document.treatment}`)}
+                />
+              )}
             </dl>
           </div>
           {document.subject === "" ? null : <p className="font-medium">{document.subject}</p>}
@@ -99,73 +104,77 @@ export function DocumentView({ document, taxName, onRemovePayment }: DocumentVie
           )}
         </Card>
 
-        <Card aria-labelledby="document-lines">
-          <CardHeader>
-            <CardTitle id="document-lines">{t("documents.sectionLines")}</CardTitle>
-          </CardHeader>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("documents.lineDescription")}</TableHead>
-                <TableHead className="text-right">{t("documents.lineQuantity")}</TableHead>
-                <TableHead className="hidden text-right md:table-cell">
-                  {t("documents.linePrice")}
-                </TableHead>
-                <TableHead className="hidden text-right lg:table-cell">
-                  {t("documents.lineTaxRate", { tax: taxName })}
-                </TableHead>
-                <TableHead className="text-right">{t("documents.lineAmount")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {document.lines.map((line) =>
-                line.kind === "text" ? (
-                  <TableRow key={line.id}>
-                    <TableCell colSpan={5} className="whitespace-pre-line">
-                      <span className="font-medium">{line.description}</span>
-                      {line.details === "" ? null : (
-                        <span className="block text-muted-foreground">{line.details}</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  <TableRow key={line.id}>
-                    <TableCell className="whitespace-pre-line">
-                      <span className="font-medium">{line.description}</span>
-                      {line.details === "" ? null : (
-                        <span className="block text-muted-foreground">{line.details}</span>
-                      )}
-                      {Number(line.discount_percent) === 0 ? null : (
-                        <span className="block text-xs text-muted-foreground">
-                          {t("documents.lineDiscountApplied", {
-                            percent: formatPercent(line.discount_percent, locale),
-                          })}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatNumber(line.quantity, locale, 4)} {line.unit ?? ""}
-                    </TableCell>
-                    <TableCell className="hidden text-right tabular-nums md:table-cell">
-                      {money(line.unit_price, 4)}
-                    </TableCell>
-                    <TableCell className="hidden text-right tabular-nums lg:table-cell">
-                      {line.tax_rate === null
-                        ? t("common.none")
-                        : formatPercent(line.tax_rate, locale)}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {line.amount === null ? t("common.none") : money(line.amount)}
-                    </TableCell>
-                  </TableRow>
-                ),
-              )}
-            </TableBody>
-          </Table>
-          {document.closing_text === "" ? null : (
-            <p className="text-sm whitespace-pre-line">{document.closing_text}</p>
-          )}
-        </Card>
+        {document.imported ? (
+          <p className="text-sm text-muted-foreground">{t("documents.importedHint")}</p>
+        ) : (
+          <Card aria-labelledby="document-lines">
+            <CardHeader>
+              <CardTitle id="document-lines">{t("documents.sectionLines")}</CardTitle>
+            </CardHeader>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("documents.lineDescription")}</TableHead>
+                  <TableHead className="text-right">{t("documents.lineQuantity")}</TableHead>
+                  <TableHead className="hidden text-right md:table-cell">
+                    {t("documents.linePrice")}
+                  </TableHead>
+                  <TableHead className="hidden text-right lg:table-cell">
+                    {t("documents.lineTaxRate", { tax: taxName })}
+                  </TableHead>
+                  <TableHead className="text-right">{t("documents.lineAmount")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {document.lines.map((line) =>
+                  line.kind === "text" ? (
+                    <TableRow key={line.id}>
+                      <TableCell colSpan={5} className="whitespace-pre-line">
+                        <span className="font-medium">{line.description}</span>
+                        {line.details === "" ? null : (
+                          <span className="block text-muted-foreground">{line.details}</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <TableRow key={line.id}>
+                      <TableCell className="whitespace-pre-line">
+                        <span className="font-medium">{line.description}</span>
+                        {line.details === "" ? null : (
+                          <span className="block text-muted-foreground">{line.details}</span>
+                        )}
+                        {Number(line.discount_percent) === 0 ? null : (
+                          <span className="block text-xs text-muted-foreground">
+                            {t("documents.lineDiscountApplied", {
+                              percent: formatPercent(line.discount_percent, locale),
+                            })}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatNumber(line.quantity, locale, 4)} {line.unit ?? ""}
+                      </TableCell>
+                      <TableCell className="hidden text-right tabular-nums md:table-cell">
+                        {money(line.unit_price, 4)}
+                      </TableCell>
+                      <TableCell className="hidden text-right tabular-nums lg:table-cell">
+                        {line.tax_rate === null
+                          ? t("common.none")
+                          : formatPercent(line.tax_rate, locale)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {line.amount === null ? t("common.none") : money(line.amount)}
+                      </TableCell>
+                    </TableRow>
+                  ),
+                )}
+              </TableBody>
+            </Table>
+            {document.closing_text === "" ? null : (
+              <p className="text-sm whitespace-pre-line">{document.closing_text}</p>
+            )}
+          </Card>
+        )}
       </div>
 
       <aside className="flex flex-col gap-6 xl:sticky xl:top-20 xl:self-start">
@@ -202,6 +211,12 @@ export function DocumentView({ document, taxName, onRemovePayment }: DocumentVie
                       {formatDate(payment.paid_on, locale)}
                       {payment.note === "" ? "" : ` · ${payment.note}`}
                     </span>
+                    {/* Taken over with the invoice: the old program did not tell the day. */}
+                    {document.imported && payment.recorded_at === document.created_at ? (
+                      <span className="text-xs text-muted-foreground">
+                        {t("documents.paidOnUnknown")}
+                      </span>
+                    ) : null}
                   </div>
                   {onRemovePayment === undefined ? null : (
                     <Button
@@ -224,7 +239,7 @@ export function DocumentView({ document, taxName, onRemovePayment }: DocumentVie
           </Card>
         )}
 
-        {document.type !== "quote" && document.status !== "draft" ? (
+        {document.type !== "quote" && document.status !== "draft" && !document.imported ? (
           <EInvoiceCard documentId={document.id} />
         ) : null}
 

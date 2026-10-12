@@ -1,11 +1,12 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api, CLIENT_HEADER, unwrap } from "@/api/client";
-import type {
-  ImportRun,
-  ImportTarget,
-  ImportTemplate,
-  Mapping,
+import {
+  uploadName,
+  type ImportRun,
+  type ImportTarget,
+  type ImportTemplate,
+  type Mapping,
 } from "@/features/importing/import-model";
 import { toApiError } from "@/lib/api-error";
 
@@ -16,6 +17,8 @@ export interface ImportOptions {
   readonly duplicates: DuplicateStrategy;
   /** null: suggested from the column names. */
   readonly mapping: Mapping | null;
+  /** Invoices: their PDF (and ZIP) files. */
+  readonly files?: readonly File[];
 }
 
 /** Test run (commit false) or import; multipart, so not through the generated client. */
@@ -23,12 +26,17 @@ export async function runImport(
   target: ImportTarget,
   options: ImportOptions,
   commit: boolean,
+  signal?: AbortSignal,
 ): Promise<ImportRun> {
   const body = new FormData();
   body.append("file", options.file);
   body.append("duplicates", options.duplicates);
   if (options.mapping !== null) {
     body.append("mapping", JSON.stringify(options.mapping));
+  }
+  for (const file of options.files ?? []) {
+    // The folders tell copies apart ("2023/pdf/R1.pdf" next to "2023/R1.pdf").
+    body.append("files", file, uploadName(file));
   }
   let response: Response;
   try {
@@ -37,6 +45,8 @@ export async function runImport(
       body,
       credentials: "same-origin",
       headers: { [CLIENT_HEADER]: "web" },
+      // A newer test run replaces this one: its upload stops.
+      ...(signal === undefined ? {} : { signal }),
     });
   } catch {
     throw toApiError(0, undefined);

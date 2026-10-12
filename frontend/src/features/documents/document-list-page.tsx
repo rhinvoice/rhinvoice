@@ -8,6 +8,7 @@ import {
   ReceiptIcon,
   RepeatIcon,
   SearchIcon,
+  UploadIcon,
   XIcon,
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
@@ -183,6 +184,12 @@ export function DocumentListPage({ kind, search, onSearchChange }: DocumentListP
                 <Link to="/recurring">
                   <RepeatIcon aria-hidden="true" />
                   {t("recurring.short")}
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/invoices/import">
+                  <UploadIcon aria-hidden="true" />
+                  {t("import.open")}
                 </Link>
               </Button>
               {newButton}
@@ -543,6 +550,11 @@ function DocumentTable({
                 {item.type === "cancellation" ? (
                   <span className="block text-xs text-muted-foreground">
                     {t("documentType.cancellation")}
+                  </span>
+                ) : null}
+                {item.imported ? (
+                  <span className="block text-xs text-muted-foreground">
+                    {t("documents.imported")}
                   </span>
                 ) : null}
                 {/* Phones show one compact cell instead of the customer and status columns. */}

@@ -563,6 +563,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/documents/{document_id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Attachments
+         * @description Further files of an imported invoice: reminders, corrected copies, versions.
+         */
+        get: operations["documents_list_attachments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{document_id}/attachments/{attachment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Attachment File
+         * @description Return an attachment, shown in the browser or (``download``) saved as a file.
+         */
+        get: operations["documents_attachment_file"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/documents/{document_id}/cancel": {
         parameters: {
             query?: never;
@@ -651,6 +691,28 @@ export interface paths {
         get: operations["e-invoices_e_invoice_status"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{document_id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add File
+         * @description Add a PDF to an imported invoice: its original if it has none, else an attachment.
+         *
+         *     Neither can be replaced or removed afterwards.
+         */
+        post: operations["documents_add_file"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1650,6 +1712,25 @@ export interface components {
          * @enum {string}
          */
         ArticleSort: "number" | "name" | "group" | "created_at";
+        /** AttachmentResponse */
+        AttachmentResponse: {
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** File Name */
+            file_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Sha256 */
+            sha256: string;
+            /** Size */
+            size: number;
+        };
         /**
          * BackupReason
          * @enum {string}
@@ -1739,6 +1820,14 @@ export interface components {
              */
             file: string;
         };
+        /** Body_documents_add_file */
+        Body_documents_add_file: {
+            /**
+             * File
+             * @description A PDF, at most 20 MB
+             */
+            file: string;
+        };
         /** Body_imports_preview_import */
         Body_imports_preview_import: {
             /** @default skip */
@@ -1748,6 +1837,12 @@ export interface components {
              * @description CSV (UTF-8 or Windows-1252), XLSX or XLS, at most 5 MB
              */
             file: string;
+            /**
+             * Files
+             * @description Invoices: their PDF files, one by one or as ZIP files; the invoice number in the file name tells the invoice. At most 200 MB together.
+             * @default []
+             */
+            files: string[];
             /**
              * Mapping
              * @description JSON object field -> column index (0-based), e.g. {"number": 0, "city": 3}; empty: suggested from the column names
@@ -1763,6 +1858,12 @@ export interface components {
              * @description CSV (UTF-8 or Windows-1252), XLSX or XLS, at most 5 MB
              */
             file: string;
+            /**
+             * Files
+             * @description Invoices: their PDF files, one by one or as ZIP files; the invoice number in the file name tells the invoice. At most 200 MB together.
+             * @default []
+             */
+            files: string[];
             /**
              * Mapping
              * @description JSON object field -> column index (0-based), e.g. {"number": 0, "city": 3}; empty: suggested from the column names
@@ -2297,11 +2398,15 @@ export interface components {
             /** Events */
             events: components["schemas"]["EventResponse"][];
             goods_treatment: components["schemas"]["TaxTreatment"] | null;
+            /** Has Pdf */
+            has_pdf: boolean;
             /**
              * Id
              * Format: uuid
              */
             id: string;
+            /** Imported */
+            imported: boolean;
             /** Intro Text */
             intro_text: string;
             /** Issue Date */
@@ -2494,7 +2599,7 @@ export interface components {
          * EventKind
          * @enum {string}
          */
-        EventKind: "created" | "created_from" | "issued" | "sent" | "accepted" | "declined" | "converted" | "payment_added" | "payment_removed" | "cancelled" | "tax_overridden" | "reminded" | "emailed" | "reminder_emailed";
+        EventKind: "created" | "created_from" | "issued" | "sent" | "accepted" | "declined" | "converted" | "payment_added" | "payment_removed" | "cancelled" | "tax_overridden" | "reminded" | "emailed" | "reminder_emailed" | "imported" | "file_added";
         /** EventResponse */
         EventResponse: {
             /**
@@ -2563,10 +2668,16 @@ export interface components {
         };
         /** ImportRowResponse */
         ImportRowResponse: {
+            /** Attachments */
+            attachments: number;
             /** Detail */
             detail: string;
+            /** File */
+            file: string | null;
             /** Name */
             name: string;
+            /** New Customer */
+            new_customer: boolean;
             /** Number */
             number: string;
             problem: components["schemas"]["RowProblemResponse"] | null;
@@ -2595,17 +2706,21 @@ export interface components {
             };
             /** Missing */
             missing: string[][];
+            /** Next Number */
+            next_number: string | null;
             /** Rows */
             rows: components["schemas"]["ImportRowResponse"][];
             /** Sample */
             sample: string[][];
             target: components["schemas"]["ImportTarget"];
+            /** Unused Files */
+            unused_files: string[];
         };
         /**
          * ImportTarget
          * @enum {string}
          */
-        ImportTarget: "customers" | "articles";
+        ImportTarget: "customers" | "articles" | "invoices";
         /**
          * Interval
          * @enum {string}
@@ -3373,6 +3488,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Imported */
+            imported: boolean;
             /** Issue Date */
             issue_date: string | null;
             /** Number */
@@ -6966,6 +7083,161 @@ export interface operations {
             };
         };
     };
+    documents_list_attachments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentResponse"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    documents_attachment_file: {
+        parameters: {
+            query?: {
+                download?: boolean;
+            };
+            header?: never;
+            path: {
+                document_id: string;
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file as it was added */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     documents_cancel_invoice: {
         parameters: {
             query?: never;
@@ -7288,6 +7560,86 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EInvoiceStatusResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    documents_add_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_documents_add_file"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentResponse"];
                 };
             };
             /** @description Bad Request */

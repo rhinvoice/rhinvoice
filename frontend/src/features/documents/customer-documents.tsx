@@ -71,6 +71,9 @@ export function CustomerDocuments({ customerId }: { readonly customerId: string 
                 >
                   {t(`documentType.${item.type}`)} {item.number ?? ""}
                 </Link>
+                {item.imported ? (
+                  <span className="text-xs text-muted-foreground">{t("documents.imported")}</span>
+                ) : null}
                 <span className="truncate text-xs text-muted-foreground">
                   {item.issue_date === null ? item.subject : formatDate(item.issue_date, locale)}
                 </span>

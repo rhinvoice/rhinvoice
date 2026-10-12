@@ -43,6 +43,7 @@ mkdir rhinvoice && cd rhinvoice
 curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/deploy/compose.yml
 curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/.env.example -o .env
 # in .env, set POSTGRES_PASSWORD to a long random value
+docker compose pull
 docker compose up -d
 ```
 

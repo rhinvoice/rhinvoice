@@ -29,9 +29,13 @@ Edit `.env`:
 ## 3. Start
 
 ```bash
+docker compose pull      # fetch the images of the version in .env
 docker compose up -d
 docker compose ps        # "healthy" after a few seconds
 ```
+
+`docker compose pull` matters when an older image of the same name is already on the computer
+(e.g. from an earlier test): `up` alone would start that one instead of downloading.
 
 Open <http://rhinvoice.localhost:8000> (or <http://127.0.0.1:8000>). Every name ending in
 `.localhost` points to your own computer, so this needs no entry in `/etc/hosts`; browsers treat it

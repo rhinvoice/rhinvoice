@@ -84,6 +84,7 @@ mkdir rhinvoice && cd rhinvoice
 curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.4.1/deploy/compose.yml
 curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.4.1/.env.example -o .env
 # edit .env: POSTGRES_PASSWORD and RHINVOICE_VERSION=0.4.1
+docker compose pull
 docker compose up -d
 ```
 

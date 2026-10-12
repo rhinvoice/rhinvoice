@@ -281,6 +281,7 @@ curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/deploy/co
 curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/.env.example -o .env
 
 <span class="c"># in .env POSTGRES_PASSWORD auf einen langen Zufallswert setzen, dann starten</span>
+docker compose pull
 docker compose up -d
 
 <span class="c"># http://rhinvoice.localhost:8000 öffnen, beim ersten Besuch den ersten Benutzer anlegen</span>

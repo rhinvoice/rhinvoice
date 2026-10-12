@@ -52,9 +52,9 @@ Then open http://rhinvoice.localhost:8000; the first visit sets up the first use
 
 Public demos, reset every hour, one per country:
 
-- Switzerland: https://ch.demo.rhinvoice.com
-- Germany: https://de.demo.rhinvoice.com
-- Austria: https://at.demo.rhinvoice.com
+- Switzerland: https://ch.rhinvoice.com
+- Germany: https://de.rhinvoice.com
+- Austria: https://at.rhinvoice.com
 
 ## Pages
 

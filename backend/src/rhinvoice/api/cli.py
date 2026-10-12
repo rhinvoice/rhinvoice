@@ -68,7 +68,7 @@ def _demo(args: argparse.Namespace, settings: Settings) -> int:
     sys.stdout.write(
         f"demo data: {result.customers} customers, {result.articles} articles, "
         f"{result.bank_accounts} bank accounts, {result.invoices} invoices, "
-        f"{result.quotes} quotes\n"
+        f"{result.quotes} quotes, {result.imported} old invoices taken over\n"
     )
     return 0
 

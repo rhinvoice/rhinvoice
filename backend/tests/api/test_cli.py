@@ -228,7 +228,8 @@ def test_demo_data(env: Engine, capsys: pytest.CaptureFixture[str]) -> None:
         uow.commit()
     assert cli.main(["demo", "--without-documents"]) == 0
     assert capsys.readouterr().out == (
-        "demo data: 9 customers, 8 articles, 2 bank accounts, 0 invoices, 0 quotes\n"
+        "demo data: 9 customers, 8 articles, 2 bank accounts, 0 invoices, 0 quotes, "
+        "0 old invoices taken over\n"
     )
     # Never into an installation that has data.
     assert cli.main(["demo"]) == 1

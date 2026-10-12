@@ -19,10 +19,14 @@ from rhinvoice.application.common import AddressInput, PageRequest
 from rhinvoice.application.company.handlers import SaveBankAccount, SaveCompany
 from rhinvoice.application.customer.handlers import SaveCustomer
 from rhinvoice.application.customer.ports import CustomerQuery
+from rhinvoice.application.demo.old_invoices import old_invoices
 from rhinvoice.application.document.handlers import DraftInput, LineInput, PaymentInput
 from rhinvoice.application.document.ports import DocumentQuery
 from rhinvoice.application.errors import ConflictError
 from rhinvoice.application.identity.handlers import CreateUser
+from rhinvoice.application.importing.fields import ImportTarget
+from rhinvoice.application.importing.handlers import ImportRequest
+from rhinvoice.application.importing.results import RowStatus
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.customer.customer import Customer, CustomerKind
 from rhinvoice.domain.document.document import DocumentType
@@ -42,6 +46,7 @@ if TYPE_CHECKING:
     from rhinvoice.application.customer.handlers import CustomerHandlers
     from rhinvoice.application.document.handlers import DocumentHandlers
     from rhinvoice.application.identity.handlers import IdentityHandlers
+    from rhinvoice.application.importing.handlers import ImportHandlers
     from rhinvoice.application.uow import UnitOfWorkFactory
     from rhinvoice.domain.catalog.article import Article
     from rhinvoice.domain.company.company import Company
@@ -291,6 +296,8 @@ class DemoResult:
     bank_accounts: int
     invoices: int
     quotes: int
+    imported: int = 0
+    """Invoices of a program used before, taken over with their PDF."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -302,6 +309,7 @@ class DemoHandlers:
     customers: CustomerHandlers
     articles: ArticleHandlers
     documents: DocumentHandlers
+    imports: ImportHandlers
 
     def install(self, country: Country) -> DemoResult:
         """Set up an empty installation as a public demo of ``country``.
@@ -337,7 +345,16 @@ class DemoHandlers:
         currency = company.default_currency
         invoices = self._invoices(customers, articles, currency)
         quotes = self._quotes(customers, articles, currency)
-        return DemoResult(len(customers), len(articles), accounts, invoices, quotes)
+        imported = self._old_invoices(company, customers)
+        return DemoResult(len(customers), len(articles), accounts, invoices, quotes, imported)
+
+    def _old_invoices(self, company: Company, customers: list[Customer]) -> int:
+        """Take over a few invoices of the program the demo company used before."""
+        content, files = old_invoices(company, customers, self.clock.today())
+        run = self.imports.run(
+            ImportRequest(ImportTarget.INVOICES, content, files=files, commit=True)
+        )
+        return run.count(RowStatus.NEW)
 
     def _require_invoice_details(self, company: Company) -> None:
         """Refuse before writing when the company lacks what its invoices must state."""

@@ -1,11 +1,13 @@
 """Demo data for a test installation."""
 
+import io
 from collections import Counter
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from itertools import pairwise
 
 import pytest
+from pypdf import PdfReader
 
 from rhinvoice.application.catalog.handlers import ArticleHandlers
 from rhinvoice.application.company.handlers import CompanyHandlers
@@ -27,6 +29,7 @@ from rhinvoice.application.document.dashboard import DashboardHandlers
 from rhinvoice.application.document.handlers import DocumentHandlers, DraftInput
 from rhinvoice.application.errors import ConflictError
 from rhinvoice.application.identity.handlers import IdentityHandlers, Login
+from rhinvoice.application.importing.handlers import ImportHandlers
 from rhinvoice.domain.company.company import Company
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.document.document import (
@@ -40,6 +43,7 @@ from rhinvoice.domain.shared.country import Country, CountryCode
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.tax.vat_number import VatNumber
+from rhinvoice.infrastructure.importing.reader import SpreadsheetReader
 from tests.helpers import raises_exactly
 from tests.unit.application.conftest import NOW
 from tests.unit.application.fakes import (
@@ -68,6 +72,7 @@ def demo(store: Store, clock: FixedClock) -> DemoHandlers:
         customers=CustomerHandlers(uow=uow, clock=clock),
         articles=ArticleHandlers(uow=uow, clock=clock),
         documents=DocumentHandlers(uow=uow, clock=clock),
+        imports=ImportHandlers(uow=uow, clock=clock, reader=SpreadsheetReader()),
     )
 
 
@@ -92,7 +97,45 @@ def austrian(**overrides: object) -> Company:
 
 
 def documents_of(store: Store) -> list[Document]:
-    return [stored.document for stored in store.documents.values()]
+    """Collect the documents the demo wrote, not the old invoices it took over."""
+    return [
+        stored.document for stored in store.documents.values() if not stored.document.is_imported
+    ]
+
+
+def test_the_demo_takes_over_invoices_of_the_program_used_before(
+    demo: DemoHandlers, store: Store
+) -> None:
+    store.company = factories.company(name="Pixelwerk GmbH")
+    result = demo.seed()
+    assert result.imported == 3
+    imported = sorted(
+        (stored.document for stored in store.documents.values() if stored.document.is_imported),
+        key=lambda document: document.number or "",
+    )
+    assert [document.number for document in imported] == [
+        "RE-2023-117",
+        "RE-2023-142",
+        "RE-2023-163",
+    ]
+    assert all(document.status is DocumentStatus.PAID for document in imported)
+    assert all(store.pdfs[document.id].startswith(b"%PDF-1.4") for document in imported)
+    assert b"(MWST 7.7 %: CHF 184.80) Tj" in store.pdfs[imported[0].id]
+    totals = imported[0].issued_totals
+    assert totals is not None
+    assert str(totals.total.amount) == "2584.80"
+    [(attachment, _)] = store.attachments.values()
+    assert attachment.file_name == "Rechnungen 2023/Zahlungserinnerung RE-2023-117.pdf"
+    # A plain one-page PDF that tools can read, its text as written.
+    text = PdfReader(io.BytesIO(store.pdfs[imported[0].id])).pages[0].extract_text()
+    assert "Rechnung RE-2023-117" in text
+    assert "Total CHF 2584.80" in text
+    assert (
+        "(geschlossen)" in PdfReader(io.BytesIO(store.pdfs[imported[1].id])).pages[0].extract_text()
+    )
+    former = next(c for c in store.customers.values() if c.company_name.startswith("Pension"))
+    assert former.archived
+    assert former.address.city == store.company.address.city
 
 
 def test_a_swiss_installation_gets_invoices_since_january_of_last_year(

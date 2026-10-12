@@ -143,8 +143,9 @@ local volume go with them; a folder set as `BACKUP_LOCAL_DIR`, S3, SFTP and clou
 touched – delete those yourself when you no longer need them. `--rmi all` removes the images of Rhinvoice, its backup, PostgreSQL
 and Gotenberg; Docker keeps an image that another project still uses and says so – that is fine.
 
-For an installation with a project name of its own (see below), add it: `docker compose -p
-rhinvoice-try down --volumes --rmi all`.
+For an installation with a name of its own (see below), run the command in its folder when the
+name is in its `.env` (`COMPOSE_PROJECT_NAME`), else add it: `docker compose -p rhinvoice-try down
+--volumes --rmi all`. The checks below then look for that name instead of `rhinvoice`.
 
 Check that nothing is left:
 
@@ -187,8 +188,8 @@ docker compose -p rhinvoice-try logs -f app
 docker compose -p rhinvoice-try down -v      # remove it again, with its data
 ```
 
-Easier: write the name and the port into that folder's `.env` once; then the plain commands work
-there:
+Easier: write the name and the port into that folder's `.env` once (the `.env.example` has the
+line `COMPOSE_PROJECT_NAME=rhinvoice` for this); then the plain commands work there:
 
 ```
 COMPOSE_PROJECT_NAME=rhinvoice-try

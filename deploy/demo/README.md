@@ -33,7 +33,7 @@ A small VPS is enough, for example Hetzner CX22 (2 vCPU, 4 GB RAM) with Debian o
 Docker. Keep the demo off servers that hold real data: anyone on the internet can use it.
 
 1. **DNS:** point `ch.<domain>`, `de.<domain>` and `at.<domain>` (A and AAAA records) at the
-   server, e.g. `ch.demo.rhinvoice.com`.
+   server, e.g. `ch.rhinvoice.com` with `DEMO_DOMAIN=rhinvoice.com`.
 2. **Firewall:** open only 22 (SSH), 80 and 443.
 3. **Docker:** install Docker Engine with the compose plugin
    (<https://docs.docker.com/engine/install/>).

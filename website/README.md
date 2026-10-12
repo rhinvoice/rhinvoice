@@ -23,11 +23,14 @@ publishes the site (`.github/workflows/pages.yml`).
 
 ## Images
 
-The screenshots come from the public demo (`deploy/demo`) and live in `docs/screenshots`, where
-the README uses them too. After changing them, or the logo, render the site's images again:
+The screenshots come from the public demo and live in `docs/screenshots`, where the README uses
+them too. Take them again from the demo (shortly after a full hour, when it was reset), then
+render the site's images (AVIF/WebP copies, social previews, app icons from the logo):
 
 ```bash
-cd frontend && node ../website/tools/make-images.mjs   # needs cwebp and avifenc
+cd frontend
+node ../website/tools/take-screenshots.mjs   # from https://ch.rhinvoice.com and de.
+node ../website/tools/make-images.mjs        # needs cwebp and avifenc
 ```
 
 ## What the pages carry, and why

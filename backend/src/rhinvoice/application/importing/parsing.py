@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -187,10 +188,10 @@ _UNIT_NAMES = (
             "C62": ("Stück", "Stk", "St", "pc", "piece", "pieces", "Anzahl", "x"),
             "HUR": ("Stunde", "Stunden", "Std", "h", "hour", "hours"),
             "MIN": ("Minute", "Minuten", "minutes"),
-            "DAY": ("Tage", "days", "Tg"),
-            "WEE": ("Wochen", "weeks", "Wo"),
-            "MON": ("Monate", "months", "Mt", "Mon"),
-            "ANN": ("Jahre", "years", "J"),
+            "DAY": ("Tage", "days", "Tg", "täglich", "pro Tag", "daily"),
+            "WEE": ("Wochen", "weeks", "Wo", "wöchentlich", "pro Woche", "weekly"),
+            "MON": ("Monate", "months", "Mt", "Mon", "monatlich", "pro Monat", "monthly"),
+            "ANN": ("Jahre", "years", "J", "jährlich", "pro Jahr", "yearly", "annually"),
             "LS": ("Psch", "pauschal", "pausch", "flat"),
             "LTR": ("Liter", "litre", "liter"),
             "MTR": ("Meter", "metre", "meter", "lfm"),
@@ -227,7 +228,7 @@ _TAX_CATEGORIES = {
 
 
 def _rate_categories(rate_sets: Sequence[TaxRateSet]) -> dict[Decimal, TaxCategory]:
-    """Map every rate the country has had to its category (7.7 % is the former Swiss one).
+    """Map every rate the country has had to its category (7.7 % and 8 % are former Swiss ones).
 
     A rate written in a file only says which category the article belongs to.
     """
@@ -318,6 +319,30 @@ def parse_currency(text: str) -> Currency | None:
 
 _YES = frozenset({"1", "ja", "j", "yes", "y", "true", "wahr", "x"})
 _NO = frozenset({"", "0", "nein", "n", "no", "false", "falsch"})
+
+
+_DATES = (
+    # 14.03.2019, 14.3.19, 14/03/2019, 2019-03-14, each optionally with a time
+    re.compile(r"(?P<d>\d{1,2})[./](?P<m>\d{1,2})[./](?P<y>\d{4}|\d{2})"),
+    re.compile(r"(?P<y>\d{4})-(?P<m>\d{1,2})-(?P<d>\d{1,2})"),
+)
+_TWO_DIGIT_CENTURY = 2000
+
+
+def parse_date(text: str, field: str) -> date:
+    """Read a date as old programs and spreadsheets write it; a time after it is ignored."""
+    value = text.strip()
+    for pattern in _DATES:
+        match = pattern.match(value)
+        if match and (len(value) == match.end() or value[match.end()] in " T"):
+            year = int(match["y"])
+            if year < 100:  # noqa: PLR2004 - two-digit years
+                year += _TWO_DIGIT_CENTURY
+            try:
+                return date(year, int(match["m"]), int(match["d"]))
+            except ValueError:
+                break
+    raise ValidationError(field, f"'{text}' is not a date", code="invalid_date")
 
 
 def parse_flag(text: str, field: str) -> bool:

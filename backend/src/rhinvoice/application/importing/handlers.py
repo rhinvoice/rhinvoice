@@ -39,6 +39,7 @@ from rhinvoice.application.importing.parsing import (
     parse_amount,
     parse_country,
     parse_currency,
+    parse_date,
     parse_flag,
     parse_language,
     parse_supply,
@@ -496,6 +497,11 @@ class _CustomerRows:
                 parse_flag(cells["tax_exempt"], "tax_exempt")
                 if "tax_exempt" in cells
                 else base.tax_exempt
+            ),
+            customer_since=(
+                parse_date(cells["customer_since"], "customer_since")
+                if "customer_since" in cells
+                else base.customer_since
             ),
         )
 

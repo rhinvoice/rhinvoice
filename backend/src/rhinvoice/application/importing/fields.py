@@ -162,6 +162,26 @@ CUSTOMER_FIELDS: tuple[ImportField, ...] = (
             "Remarks",
         ),
     ),
+    ImportField(
+        "customer_since",
+        (
+            "Kunde seit",
+            "Kunden seit",
+            "Angelegt",
+            "Angelegt am",
+            "Erstellt",
+            "Erstellt am",
+            "Erfasst",
+            "Erfasst am",
+            "Anlagedatum",
+            "Erstelldatum",
+            "Eintrittsdatum",
+            "Customer since",
+            "Created",
+            "Created at",
+            "Since",
+        ),
+    ),
 )
 
 ARTICLE_FIELDS: tuple[ImportField, ...] = (

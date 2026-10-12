@@ -27,6 +27,7 @@ import {
 import { FormAlert } from "@/features/shared/form-alert";
 import { showUndoToast } from "@/features/shared/undo";
 import { useErrorMessage } from "@/features/shared/use-error-message";
+import { formatDate } from "@/lib/format";
 
 function BackLink() {
   const { t } = useI18n();
@@ -128,7 +129,10 @@ function CustomerEditor({
       <BackLink />
       <PageHeader
         title={customer.display_name}
-        description={`${t("customers.numberLabel")} ${customer.number}`}
+        description={t("customers.numberAndSince", {
+          number: customer.number,
+          since: formatDate(customer.created_at.slice(0, 10), locale),
+        })}
         actions={
           customer.archived ? (
             <Button

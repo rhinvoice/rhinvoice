@@ -1,5 +1,7 @@
 """Cell texts of imported files become values; what cannot be read is reported by field."""
 
+from datetime import date
+
 import pytest
 
 from rhinvoice.application.importing.fields import ImportTarget, suggest_mapping
@@ -8,6 +10,7 @@ from rhinvoice.application.importing.parsing import (
     parse_amount,
     parse_country,
     parse_currency,
+    parse_date,
     parse_flag,
     parse_language,
     parse_supply,
@@ -169,6 +172,9 @@ def test_whole_numbers() -> None:
         ("m²", "MTK"),
         ("Tag", "DAY"),
         ("Monat", "MON"),
+        ("monatlich", "MON"),
+        ("pro Monat", "MON"),
+        ("jährlich", "ANN"),
     ],
 )
 def test_units_are_read_from_codes_and_labels(text: str, expected: str) -> None:
@@ -189,6 +195,8 @@ def test_unknown_units_are_rejected() -> None:
         (Country.CH, "8.1", TaxCategory.STANDARD),
         (Country.CH, "8,1 %", TaxCategory.STANDARD),
         (Country.CH, "7.7", TaxCategory.STANDARD),
+        # The standard rate of 2011 to 2017.
+        (Country.CH, "8", TaxCategory.STANDARD),
         (Country.CH, "2.6", TaxCategory.REDUCED),
         (Country.CH, "2.5", TaxCategory.REDUCED),
         (Country.CH, "ermässigt", TaxCategory.REDUCED),
@@ -322,3 +330,26 @@ def test_article_columns_are_suggested() -> None:
         "price": 4,
         "tax_category": 5,
     }
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("14.03.2019", date(2019, 3, 14)),
+        ("4.3.2019", date(2019, 3, 4)),
+        ("14.03.19", date(2019, 3, 14)),
+        ("14/03/2019", date(2019, 3, 14)),
+        ("2019-03-14", date(2019, 3, 14)),
+        ("2019-03-14T10:22:00", date(2019, 3, 14)),
+        (" 14.03.2019 10:22 ", date(2019, 3, 14)),
+    ],
+)
+def test_dates_are_read_as_old_programs_write_them(text: str, expected: date) -> None:
+    assert parse_date(text, "customer_since") == expected
+
+
+@pytest.mark.parametrize("text", ["morgen", "31.02.2019", "2019-13-01", "14.03.2019x", "1403"])
+def test_what_is_no_date_is_reported(text: str) -> None:
+    with raises_exactly(ValidationError, f"'{text}' is not a date") as caught:
+        parse_date(text, "customer_since")
+    assert (caught.value.field, caught.value.code) == ("customer_since", "invalid_date")

@@ -2,6 +2,7 @@
 
 import csv
 import io
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
@@ -375,6 +376,39 @@ def test_the_company_must_be_set_up_first(store: Store, clock: FixedClock) -> No
     with raises_exactly(ConflictError, "set up the company before importing") as caught:
         handlers.run(customers_request())
     assert caught.value.code == "company_not_set_up"
+
+
+def test_the_customer_since_date_comes_along(handlers: ImportHandlers, store: Store) -> None:
+    content = lines("Nachname;PLZ Ort;Angelegt am", "Muster;3000 Bern;14.03.2019 10:22")
+    run = handlers.run(customers_request(content=content, commit=True))
+    assert run.mapping["customer_since"] == 2
+    [customer] = store.customers.values()
+    assert customer.created_at == datetime(2019, 3, 14, tzinfo=UTC)
+    # Imported again with an update: the date of an existing customer is set as well.
+    later = lines("Nachname;PLZ Ort;Angelegt am", "Muster;3000 Bern;01.02.2018")
+    handlers.run(customers_request(content=later, duplicates=DuplicateStrategy.UPDATE, commit=True))
+    [customer] = store.customers.values()
+    assert customer.created_at == datetime(2018, 2, 1, tzinfo=UTC)
+    # Without the column the date stays.
+    handlers.run(
+        customers_request(
+            content=lines("Nachname;PLZ Ort", "Muster;3000 Bern"),
+            duplicates=DuplicateStrategy.UPDATE,
+            commit=True,
+        )
+    )
+    assert next(iter(store.customers.values())).created_at == datetime(2018, 2, 1, tzinfo=UTC)
+
+
+def test_a_customer_since_date_in_the_future_is_refused(handlers: ImportHandlers) -> None:
+    content = lines("Nachname;PLZ Ort;Kunde seit", "Muster;3000 Bern;01.01.2099")
+    [outcome] = handlers.run(customers_request(content=content)).outcomes
+    assert outcome.status is RowStatus.ERROR
+    assert outcome.problem is not None
+    assert (outcome.problem.field, outcome.problem.message) == (
+        "customer_since",
+        "the date lies in the future",
+    )
 
 
 def test_the_demo_takes_small_imports_only(store: Store, clock: FixedClock) -> None:

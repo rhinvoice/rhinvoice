@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, date, datetime, time
 from typing import TYPE_CHECKING
 
 from rhinvoice.application.common import AddressInput, optional_email, optional_vat_number
@@ -10,12 +11,12 @@ from rhinvoice.application.errors import ConflictError, NotFoundError
 from rhinvoice.application.numbering.handlers import allocate_number
 from rhinvoice.domain.customer.customer import Customer, CustomerKind
 from rhinvoice.domain.numbering.sequence import SequenceKind
+from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.money import parse_decimal
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from datetime import date, datetime
     from uuid import UUID
 
     from rhinvoice.application.common import Page
@@ -50,6 +51,8 @@ class SaveCustomer:
     payment_terms_days: int | None = None
     delivery_address: AddressInput | None = None
     note: str = ""
+    customer_since: date | None = None
+    """When the customer relationship began, e.g. from the old program; kept otherwise."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,6 +118,15 @@ class CustomerHandlers:
         return customer
 
 
+def _created_at(command: SaveCustomer, *, now: datetime, existing: Customer | None) -> datetime:
+    since = command.customer_since
+    if since is None:
+        return now if existing is None else existing.created_at
+    if since > now.date():
+        raise ValidationError("customer_since", "the date lies in the future")
+    return datetime.combine(since, time(), tzinfo=UTC)
+
+
 def build_customer(
     customer_id: UUID,
     number: str,
@@ -129,7 +141,7 @@ def build_customer(
         number=number,
         kind=command.kind,
         address=command.address.to_domain(),
-        created_at=now if existing is None else existing.created_at,
+        created_at=_created_at(command, now=now, existing=existing),
         company_name=command.company_name,
         salutation=command.salutation,
         first_name=command.first_name,

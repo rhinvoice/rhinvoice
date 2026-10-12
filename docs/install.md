@@ -113,12 +113,56 @@ docker compose up -d
 Database migrations run automatically on start (`RHINVOICE_RUN_MIGRATIONS=true`). Read the
 [changelog](../CHANGELOG.md) before updating.
 
-## Stopping and removing
+## Stopping
 
 ```bash
 docker compose down          # stop; the data stays in the volume "rhinvoice_db-data"
-docker compose down -v       # stop and DELETE ALL DATA
+docker compose up -d         # start again, with all data
 ```
+
+## Uninstalling
+
+Removing Rhinvoice deletes all invoices, customers and settings for good. Issued invoices usually
+have to be kept for ten years (CH: OR 958f, DE: § 147 AO, AT: § 132 BAO), so keep their PDFs or a
+backup outside of Docker first:
+
+```bash
+docker compose exec backup rhinvoice-backup backup   # a last backup, if you set one up (backup.md)
+```
+
+Then, in the folder with `compose.yml` and `.env`:
+
+```bash
+docker compose down --volumes --rmi all    # containers, network, data volumes and images
+cd .. && rm -r rhinvoice                   # compose.yml and .env (holds the database password)
+```
+
+`--volumes` deletes the database (`rhinvoice_db-data`) and the backup volumes
+(`rhinvoice_backup-*`), including the stored Dropbox or Google Drive access. Backups in the default
+local volume go with them; a folder set as `BACKUP_LOCAL_DIR`, S3, SFTP and cloud targets are not
+touched – delete those yourself when you no longer need them. `--rmi all` removes the images of Rhinvoice, its backup, PostgreSQL
+and Gotenberg; Docker keeps an image that another project still uses and says so – that is fine.
+
+For an installation with a project name of its own (see below), add it: `docker compose -p
+rhinvoice-try down --volumes --rmi all`.
+
+Check that nothing is left:
+
+```bash
+docker ps -a --filter name=rhinvoice                   # containers: none
+docker volume ls --filter name=rhinvoice               # volumes: none
+docker image ls | grep -E "rhinvoice|gotenberg"        # images: none
+```
+
+If something is still listed, e.g. images of older versions that `--rmi all` does not know:
+
+```bash
+docker image rm $(docker image ls -q --filter "reference=ghcr.io/rhinvoice/*")
+docker volume rm rhinvoice_db-data                     # one by one, as listed
+```
+
+Docker Desktop shows the same under *Containers*, *Images* and *Volumes*, each with a delete
+button.
 
 ## Running it on a server
 

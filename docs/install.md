@@ -131,14 +131,27 @@ docker compose down -v       # stop and DELETE ALL DATA
   is reachable from the internet, and turn on two-factor authentication for every user.
 - Set up backups: [backup.md](backup.md).
 
-## Trying it next to an existing installation
+## Several installations on one computer
 
-Use another folder, another port and another project name, so that nothing is shared:
+Each installation needs a folder, a port and a **project name** of its own, so that containers and
+data stay apart. Give the name with `-p`, in every command for that installation:
 
 ```bash
 RHINVOICE_PORT=8100 docker compose -p rhinvoice-try up -d
-docker compose -p rhinvoice-try down -v      # remove it again
+docker compose -p rhinvoice-try ps
+docker compose -p rhinvoice-try logs -f app
+docker compose -p rhinvoice-try down -v      # remove it again, with its data
 ```
+
+Easier: write the name and the port into that folder's `.env` once; then the plain commands work
+there:
+
+```
+COMPOSE_PROJECT_NAME=rhinvoice-try
+RHINVOICE_PORT=8100
+```
+
+Open it at <http://rhinvoice.localhost:8100>.
 
 ## Images
 

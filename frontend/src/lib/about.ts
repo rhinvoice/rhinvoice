@@ -6,5 +6,5 @@ export const ISSUES_URL = `${REPOSITORY_URL}/issues/new/choose`;
 export const CHANGELOG_URL = `${REPOSITORY_URL}/blob/main/CHANGELOG.md`;
 export const LICENSE_URL = `${REPOSITORY_URL}/blob/main/LICENSE`;
 
-export const MAKER = "Webberz";
+export const MAKER = "webberz";
 export const MAKER_URL = "https://www.webberz.ch";

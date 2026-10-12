@@ -116,7 +116,7 @@ test.describe("app shell", () => {
       await page.getByRole("button", { name: "Konto" }).click();
       await page.getByRole("menuitem", { name: "Über Rhinvoice" }).click();
     } else {
-      await page.getByRole("button", { name: /^Über Rhinvoice:.*by Webberz/ }).click();
+      await page.getByRole("button", { name: /^Über Rhinvoice:.*by webberz/ }).click();
     }
     const dialog = page.getByRole("dialog", { name: "Über Rhinvoice" });
     await expect(dialog).toBeVisible();
@@ -128,7 +128,7 @@ test.describe("app shell", () => {
       "href",
       "https://github.com/rhinvoice/rhinvoice/issues/new/choose",
     );
-    await expect(dialog.getByRole("link", { name: /Made by Webberz/ })).toHaveAttribute(
+    await expect(dialog.getByRole("link", { name: /made by webberz/ })).toHaveAttribute(
       "href",
       "https://www.webberz.ch",
     );

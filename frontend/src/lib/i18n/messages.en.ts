@@ -48,7 +48,7 @@ export const en: Catalog<MessageKey> = {
   "about.reportBug": "Report a bug",
   "about.changelog": "What's new",
   "about.noAdvice": "No tax advice; tax rates without warranty.",
-  "about.madeBy": "Made by {maker}",
+  "about.madeBy": "made by {maker}",
   "about.byMaker": "by {maker}",
   "about.openSource": "Open source",
 

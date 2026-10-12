@@ -14,7 +14,7 @@ test.describe("authentication", () => {
   test("switches the language and names version and maker", async ({ page }) => {
     await page.goto("/login");
     await expect(page.getByText(/^Rhinvoice \d+\.\d+\.\d+$/)).toBeVisible();
-    await expect(page.getByRole("link", { name: /Made by Webberz/ })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: /made by webberz/ })).toHaveAttribute(
       "href",
       "https://www.webberz.ch",
     );

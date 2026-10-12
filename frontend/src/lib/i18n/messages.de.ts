@@ -50,7 +50,7 @@ export const de = {
   "about.reportBug": "Fehler melden",
   "about.changelog": "Neuerungen",
   "about.noAdvice": "Keine Steuerberatung, Steuersätze ohne Gewähr.",
-  "about.madeBy": "Made by {maker}",
+  "about.madeBy": "made by {maker}",
   "about.byMaker": "by {maker}",
   "about.openSource": "Open Source",
 

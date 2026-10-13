@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.5.4] – 2026-10-13
+
 ### Added
 - The user documentation at [rhinvoice.com/docs](https://rhinvoice.com/docs/), in English and German:
   getting started, the rules of each country, invoices, moving over from another program, running

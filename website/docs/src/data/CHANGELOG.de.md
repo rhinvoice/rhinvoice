@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.5.4] – 2026-10-13
+
 ### Neu
 - Die Dokumentation unter [rhinvoice.com/docs](https://rhinvoice.com/docs/de/), auf Deutsch und
   Englisch: erste Schritte, die Regeln jedes Landes, Rechnungen, Umzug aus dem bisherigen Programm,

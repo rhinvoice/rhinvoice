@@ -85,7 +85,7 @@ DEMO_COMPANIES: dict[Country, SaveCompany] = {
         website="https://muster-webdesign.example",
         vat_number="DE123456789",
         tax_number="127/123/45678",
-        commercial_register="Amtsgericht Kempten HRB 12345",
+        commercial_register="Amtsgericht Kempten, HRB 12345",
     ),
     Country.AT: SaveCompany(
         name="Muster Webdesign GmbH",

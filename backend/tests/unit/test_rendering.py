@@ -169,6 +169,46 @@ def test_a_swiss_draft_invoice(printing: PrintHandlers) -> None:
     assert "<span>Steuernummer 12/345</span><span>Handelsregister CH-020.4.000.000-0</span>" in html
 
 
+@pytest.mark.parametrize(
+    ("register", "language", "lines"),
+    [
+        # Footer lines do not wrap: each part of a long entry gets its own line.
+        (
+            "Amtsgericht Kempten, HRB 12345",
+            Language.DE,
+            ["Handelsregister Amtsgericht Kempten", "HRB 12345"],
+        ),
+        (
+            "FN 123456a, Landesgericht Feldkirch",
+            Language.EN,
+            ["Commercial register FN 123456a", "Landesgericht Feldkirch"],
+        ),
+        # An entry that names its register is not labelled twice, in either language.
+        (
+            "Handelsregister des Kantons Zürich, CHE-123.456.789",
+            Language.EN,
+            ["Handelsregister des Kantons Zürich", "CHE-123.456.789"],
+        ),
+        (
+            "CHE-123.456.788,  handelsregister St. Gallen, ",
+            Language.DE,
+            ["CHE-123.456.788", "handelsregister St. Gallen"],
+        ),
+        (" , ", Language.DE, []),
+    ],
+)
+def test_the_register_entry_is_split_at_commas(
+    store: Store, printing: PrintHandlers, register: str, language: Language, lines: list[str]
+) -> None:
+    assert store.company is not None
+    store.company = replace(store.company, tax_number="", commercial_register=register)
+    html = printing.preview_html(DocumentType.INVOICE, draft(language=language))
+    legal = "".join(f"<span>{line}</span>" for line in ["MWST-Nr. CHE-123.456.788 MWST", *lines])
+    if language is Language.EN:
+        legal = legal.replace("MWST-Nr.", "VAT no.")
+    assert f'<div class="legal">{legal}</div>' in html
+
+
 def test_an_issued_reverse_charge_invoice_abroad(printing: PrintHandlers, store: Store) -> None:
     store.customers[CUSTOMER] = replace(
         store.customers[CUSTOMER],

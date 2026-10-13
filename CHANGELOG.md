@@ -5,6 +5,11 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Fixed
+- PDF footer: a long commercial register entry ran past the page edge. It now takes one line per
+  comma-separated part ("Amtsgericht Kempten, HRB 12345"), and the label "Commercial register" is
+  left out when the entry already names it ("Handelsregister des Kantons Zürich, …").
+
 ## [0.5.2] – 2026-10-13
 
 ### Fixed

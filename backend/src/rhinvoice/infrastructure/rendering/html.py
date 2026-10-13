@@ -508,10 +508,26 @@ def _footer(model: PrintModel, language: Language) -> list[tuple[str, list[str]]
         legal.append(f"{label} {company.vat_number}")
     if company.tax_number:
         legal.append(f"{labels['tax_number']} {company.tax_number}")
-    if company.commercial_register:
-        legal.append(f"{labels['register']} {company.commercial_register}")
+    legal += _register_lines(company.commercial_register, labels["register"])
     columns.append(("legal", legal))
     return [(kind, lines) for kind, lines in columns if lines]
+
+
+def _register_lines(register: str, label: str) -> list[str]:
+    """Split the register entry into footer lines, one per comma-separated part.
+
+    Footer lines do not wrap, and entries such as "Handelsregister des Kantons
+    Zürich, CHE-123.456.789" are long. The label goes in front unless the entry
+    already names its register.
+    """
+    parts = [part.strip() for part in register.split(",") if part.strip()]
+    if not parts:
+        return []
+    named = any(
+        register_label.casefold() in register.casefold()
+        for register_label in {LABELS[language]["register"] for language in Language}
+    )
+    return parts if named else [f"{label} {parts[0]}", *parts[1:]]
 
 
 def _bank_columns(model: PrintModel, labels: dict[str, str]) -> list[list[str]]:

@@ -253,6 +253,7 @@ documents = Table(
     Column("net_amount", Numeric(14, 2), nullable=False),
     Column("total_amount", Numeric(14, 2), nullable=False),
     Column("open_amount", Numeric(14, 2), nullable=False),
+    Column("written_off_amount", Numeric(14, 2), nullable=False, server_default="0"),
     Column("search_vector", TSVECTOR, nullable=False),
     UniqueConstraint("type", "number", name="uq_documents_type_number"),
     CheckConstraint("(status = 'draft') = (number IS NULL)", name="number_iff_issued"),
@@ -296,6 +297,26 @@ document_payments = Table(
     Column("amount", Numeric(14, 2), nullable=False),
     Column("note", String(500), nullable=False, server_default=""),
     Column("recorded_at", DateTime(timezone=True), nullable=False),
+)
+
+# What was open of an invoice when collecting it was given up; at most one per invoice.
+document_write_offs = Table(
+    "document_write_offs",
+    metadata,
+    Column("id", Uuid(), primary_key=True),
+    Column(
+        "document_id",
+        Uuid(),
+        ForeignKey("documents.id", ondelete="RESTRICT"),
+        nullable=False,
+        unique=True,
+    ),
+    Column("written_off_on", Date, nullable=False),
+    Column("amount", Numeric(14, 2), nullable=False),
+    Column("reason", String(20), nullable=False),
+    Column("note", String(500), nullable=False, server_default=""),
+    Column("recorded_at", DateTime(timezone=True), nullable=False),
+    CheckConstraint("amount > 0", name="amount_positive"),
 )
 
 document_events = Table(

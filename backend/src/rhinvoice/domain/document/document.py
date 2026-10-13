@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.document.calculation import CalculationInput, Totals, calculate
 from rhinvoice.domain.document.lines import Discount, DocumentLine, LineKind, PriceMode
+from rhinvoice.domain.document.write_off import WriteOff, WriteOffReason
 from rhinvoice.domain.numbering.sequence import SequenceKind
 from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
 from rhinvoice.domain.shared.identifier import new_id
@@ -68,6 +69,8 @@ class DocumentStatus(StrEnum):
     PARTIALLY_PAID = "partially_paid"
     PAID = "paid"
     CANCELLED = "cancelled"
+    WRITTEN_OFF = "written_off"
+    """Collecting the rest was given up; the invoice stays as issued (see ``WriteOff``)."""
 
 
 class DisplayStatus(StrEnum):
@@ -83,6 +86,7 @@ class DisplayStatus(StrEnum):
     OVERDUE = "overdue"
     PAID = "paid"
     CANCELLED = "cancelled"
+    WRITTEN_OFF = "written_off"
 
 
 OPEN_INVOICE_STATUSES = frozenset({DocumentStatus.ISSUED, DocumentStatus.PARTIALLY_PAID})
@@ -117,6 +121,10 @@ class EventKind(StrEnum):
     """Taken over from a program used before; the detail names the original PDF."""
     FILE_ADDED = "file_added"
     """A file of an imported invoice added afterwards; the detail is its name."""
+    WRITTEN_OFF = "written_off"
+    """The open rest was written off; the detail is "<amount> <date> <reason>"."""
+    WRITE_OFF_REMOVED = "write_off_removed"
+    """The write-off was taken back; the detail is its amount."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -265,6 +273,8 @@ class Document:
     pdf_sha256: str | None = None
     """SHA-256 of the archived PDF, set once after issuing (GoBD, OR 958f)."""
     origin: DocumentOrigin = DocumentOrigin.RHINVOICE
+    write_off: WriteOff | None = None
+    """Set once collecting the open rest was given up; it stays when the rest is paid later."""
 
     # --- Factories -------------------------------------------------------------
 
@@ -484,10 +494,34 @@ class Document:
             ),
         )
 
+    @property
+    def recoveries(self) -> tuple[Payment, ...]:
+        """Payments that came in after the invoice was written off."""
+        write_off = self.write_off
+        if write_off is None:
+            return ()
+        return tuple(
+            payment for payment in self.payments if payment.recorded_at > write_off.recorded_at
+        )
+
+    @property
+    def recovered_amount(self) -> Money:
+        return sum(
+            (payment.amount for payment in self.recoveries), Money.zero(self.content.currency)
+        )
+
+    @property
+    def written_off_amount(self) -> Money:
+        """What is lost of the invoice: the write-off less what was paid after it."""
+        if self.write_off is None:
+            return Money.zero(self.content.currency)
+        return self.write_off.amount - self.recovered_amount
+
     def open_amount(self) -> Money:
+        """Return what the customer is still expected to pay."""
         if self.issued_totals is None or self.status is DocumentStatus.CANCELLED:
             return Money.zero(self.content.currency)
-        return self.issued_totals.total - self.paid_amount
+        return self.issued_totals.total - self.paid_amount - self.written_off_amount
 
     # --- Commands ------------------------------------------------------------------
 
@@ -638,22 +672,32 @@ class Document:
         )
 
     def add_payment(self, payment: Payment, now: datetime) -> Document:
-        self._require(*OPEN_INVOICE_STATUSES, action="paid")
+        """Record a payment; on a written-off invoice it takes back that much of the loss."""
+        self._require(*OPEN_INVOICE_STATUSES, DocumentStatus.WRITTEN_OFF, action="paid")
         if payment.amount.currency is not self.content.currency:
             raise ValidationError("amount", f"the payment must be in {self.content.currency}")
-        open_amount = self.open_amount()
-        if payment.amount > open_amount:
+        write_off = self.write_off
+        if write_off is not None and payment.recorded_at <= write_off.recorded_at:
+            raise InvalidStateError(
+                "a payment of a written-off invoice is recorded after the write-off"
+            )
+        unpaid = self.open_amount() + self.written_off_amount
+        if payment.amount > unpaid:
             raise ValidationError(
                 "amount",
-                f"the payment exceeds the open amount of {open_amount}",
+                f"the payment exceeds the open amount of {unpaid}",
                 code="payment_exceeds_open_amount",
             )
-        payments = (*self.payments, payment)
-        paid = payment.amount == open_amount
+        if payment.amount == unpaid:
+            status = DocumentStatus.PAID
+        elif write_off is None:
+            status = DocumentStatus.PARTIALLY_PAID
+        else:
+            status = DocumentStatus.WRITTEN_OFF
         return replace(
             self,
-            payments=payments,
-            status=DocumentStatus.PAID if paid else DocumentStatus.PARTIALLY_PAID,
+            payments=(*self.payments, payment),
+            status=status,
             events=self._with_event(now, EventKind.PAYMENT_ADDED, _amount_detail(payment)),
         )
 
@@ -666,16 +710,81 @@ class Document:
         return self.add_payment(payment, now)
 
     def remove_payment(self, payment_id: UUID, now: datetime) -> Document:
-        self._require(DocumentStatus.PARTIALLY_PAID, DocumentStatus.PAID, action="changed")
+        self._require(
+            DocumentStatus.PARTIALLY_PAID,
+            DocumentStatus.PAID,
+            DocumentStatus.WRITTEN_OFF,
+            action="changed",
+        )
         removed = next((payment for payment in self.payments if payment.id == payment_id), None)
         if removed is None:
             raise ValidationError("payment", "this payment does not belong to the document")
         payments = tuple(payment for payment in self.payments if payment.id != payment_id)
+        if self.write_off is None:
+            status = DocumentStatus.PARTIALLY_PAID if payments else DocumentStatus.ISSUED
+        elif removed in self.recoveries:
+            status = DocumentStatus.WRITTEN_OFF
+        else:
+            # The write-off names the rest after this payment; without it, it would be wrong.
+            raise InvalidStateError(
+                "remove the write-off before a payment made before it",
+                code="payment_before_write_off",
+            )
         return replace(
             self,
             payments=payments,
-            status=DocumentStatus.PARTIALLY_PAID if payments else DocumentStatus.ISSUED,
+            status=status,
             events=self._with_event(now, EventKind.PAYMENT_REMOVED, _amount_detail(removed)),
+        )
+
+    def record_write_off(
+        self,
+        write_off_id: UUID,
+        written_off_on: date,
+        reason: WriteOffReason,
+        now: datetime,
+        *,
+        note: str = "",
+    ) -> Document:
+        """Give up collecting the open rest; the invoice itself stays as issued."""
+        self._require(*OPEN_INVOICE_STATUSES, action="written off")
+        if self.type is not DocumentType.INVOICE:
+            raise InvalidStateError("only invoices are written off")
+        issue_date = self.content.issue_date
+        if issue_date is not None and written_off_on < issue_date:
+            raise ValidationError(
+                "written_off_on",
+                "an invoice is not written off before its date",
+                code="write_off_before_invoice",
+            )
+        write_off = WriteOff(
+            id=write_off_id,
+            written_off_on=written_off_on,
+            amount=self.open_amount(),
+            reason=reason,
+            recorded_at=now,
+            note=note,
+        )
+        detail = f"{write_off.amount.amount:.2f} {written_off_on.isoformat()} {reason.value}"
+        return replace(
+            self,
+            write_off=write_off,
+            status=DocumentStatus.WRITTEN_OFF,
+            events=self._with_event(now, EventKind.WRITTEN_OFF, detail),
+        )
+
+    def remove_write_off(self, now: datetime) -> Document:
+        """Take a write-off back (it was a mistake): the rest is open again."""
+        write_off = self.write_off
+        if self.status is not DocumentStatus.WRITTEN_OFF or write_off is None:
+            raise InvalidStateError(f"a {self.status} {self.type} cannot be reopened")
+        return replace(
+            self,
+            write_off=None,
+            status=DocumentStatus.PARTIALLY_PAID if self.payments else DocumentStatus.ISSUED,
+            events=self._with_event(
+                now, EventKind.WRITE_OFF_REMOVED, f"{write_off.amount.amount:.2f}"
+            ),
         )
 
     def record_reminder(self, level: int, now: datetime) -> Document:

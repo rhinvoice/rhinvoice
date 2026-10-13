@@ -23,6 +23,7 @@ from rhinvoice.api.schemas import (
     text,
 )
 from rhinvoice.application.common import SortDirection
+from rhinvoice.application.document.bad_debts import BadDebtYear
 from rhinvoice.application.document.dashboard import Dashboard
 from rhinvoice.application.document.einvoice import EInvoiceProblem
 from rhinvoice.application.document.handlers import (
@@ -33,6 +34,7 @@ from rhinvoice.application.document.handlers import (
     LineInput,
     PaymentInput,
     RecordedPayment,
+    WriteOffInput,
 )
 from rhinvoice.application.document.ports import (
     DocumentFacets,
@@ -50,6 +52,7 @@ from rhinvoice.domain.document.document import (
     EventKind,
 )
 from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
+from rhinvoice.domain.document.write_off import WriteOffReason, tax_share
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
 from rhinvoice.domain.tax.category import TaxCategory
@@ -157,6 +160,13 @@ class MarkPaidRequest(ApiModel):
     paid_on: date
 
 
+class WriteOffRequest(ApiModel):
+    written_off_on: date
+    """Not before the invoice date and not in the future."""
+    reason: WriteOffReason
+    note: str = text(500)
+
+
 MAX_BULK = 100
 
 
@@ -247,6 +257,21 @@ class PaymentResponse(ApiModel):
     amount: str
     note: str
     recorded_at: datetime
+    after_write_off: bool
+    """Came in after the invoice was written off."""
+
+
+class WriteOffResponse(ApiModel):
+    """What was open of the invoice when collecting it was given up."""
+
+    id: UUID
+    written_off_on: date
+    amount: str
+    tax: str
+    """Tax contained in the amount; whether it is corrected depends on the accounting."""
+    reason: WriteOffReason
+    note: str
+    recorded_at: datetime
 
 
 class EventResponse(ApiModel):
@@ -297,6 +322,10 @@ class DocumentResponse(ApiModel):
     payments: list[PaymentResponse]
     paid_amount: str
     open_amount: str
+    write_off: WriteOffResponse | None
+    """Stays when the rest is paid after all (see ``written_off_amount``)."""
+    written_off_amount: str
+    """What is lost: the write-off less the payments that came in after it."""
     events: list[EventResponse]
     source_id: UUID | None
     cancelled_by_id: UUID | None
@@ -317,6 +346,8 @@ class DocumentResponse(ApiModel):
         open_value = (
             document.open_amount() if document.issued_totals is not None else view.totals.total
         )
+        write_off = document.write_off
+        recoveries = {payment.id for payment in document.recoveries}
         return cls(
             id=document.id,
             type=document.type,
@@ -378,11 +409,26 @@ class DocumentResponse(ApiModel):
                     amount=amount(payment.amount),
                     note=payment.note,
                     recorded_at=payment.recorded_at,
+                    after_write_off=payment.id in recoveries,
                 )
                 for payment in document.payments
             ],
             paid_amount=amount(document.paid_amount),
             open_amount=amount(open_value),
+            write_off=(
+                None
+                if write_off is None
+                else WriteOffResponse(
+                    id=write_off.id,
+                    written_off_on=write_off.written_off_on,
+                    amount=amount(write_off.amount),
+                    tax=amount(tax_share(write_off.amount, document.frozen_totals)),
+                    reason=write_off.reason,
+                    note=write_off.note,
+                    recorded_at=write_off.recorded_at,
+                )
+            ),
+            written_off_amount=amount(document.written_off_amount),
             events=[
                 EventResponse(at=event.at, kind=event.kind, detail=event.detail)
                 for event in document.events
@@ -537,6 +583,32 @@ class DocumentPage(ApiModel):
         )
 
 
+class BadDebtYearResponse(ApiModel):
+    year: int
+    currency: Currency
+    written_off: str
+    """Written off with a date in the year."""
+    recovered: str
+    """Paid in the year on invoices written off before."""
+    loss: str
+    """Written off less recovered."""
+    net: str
+    tax: str
+    """Tax contained in the loss."""
+
+    @classmethod
+    def of(cls, year: BadDebtYear) -> Self:
+        return cls(
+            year=year.year,
+            currency=year.currency,
+            written_off=amount(year.written_off),
+            recovered=amount(year.recovered),
+            loss=amount(year.loss),
+            net=amount(year.net),
+            tax=amount(year.tax),
+        )
+
+
 class BulkPaymentsResponse(ApiModel):
     payments: list[RecordedPaymentSchema]
 
@@ -544,7 +616,9 @@ class BulkPaymentsResponse(ApiModel):
 class DocumentSearch(ListParams):
     direction: SortDirection = SortDirection.DESC
     type: list[DocumentType] = Field(default_factory=lambda: list(DocumentType), max_length=3)
-    status: list[DisplayStatus] = Field(default_factory=list[DisplayStatus], max_length=10)
+    status: list[DisplayStatus] = Field(
+        default_factory=list[DisplayStatus], max_length=len(DisplayStatus)
+    )
     customer_id: UUID | None = None
     year: int | None = Field(default=None, ge=1900, le=9999)
     sort: DocumentSort = DocumentSort.CREATED_AT
@@ -1041,6 +1115,36 @@ def remove_payment(
     container: ContainerDep,
 ) -> DocumentResponse:
     return DocumentResponse.of(container.documents.remove_payment(document_id, payment_id))
+
+
+@router.post("/documents/{document_id}/write-off")
+def write_off_invoice(
+    document_id: UUID,
+    body: WriteOffRequest,
+    _user: CurrentUser,
+    container: ContainerDep,
+) -> DocumentResponse:
+    """Give up collecting the open rest. The invoice stays as issued; nothing is sent."""
+    return DocumentResponse.of(
+        container.documents.write_off(
+            document_id,
+            WriteOffInput(written_off_on=body.written_off_on, reason=body.reason, note=body.note),
+        ),
+    )
+
+
+@router.delete("/documents/{document_id}/write-off")
+def remove_write_off(
+    document_id: UUID, _user: CurrentUser, container: ContainerDep
+) -> DocumentResponse:
+    """Take a write-off back: the rest of the invoice is open again."""
+    return DocumentResponse.of(container.documents.remove_write_off(document_id))
+
+
+@router.get("/bad-debts")
+def bad_debts(_user: CurrentUser, container: ContainerDep) -> list[BadDebtYearResponse]:
+    """Written-off amounts per year and currency, the latest year first."""
+    return [BadDebtYearResponse.of(year) for year in container.documents.bad_debts()]
 
 
 @router.get("/dashboard")

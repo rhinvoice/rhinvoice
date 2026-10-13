@@ -14,6 +14,7 @@ from rhinvoice.application.catalog.ports import ArticleQuery, ArticleSort
 from rhinvoice.application.common import Page, SortDirection
 from rhinvoice.application.customer.ports import CustomerQuery, CustomerSort
 from rhinvoice.application.document.ports import (
+    BadDebt,
     CurrencyFigures,
     CurrencyTotals,
     CustomerRevenue,
@@ -531,13 +532,17 @@ class InMemoryDocumentRepository:
             figures = by_currency.get(currency, CurrencyFigures(currency, zero, zero, zero, 0, 0))
             is_open = document.status in OPEN_INVOICE_STATUSES
             overdue = is_open and document.display_status(today) is DisplayStatus.OVERDUE
-            counts_paid = is_open or document.status is DocumentStatus.PAID
+            counts_paid = is_open or document.status in {
+                DocumentStatus.PAID,
+                DocumentStatus.WRITTEN_OFF,
+            }
             open_amount = stored.index.open_amount
+            received = stored.index.total - open_amount - stored.index.written_off
             by_currency[currency] = CurrencyFigures(
                 currency=currency,
                 open=figures.open + (open_amount if is_open else zero),
                 overdue=figures.overdue + (open_amount if overdue else zero),
-                paid=figures.paid + (stored.index.total - open_amount if counts_paid else zero),
+                paid=figures.paid + (received if counts_paid else zero),
                 open_count=figures.open_count + is_open,
                 overdue_count=figures.overdue_count + overdue,
             )
@@ -614,6 +619,7 @@ class InMemoryDocumentRepository:
                 document.type is not DocumentType.INVOICE
                 or document.status is not DocumentStatus.PAID
                 or document.is_imported
+                or document.write_off is not None
                 or issue_date is None
             ):
                 continue
@@ -623,6 +629,24 @@ class InMemoryDocumentRepository:
                     (last, str(document.id), document.content.currency, (last - issue_date).days)
                 )
         return [(currency, days) for _, _, currency, days in sorted(found)]
+
+    def bad_debts(self) -> list[BadDebt]:
+        found = [
+            (document.write_off, document)
+            for document in (stored.document for stored in self.data.values())
+            if document.write_off is not None
+        ]
+        found.sort(key=lambda entry: (entry[0].written_off_on, str(entry[0].id)))
+        return [
+            BadDebt(
+                write_off=write_off,
+                totals=document.frozen_totals,
+                recoveries=tuple(
+                    (payment.paid_on, payment.amount) for payment in document.recoveries
+                ),
+            )
+            for write_off, document in found
+        ]
 
     def recent_events(self, limit: int, today: date) -> list[tuple[DocumentSummary, str, datetime]]:
         # Newest recorded first among equal times, like ORDER BY at DESC, id DESC.

@@ -25,6 +25,7 @@ from sqlalchemy.dialects.postgresql import aggregate_order_by
 
 from rhinvoice.application.common import Page, SortDirection
 from rhinvoice.application.document.ports import (
+    BadDebt,
     CurrencyFigures,
     CurrencyTotals,
     CustomerRevenue,
@@ -53,6 +54,7 @@ from rhinvoice.domain.document.lines import (
     LineKind,
     PriceMode,
 )
+from rhinvoice.domain.document.write_off import WriteOff, WriteOffReason
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
 from rhinvoice.domain.tax.category import TaxCategory
@@ -71,6 +73,7 @@ from rhinvoice.infrastructure.db.tables import (
     document_lines,
     document_payments,
     document_pdfs,
+    document_write_offs,
     documents,
 )
 
@@ -172,6 +175,7 @@ def _document_values(document: Document, index: DocumentIndex) -> dict[str, Any]
         "net_amount": index.net.amount,
         "total_amount": index.total.amount,
         "open_amount": index.open_amount.amount,
+        "written_off_amount": index.written_off.amount,
         "search_vector": _search_vector(index.search_text),
     }
 
@@ -209,6 +213,17 @@ def _line_from_row(row: RowMapping) -> DocumentLine:
         supply=Supply(row["supply"]),
         article_id=row["article_id"],
         tax_rate=None if row["tax_rate"] is None else Decimal(row["tax_rate"]),
+    )
+
+
+def _write_off(row: RowMapping, currency: Currency) -> WriteOff:
+    return WriteOff(
+        id=row["id"],
+        written_off_on=row["written_off_on"],
+        amount=Money(Decimal(row["amount"]), currency),
+        reason=WriteOffReason(row["reason"]),
+        recorded_at=row["recorded_at"],
+        note=row["note"],
     )
 
 
@@ -356,6 +371,13 @@ class SqlDocumentRepository:
             .where(document_events.c.document_id == document_id)
             .order_by(document_events.c.id),
         ).mappings()
+        write_off = (
+            self._connection.execute(
+                select(document_write_offs).where(document_write_offs.c.document_id == document_id),
+            )
+            .mappings()
+            .first()
+        )
         currency = Currency(row["currency"])
         content = DraftContent(
             customer_id=row["customer_id"],
@@ -410,6 +432,7 @@ class SqlDocumentRepository:
             converted_to_id=row["converted_to_id"],
             pdf_sha256=row["pdf_sha256"],
             origin=DocumentOrigin(row["origin"]),
+            write_off=None if write_off is None else _write_off(write_off, currency),
         )
 
     def number_exists(self, document_type: DocumentType, number: str) -> bool:
@@ -430,6 +453,7 @@ class SqlDocumentRepository:
         self._connection.execute(insert(documents).values(_document_values(document, index)))
         self._insert_lines(document)
         self._sync_payments(document)
+        self._sync_write_off(document)
         self._append_events(document, stored=0)
 
     def update(self, document: Document, index: DocumentIndex) -> None:
@@ -456,6 +480,7 @@ class SqlDocumentRepository:
             update(documents).where(documents.c.id == document.id).values(values),
         )
         self._sync_payments(document)
+        self._sync_write_off(document)
         self._append_events(document, stored=stored_events)
 
     def delete(self, document_id: UUID) -> None:
@@ -501,6 +526,33 @@ class SqlDocumentRepository:
                     }
                     for payment in new
                 ],
+            )
+
+    def _sync_write_off(self, document: Document) -> None:
+        """Store a new write-off, drop one that was taken back; a stored one never changes."""
+        write_off = document.write_off
+        self._connection.execute(
+            delete(document_write_offs).where(
+                document_write_offs.c.document_id == document.id,
+                true() if write_off is None else document_write_offs.c.id != write_off.id,
+            ),
+        )
+        if write_off is None:
+            return
+        stored = self._connection.execute(
+            select(func.count()).where(document_write_offs.c.id == write_off.id),
+        ).scalar_one()
+        if not stored:
+            self._connection.execute(
+                insert(document_write_offs).values(
+                    id=write_off.id,
+                    document_id=document.id,
+                    written_off_on=write_off.written_off_on,
+                    amount=write_off.amount.amount,
+                    reason=write_off.reason.value,
+                    note=write_off.note,
+                    recorded_at=write_off.recorded_at,
+                ),
             )
 
     def _append_events(self, document: Document, *, stored: int) -> None:
@@ -674,10 +726,13 @@ class SqlDocumentRepository:
         invoices = documents.c.type == DocumentType.INVOICE.value
         is_open = documents.c.status.in_(OPEN)
         overdue = and_(is_open, documents.c.due_date < today)
+        # What is written off was not paid: it is neither open nor received.
         paid = case(
             (
-                documents.c.status.in_([*OPEN, DocumentStatus.PAID.value]),
-                documents.c.total_amount - documents.c.open_amount,
+                documents.c.status.in_(
+                    [*OPEN, DocumentStatus.PAID.value, DocumentStatus.WRITTEN_OFF.value]
+                ),
+                documents.c.total_amount - documents.c.open_amount - documents.c.written_off_amount,
             ),
             else_=0,
         )
@@ -803,12 +858,48 @@ class SqlDocumentRepository:
                 documents.c.status == DocumentStatus.PAID.value,
                 # Imported invoices were paid on a day the program did not tell.
                 documents.c.origin == DocumentOrigin.RHINVOICE.value,
+                documents.c.id.not_in(select(document_write_offs.c.document_id)),
                 last_payment.c.paid_on >= since,
             )
             .order_by(last_payment.c.paid_on, documents.c.id)
         )
         return [
             (Currency(row["currency"]), int(row["days"]))
+            for row in self._connection.execute(statement).mappings()
+        ]
+
+    def bad_debts(self) -> list[BadDebt]:
+        recovered: dict[UUID, list[tuple[date, Money]]] = {}
+        payments = (
+            select(
+                document_payments.c.document_id,
+                document_payments.c.paid_on,
+                document_payments.c.amount,
+                documents.c.currency,
+            )
+            .join(documents, documents.c.id == document_payments.c.document_id)
+            .join(
+                document_write_offs,
+                document_write_offs.c.document_id == document_payments.c.document_id,
+            )
+            .where(document_payments.c.recorded_at > document_write_offs.c.recorded_at)
+            .order_by(document_payments.c.recorded_at, document_payments.c.id)
+        )
+        for row in self._connection.execute(payments).mappings():
+            recovered.setdefault(row["document_id"], []).append(
+                (row["paid_on"], Money(Decimal(row["amount"]), Currency(row["currency"])))
+            )
+        statement = (
+            select(document_write_offs, documents.c.currency, documents.c.issued_totals)
+            .join(documents, documents.c.id == document_write_offs.c.document_id)
+            .order_by(document_write_offs.c.written_off_on, document_write_offs.c.id)
+        )
+        return [
+            BadDebt(
+                write_off=_write_off(row, Currency(row["currency"])),
+                totals=totals_from_json(row["issued_totals"]),
+                recoveries=tuple(recovered.get(row["document_id"], ())),
+            )
             for row in self._connection.execute(statement).mappings()
         ]
 

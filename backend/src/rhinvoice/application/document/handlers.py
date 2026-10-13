@@ -8,6 +8,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from rhinvoice.application.backup.ports import BackupReason
+from rhinvoice.application.document.bad_debts import BadDebtYear, bad_debts_by_year
 from rhinvoice.application.document.ports import DocumentIndex
 from rhinvoice.application.errors import NotFoundError
 from rhinvoice.application.numbering.handlers import allocate_number
@@ -60,6 +61,7 @@ if TYPE_CHECKING:
     from rhinvoice.domain.company.company import Company
     from rhinvoice.domain.customer.customer import Customer
     from rhinvoice.domain.document.calculation import Totals
+    from rhinvoice.domain.document.write_off import WriteOffReason
     from rhinvoice.domain.shared.clock import Clock
     from rhinvoice.domain.shared.language import Language
     from rhinvoice.domain.text.template import TextTemplate
@@ -134,6 +136,13 @@ class PaymentInput:
 
 
 @dataclass(frozen=True, slots=True)
+class WriteOffInput:
+    written_off_on: date
+    reason: WriteOffReason
+    note: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class DocumentView:
     document: Document
     totals: Totals
@@ -189,6 +198,7 @@ def build_index(document: Document, totals: Totals, customer: Customer | None) -
         net=totals.net,
         total=totals.total,
         open_amount=open_amount,
+        written_off=document.written_off_amount,
         search_text=" ".join(text for text in texts if text),
     )
 
@@ -418,6 +428,37 @@ class DocumentHandlers:
             return document.remove_payment(payment_id, self.clock.now())
 
         return self._change(document_id, apply)
+
+    # --- Invoices that will not be paid -------------------------------------------------
+
+    def write_off(self, document_id: UUID, write_off: WriteOffInput) -> DocumentView:
+        """Give up collecting the open rest of an invoice."""
+        if write_off.written_off_on > self.clock.today():
+            raise ValidationError(
+                "written_off_on",
+                "the date of the write-off is in the future",
+                code="write_off_date_in_future",
+            )
+        return self._change(
+            document_id,
+            lambda document: document.record_write_off(
+                new_id(),
+                write_off.written_off_on,
+                write_off.reason,
+                self.clock.now(),
+                note=write_off.note,
+            ),
+        )
+
+    def remove_write_off(self, document_id: UUID) -> DocumentView:
+        """Take a write-off back: the rest of the invoice is open again."""
+        return self._change(
+            document_id, lambda document: document.remove_write_off(self.clock.now())
+        )
+
+    def bad_debts(self) -> list[BadDebtYear]:
+        with self.uow() as uow:
+            return bad_debts_by_year(uow.documents.bad_debts())
 
     # --- Files of imported invoices ------------------------------------------------------
 

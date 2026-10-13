@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
     from rhinvoice.application.common import Page
     from rhinvoice.domain.document.attachment import Attachment
+    from rhinvoice.domain.document.calculation import Totals
     from rhinvoice.domain.document.document import (
         DisplayStatus,
         Document,
@@ -21,6 +22,7 @@ if TYPE_CHECKING:
         DocumentStatus,
         DocumentType,
     )
+    from rhinvoice.domain.document.write_off import WriteOff
     from rhinvoice.domain.shared.money import Currency, Money
 
 
@@ -32,6 +34,8 @@ class DocumentIndex:
     net: Money
     total: Money
     open_amount: Money
+    written_off: Money
+    """What is lost of a written-off invoice, else zero."""
     search_text: str
 
 
@@ -135,6 +139,16 @@ class CustomerRevenue:
     net: Money
 
 
+@dataclass(frozen=True, slots=True)
+class BadDebt:
+    """A write-off with what reporting it needs: the invoice's totals and later payments."""
+
+    write_off: WriteOff
+    totals: Totals
+    recoveries: tuple[tuple[date, Money], ...]
+    """Day and amount of the payments that came in after the write-off."""
+
+
 class DocumentRepository(Protocol):
     def get(self, document_id: UUID, *, for_update: bool = False) -> Document | None: ...
     def add(self, document: Document, index: DocumentIndex) -> None: ...
@@ -183,8 +197,13 @@ class DocumentRepository(Protocol):
     def days_to_pay(self, since: date) -> list[tuple[Currency, int]]:
         """Days from issuing to the last payment of the invoices fully paid since.
 
-        Imported invoices are left out: their payment dates are not known.
+        Imported invoices are left out: their payment dates are not known. So are
+        written-off ones: what comes in after years says nothing about how customers pay.
         """
+        ...
+
+    def bad_debts(self) -> list[BadDebt]:
+        """All write-offs, in the order they were dated."""
         ...
 
     def recent_events(self, limit: int, today: date) -> list[tuple[DocumentSummary, str, datetime]]:

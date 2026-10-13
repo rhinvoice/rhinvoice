@@ -108,8 +108,6 @@ export const de = {
     other: "{count} Angaben müssen korrigiert werden",
   },
 
-  "error.demo_import_too_large": "In der Demo darf eine Datei höchstens 200 KB gross sein.",
-  "error.demo_import_too_many_rows": "In der Demo sind höchstens 200 Zeilen pro Import möglich.",
   "error.demo_locked": "In der öffentlichen Demo ist das nicht möglich.",
   "error.generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
   "error.network": "Keine Verbindung zum Server. Bitte prüfen Sie Ihre Verbindung.",
@@ -973,8 +971,6 @@ export const de = {
   },
   "import.choose.customers": "CSV- oder Excel-Datei mit Kunden",
   "import.choose.articles": "CSV- oder Excel-Datei mit Artikeln",
-  "import.formatsDemo":
-    "CSV (UTF-8 oder Windows-1252), Excel .xlsx und .xls; in der Demo höchstens 200 KB und 200 Zeilen.",
   "import.formats":
     "CSV (UTF-8 oder Windows-1252), Excel .xlsx und .xls, höchstens 5 MB und {rows} Zeilen.",
   "import.rows": { zero: "keine Zeilen", one: "1 Zeile", other: "{count} Zeilen" },
@@ -1081,6 +1077,11 @@ export const de = {
   "import.show.articles": "Zu den Artikeln",
   "import.again": "Weitere Datei importieren",
   "import.title.invoices": "Alte Rechnungen übernehmen",
+  "import.demo.title": "Der Import ist in der Demo ausgeschaltet",
+  "import.demo.text":
+    "Alle Besucher teilen sich diese Demo, deshalb nimmt sie keine Dateien an. Installieren Sie Rhinvoice auf Ihrem eigenen Rechner oder Server – mit Docker dauert das wenige Minuten. Dort übernehmen Sie Kunden, Artikel und alte Rechnungen mit ihren PDFs.",
+  "import.demo.install": "Installationsanleitung",
+  "import.demo.guide": "So funktioniert der Import",
   "import.descriptionInvoices":
     "Rechnungen eines früheren Programms mit ihren Original-PDFs. Sie bleiben, wie sie waren: gesperrt, mit Nummer, Betrag und PDF.",
   "import.run.invoices": {

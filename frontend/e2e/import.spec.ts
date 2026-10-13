@@ -110,3 +110,23 @@ test("columns with unknown names are mapped by hand", async ({ page }, testInfo)
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "1 Artikel importieren" })).toBeEnabled();
 });
+
+test("the public demo takes no files and says where importing works", async ({ page }) => {
+  // The demo itself only differs in what /api/demo answers.
+  await page.route("**/api/demo", async (route) => {
+    const response = await route.fetch();
+    const demo = (await response.json()) as Record<string, unknown>;
+    await route.fulfill({ response, json: { ...demo, enabled: true } });
+  });
+  await page.goto("/invoices/import");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Alte Rechnungen übernehmen" }),
+  ).toBeVisible();
+  await expect(page.getByText("Der Import ist in der Demo ausgeschaltet")).toBeVisible();
+  await expect(page.getByLabel("Datei wählen")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Installationsanleitung" })).toHaveAttribute(
+    "href",
+    "https://github.com/rhinvoice/rhinvoice/blob/main/docs/install.md",
+  );
+  await expectAccessible(page);
+});

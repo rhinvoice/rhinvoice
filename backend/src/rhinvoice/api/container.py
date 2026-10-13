@@ -16,7 +16,7 @@ from rhinvoice.application.document.handlers import DocumentHandlers
 from rhinvoice.application.document.printing import PrintHandlers
 from rhinvoice.application.dunning.handlers import DunningHandlers
 from rhinvoice.application.identity.handlers import IdentityHandlers
-from rhinvoice.application.importing.handlers import DEMO_IMPORT_LIMITS, ImportHandlers
+from rhinvoice.application.importing.handlers import ImportHandlers
 from rhinvoice.application.mail.handlers import MailHandlers
 from rhinvoice.application.numbering.handlers import NumberingHandlers
 from rhinvoice.application.onboarding.handlers import OnboardingHandlers
@@ -71,12 +71,7 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
         return SqlUnitOfWork(engine)
 
     documents = DocumentHandlers(uow=uow, clock=effective_clock)
-    imports = ImportHandlers(
-        uow=uow,
-        clock=effective_clock,
-        reader=SpreadsheetReader(),
-        limits=DEMO_IMPORT_LIMITS if settings.demo else None,
-    )
+    imports = ImportHandlers(uow=uow, clock=effective_clock, reader=SpreadsheetReader())
     company = CompanyHandlers(uow=uow)
     customers = CustomerHandlers(uow=uow, clock=effective_clock)
     articles = ArticleHandlers(uow=uow, clock=effective_clock)

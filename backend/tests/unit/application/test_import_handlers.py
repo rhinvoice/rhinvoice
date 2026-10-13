@@ -10,9 +10,7 @@ import pytest
 from rhinvoice.application.errors import ConflictError, NotFoundError
 from rhinvoice.application.importing.fields import ImportTarget
 from rhinvoice.application.importing.handlers import (
-    DEMO_IMPORT_LIMITS,
     ImportHandlers,
-    ImportLimits,
     ImportRequest,
     SaveTemplate,
 )
@@ -411,25 +409,6 @@ def test_a_customer_since_date_in_the_future_is_refused(handlers: ImportHandlers
         "customer_since",
         "the date lies in the future",
     )
-
-
-def test_the_demo_takes_small_imports_only(store: Store, clock: FixedClock) -> None:
-    store.company = factories.company()
-    demo = ImportHandlers(
-        uow=lambda: InMemoryUnitOfWork(store),
-        clock=clock,
-        reader=SemicolonReader(),
-        limits=ImportLimits(max_bytes=2048, max_rows=2),
-    )
-    assert demo.run(customers_request(content=lines("Nachname", "A", "B"))).outcomes
-    with raises_exactly(ValidationError, "imports in the demo may have at most 2 rows") as rows:
-        demo.run(customers_request(content=lines("Nachname", "A", "B", "C")))
-    assert (rows.value.field, rows.value.code) == ("file", "demo_import_too_many_rows")
-    big = lines("Nachname", "x" * 2048)
-    with raises_exactly(ValidationError, "files in the demo may have at most 2 KB") as size:
-        demo.run(customers_request(content=big))
-    assert (size.value.field, size.value.code) == ("file", "demo_import_too_large")
-    assert ImportLimits(max_bytes=200 * 1024, max_rows=200) == DEMO_IMPORT_LIMITS
 
 
 ARTICLES = lines(

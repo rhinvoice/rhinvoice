@@ -11,9 +11,11 @@ Each instance runs with `RHINVOICE_DEMO=true`:
 - **One click to log in.** The login page shows the login, a button to open the demo, and links
   to the other countries. A strip on every page says that it is a demo.
 - **Some things are refused:** setting up a first user, changing the password, two-factor
-  authentication, the logo, the mail server, sending any mail, backups, and changing the
-  company's country. They would lock other visitors out or send mail from the demo; the
-  interface shows a note instead. Recurring invoices are not written.
+  authentication, the logo, the mail server, sending any mail, backups, changing the company's
+  country, and every upload: imports of customers, articles and invoices, and files added to an
+  imported invoice. They would lock other visitors out, send mail from the demo, or show
+  strangers' files to every visitor; the interface shows a note instead. A request body may
+  have at most 2 MB. Recurring invoices are not written.
 - **No lockout, but limits:** failed logins do not lock the shared login. Instead each client
   address may log in 10 times and change something 60 times per minute; argon2 runs at most
   twice at a time, so a flood of logins waits instead of exhausting the memory.

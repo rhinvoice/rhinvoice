@@ -139,16 +139,6 @@ REQUIRED_COLUMNS: dict[ImportTarget, tuple[tuple[str, ...], ...]] = {
 }
 
 
-@dataclass(frozen=True, slots=True)
-class ImportLimits:
-    """Tighter limits than the reader's own, for the public demo."""
-
-    max_bytes: int
-    max_rows: int
-
-
-DEMO_IMPORT_LIMITS = ImportLimits(max_bytes=200 * 1024, max_rows=200)
-"""Enough to try the import, too little to fill a shared demo with junk."""
 MAX_FILES = 5000
 MAX_FILE_BYTES = 20 * 1024 * 1024
 """Of one PDF; scanned invoices of many pages stay below."""
@@ -159,7 +149,6 @@ class ImportHandlers:
     uow: UnitOfWorkFactory
     clock: Clock
     reader: TableReader
-    limits: ImportLimits | None = None
 
     def run(self, request: ImportRequest) -> ImportRun:
         table = self._read(request)
@@ -210,23 +199,9 @@ class ImportHandlers:
         )
 
     def _read(self, request: ImportRequest) -> ImportTable:
-        """Read the file within the limits (and the tighter ones of the demo)."""
-        limits = self.limits
-        if limits is not None and len(request.content) > limits.max_bytes:
-            raise ValidationError(
-                "file",
-                f"files in the demo may have at most {limits.max_bytes // 1024} KB",
-                code="demo_import_too_large",
-            )
-        _check_files(request.files, limits)
-        table = self.reader.read(request.content)
-        if limits is not None and len(table.rows) > limits.max_rows:
-            raise ValidationError(
-                "file",
-                f"imports in the demo may have at most {limits.max_rows} rows",
-                code="demo_import_too_many_rows",
-            )
-        return table
+        """Read the file within the limits."""
+        _check_files(request.files)
+        return self.reader.read(request.content)
 
     def templates(self, target: ImportTarget) -> list[ImportTemplate]:
         with self.uow() as uow:
@@ -275,7 +250,7 @@ def _mapping(request: ImportRequest, table: ImportTable) -> dict[str, int]:
     return mapping
 
 
-def _check_files(files: tuple[ImportFile, ...], limits: ImportLimits | None) -> None:
+def _check_files(files: tuple[ImportFile, ...]) -> None:
     if len(files) > MAX_FILES:
         raise ValidationError(
             "files", f"at most {MAX_FILES} files per import", code="too_many_files"
@@ -287,12 +262,6 @@ def _check_files(files: tuple[ImportFile, ...], limits: ImportLimits | None) -> 
             )
         if not file.content.startswith(b"%PDF-"):
             raise ValidationError("files", f"{file.name} is no PDF file", code="not_a_pdf")
-    if limits is not None and sum(len(file.content) for file in files) > limits.max_bytes:
-        raise ValidationError(
-            "files",
-            f"files in the demo may have at most {limits.max_bytes // 1024} KB",
-            code="demo_import_too_large",
-        )
 
 
 def number_column(

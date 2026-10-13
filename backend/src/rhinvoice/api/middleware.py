@@ -131,9 +131,11 @@ class SecurityMiddleware(BaseHTTPMiddleware):
 
 def _body_limit(request: Request, *, demo: bool = False) -> int:
     path = request.url.path
+    if demo:
+        # A public demo takes no uploads (imports, files, logo): it never reads large bodies.
+        return MAX_BODY_BYTES
     if path.startswith(INVOICE_IMPORT_PATH):
-        # The demo takes 200 KB of files; it never reads hundreds of MB.
-        return MAX_IMPORT_BODY_BYTES if demo else MAX_INVOICE_IMPORT_BODY_BYTES
+        return MAX_INVOICE_IMPORT_BODY_BYTES
     if path.startswith(DOCUMENTS_PATH) and path.endswith(FILES_SUFFIX):
         return MAX_FILE_BODY_BYTES
     return MAX_IMPORT_BODY_BYTES if path.startswith(IMPORT_PATH) else MAX_BODY_BYTES

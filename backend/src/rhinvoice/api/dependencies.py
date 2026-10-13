@@ -41,7 +41,7 @@ def get_current_user(
 
 
 def refuse_in_demo(request: Request) -> None:
-    """Refuse what would lock other visitors of a public demo out, or send mail from it."""
+    """Refuse what would lock other visitors of a public demo out, send mail or take uploads."""
     if get_container(request).settings.demo:
         raise DemoLockedError("this is not possible in the public demo")
 

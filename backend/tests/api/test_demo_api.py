@@ -7,6 +7,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from rhinvoice.api.middleware import MAX_BODY_BYTES
 from rhinvoice.application.demo.handlers import DEMO_EMAIL, DEMO_PASSWORD
 from rhinvoice.application.identity.handlers import CreateUser
 from rhinvoice.domain.shared.country import Country
@@ -81,9 +82,14 @@ def test_the_demo_tells_how_to_get_in(demo_client: TestClient) -> None:
         ("post", "/api/reminders/00000000-0000-0000-0000-000000000000/mail"),
         ("post", "/api/documents/00000000-0000-0000-0000-000000000000/files"),
         ("post", "/api/backup"),
+        ("post", "/api/imports/customers/preview"),
+        ("post", "/api/imports/invoices"),
+        ("post", "/api/imports/articles/templates"),
+        ("delete", "/api/imports/templates/00000000-0000-0000-0000-000000000000"),
+        ("get", "/api/imports/invoices/templates"),
     ],
 )
-def test_the_demo_refuses_what_would_lock_others_out_or_send_mail(
+def test_the_demo_refuses_what_would_lock_others_out_send_mail_or_take_files(
     demo_client: TestClient, method: str, path: str
 ) -> None:
     response = demo_client.request(method, path, json={})
@@ -141,11 +147,20 @@ def test_the_demo_slows_down_floods(demo_app: FastAPI) -> None:
         assert client.get("/api/demo").status_code == 200
 
 
-def test_the_demo_takes_small_imports_only(demo_client: TestClient) -> None:
-    rows = "Nachname\n" + "\n".join(f"Muster {n}" for n in range(201))
+def test_the_demo_takes_no_uploads(demo_client: TestClient) -> None:
+    """Whatever a shared demo stored, every visitor could open: it takes no files at all."""
     response = demo_client.post(
-        "/api/imports/customers/preview",
-        files={"file": ("kunden.csv", rows.encode(), "text/csv")},
+        "/api/imports/invoices",
+        files={
+            "file": ("rechnungen.csv", b"Nummer\nR20150001\n", "text/csv"),
+            "files": ("R20150001.pdf", b"%PDF-1.4 invoice", "application/pdf"),
+        },
     )
-    assert response.status_code == 422
-    assert response.json()["error"]["code"] == "demo_import_too_many_rows"
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "demo_locked"
+    large = demo_client.post(
+        "/api/imports/invoices",
+        content=b"x" * (MAX_BODY_BYTES + 1),
+        headers={"content-type": "multipart/form-data; boundary=x"},
+    )
+    assert large.status_code == 413

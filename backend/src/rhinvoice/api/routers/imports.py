@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile, status
 from pydantic import Field, TypeAdapter
 from pydantic import ValidationError as PydanticValidationError
 
-from rhinvoice.api.dependencies import ContainerDep, CurrentUser
+from rhinvoice.api.dependencies import NOT_IN_DEMO, ContainerDep, CurrentUser
 from rhinvoice.api.schemas import ERROR_RESPONSES, ApiModel
 from rhinvoice.application.importing.fields import FIELDS, ImportTarget
 from rhinvoice.application.importing.files import ImportFile
@@ -26,7 +26,13 @@ from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.infrastructure.importing.archive import MAX_UPLOAD_BYTES, read_files
 from rhinvoice.infrastructure.importing.reader import MAX_FILE_BYTES
 
-router = APIRouter(prefix="/api/imports", tags=["imports"], responses=ERROR_RESPONSES)
+# A public demo takes no files from strangers: whatever it stored, every visitor could open.
+router = APIRouter(
+    prefix="/api/imports",
+    tags=["imports"],
+    responses=ERROR_RESPONSES,
+    dependencies=[NOT_IN_DEMO],
+)
 
 SAMPLE_ROWS = 3
 _MAPPING = TypeAdapter(dict[str, int])

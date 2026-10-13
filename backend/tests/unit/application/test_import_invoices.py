@@ -10,7 +10,6 @@ from rhinvoice.application.importing import handlers as import_handlers
 from rhinvoice.application.importing.fields import ImportTarget
 from rhinvoice.application.importing.files import ImportFile
 from rhinvoice.application.importing.handlers import (
-    DEMO_IMPORT_LIMITS,
     ImportHandlers,
     ImportRequest,
 )
@@ -322,23 +321,6 @@ def test_files_are_checked(handlers: ImportHandlers, monkeypatch: pytest.MonkeyP
     with raises_exactly(ValidationError, "at most 1 files per import") as caught:
         handlers.run(invoices_request(files=(ImportFile("a.pdf", PDF), ImportFile("b.pdf", PDF))))
     assert (caught.value.field, caught.value.code) == ("files", "too_many_files")
-
-
-def test_the_demo_limits_the_files(store: Store, clock: FixedClock) -> None:
-    store.company = factories.company()
-    handlers = ImportHandlers(
-        uow=lambda: InMemoryUnitOfWork(store),
-        clock=clock,
-        reader=SemicolonReader(),
-        limits=DEMO_IMPORT_LIMITS,
-    )
-    big = ImportFile("a.pdf", PDF + b"x" * (DEMO_IMPORT_LIMITS.max_bytes - len(PDF) + 1))
-    with raises_exactly(ValidationError, "files in the demo may have at most 200 KB") as caught:
-        handlers.run(invoices_request(files=(big,)))
-    assert (caught.value.field, caught.value.code) == ("files", "demo_import_too_large")
-    # Up to the limit the demo takes them.
-    fitting = ImportFile("a.pdf", PDF + b"x" * (DEMO_IMPORT_LIMITS.max_bytes - len(PDF)))
-    handlers.run(invoices_request(files=(fitting,), commit=False))
 
 
 def test_the_company_must_be_set_up(store: Store, clock: FixedClock) -> None:

@@ -5,6 +5,11 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Changed
+- The public demo takes no uploads any more: importing customers, articles and invoices is
+  switched off there, and the import page says how to try it on an own installation. Request
+  bodies in the demo may have at most 2 MB.
+
 ## [0.5.0] – 2026-10-13
 
 ### Added

@@ -5,12 +5,14 @@ import {
   FileSpreadsheetIcon,
   FilesIcon,
   FolderOpenIcon,
+  MonitorDownIcon,
   UploadIcon,
   XIcon,
 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { ExternalLink } from "@/components/external-link";
 import { useI18n } from "@/components/i18n/use-i18n";
 import {
   AlertDialog,
@@ -77,6 +79,7 @@ import {
 import { demoQuery } from "@/features/shared/demo-api";
 import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
+import { IMPORT_GUIDE_URL, INSTALL_URL } from "@/lib/about";
 import { cn } from "@/lib/cn";
 import { formatBytes, formatMoney, formatNumber } from "@/lib/format";
 import type { Locale } from "@/lib/locale";
@@ -113,6 +116,39 @@ const LIST_PATHS = {
 export function ImportPage({ target }: { readonly target: ImportTarget }) {
   const { t } = useI18n();
   useDocumentTitle(t("app.pageTitle", { title: t(`import.title.${target}`) }));
+  // The public demo takes no files: everything it stored, every visitor could open.
+  const demo = useQuery(demoQuery).data?.enabled === true;
+  return demo ? <ImportInDemo target={target} /> : <ImportForm target={target} />;
+}
+
+function ImportInDemo({ target }: { readonly target: ImportTarget }) {
+  const { t } = useI18n();
+  return (
+    <>
+      <PageHeader title={t(`import.title.${target}`)} />
+      <Card className="max-w-2xl">
+        <div className="flex items-start gap-4">
+          <MonitorDownIcon className="size-8 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <div className="flex flex-col gap-2">
+            <h2 className="text-sm font-medium">{t("import.demo.title")}</h2>
+            <p className="text-sm text-muted-foreground">{t("import.demo.text")}</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              <ExternalLink href={INSTALL_URL} className="min-h-6 text-primary">
+                {t("import.demo.install")}
+              </ExternalLink>
+              <ExternalLink href={IMPORT_GUIDE_URL} className="min-h-6 text-primary">
+                {t("import.demo.guide")}
+              </ExternalLink>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </>
+  );
+}
+
+function ImportForm({ target }: { readonly target: ImportTarget }) {
+  const { t } = useI18n();
   const errorMessage = useErrorMessage();
   const client = useQueryClient();
   const [chosen, setChosen] = useState<ChosenFile | null>(null);
@@ -294,8 +330,6 @@ function FilePicker({
   readonly onChoose: (file: File | undefined) => void;
 }) {
   const { t, locale } = useI18n();
-  // The public demo takes small files only (the server says so too).
-  const demo = useQuery(demoQuery).data?.enabled === true;
   const inputId = useId();
   const details =
     run === undefined
@@ -322,10 +356,7 @@ function FilePicker({
             {chosen === null ? t(`import.choose.${target}`) : chosen.file.name}
           </p>
           <p id={`${inputId}-details`} className="text-sm text-muted-foreground">
-            {details ??
-              (demo
-                ? t("import.formatsDemo")
-                : t("import.formats", { rows: formatNumber("10000", locale, 0) }))}
+            {details ?? t("import.formats", { rows: formatNumber("10000", locale, 0) })}
           </p>
         </div>
         {/* The browser's own file button cannot be translated or styled; the label is the button. */}

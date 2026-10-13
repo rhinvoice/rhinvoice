@@ -156,6 +156,6 @@ def test_imports_and_files_may_be_larger_than_other_requests() -> None:
     assert _body_limit(request("/api/imports/invoices")) == MAX_INVOICE_IMPORT_BODY_BYTES
     assert _body_limit(request("/api/documents/1/files")) == MAX_FILE_BODY_BYTES
     assert _body_limit(request("/api/documents/1/pdf")) == MAX_BODY_BYTES
-    # The public demo takes small imports only; it never reads hundreds of MB.
-    demo = _body_limit(request("/api/imports/invoices"), demo=True)
-    assert demo == MAX_IMPORT_BODY_BYTES
+    # The public demo takes no uploads at all; it never reads large bodies.
+    for path in ("/api/imports/invoices", "/api/imports/customers", "/api/documents/1/files"):
+        assert _body_limit(request(path), demo=True) == MAX_BODY_BYTES

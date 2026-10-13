@@ -5,6 +5,8 @@ export const REPOSITORY_URL = "https://github.com/rhinvoice/rhinvoice";
 export const ISSUES_URL = `${REPOSITORY_URL}/issues/new/choose`;
 export const CHANGELOG_URL = `${REPOSITORY_URL}/blob/main/CHANGELOG.md`;
 export const LICENSE_URL = `${REPOSITORY_URL}/blob/main/LICENSE`;
+export const INSTALL_URL = `${REPOSITORY_URL}/blob/main/docs/install.md`;
+export const IMPORT_GUIDE_URL = `${REPOSITORY_URL}/blob/main/docs/import.md`;
 
 export const MAKER = "webberz";
 export const MAKER_URL = "https://www.webberz.ch";

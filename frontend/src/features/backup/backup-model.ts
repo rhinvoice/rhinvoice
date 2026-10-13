@@ -10,8 +10,6 @@ export const BUSY_REFRESH_MS = 5_000;
 /** Otherwise once a minute: "vor 3 Minuten" stays true and daily backups show up. */
 export const IDLE_REFRESH_MS = 60_000;
 
-export const BACKUP_GUIDE = "https://github.com/rhinvoice/rhinvoice/blob/main/docs/backup.md";
-
 export function backupActivity(backup: Backup): BackupActivity {
   const latest = backup.runs[0];
   if (latest?.status === "running") {

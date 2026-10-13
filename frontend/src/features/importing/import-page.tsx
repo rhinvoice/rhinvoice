@@ -79,7 +79,7 @@ import {
 import { demoQuery } from "@/features/shared/demo-api";
 import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
-import { IMPORT_GUIDE_URL, INSTALL_URL } from "@/lib/about";
+import { docsUrl } from "@/lib/about";
 import { cn } from "@/lib/cn";
 import { formatBytes, formatMoney, formatNumber } from "@/lib/format";
 import type { Locale } from "@/lib/locale";
@@ -122,7 +122,8 @@ export function ImportPage({ target }: { readonly target: ImportTarget }) {
 }
 
 function ImportInDemo({ target }: { readonly target: ImportTarget }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const guide = target === "invoices" ? "moving/old-invoices" : "moving/customers-and-articles";
   return (
     <>
       <PageHeader title={t(`import.title.${target}`)} />
@@ -133,10 +134,13 @@ function ImportInDemo({ target }: { readonly target: ImportTarget }) {
             <h2 className="text-sm font-medium">{t("import.demo.title")}</h2>
             <p className="text-sm text-muted-foreground">{t("import.demo.text")}</p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              <ExternalLink href={INSTALL_URL} className="min-h-6 text-primary">
+              <ExternalLink
+                href={docsUrl("getting-started/installation", locale)}
+                className="min-h-6 text-primary"
+              >
                 {t("import.demo.install")}
               </ExternalLink>
-              <ExternalLink href={IMPORT_GUIDE_URL} className="min-h-6 text-primary">
+              <ExternalLink href={docsUrl(guide, locale)} className="min-h-6 text-primary">
                 {t("import.demo.guide")}
               </ExternalLink>
             </div>

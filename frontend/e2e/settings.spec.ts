@@ -86,7 +86,7 @@ test("the backup settings say when backups are not set up", async ({ page }) => 
   await expect(page.getByText("Nicht eingerichtet", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Anleitung öffnen" })).toHaveAttribute(
     "href",
-    /docs\/backup\.md$/,
+    "https://rhinvoice.com/docs/de/operations/backup/",
   );
   await expect(page.getByRole("button", { name: "Jetzt sichern" })).toHaveCount(0);
   await expectAccessible(page);

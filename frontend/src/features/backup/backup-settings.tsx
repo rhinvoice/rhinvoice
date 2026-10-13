@@ -15,14 +15,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { backupQuery, useRequestBackup, type BackupRun } from "@/features/backup/api";
-import { BACKUP_GUIDE, backupActivity } from "@/features/backup/backup-model";
+import { backupActivity } from "@/features/backup/backup-model";
 import { BackupBadge, BackupSummary } from "@/features/backup/backup-status";
 import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
+import { docsUrl } from "@/lib/about";
 import { formatBytes, formatDateTime } from "@/lib/format";
 
 export function BackupSettings() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const errorMessage = useErrorMessage();
   const query = useQuery(backupQuery);
   const request = useRequestBackup();
@@ -50,7 +51,7 @@ export function BackupSettings() {
               <p className="text-sm text-muted-foreground">
                 {t("backup.setUpHint")}{" "}
                 <a
-                  href={BACKUP_GUIDE}
+                  href={docsUrl("operations/backup", locale)}
                   className="inline-flex items-center gap-1 text-primary underline underline-offset-4"
                   rel="noreferrer"
                   target="_blank"

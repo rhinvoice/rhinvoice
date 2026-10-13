@@ -1134,7 +1134,7 @@ export const de = {
   "import.unusedHint":
     "Fehlt eine Rechnung in der Liste, oder steht ihre Nummer nicht im Dateinamen? Ein PDF lässt sich später auch auf der Rechnung selbst hinzufügen.",
   "import.nextNumber":
-    "Die nächste Rechnung, die du in Rhinvoice schreibst, bekommt die Nummer {number}.",
+    "Die nächste Rechnung, die Sie in Rhinvoice schreiben, bekommt die Nummer {number}.",
   "import.problem.non_positive_total": "Betrag ist null oder negativ",
   "import.problem.net_above_total": "Netto größer als der Gesamtbetrag",
   "import.problem.open_above_total": "offener Betrag größer als der Gesamtbetrag",

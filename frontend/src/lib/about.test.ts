@@ -5,11 +5,10 @@ import { describe, expect, it } from "vitest";
 import {
   APP_VERSION,
   CHANGELOG_URL,
-  IMPORT_GUIDE_URL,
-  INSTALL_URL,
   ISSUES_URL,
   LICENSE_URL,
   REPOSITORY_URL,
+  docsUrl,
 } from "@/lib/about";
 
 describe("about", () => {
@@ -20,8 +19,17 @@ describe("about", () => {
 
   it("links into the repository", () => {
     expect(REPOSITORY_URL).toBe("https://github.com/rhinvoice/rhinvoice");
-    for (const url of [ISSUES_URL, CHANGELOG_URL, LICENSE_URL, INSTALL_URL, IMPORT_GUIDE_URL]) {
+    for (const url of [ISSUES_URL, CHANGELOG_URL, LICENSE_URL]) {
       expect(url.startsWith(`${REPOSITORY_URL}/`)).toBe(true);
     }
+  });
+
+  it("links into the docs in the language of the interface", () => {
+    expect(docsUrl("operations/backup", "de-AT")).toBe(
+      "https://rhinvoice.com/docs/de/operations/backup/",
+    );
+    expect(docsUrl("operations/backup", "en")).toBe(
+      "https://rhinvoice.com/docs/operations/backup/",
+    );
   });
 });

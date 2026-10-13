@@ -126,7 +126,7 @@ test("the public demo takes no files and says where importing works", async ({ p
   await expect(page.getByLabel("Datei wählen")).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Installationsanleitung" })).toHaveAttribute(
     "href",
-    "https://github.com/rhinvoice/rhinvoice/blob/main/docs/install.md",
+    "https://rhinvoice.com/docs/de/getting-started/installation/",
   );
   await expectAccessible(page);
 });

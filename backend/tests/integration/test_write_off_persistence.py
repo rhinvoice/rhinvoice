@@ -162,6 +162,8 @@ def test_bad_debts(engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClo
     )
     clock.set(LATER)
     handlers.add_payment(old, PaymentInput(paid_on=date(2027, 1, 5), amount="100"))
+    # Recoveries are listed in the order they were recorded.
+    clock.set(LATER + timedelta(minutes=1))
     handlers.add_payment(old, PaymentInput(paid_on=date(2027, 2, 5), amount="50"))
     with SqlUnitOfWork(engine) as uow:
         debts = uow.documents.bad_debts()

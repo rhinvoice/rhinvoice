@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.5.2] – 2026-10-13
+
 ### Fixed
 - A session that ends while the app is open (expired, logged out elsewhere, or the hourly reset
   of the demo) now leads straight to the login, which says why. Before, pages showed "E-mail

@@ -5899,7 +5899,7 @@
   "info": {
     "summary": "Self-hosted invoicing for CH, LI, DE and AT",
     "title": "Rhinvoice",
-    "version": "0.5.1"
+    "version": "0.5.2"
   },
   "openapi": "3.1.0",
   "paths": {

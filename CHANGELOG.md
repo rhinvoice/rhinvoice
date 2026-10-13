@@ -5,6 +5,10 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Changed
+- The original PDF of an invoice taken over from another program shows only the sheet, fitted to the
+  width, without the browser viewer's thumbnails and toolbar (in Chromium browsers).
+
 ## [0.6.1] – 2026-10-13
 
 ### Fixed

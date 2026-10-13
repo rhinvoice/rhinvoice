@@ -5,6 +5,11 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Geändert
+- Das Original-PDF einer aus einem früheren Programm übernommenen Rechnung zeigt nur noch das Blatt,
+  auf die Breite eingepasst, ohne Miniaturen und Werkzeugleiste des Browser-Betrachters (in
+  Chromium-Browsern).
+
 ## [0.6.1] – 2026-10-13
 
 ### Behoben

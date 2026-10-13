@@ -6060,7 +6060,7 @@
   "info": {
     "summary": "Self-hosted invoicing for CH, LI, DE and AT",
     "title": "Rhinvoice",
-    "version": "0.5.6"
+    "version": "0.6.0"
   },
   "openapi": "3.1.0",
   "paths": {

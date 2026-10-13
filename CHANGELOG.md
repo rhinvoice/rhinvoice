@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.6.0] – 2026-10-13
+
 ### Added
 - Writing off invoices that will not be paid: *More actions → Write off …* on an open invoice, with
   date, reason and note. The invoice stays as issued and nothing goes to the customer; it is no longer

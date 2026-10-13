@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.6.0] – 2026-10-13
+
 ### Neu
 - Rechnungen abschreiben, die nicht mehr bezahlt werden: *Weitere Aktionen → Abschreiben …* auf einer
   offenen Rechnung, mit Datum, Grund und Notiz. Die Rechnung bleibt wie ausgestellt, der Kunde erhält

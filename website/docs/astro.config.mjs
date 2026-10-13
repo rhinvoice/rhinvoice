@@ -70,6 +70,7 @@ export default defineConfig({
           page("invoices/quotes", "Quotes", "Angebote"),
           page("invoices/issue-and-cancel", "Issuing and cancelling", "Ausstellen und Storno"),
           page("invoices/payments-and-reminders", "Payments and reminders", "Zahlungen und Mahnungen"),
+          page("invoices/write-off", "Writing off invoices", "Rechnungen abschreiben"),
           page("invoices/recurring", "Recurring invoices", "Wiederkehrende Rechnungen"),
           page("invoices/e-invoice", "E-invoices", "E-Rechnung"),
         ]),

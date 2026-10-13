@@ -1,0 +1,77 @@
+---
+title: Uneinbringliche Rechnung abschreiben
+description: Eine Rechnung, die nicht mehr bezahlt wird, in Rhinvoice abschreiben statt stornieren. Mit Debitorenverlusten pro Jahr, enthaltener MWST bzw. USt. und den Regeln je Land.
+faq:
+  - q: Wann schreibe ich eine Rechnung ab und wann storniere ich sie?
+    a: Stornieren Sie eine Rechnung, die falsch war oder deren Leistung es nicht gab. Der Kunde erhält dann eine Stornorechnung. Abschreiben ist für eine richtige Rechnung, die der Kunde nicht mehr bezahlt. Der Kunde erhält nichts und schuldet den Betrag weiterhin.
+  - q: Was passiert, wenn der Kunde eine abgeschriebene Rechnung doch noch bezahlt?
+    a: Sie erfassen die Zahlung wie gewohnt mit «Zahlung erfassen». Die Abschreibung bleibt im Jahr ihres Datums stehen, die Zahlung zählt als «Später bezahlt» im Jahr ihres Eingangs.
+  - q: Kann ich eine Abschreibung rückgängig machen?
+    a: Ja, mit «Weitere Aktionen → Abschreibung zurücknehmen». Der abgeschriebene Betrag ist danach wieder offen und kann gemahnt werden. Der Verlauf der Rechnung hält beides fest.
+  - q: Muss ich wegen der Abschreibung die MWST oder USt. korrigieren?
+    a: Das hängt von Ihrer Abrechnungsart ab. Wer die Steuer beim Rechnungsstellen schuldet, korrigiert sie. Wer sie erst beim Zahlungseingang schuldet, hat nichts zu korrigieren. Rhinvoice zeigt nur die im Betrag enthaltene Steuer.
+  - q: Kann ich auch übernommene Rechnungen aus einem früheren Programm abschreiben?
+    a: Ja. Übernommene Rechnungen lassen sich nicht stornieren, aber abschreiben, auch ohne PDF.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Eine Rechnung, die richtig war, aber nicht mehr bezahlt wird, **schreiben Sie in Rhinvoice ab**. Sie gilt danach nicht mehr als offen oder überfällig und wird nicht mehr gemahnt. Die Rechnung selbst bleibt unverändert, der Kunde erhält nichts, und als Zahlungseingang zählt der Betrag nicht.
+
+## Abschreiben oder stornieren?
+
+| | Stornieren | Abschreiben |
+|---|---|---|
+| Wann | Die Rechnung war falsch oder die Leistung gab es so nicht | Die Rechnung war richtig, der Kunde zahlt nicht |
+| Beleg an den Kunden | Stornorechnung mit eigener Nummer | Keiner |
+| Schuld des Kunden | Aufgehoben | Besteht weiter |
+| Übernommene Rechnungen | Nicht möglich | Möglich |
+
+Einen nachträglich vereinbarten Nachlass, etwa aus Kulanz, bilden Sie mit einem [Storno](/docs/de/invoices/issue-and-cancel/) und einer neuen Rechnung ab, nicht mit einer Abschreibung.
+
+## Rechnung abschreiben
+
+<Steps>
+
+1. Öffnen Sie die ausgestellte oder teilweise bezahlte Rechnung.
+2. Wählen Sie *Weitere Aktionen → Abschreiben …*.
+3. Setzen Sie das Datum unter *Abgeschrieben per*. Vorgeschlagen ist heute, *Ende Rechnungsjahr* setzt den 31. Dezember des Rechnungsjahres. Das Datum liegt zwischen dem Rechnungsdatum und heute.
+4. Wählen Sie den *Grund*: *Firma gelöscht oder Konkurs*, *Verjährt*, *Kleinbetrag*, *Nicht auffindbar* oder *Anderer Grund*. Eine *Notiz* ist freiwillig.
+5. Bestätigen Sie mit **Abschreiben**.
+
+</Steps>
+
+Abgeschrieben wird immer der ganze offene Betrag. Nach einer Teilzahlung ist das der Rest. Die Rechnung steht danach auf *Abgeschrieben*, ihr offener Betrag ist 0. Unter *Details* zeigt die Karte *Abschreibung* Datum, Betrag, Grund und die im Betrag enthaltene Steuer. Der *Verlauf* hält die Abschreibung fest.
+
+Eine abgeschriebene Rechnung lässt sich nicht stornieren und nicht mahnen.
+
+## Spätere Zahlung und Zurücknehmen
+
+Zahlt der Kunde doch noch, erfassen Sie die Zahlung auf der Rechnung mit *Zahlung erfassen*, höchstens bis zum abgeschriebenen Betrag. Ist der ganze Betrag bezahlt, steht die Rechnung auf *Bezahlt*, sonst bleibt sie für den Rest *Abgeschrieben*.
+
+War die Abschreibung ein Irrtum, nehmen Sie sie mit *Weitere Aktionen → Abschreibung zurücknehmen* zurück. Der Betrag ist dann wieder offen. Zahlungen, die vor der Abschreibung eingingen, lassen sich erst nach dem Zurücknehmen entfernen.
+
+## Verluste pro Jahr
+
+Die Rechnungsliste hat die Ansicht *Abgeschrieben*. Darunter steht eine Tabelle pro Jahr und Währung mit *Abgeschrieben*, *Später bezahlt*, *Verlust*, *Netto* und der enthaltenen Steuer. Eine Abschreibung zählt im Jahr ihres Datums, eine spätere Zahlung im Jahr ihres Eingangs. In der Schweiz und in Liechtenstein heisst die Tabelle *Debitorenverluste*, in Deutschland und Österreich *Forderungsausfälle*.
+
+Der Umsatz auf der Übersicht bleibt, was fakturiert wurde. Unter *Bezahlt* zählt nur, was wirklich einging.
+
+## Steuer je Land
+
+Rhinvoice weiss nicht, wie Ihre Firma die Steuer abrechnet, und bucht deshalb keine Korrektur. Es zeigt die enthaltene Steuer, damit Sie oder Ihre Buchhaltung sie verwenden können.
+
+| Land | Regel | Datum der Abschreibung |
+|---|---|---|
+| Schweiz, Liechtenstein | Bei Abrechnung nach vereinbartem Entgelt ist der Betrag eine Entgeltsminderung in der Periode, in der Sie ihn verbuchen (Art. 41 MWSTG). Bei Abrechnung nach vereinnahmtem Entgelt ist nichts zu korrigieren. | Tag der Verbuchung |
+| Deutschland | Bei Soll-Versteuerung berichtigen Sie die USt. in dem Zeitraum, in dem die Forderung uneinbringlich wurde, und erneut, wenn doch noch gezahlt wird (§ 17 Abs. 2 Nr. 1 UStG). | Tag, an dem die Forderung uneinbringlich wurde |
+| Österreich | Wie Deutschland (§ 16 Abs. 3 Z 1 UStG). | Tag, an dem die Forderung uneinbringlich wurde |
+
+<Aside type="caution" title="Keine Steuerberatung">
+Ob eine Forderung als uneinbringlich gilt und ob Sie die Steuer korrigieren, klären Sie mit Ihrer Treuhand oder Steuerberatung. Führen Sie eine Bilanz, sagen Sie Ihrer Buchhaltung, welche Rechnungen Sie abgeschrieben haben.
+</Aside>
+
+## Häufige Fragen
+
+<Faq />

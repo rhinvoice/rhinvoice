@@ -5,6 +5,16 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Added
+- Writing off invoices that will not be paid: *More actions → Write off …* on an open invoice, with
+  date, reason and note. The invoice stays as issued and nothing goes to the customer; it is no longer
+  open, overdue or reminded, and it does not count as paid. A payment that comes in later is recorded
+  as usual, and a write-off made by mistake can be taken back. Invoices taken over from another
+  program can be written off too.
+- The invoice list has the view *Written off* with the bad debts per year and currency: written off,
+  paid later, loss, net and the tax contained. Each country names them and its tax rule in its own
+  words (CH/LI Art. 41 MWSTG, DE § 17 UStG, AT § 16 UStG).
+
 ## [0.5.6] – 2026-10-13
 
 ### Added

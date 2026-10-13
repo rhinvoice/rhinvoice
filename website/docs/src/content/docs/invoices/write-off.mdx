@@ -1,0 +1,77 @@
+---
+title: Writing off an invoice that will not be paid
+description: Write off an uncollectible invoice in Rhinvoice instead of cancelling it. With bad debts per year, the VAT contained in them and the rules of each country.
+faq:
+  - q: When do I write an invoice off and when do I cancel it?
+    a: Cancel an invoice that was wrong or whose service was never provided. The customer then gets a cancellation invoice. Writing off is for a correct invoice the customer no longer pays. The customer receives nothing and still owes the amount.
+  - q: What happens if the customer pays a written-off invoice after all?
+    a: Record the payment as usual with "Record payment". The write-off stays in the year of its date, and the payment counts as "Paid later" in the year it came in.
+  - q: Can I undo a write-off?
+    a: Yes, with "More actions → Take write-off back". The written-off amount is open again afterwards and can be reminded. The history of the invoice notes both.
+  - q: Do I have to correct the VAT because of the write-off?
+    a: That depends on how you account for VAT. If you owe the tax when invoicing, you correct it. If you owe it only when the payment comes in, there is nothing to correct. Rhinvoice only shows the tax contained in the amount.
+  - q: Can I write off invoices taken over from a program used before?
+    a: Yes. Taken-over invoices cannot be cancelled, but they can be written off, also without a PDF.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+An invoice that was correct but will not be paid any more is **written off in Rhinvoice**. It then no longer counts as open or overdue and is not reminded. The invoice itself stays unchanged, the customer receives nothing, and the amount does not count as a payment received.
+
+## Write off or cancel?
+
+| | Cancel | Write off |
+|---|---|---|
+| When | The invoice was wrong or the service was not provided like that | The invoice was correct, the customer does not pay |
+| Document to the customer | Cancellation invoice with its own number | None |
+| The customer's debt | Lifted | Remains |
+| Taken-over invoices | Not possible | Possible |
+
+A discount agreed afterwards, for example as a goodwill gesture, is a [cancellation](/docs/invoices/issue-and-cancel/) and a new invoice, not a write-off.
+
+## Writing off an invoice
+
+<Steps>
+
+1. Open the issued or partially paid invoice.
+2. Choose *More actions → Write off …*.
+3. Set the date under *Written off as of*. Today is suggested, *End of invoice year* sets 31 December of the invoice's year. The date lies between the invoice date and today.
+4. Choose the *Reason*: *Company dissolved or bankrupt*, *Time-barred*, *Small amount*, *Cannot be found* or *Other reason*. A *Note* is optional.
+5. Confirm with **Write off**.
+
+</Steps>
+
+The whole open amount is always written off. After a partial payment that is the rest. The invoice then shows *Written off* and its open amount is 0. Under *Details*, the card *Write-off* shows date, amount, reason and the tax contained in the amount. The *History* notes the write-off.
+
+A written-off invoice cannot be cancelled or reminded.
+
+## Later payment and taking it back
+
+If the customer pays after all, record the payment on the invoice with *Record payment*, up to the written-off amount. Once the whole amount is paid the invoice shows *Paid*, otherwise it stays *Written off* for the rest.
+
+If the write-off was a mistake, take it back with *More actions → Take write-off back*. The amount is then open again. Payments that came in before the write-off can only be removed after taking it back.
+
+## Losses per year
+
+The invoice list has the view *Written off*. Below it, a table per year and currency shows *Written off*, *Paid later*, *Loss*, *Net* and the tax contained. A write-off counts in the year of its date, a later payment in the year it came in. With the interface in German the table is called *Debitorenverluste* in Switzerland and Liechtenstein and *Forderungsausfälle* in Germany and Austria; in English it is *Bad debts*.
+
+The revenue on the dashboard remains what was invoiced. *Paid* only counts what really came in.
+
+## Tax by country
+
+Rhinvoice does not know how your company accounts for VAT and therefore books no correction. It shows the tax contained, so that you or your bookkeeper can use it.
+
+| Country | Rule | Date of the write-off |
+|---|---|---|
+| Switzerland, Liechtenstein | If you account by agreed consideration, the amount reduces the consideration in the period you book it (Art. 41 MWSTG). By received consideration there is nothing to correct. | Day of booking |
+| Germany | If you owe VAT when invoicing, correct it in the period in which the amount became uncollectible, and again if it is paid after all (§ 17 Abs. 2 Nr. 1 UStG). | Day the amount became uncollectible |
+| Austria | As in Germany (§ 16 Abs. 3 Z 1 UStG). | Day the amount became uncollectible |
+
+<Aside type="caution" title="No tax advice">
+Whether an amount counts as uncollectible and whether you correct the tax is a question for your fiduciary or tax advisor. If you keep a balance sheet, tell your bookkeeper which invoices you wrote off.
+</Aside>
+
+## Questions
+
+<Faq />

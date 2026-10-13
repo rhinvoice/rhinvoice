@@ -5,6 +5,16 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Neu
+- Rechnungen abschreiben, die nicht mehr bezahlt werden: *Weitere Aktionen → Abschreiben …* auf einer
+  offenen Rechnung, mit Datum, Grund und Notiz. Die Rechnung bleibt wie ausgestellt, der Kunde erhält
+  nichts; sie ist nicht mehr offen, überfällig oder mahnbar und zählt nicht als bezahlt. Eine spätere
+  Zahlung erfassen Sie wie gewohnt, eine irrtümliche Abschreibung nehmen Sie zurück. Auch aus einem
+  früheren Programm übernommene Rechnungen lassen sich abschreiben.
+- Die Rechnungsliste hat die Ansicht *Abgeschrieben* mit den Verlusten pro Jahr und Währung:
+  abgeschrieben, später bezahlt, Verlust, netto und enthaltene Steuer. Jedes Land nennt sie und seine
+  Steuerregel in den eigenen Worten (CH/FL Art. 41 MWSTG, DE § 17 UStG, AT § 16 UStG).
+
 ## [0.5.6] – 2026-10-13
 
 ### Neu

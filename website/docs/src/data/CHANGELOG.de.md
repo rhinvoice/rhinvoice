@@ -5,6 +5,14 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Behoben
+- Der Backup-Container sichert sofort, nachdem er ein neues Repository angelegt hat. Bisher blieb ein
+  Repository, das nach früheren erfolgreichen Backups entstand (anderes Ziel, anderer Zugriff auf
+  dasselbe), bis zum nächsten täglichen Backup leer, während die Übersicht noch das letzte
+  erfolgreiche zeigte.
+- Ein Backup, das während des Anlegens des Repositorys angefordert wird, scheitert nicht mehr mit
+  «config file already exists».
+
 ## [0.6.0] – 2026-10-13
 
 ### Neu

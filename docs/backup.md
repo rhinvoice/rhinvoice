@@ -109,8 +109,8 @@ what changed, usually a few kilobytes.
 4. **Try it:** wait until `docker compose logs backup` shows `waiting for requests`, then
    run `docker compose exec backup rhinvoice-backup backup`. The folder `Rhinvoice-Backup`
    appears in your Dropbox; *Settings → Backup* shows the backup. Creating the repository on
-   the first start takes about a minute over rclone; a backup asked for before that fails
-   with `config file already exists`, although nothing is wrong.
+   the first start takes about a minute over rclone. Up to version 0.6.0 a backup asked
+   for before that fails with `config file already exists`, although nothing is wrong.
 
 For other providers (OneDrive, kDrive and other WebDAV storage, …) run
 `docker compose run --rm --no-deps backup rclone config`, answer "No" when asked whether to
@@ -182,9 +182,10 @@ a second folder of the same name appears next to it. Let rclone create the folde
 
 The new client does not see what the old one wrote: the repository made with rclone's shared
 client ID is invisible to it. The backup container therefore **creates a new, empty
-repository** in a second folder of the same name, and it does not back up by itself right
-then. Until you start a backup by hand there is no backup the installation can reach, while
-the dashboard still shows the last successful one.
+repository** in a second folder of the same name. Since version 0.6.1 it backs up into a new
+repository at once. Up to version 0.6.0 it does not: until you start a backup by hand there
+is no backup the installation can reach, while the dashboard still shows the last
+successful one.
 
 Do steps 1 to 6 above, authorize as shown, then on the server:
 
@@ -198,7 +199,7 @@ docker compose run --rm --no-deps backup rclone config create gdrive drive \
 unset TOKEN CID CSECRET
 docker compose up -d backup
 docker compose logs -f backup                            # wait for "waiting for requests"
-docker compose exec backup rhinvoice-backup backup       # needed: the new repository is empty
+docker compose exec backup rhinvoice-backup backup       # needed up to 0.6.0: the new repository is empty
 docker compose exec backup rhinvoice-backup snapshots
 docker compose exec backup rhinvoice-backup check
 ```

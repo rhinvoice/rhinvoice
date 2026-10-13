@@ -87,12 +87,22 @@ has_data() {
     [ "$(echo "SELECT EXISTS (SELECT 1 FROM public.company)" | sql)" = "t" ]
 }
 
+# Set once this process created the repository: it is empty until the first backup.
+NEW_REPOSITORY=""
+
 ensure_repository() {
     status=0
     restic cat config >/dev/null 2>&1 || status=$?
     if [ "$status" -eq "$NO_REPOSITORY" ]; then
         log "creating the restic repository"
-        restic init >/dev/null || return 1
+        if restic init >/dev/null; then
+            NEW_REPOSITORY="yes"
+        else
+            # Created meanwhile by another process (the container starting while a backup
+            # is asked for by hand): "config file already exists" is no failure then.
+            restic cat config >/dev/null 2>&1 || return 1
+            log "the repository was created meanwhile"
+        fi
     fi
 }
 
@@ -277,6 +287,12 @@ run() {
     configured || not_configured
     recover_runs || log "could not clean up interrupted runs"
     if ensure_repository && restic unlock >/dev/null; then
+        # A repository made just now holds nothing, whatever was backed up before (another
+        # target, another access to the same one): the earlier backups are out of reach.
+        if [ -n "$NEW_REPOSITORY" ] && has_data; then
+            log "the repository is new: backing up at once"
+            backup daily || log "the first backup failed; start one with: rhinvoice-backup backup"
+        fi
         log "waiting for requests; daily backup at $DAILY_AT ($TIMEZONE)"
     else
         log "the repository is not reachable yet; the next backup will try again"

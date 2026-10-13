@@ -5,6 +5,13 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Fixed
+- The backup container backs up at once after it created a new repository. Before, a repository
+  made after earlier successful backups (another target, another access to the same one) stayed
+  empty until the next daily backup, while the dashboard still showed the last successful one.
+- A backup asked for while the repository is being created no longer fails with "config file
+  already exists".
+
 ## [0.6.0] – 2026-10-13
 
 ### Added

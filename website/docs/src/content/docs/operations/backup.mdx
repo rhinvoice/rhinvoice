@@ -100,7 +100,7 @@ restic reaches them through [rclone](https://rclone.org), which is part of the b
    RESTIC_REPOSITORY=rclone:dropbox:Rhinvoice-Backup
    ```
 
-4. **Try it:** wait until `docker compose logs backup` shows `waiting for requests`, then run `docker compose exec backup rhinvoice-backup backup`. The folder `Rhinvoice-Backup` appears in your Dropbox; *Settings → Backup* shows the backup. Creating the repository on the first start takes about a minute over rclone. A backup asked for before that fails with `config file already exists`, although nothing is wrong.
+4. **Try it:** wait until `docker compose logs backup` shows `waiting for requests`, then run `docker compose exec backup rhinvoice-backup backup`. The folder `Rhinvoice-Backup` appears in your Dropbox; *Settings → Backup* shows the backup. Creating the repository on the first start takes about a minute over rclone. Up to version 0.6.0 a backup asked for before that fails with `config file already exists`, although nothing is wrong.
 
 </Steps>
 

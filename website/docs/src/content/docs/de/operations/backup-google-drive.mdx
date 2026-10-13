@@ -74,10 +74,10 @@ Lassen Sie rclone den Ordner anlegen. Ein Ordner, den Sie selbst im Browser ange
 
 ## Bestehendes Backup auf die eigene Client-ID umstellen
 
-Ein Backup-Container, der `NOTICE: … rclone's shared Google Drive client_id` ins Log schreibt, verwendet noch die gemeinsame Client-ID. Der neue Client sieht nicht, was der alte geschrieben hat. Der Backup-Container **legt deshalb ein neues, leeres Repository an**, in einem zweiten Ordner mit demselben Namen, und sichert in diesem Moment nicht von selbst.
+Ein Backup-Container, der `NOTICE: … rclone's shared Google Drive client_id` ins Log schreibt, verwendet noch die gemeinsame Client-ID. Der neue Client sieht nicht, was der alte geschrieben hat. Der Backup-Container **legt deshalb ein neues, leeres Repository an**, in einem zweiten Ordner mit demselben Namen. Seit Version 0.6.1 sichert er sofort in ein neues Repository.
 
-<Aside type="caution" title="Das erste Backup von Hand starten">
-Bis Sie ein Backup von Hand starten, gibt es kein Backup, das die Installation erreichen kann, während die Übersicht noch das letzte erfolgreiche zeigt.
+<Aside type="caution" title="Bis Version 0.6.0: das erste Backup von Hand starten">
+Bis Version 0.6.0 sichert der Container nach dem Anlegen des Repositorys nicht von selbst. Bis Sie ein Backup von Hand starten, gibt es kein Backup, das die Installation erreichen kann, während die Übersicht noch das letzte erfolgreiche zeigt.
 </Aside>
 
 Legen Sie die Client-ID an und autorisieren Sie wie oben, dann auf dem Server:
@@ -92,7 +92,7 @@ docker compose run --rm --no-deps backup rclone config create gdrive drive \
 unset TOKEN CID CSECRET
 docker compose up -d backup
 docker compose logs -f backup                            # wait for "waiting for requests"
-docker compose exec backup rhinvoice-backup backup       # needed: the new repository is empty
+docker compose exec backup rhinvoice-backup backup       # needed up to 0.6.0: the new repository is empty
 docker compose exec backup rhinvoice-backup snapshots
 docker compose exec backup rhinvoice-backup check
 ```

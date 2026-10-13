@@ -74,10 +74,10 @@ Let rclone create the folder. A folder you made yourself in the browser is invis
 
 ## Moving an existing backup to your own client ID
 
-A backup container that logs `NOTICE: … rclone's shared Google Drive client_id` still uses the shared client ID. The new client does not see what the old one wrote. The backup container therefore **creates a new, empty repository** in a second folder of the same name, and it does not back up by itself right then.
+A backup container that logs `NOTICE: … rclone's shared Google Drive client_id` still uses the shared client ID. The new client does not see what the old one wrote. The backup container therefore **creates a new, empty repository** in a second folder of the same name. Since version 0.6.1 it backs up into a new repository at once.
 
-<Aside type="caution" title="Start the first backup by hand">
-Until you start a backup by hand, there is no backup the installation can reach, while the dashboard still shows the last successful one.
+<Aside type="caution" title="Up to version 0.6.0: start the first backup by hand">
+Up to version 0.6.0 the container does not back up by itself after creating the repository. Until you start a backup by hand, there is no backup the installation can reach, while the dashboard still shows the last successful one.
 </Aside>
 
 Create the client ID and authorize as above, then on the server:
@@ -92,7 +92,7 @@ docker compose run --rm --no-deps backup rclone config create gdrive drive \
 unset TOKEN CID CSECRET
 docker compose up -d backup
 docker compose logs -f backup                            # wait for "waiting for requests"
-docker compose exec backup rhinvoice-backup backup       # needed: the new repository is empty
+docker compose exec backup rhinvoice-backup backup       # needed up to 0.6.0: the new repository is empty
 docker compose exec backup rhinvoice-backup snapshots
 docker compose exec backup rhinvoice-backup check
 ```

@@ -65,8 +65,24 @@ compose run --rm --no-deps -e RESTIC_REPOSITORY="$via_rclone" backup backup
 compose run --rm --no-deps -e RESTIC_REPOSITORY="$via_rclone" backup snapshots | grep -q rhinvoice.sql
 test "$(psql_db "SELECT count(*) FROM backup_runs WHERE reason = 'manual' AND status = 'succeeded'")" = "1"
 
-echo "--- a failed backup is recorded with its reason and its request stays open"
+echo "--- a new repository is filled at once, although today's backup was made"
 compose stop backup
+dailies="$(psql_db "SELECT count(*) FROM backup_runs WHERE reason = 'daily' AND status = 'succeeded'")"
+fresh="/repository/fresh"
+for expected in "$((dailies + 1))" "$((dailies + 1))"; do
+    container="$(compose run --detach --no-deps -e RESTIC_REPOSITORY="$fresh" backup)"
+    until docker logs "$container" 2>&1 | grep -q "waiting for requests"; do sleep 1; done
+    # The first start creates the repository and backs up, the second finds it and does not.
+    test "$(psql_db "SELECT count(*) FROM backup_runs WHERE reason = 'daily' AND status = 'succeeded'")" = "$expected"
+    docker logs "$container" 2>&1 | grep -c "the repository is new" >>/tmp/rhinvoice-backup-test-new || true
+    docker stop "$container" >/dev/null
+    docker rm "$container" >/dev/null
+done
+test "$(tr '\n' ' ' </tmp/rhinvoice-backup-test-new)" = "1 0 "
+rm -f /tmp/rhinvoice-backup-test-new
+compose run --rm --no-deps -e RESTIC_REPOSITORY="$fresh" backup snapshots | grep -q rhinvoice.sql
+
+echo "--- a failed backup is recorded with its reason and its request stays open"
 wrong="$(compose run --detach --no-deps -e RESTIC_PASSWORD=wrong backup)"
 psql_db "INSERT INTO backup_requests (requested_at, reason) VALUES (now(), 'manual')"
 wait_for "SELECT EXISTS (SELECT 1 FROM backup_runs WHERE status = 'failed' AND message LIKE '%password%')"

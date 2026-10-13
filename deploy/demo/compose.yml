@@ -6,7 +6,16 @@
 #   docker compose up -d
 name: rhinvoice-demo
 
+# Access logs hold IP addresses (see the privacy notice on rhinvoice.com): each service keeps at
+# most two files of 5 MB, the older one is overwritten, and an update starts the apps' logs anew.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "5m"
+    max-file: "2"
+
 x-app: &app
+  logging: *logging
   # A released version with the demo mode (0.4.0 or later); older images ignore
   # RHINVOICE_DEMO and would start an empty installation open to the first visitor.
   image: ${RHINVOICE_IMAGE:?set RHINVOICE_IMAGE in .env, e.g. ghcr.io/rhinvoice/rhinvoice:0.4.0}
@@ -63,6 +72,7 @@ services:
 
   caddy:
     image: caddy:2.10-alpine
+    logging: *logging
     restart: unless-stopped
     depends_on: [app-ch, app-de, app-at]
     environment:
@@ -91,6 +101,7 @@ services:
 
   gotenberg:
     image: gotenberg/gotenberg:8.37.0
+    logging: *logging
     restart: unless-stopped
     command:
       - gotenberg
@@ -111,6 +122,7 @@ services:
   # One server, one database and one role per country (created by init-databases.sh).
   db:
     image: postgres:17-alpine
+    logging: *logging
     restart: unless-stopped
     environment:
       POSTGRES_DB: rhinvoice

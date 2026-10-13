@@ -1,0 +1,64 @@
+---
+// Starlight's "on this page", followed by a way into the demo.
+import Default from "@astrojs/starlight/components/PageSidebar.astro";
+
+const { lang, toc } = Astro.locals.starlightRoute;
+const german = lang === "de";
+const demos = [
+  ["CH", "https://ch.rhinvoice.com"],
+  ["DE", "https://de.rhinvoice.com"],
+  ["AT", "https://at.rhinvoice.com"],
+] as const;
+---
+
+<Default />
+{
+  toc && (
+    <aside class="demo sl-hidden lg:sl-block" aria-label={german ? "Demo" : "Demo"}>
+      <p class="demo-title">{german ? "Demo ausprobieren" : "Try the demo"}</p>
+      <p>{german ? "Rechnungen schreiben, ohne etwas zu installieren:" : "Write invoices without installing anything:"}</p>
+      <p class="demo-links">
+        {demos.map(([country, href]) => (
+          <a href={href}>{country}</a>
+        ))}
+      </p>
+    </aside>
+  )
+}
+
+<style>
+  .demo {
+    /* As wide as the contents above it; the column itself runs to the screen's edge. */
+    width: calc(var(--sl-sidebar-width) - 2 * var(--sl-sidebar-pad-x));
+    margin: 1.5rem var(--sl-sidebar-pad-x) 0;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.75rem;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-xs);
+    line-height: 1.5;
+  }
+  .demo-title {
+    color: var(--sl-color-white);
+    font-weight: 600;
+  }
+  .demo-links {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+  }
+  .demo-links a {
+    display: grid;
+    place-items: center;
+    min-width: 2.25rem;
+    min-height: 1.6rem;
+    border-radius: 999px;
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-accent);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .demo-links a:hover {
+    text-decoration: underline;
+  }
+</style>

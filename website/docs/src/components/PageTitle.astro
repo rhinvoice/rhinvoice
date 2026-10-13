@@ -1,26 +1,80 @@
 ---
-// Starlight's title, followed by "Since version …" when the page's feature is newer than the
-// first public release (frontmatter `since`).
+// The title as in the first draft: the way there above it, then reading time and, for a feature
+// newer than the first public release (frontmatter `since`), the version that brought it.
 import Since from "./Since.astro";
 
 // Starlight's id for the page title (its "skip to content" target); not exported by the package.
 const PAGE_TITLE_ID = "_top";
+const WORDS_PER_MINUTE = 200;
 
-const { title, since } = Astro.locals.starlightRoute.entry.data;
+const { entry, sidebar, siteTitleHref, lang } = Astro.locals.starlightRoute;
+const { title, since } = entry.data;
+const german = lang === "de";
+
+type Entry = (typeof sidebar)[number];
+const group = sidebar.find(
+  (item): item is Extract<Entry, { type: "group" }> =>
+    item.type === "group" && item.entries.some((child) => child.type === "link" && child.isCurrent),
+);
+const groupStart = group?.entries.find((child) => child.type === "link");
+const isHome = Astro.url.pathname === siteTitleHref;
+const minutes = Math.max(1, Math.round((entry.body ?? "").split(/\s+/).length / WORDS_PER_MINUTE));
 ---
 
+{
+  !isHome && (
+    <nav class="crumbs" aria-label={german ? "Brotkrumen" : "Breadcrumbs"}>
+      <a href={siteTitleHref}>{german ? "Dokumentation" : "Docs"}</a>
+      {group && groupStart && (
+        <>
+          <span aria-hidden="true">›</span>
+          <a href={groupStart.href}>{group.label}</a>
+        </>
+      )}
+    </nav>
+  )
+}
 <h1 id={PAGE_TITLE_ID}>{title}</h1>
-{since && <p class="page-since"><Since version={since} /></p>}
+{
+  !isHome && (
+    <p class="meta">
+      <span>{german ? `Lesezeit ${minutes} ${minutes === 1 ? "Minute" : "Minuten"}` : `${minutes} min read`}</span>
+      {since && <Since version={since} />}
+    </p>
+  )
+}
 
 <style>
+  .crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-sm);
+  }
+  .crumbs a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .crumbs a:hover {
+    color: var(--sl-color-white);
+    text-decoration: underline;
+  }
   h1 {
-    margin-top: 1rem;
+    margin-top: 0.5rem;
     font-size: var(--sl-text-h1);
     line-height: var(--sl-line-height-headings);
     font-weight: 600;
     color: var(--sl-color-white);
   }
-  .page-since {
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.9rem;
     margin-top: 0.75rem;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-sm);
   }
 </style>

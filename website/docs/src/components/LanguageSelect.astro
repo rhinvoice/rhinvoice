@@ -1,0 +1,40 @@
+---
+// DE | EN as two links, as on rhinvoice.com: one click, no menu.
+import { otherLanguagePath } from "../lib/paths";
+
+const { lang } = Astro.locals.starlightRoute;
+const german = lang === "de";
+const other = otherLanguagePath(Astro.url.pathname, lang);
+---
+
+<nav class="lang" aria-label={german ? "Sprache" : "Language"}>
+  <a href={german ? Astro.url.pathname : other} hreflang="de" lang="de" aria-current={german ? "true" : undefined}>DE</a>
+  <a href={german ? other : Astro.url.pathname} hreflang="en" lang="en" aria-current={german ? undefined : "true"}>EN</a>
+</nav>
+
+<style>
+  .lang {
+    display: flex;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 999px;
+    overflow: hidden;
+    font-size: var(--sl-text-sm);
+  }
+  .lang a {
+    display: grid;
+    place-items: center;
+    min-width: 2.25rem;
+    min-height: 1.75rem;
+    padding-inline: 0.6rem;
+    color: var(--sl-color-gray-3);
+    text-decoration: none;
+  }
+  .lang a:hover {
+    color: var(--sl-color-white);
+  }
+  .lang a[aria-current] {
+    background: var(--sl-color-accent);
+    color: var(--sl-color-black);
+    font-weight: 600;
+  }
+</style>

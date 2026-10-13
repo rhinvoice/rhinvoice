@@ -4,7 +4,7 @@ import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 
 const group = (label, de, items) => ({ label, translations: { de }, items });
-const page = (slug, label, de) => ({ slug, label, translations: { de } });
+const page = (slug, label, de, attrs = {}) => ({ slug, label, translations: { de }, attrs });
 
 export default defineConfig({
   site: "https://rhinvoice.com",
@@ -36,6 +36,11 @@ export default defineConfig({
       components: {
         SiteTitle: "./src/components/SiteTitle.astro",
         PageTitle: "./src/components/PageTitle.astro",
+        PageSidebar: "./src/components/PageSidebar.astro",
+        Sidebar: "./src/components/Sidebar.astro",
+        LanguageSelect: "./src/components/LanguageSelect.astro",
+        SocialIcons: "./src/components/SocialIcons.astro",
+        ThemeSelect: "./src/components/ThemeSelect.astro",
       },
       head: [
         { tag: "meta", attrs: { name: "theme-color", content: "#f6f8fb", media: "(prefers-color-scheme: light)" } },
@@ -53,10 +58,10 @@ export default defineConfig({
           page("getting-started/first-invoice", "Your first invoice", "Die erste Rechnung"),
         ]),
         group("Countries", "Länder", [
-          page("countries/switzerland", "Switzerland", "Schweiz"),
-          page("countries/liechtenstein", "Liechtenstein", "Liechtenstein"),
-          page("countries/germany", "Germany", "Deutschland"),
-          page("countries/austria", "Austria", "Österreich"),
+          page("countries/switzerland", "Switzerland", "Schweiz", { "data-code": "CH" }),
+          page("countries/liechtenstein", "Liechtenstein", "Liechtenstein", { "data-code": "FL" }),
+          page("countries/germany", "Germany", "Deutschland", { "data-code": "DE" }),
+          page("countries/austria", "Austria", "Österreich", { "data-code": "AT" }),
         ]),
         // Its own entry, so that everyone sees Rhinvoice is open to more countries.
         page("countries/more-countries", "More countries", "Weitere Länder"),

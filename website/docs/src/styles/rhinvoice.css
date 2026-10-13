@@ -138,12 +138,46 @@ starlight-theme-select label {
   }
   .sidebar-pane {
     inset-inline-start: var(--rh-gutter);
-    border-inline-start: 1px solid var(--sl-color-hairline-shade);
   }
   .main-frame {
     padding-inline: calc(var(--sl-content-inline-start) + var(--rh-gutter)) var(--rh-gutter);
   }
-  .right-sidebar {
-    border-inline-end: 1px solid var(--sl-color-hairline);
+}
+
+/* One calm surface as in the first draft: no panels or lines between navigation, page and contents. */
+:root,
+:root[data-theme="light"] {
+  --sl-color-bg-nav: var(--sl-color-black);
+  --sl-color-bg-sidebar: var(--sl-color-black);
+}
+@media (min-width: 50rem) {
+  .sidebar-pane {
+    border-inline-end-color: transparent !important;
   }
+}
+.right-sidebar {
+  border-inline-start-color: transparent !important;
+}
+/* No line under the title; the first paragraph is the page's lead. */
+.content-panel + .content-panel {
+  border-top-color: transparent !important;
+  padding-top: 0.5rem;
+}
+.sl-markdown-content > p:first-child {
+  color: var(--sl-color-gray-2);
+  font-size: var(--sl-text-lg);
+}
+/* "On this page" as a small label, like the navigation's groups. */
+.right-sidebar-panel h2 {
+  font-family: var(--sl-font);
+  font-size: 0.75rem !important;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-3) !important;
+}
+/* Notes and tips as rounded boxes with a fine border. */
+.starlight-aside {
+  border: 1px solid color-mix(in oklab, var(--sl-color-asides-border) 45%, transparent);
+  border-radius: 0.75rem;
 }

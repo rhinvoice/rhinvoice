@@ -1,0 +1,111 @@
+---
+// The navigation as in the first draft: groups under small labels, always open, the countries
+// with their code in front (`attrs: { "data-code": "CH" }` in astro.config.mjs).
+// Starlight's own footer of the phone menu; it shows the components overridden here.
+import MobileMenuFooter from "@astrojs/starlight/components/MobileMenuFooter.astro";
+
+const { sidebar, lang } = Astro.locals.starlightRoute;
+
+type Link = Extract<(typeof sidebar)[number], { type: "link" }>;
+
+function code(link: Link): string | undefined {
+  const value = (link.attrs as Record<string, unknown>)["data-code"];
+  if (typeof value !== "string") return undefined;
+  // Liechtenstein is "FL" in German and "LI" in English, as on rhinvoice.com.
+  return value === "FL" && lang !== "de" ? "LI" : value;
+}
+---
+
+<nav class="docs-nav">
+  {
+    sidebar.map((entry) =>
+      entry.type === "link" ? (
+        <ul>
+          <li>
+            <a href={entry.href} aria-current={entry.isCurrent ? "page" : undefined}>
+              {entry.label}
+            </a>
+          </li>
+        </ul>
+      ) : (
+        <>
+          <h2>{entry.label}</h2>
+          <ul>
+            {entry.entries.map(
+              (child) =>
+                child.type === "link" && (
+                  <li>
+                    <a href={child.href} aria-current={child.isCurrent ? "page" : undefined}>
+                      {code(child) && <span class="code" aria-hidden="true">{code(child)}</span>}
+                      {child.label}
+                    </a>
+                  </li>
+                ),
+            )}
+          </ul>
+        </>
+      ),
+    )
+  }
+</nav>
+
+<div class="md:sl-hidden">
+  <MobileMenuFooter />
+</div>
+
+<style>
+  .docs-nav {
+    padding-block: 0.5rem 2rem;
+  }
+  h2 {
+    margin: 1.4rem 0 0.35rem;
+    padding-inline: 0.6rem;
+    font-family: var(--sl-font);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
+  }
+  h2:first-child {
+    margin-top: 0;
+  }
+  ul {
+    display: grid;
+    gap: 1px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* A link on its own (more countries) sits between the groups. */
+  ul + ul,
+  ul + h2 {
+    margin-top: 1rem;
+  }
+  a {
+    display: flex;
+    align-items: baseline;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.5rem;
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-sm);
+    line-height: 1.4;
+    text-decoration: none;
+  }
+  a:hover {
+    background: var(--sl-color-accent-low);
+  }
+  a[aria-current="page"] {
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-accent);
+    font-weight: 600;
+  }
+  .code {
+    flex: none;
+    width: 1.75rem;
+    color: var(--sl-color-gray-3);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+</style>

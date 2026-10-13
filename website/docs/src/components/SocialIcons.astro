@@ -1,0 +1,23 @@
+---
+// "Website" and "GitHub" as words, as in the first draft of the docs.
+import { websiteHref } from "../lib/paths";
+
+const { lang } = Astro.locals.starlightRoute;
+---
+
+<a class="top-link" href={websiteHref(lang)}>Website</a>
+<a class="top-link" href="https://github.com/rhinvoice/rhinvoice">GitHub</a>
+
+<style>
+  .top-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.75rem;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-sm);
+    text-decoration: none;
+  }
+  .top-link:hover {
+    color: var(--sl-color-white);
+  }
+</style>

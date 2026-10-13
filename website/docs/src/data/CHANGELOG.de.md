@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.5.5] – 2026-10-13
+
 ### Neu
 - Das Logo auf der Anmeldeseite führt zu rhinvoice.com, und die Leiste auf jeder Seite der
   öffentlichen Demo verlinkt die Website ebenfalls.

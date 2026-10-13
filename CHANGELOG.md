@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.5.5] – 2026-10-13
+
 ### Added
 - The logo on the login page leads to rhinvoice.com, and the strip on every page of the public demo
   links it too.

@@ -30,7 +30,7 @@ To update Rhinvoice, set the new version in `.env`, pull the images and restart 
 
 <Steps>
 
-1. In the folder with `compose.yml` and `.env`, set `RHINVOICE_VERSION` in `.env` to the new version, e.g. `RHINVOICE_VERSION=0.6.0`.
+1. In the folder with `compose.yml` and `.env`, set `RHINVOICE_VERSION` in `.env` to the new version, e.g. `RHINVOICE_VERSION=0.6.1`.
 
 2. Pull the images and restart:
 
@@ -52,7 +52,7 @@ Database migrations run automatically on start (`RHINVOICE_RUN_MIGRATIONS=true` 
 
 | `RHINVOICE_VERSION` | Behaviour |
 |---|---|
-| a version, e.g. `0.6.0` | pinned: changes only when you change it |
+| a version, e.g. `0.6.1` | pinned: changes only when you change it |
 | `latest` | follows every release on the next `docker compose pull` |
 
 A pinned version is the safer choice for real invoices: you decide when to update and can read the changelog first.

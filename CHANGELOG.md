@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.6.1] – 2026-10-13
+
 ### Fixed
 - The backup container backs up at once after it created a new repository. Before, a repository
   made after earlier successful backups (another target, another access to the same one) stayed

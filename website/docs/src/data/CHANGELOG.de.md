@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.6.1] – 2026-10-13
+
 ### Behoben
 - Der Backup-Container sichert sofort, nachdem er ein neues Repository angelegt hat. Bisher blieb ein
   Repository, das nach früheren erfolgreichen Backups entstand (anderes Ziel, anderer Zugriff auf

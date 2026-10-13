@@ -162,8 +162,11 @@ def test_a_later_payment_is_a_recovery_and_the_write_off_stays() -> None:
     assert whole.recovered_amount == chf("659.50")
     assert whole.write_off is not None
     assert whole.display_status(TODAY + timedelta(days=999)) is DisplayStatus.PAID
-    with raises_exactly(InvalidStateError, "a paid invoice cannot be reopened"):
-        whole.remove_write_off(MUCH_LATER)
+    with raises_exactly(
+        InvalidStateError, "take the write-off back before cancelling the invoice"
+    ) as kept:
+        whole.cancel_check()
+    assert kept.value.code == "written_off"
 
     # Removing a recovery leads back to the written-off invoice, never to an open one.
     back = whole.remove_payment(whole.payments[2].id, MUCH_LATER)
@@ -189,8 +192,53 @@ def test_recoveries_are_recorded_after_the_write_off() -> None:
     same_moment = Payment(id=new_id(), paid_on=TODAY, amount=chf("1"), recorded_at=LATER)
     with raises_exactly(
         InvalidStateError, "a payment of a written-off invoice is recorded after the write-off"
-    ):
+    ) as refused:
         lost.add_payment(same_moment, LATER)
+    assert refused.value.code == "clock_went_back"
+
+
+def test_the_write_off_is_recorded_after_the_payments() -> None:
+    # The clock of the server went back: the payment would count as recovered.
+    ahead = Payment(id=new_id(), paid_on=TODAY, amount=chf("1000"), recorded_at=MUCH_LATER)
+    paid = issued().add_payment(ahead, MUCH_LATER)
+    with raises_exactly(
+        InvalidStateError, "a payment of the invoice was recorded after now"
+    ) as refused:
+        written_off(paid)
+    assert refused.value.code == "clock_went_back"
+    # Recorded at the same moment, the payment came first.
+    same = Payment(id=new_id(), paid_on=TODAY, amount=chf("1000"), recorded_at=LATER)
+    lost = written_off(issued().add_payment(same, LATER))
+    assert lost.recoveries == ()
+    assert lost.written_off_amount == chf("659.50")
+
+
+def test_a_recovery_is_not_dated_before_the_write_off() -> None:
+    lost = written_off(issued(), on=TODAY)
+    with raises_exactly(
+        ValidationError,
+        "the payment is dated before the write-off; take the write-off back instead",
+    ) as early:
+        recover(lost, "100", paid_on=TODAY - timedelta(days=1))
+    assert early.value.field == "paid_on"
+    assert early.value.code == "payment_dated_before_write_off"
+    assert recover(lost, "100", paid_on=TODAY).recovered_amount == chf("100")
+
+
+def test_a_write_off_can_be_taken_back_after_the_invoice_was_paid() -> None:
+    whole = recover(written_off(pay(issued(), "1000")), "659.50")
+    assert whole.status is DocumentStatus.PAID
+    plain = whole.remove_write_off(MUCH_LATER)
+    assert plain.status is DocumentStatus.PAID
+    assert plain.write_off is None
+    assert plain.recoveries == ()
+    assert plain.paid_amount == chf("1659.50")
+    assert plain.open_amount() == Money.zero(Currency.CHF)
+    assert plain.events[-1] == DocumentEvent(MUCH_LATER, EventKind.WRITE_OFF_REMOVED, "659.50")
+    plain.cancel_check()  # an ordinary paid invoice again
+    paid = pay(issued(), "1659.50")
+    with raises_exactly(InvalidStateError, "a paid invoice cannot be reopened"):
+        paid.remove_write_off(NOW)
 
 
 def test_payments_from_before_the_write_off_stay() -> None:

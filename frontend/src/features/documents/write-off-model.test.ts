@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canRemoveWriteOff,
   canWriteOff,
+  earliestPaymentDate,
   endOfInvoiceYear,
   isWriteOffDate,
   parseWriteOffEvent,
@@ -90,5 +92,38 @@ describe("parseWriteOffEvent", () => {
     expect(parseWriteOffEvent("2520.00")).toBeNull();
     expect(parseWriteOffEvent("2520.00 2021-12-31 bored")).toBeNull();
     expect(parseWriteOffEvent("2520 2021-12-31 gone")).toBeNull();
+  });
+});
+
+const WRITE_OFF = {
+  id: "0",
+  written_off_on: "2021-12-31",
+  amount: "100.00",
+  tax: "0.00",
+  reason: "gone",
+  note: "",
+  recorded_at: "2026-10-13T10:00:00Z",
+} as const;
+
+describe("canRemoveWriteOff", () => {
+  it("is for written-off invoices and for those paid after all", () => {
+    expect(canRemoveWriteOff({ status: "written_off", write_off: WRITE_OFF })).toBe(true);
+    expect(canRemoveWriteOff({ status: "paid", write_off: WRITE_OFF })).toBe(true);
+  });
+
+  it("is not for invoices without a write-off or cancelled ones", () => {
+    expect(canRemoveWriteOff({ status: "paid", write_off: null })).toBe(false);
+    expect(canRemoveWriteOff({ status: "issued", write_off: null })).toBe(false);
+    expect(canRemoveWriteOff({ status: "cancelled", write_off: WRITE_OFF })).toBe(false);
+  });
+});
+
+describe("earliestPaymentDate", () => {
+  it("is the date of the write-off", () => {
+    expect(earliestPaymentDate({ write_off: WRITE_OFF })).toBe("2021-12-31");
+  });
+
+  it("is open without a write-off", () => {
+    expect(earliestPaymentDate({ write_off: null })).toBeNull();
   });
 });

@@ -49,10 +49,14 @@ def bad_debts_by_year(items: list[BadDebt]) -> list[BadDebtYear]:
         written = entry(item.write_off.written_off_on.year, currency)
         written[0] += amount
         written[2] += tax_share(amount, item.totals)
+        rest = amount
         for paid_on, paid in item.recoveries:
             recovered = entry(paid_on.year, currency)
             recovered[1] += paid
-            recovered[2] -= tax_share(paid, item.totals)
+            # The tax of what is still lost, before and after: fully paid, no cent remains.
+            before = tax_share(rest, item.totals)
+            rest -= paid
+            recovered[2] -= before - tax_share(rest, item.totals)
     return [
         BadDebtYear(
             year=year,

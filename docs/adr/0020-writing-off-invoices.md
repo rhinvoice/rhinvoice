@@ -25,9 +25,13 @@ program cannot be cancelled at all (ADR 0019). Marking it as paid is wrong too: 
 - **A payment after the write-off** is recorded as usual, up to the written-off amount. The
   write-off stays in its year; the payment counts as recovered in the year it came in (DE § 17
   Abs. 2 Nr. 1 Satz 2 UStG, AT § 16 Abs. 3 UStG correct the tax again in that period). Paid in
-  full, the invoice is `paid`. Recoveries are the payments recorded after the write-off.
-- **Taking it back** (a mistake) reopens the rest and is logged. Payments from before the
-  write-off cannot be removed while it stands: it names the rest after them.
+  full, the invoice is `paid`. Recoveries are the payments recorded after the write-off; such a
+  payment is not dated before the write-off, and a write-off is refused while a payment lies ahead
+  of the clock, so that the two are never confused.
+- **Taking it back** (a mistake) reopens the rest and is logged, also after the invoice was paid
+  in full (it then stays paid). Payments from before the write-off cannot be removed while it
+  stands: it names the rest after them. An invoice with a write-off is not cancelled; the write-off
+  is taken back first.
 - **Tax is stated, not corrected.** Whether the tax is corrected depends on how the company accounts
   for it (agreed or received consideration), which Rhinvoice does not know. The report shows written
   off, recovered, loss, net and the tax contained per year and currency; the tax is spread evenly

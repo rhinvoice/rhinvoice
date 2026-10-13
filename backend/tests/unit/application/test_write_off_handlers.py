@@ -286,6 +286,30 @@ def test_a_payment_in_the_year_of_the_write_off_reduces_its_loss() -> None:
     assert (year.net, year.tax) == (chf("925.93"), chf("74.07"))
 
 
+def test_paid_in_full_after_all_no_tax_remains() -> None:
+    # 19 % of 100: each third alone would round to 6.33 and leave a cent behind.
+    years = bad_debts_by_year(
+        [
+            bad_debt(
+                "119.00",
+                date(2021, 12, 31),
+                (date(2022, 1, 5), "39.67"),
+                (date(2022, 2, 5), "39.67"),
+                (date(2023, 3, 5), "39.66"),
+                total="119.00",
+                net="100.00",
+            )
+        ]
+    )
+    assert [(year.year, year.recovered, year.tax, year.net) for year in years] == [
+        (2023, chf("39.66"), chf("-6.33"), chf("-33.33")),
+        (2022, chf("79.34"), chf("-12.67"), chf("-66.67")),
+        (2021, chf("0"), chf("19.00"), chf("100.00")),
+    ]
+    assert sum((year.tax for year in years), Money.zero(Currency.CHF)).is_zero
+    assert sum((year.loss for year in years), Money.zero(Currency.CHF)).is_zero
+
+
 def test_currencies_are_kept_apart() -> None:
     euro = imported(total="1296.00", net="1200.00", open_amount="1296.00")
     totals = euro.frozen_totals

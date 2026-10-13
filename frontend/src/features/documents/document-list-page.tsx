@@ -271,7 +271,9 @@ export function DocumentListPage({ kind, search, onSearchChange }: DocumentListP
         </>
       ) : null}
 
-      {kind === "invoice" && search.view === "written_off" ? <BadDebtsCard /> : null}
+      {kind === "invoice" && search.view === "written_off" ? (
+        <BadDebtsCard year={search.year} />
+      ) : null}
 
       {selected.size > 0 ? (
         <SelectionBar

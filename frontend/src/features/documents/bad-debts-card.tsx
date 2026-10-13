@@ -19,10 +19,12 @@ import { formatMoney } from "@/lib/format";
  * What was written off per year and currency, with the tax contained in it. The
  * country names it (CH/LI "Debitorenverluste", DE/AT "Forderungsausfälle").
  */
-export function BadDebtsCard() {
+export function BadDebtsCard({ year }: { readonly year: number | "all" }) {
   const { t, locale } = useI18n();
-  const years = useQuery(badDebtsQuery()).data;
+  const all = useQuery(badDebtsQuery()).data;
   const profile = useQuery(companyQuery).data?.profile;
+  // Like the list above it: one year, or all of them.
+  const years = year === "all" ? all : all?.filter((entry) => entry.year === year);
   if (years === undefined || years.length === 0 || profile === undefined) return null;
   const terms = termsFor(profile, locale);
   return (
@@ -47,24 +49,24 @@ export function BadDebtsCard() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {years.map((year) => {
-            const money = (amount: string) => formatMoney(amount, year.currency, locale);
+          {years.map((entry) => {
+            const money = (amount: string) => formatMoney(amount, entry.currency, locale);
             return (
-              <TableRow key={`${String(year.year)}-${year.currency}`}>
-                <TableCell className="tabular-nums">{year.year}</TableCell>
+              <TableRow key={`${String(entry.year)}-${entry.currency}`}>
+                <TableCell className="tabular-nums">{entry.year}</TableCell>
                 <TableCell className="hidden text-right tabular-nums sm:table-cell">
-                  {money(year.written_off)}
+                  {money(entry.written_off)}
                 </TableCell>
                 <TableCell className="hidden text-right tabular-nums sm:table-cell">
-                  {money(year.recovered)}
+                  {money(entry.recovered)}
                 </TableCell>
                 <TableCell className="text-right font-medium tabular-nums">
-                  {money(year.loss)}
+                  {money(entry.loss)}
                 </TableCell>
                 <TableCell className="hidden text-right tabular-nums md:table-cell">
-                  {money(year.net)}
+                  {money(entry.net)}
                 </TableCell>
-                <TableCell className="text-right tabular-nums">{money(year.tax)}</TableCell>
+                <TableCell className="text-right tabular-nums">{money(entry.tax)}</TableCell>
               </TableRow>
             );
           })}

@@ -60,7 +60,20 @@ def upgrade() -> None:
     op.execute(PROTECT_WRITE_OFFS)
 
 
+# Without the status, a written-off invoice is open again with what was lost of it.
+REOPEN = """
+UPDATE documents SET
+    open_amount = written_off_amount,
+    status = CASE
+        WHEN EXISTS (SELECT 1 FROM document_payments WHERE document_id = documents.id)
+        THEN 'partially_paid' ELSE 'issued'
+    END
+WHERE status = 'written_off'
+"""
+
+
 def downgrade() -> None:
+    op.execute(REOPEN)
     op.execute("DROP TRIGGER protect_document_write_offs ON document_write_offs")
     op.execute("DROP FUNCTION rhinvoice_protect_document_write_offs()")
     op.drop_table("document_write_offs")

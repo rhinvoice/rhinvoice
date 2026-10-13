@@ -170,6 +170,10 @@ export const en: Catalog<MessageKey> = {
   "error.payment_exceeds_open_amount": "The amount is higher than the open amount.",
   "error.payment_date_in_future": "The payment date must not be in the future.",
   "error.write_off_date_in_future": "The date of the write-off must not be in the future.",
+  "error.payment_dated_before_write_off":
+    "The payment is dated before the write-off. Take the write-off back instead.",
+  "error.written_off": "The invoice was written off. Take the write-off back first.",
+  "error.clock_went_back": "The server's clock is behind. Please try again in a moment.",
   "error.write_off_before_invoice":
     "The date of the write-off must not be before the invoice date.",
   "error.payment_before_write_off":

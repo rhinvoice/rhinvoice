@@ -677,10 +677,19 @@ class Document:
         if payment.amount.currency is not self.content.currency:
             raise ValidationError("amount", f"the payment must be in {self.content.currency}")
         write_off = self.write_off
-        if write_off is not None and payment.recorded_at <= write_off.recorded_at:
-            raise InvalidStateError(
-                "a payment of a written-off invoice is recorded after the write-off"
-            )
+        if write_off is not None:
+            # Payments recorded after the write-off take back the loss: both must be certain.
+            if payment.recorded_at <= write_off.recorded_at:
+                raise InvalidStateError(
+                    "a payment of a written-off invoice is recorded after the write-off",
+                    code="clock_went_back",
+                )
+            if payment.paid_on < write_off.written_off_on:
+                raise ValidationError(
+                    "paid_on",
+                    "the payment is dated before the write-off; take the write-off back instead",
+                    code="payment_dated_before_write_off",
+                )
         unpaid = self.open_amount() + self.written_off_amount
         if payment.amount > unpaid:
             raise ValidationError(
@@ -757,6 +766,11 @@ class Document:
                 "an invoice is not written off before its date",
                 code="write_off_before_invoice",
             )
+        if any(payment.recorded_at > now for payment in self.payments):
+            # Payments recorded later count as recovered: none may lie ahead of the clock.
+            raise InvalidStateError(
+                "a payment of the invoice was recorded after now", code="clock_went_back"
+            )
         write_off = WriteOff(
             id=write_off_id,
             written_off_on=written_off_on,
@@ -774,14 +788,27 @@ class Document:
         )
 
     def remove_write_off(self, now: datetime) -> Document:
-        """Take a write-off back (it was a mistake): the rest is open again."""
+        """Take a write-off back (it was a mistake): the rest is open again.
+
+        Also for an invoice that was paid in full afterwards: it stays paid, and what
+        came in counts as ordinary payments.
+        """
         write_off = self.write_off
-        if self.status is not DocumentStatus.WRITTEN_OFF or write_off is None:
+        if write_off is None or self.status not in {
+            DocumentStatus.WRITTEN_OFF,
+            DocumentStatus.PAID,
+        }:
             raise InvalidStateError(f"a {self.status} {self.type} cannot be reopened")
+        if self.status is DocumentStatus.PAID:
+            status = DocumentStatus.PAID
+        elif self.payments:
+            status = DocumentStatus.PARTIALLY_PAID
+        else:
+            status = DocumentStatus.ISSUED
         return replace(
             self,
             write_off=None,
-            status=DocumentStatus.PARTIALLY_PAID if self.payments else DocumentStatus.ISSUED,
+            status=status,
             events=self._with_event(
                 now, EventKind.WRITE_OFF_REMOVED, f"{write_off.amount.amount:.2f}"
             ),
@@ -805,6 +832,11 @@ class Document:
             raise InvalidStateError("only invoices can be cancelled")
         self._require_own("cancelled")
         self._require(*OPEN_INVOICE_STATUSES, DocumentStatus.PAID, action="cancelled")
+        if self.write_off is not None:
+            # Paid after all, but the write-off still counts in its year: it goes first.
+            raise InvalidStateError(
+                "take the write-off back before cancelling the invoice", code="written_off"
+            )
 
     def cancel(self, cancellation: Document, now: datetime) -> Document:
         """Mark this invoice as cancelled by an issued cancellation invoice."""

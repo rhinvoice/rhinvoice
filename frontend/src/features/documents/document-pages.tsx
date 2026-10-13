@@ -75,7 +75,7 @@ import { AttachmentsCard, ImportedPdf } from "@/features/documents/imported-docu
 import { PaperPreview } from "@/components/paper-preview";
 import { PaymentDialog } from "@/features/documents/payment-dialog";
 import { RemoveWriteOffDialog, WriteOffDialog } from "@/features/documents/write-off-dialog";
-import { canWriteOff } from "@/features/documents/write-off-model";
+import { canRemoveWriteOff, canWriteOff } from "@/features/documents/write-off-model";
 import { fetchFile, saveFile } from "@/features/documents/file-download";
 import { printPage } from "@/features/documents/print-page";
 import { companyQuery, type Company } from "@/features/shared/company-api";
@@ -444,7 +444,7 @@ function IssuedPage({ document, company }: PageProps) {
                 : undefined
             }
             onRemoveWriteOff={
-              writtenOff
+              canRemoveWriteOff(document)
                 ? () => {
                     setRemoveWriteOffOpen(true);
                   }
@@ -626,8 +626,10 @@ function MoreActions({ document, onWriteOff, onRemoveWriteOff }: MoreActionsProp
     document.converted_to_id === null;
   // An imported invoice is its PDF: nothing can be built from its lines.
   const own = !document.imported;
+  // A write-off still counts in its year: it is taken back before a cancellation.
   const canCancel =
     own &&
+    document.write_off === null &&
     document.type === "invoice" &&
     (document.status === "issued" ||
       document.status === "partially_paid" ||

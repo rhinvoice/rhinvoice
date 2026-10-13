@@ -47,6 +47,8 @@ export const documentKeys = {
   detail: (id: string) => ["documents", "detail", id] as const,
   dashboard: ["dashboard"] as const,
   badDebts: ["bad-debts"] as const,
+  /** The dunning overview (features/dunning) lists the overdue invoices. */
+  dunning: ["dunning"] as const,
 };
 
 export function documentListQuery(params: DocumentListParams) {
@@ -117,6 +119,7 @@ function useOnChanged() {
     void client.invalidateQueries({ queryKey: documentKeys.lists });
     void client.invalidateQueries({ queryKey: documentKeys.dashboard });
     void client.invalidateQueries({ queryKey: documentKeys.badDebts });
+    void client.invalidateQueries({ queryKey: documentKeys.dunning });
   };
 }
 

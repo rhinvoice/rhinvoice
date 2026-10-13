@@ -18,6 +18,7 @@ from rhinvoice.domain.document.document import DisplayStatus, DocumentStatus, Do
 from rhinvoice.domain.document.write_off import WriteOffReason
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.money import Currency, Money
+from rhinvoice.infrastructure.db.migrate import downgrade, upgrade
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork
 from tests.integration.test_document_persistence import FOOD, NOW, TODAY, draft, setup
 
@@ -186,3 +187,27 @@ def test_bad_debts(engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClo
         (2026, chf("38.00"), chf("0"), chf("38.00")),
         (2025, chf("659.50"), chf("0"), chf("659.50")),
     ]
+
+
+def test_an_older_version_finds_written_off_invoices_open_again(
+    database_url: str, engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
+) -> None:
+    handlers, customer, _ = setup
+    lost = issued(handlers, customer)
+    handlers.write_off(lost, GONE)
+    partly = issued(handlers, customer)
+    handlers.add_payment(partly, PaymentInput(paid_on=TODAY, amount="1000"))
+    handlers.write_off(partly, GONE)
+    downgrade(database_url, "0017")
+    try:
+        with engine.connect() as connection:
+            rows = {
+                row.id: (row.status, row.open_amount)
+                for row in connection.execute(text("SELECT id, status, open_amount FROM documents"))
+            }
+    finally:
+        upgrade(database_url)
+    assert rows == {
+        lost: ("issued", Decimal("1659.50")),
+        partly: ("partially_paid", Decimal("659.50")),
+    }

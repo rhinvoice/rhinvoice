@@ -33,6 +33,18 @@ export function canWriteOff(document: Writable): boolean {
   );
 }
 
+/** A write-off is taken back while the rest is lost, and after it was paid in full. */
+export function canRemoveWriteOff(document: Pick<DocumentDetail, "status" | "write_off">): boolean {
+  return (
+    document.write_off !== null && (document.status === "written_off" || document.status === "paid")
+  );
+}
+
+/** A payment of a written-off invoice is not dated before the write-off. */
+export function earliestPaymentDate(document: Pick<DocumentDetail, "write_off">): string | null {
+  return document.write_off?.written_off_on ?? null;
+}
+
 /** What a payment may amount to: the open rest, or what was written off of it. */
 export function paymentLimit(
   document: Pick<DocumentDetail, "status" | "open_amount" | "written_off_amount">,

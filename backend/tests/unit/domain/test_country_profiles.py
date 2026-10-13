@@ -151,9 +151,7 @@ def test_the_write_off_hint_names_its_legal_basis(profile: CountryProfile) -> No
 
 
 def test_the_countries_name_bad_debts_in_their_own_words() -> None:
-    words = {
-        country: profile_of(country).terms[Language.DE].bad_debts for country in Country
-    }
+    words = {country: profile_of(country).terms[Language.DE].bad_debts for country in Country}
     assert words == {
         Country.CH: "Debitorenverluste",
         Country.LI: "Debitorenverluste",

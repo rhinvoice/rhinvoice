@@ -16,7 +16,7 @@ import {
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import type { DocumentDetail, PaymentInput } from "@/features/documents/api";
-import { paymentLimit } from "@/features/documents/write-off-model";
+import { earliestPaymentDate, paymentLimit } from "@/features/documents/write-off-model";
 import { FormAlert } from "@/features/shared/form-alert";
 import { fields, toApiDecimal } from "@/features/shared/form-schema";
 import { useErrorMessage } from "@/features/shared/use-error-message";
@@ -75,11 +75,18 @@ function PaymentForm({ document, onCancel, onSubmit }: PaymentFormProps) {
   const errorMessage = useErrorMessage();
   // A written-off invoice takes payments up to what was written off.
   const limit = paymentLimit(document);
+  const earliest = earliestPaymentDate(document);
   const schema = useMemo(() => {
     const f = fields(t, locale);
     return z
       .object({
-        paid_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t("validation.required")),
+        paid_on: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, t("validation.required"))
+          .refine(
+            (value) => earliest === null || value >= earliest,
+            t("error.payment_dated_before_write_off"),
+          ),
         amount: f.decimal({ max: 9_999_999_999.99, decimals: 2, required: true }),
         note: f.optionalText(500),
       })
@@ -98,7 +105,7 @@ function PaymentForm({ document, onCancel, onSubmit }: PaymentFormProps) {
           });
         }
       });
-  }, [t, locale, limit, document.currency]);
+  }, [t, locale, limit, earliest, document.currency]);
   const form = useForm({
     resolver: zodResolver(schema),
     mode: "onTouched",

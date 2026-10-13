@@ -179,6 +179,12 @@ export const de = {
   "error.payment_exceeds_open_amount": "Der Betrag ist höher als der offene Betrag.",
   "error.payment_date_in_future": "Das Zahlungsdatum darf nicht in der Zukunft liegen.",
   "error.write_off_date_in_future": "Das Datum der Abschreibung darf nicht in der Zukunft liegen.",
+  "error.payment_dated_before_write_off":
+    "Die Zahlung ist vor der Abschreibung datiert. Nehmen Sie stattdessen die Abschreibung zurück.",
+  "error.written_off":
+    "Die Rechnung wurde abgeschrieben. Nehmen Sie zuerst die Abschreibung zurück.",
+  "error.clock_went_back":
+    "Die Uhr des Servers geht nach. Bitte versuchen Sie es in einem Moment noch einmal.",
   "error.write_off_before_invoice":
     "Das Datum der Abschreibung darf nicht vor dem Rechnungsdatum liegen.",
   "error.payment_before_write_off":

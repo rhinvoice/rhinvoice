@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { InfoIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -40,7 +41,14 @@ function loginSchema(t: T, needsTotp: boolean) {
 
 type LoginValues = z.infer<ReturnType<typeof loginSchema>>;
 
-export function LoginPage({ redirectTo }: { readonly redirectTo: string }) {
+export function LoginPage({
+  redirectTo,
+  expired = false,
+}: {
+  readonly redirectTo: string;
+  /** The session ended while the app was open. */
+  readonly expired?: boolean;
+}) {
   const { t } = useI18n();
   useDocumentTitle(t("app.pageTitle", { title: t("auth.loginTitle") }));
   const navigate = useNavigate();
@@ -106,6 +114,17 @@ export function LoginPage({ redirectTo }: { readonly redirectTo: string }) {
             submitCount={submitCount}
             items={summaryItems(errors, ["email", "password", "totp_code"])}
           />
+        ) : null}
+        {expired && serverError === null ? (
+          <p
+            role="status"
+            className="flex items-start gap-2 rounded-lg border border-border bg-muted/50 p-3 text-sm"
+          >
+            <InfoIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            {demo?.enabled === true
+              ? t("auth.demoReset", { minutes: demo.reset_minutes ?? 60 })
+              : t("auth.sessionExpired")}
+          </p>
         ) : null}
         <FormAlert message={serverError} />
         <Field label={t("auth.email")} error={errors.email?.message}>

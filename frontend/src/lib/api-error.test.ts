@@ -21,6 +21,16 @@ describe("toApiError", () => {
     expect(error.message).toBe("authentication_failed");
     expect(error.details).toEqual({});
     expect(error.isUnauthorized).toBe(true);
+    expect(error.endsSession).toBe(false);
+  });
+
+  it.each([
+    ["session_expired", true],
+    ["not_logged_in", true],
+    ["authentication_failed", false],
+    ["totp_required", false],
+  ])("tells whether %s ends the session", (code, ends) => {
+    expect(new ApiError(401, code, code).endsSession).toBe(ends);
   });
 
   it.each([

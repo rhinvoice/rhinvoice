@@ -5,6 +5,13 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Fixed
+- A session that ends while the app is open (expired, logged out elsewhere, or the hourly reset
+  of the demo) now leads straight to the login, which says why. Before, pages showed "E-mail
+  address or password is incorrect". The API answers such requests with the codes
+  `session_expired` and `not_logged_in` instead of `authentication_failed`, which is now kept
+  for wrong credentials.
+
 ## [0.5.1] – 2026-10-13
 
 ### Changed

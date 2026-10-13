@@ -111,8 +111,10 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { redirect: string; expired?: true } => ({
     redirect: safeRedirect(search["redirect"]),
+    // Set when a session ended while the app was open: the login says why.
+    ...(search["expired"] === true ? { expired: true } : {}),
   }),
   beforeLoad: async ({ context }) => {
     const status = await context.queryClient.query(setupStatusQuery);
@@ -121,8 +123,8 @@ const loginRoute = createRoute({
     }
   },
   component: function LoginRoute() {
-    const { redirect: target } = loginRoute.useSearch();
-    return <LoginPage redirectTo={target} />;
+    const { redirect: target, expired } = loginRoute.useSearch();
+    return <LoginPage redirectTo={target} expired={expired === true} />;
   },
 });
 
@@ -144,7 +146,13 @@ async function requireUser(queryClient: QueryClient, location: ParsedLocation) {
     return await queryClient.query(meQuery);
   } catch (error) {
     if (error instanceof ApiError && error.isUnauthorized) {
-      throw redirect({ to: "/login", search: { redirect: location.href } });
+      throw redirect({
+        to: "/login",
+        search: {
+          redirect: location.href,
+          ...(error.code === "session_expired" ? { expired: true } : {}),
+        },
+      });
     }
     throw error;
   }
@@ -446,6 +454,8 @@ const routeTree = rootRoute.addChildren([
     settingsRoute,
   ]),
 ]);
+
+export type AppRouter = ReturnType<typeof createAppRouter>;
 
 export function createAppRouter(queryClient: QueryClient) {
   return createRouter({

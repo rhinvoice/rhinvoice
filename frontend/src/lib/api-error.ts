@@ -15,6 +15,11 @@ export class ApiError extends Error {
   get isUnauthorized(): boolean {
     return this.status === 401;
   }
+
+  /** The session is gone (expired, logged out elsewhere, demo reset); a wrong password is not. */
+  get endsSession(): boolean {
+    return this.code === "session_expired" || this.code === "not_logged_in";
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

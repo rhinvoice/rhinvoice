@@ -26,7 +26,7 @@ def get_container(request: Request) -> Container:
 
 def get_session_token(token: Annotated[str | None, Depends(session_cookie)]) -> str:
     if not token:
-        raise AuthenticationError("not logged in")
+        raise AuthenticationError("not logged in", code="not_logged_in")
     return token
 
 
@@ -36,7 +36,8 @@ def get_current_user(
 ) -> User:
     user = get_container(request).identity.authenticate(token)
     if user is None:
-        raise AuthenticationError("session expired, please log in again")
+        # Ended by logging out elsewhere, by its timeouts, or by the hourly reset of a demo.
+        raise AuthenticationError("session expired, please log in again", code="session_expired")
     return user
 
 

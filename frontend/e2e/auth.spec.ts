@@ -1,4 +1,4 @@
-import { ADMIN, expect, expectAccessible, test } from "./fixtures";
+import { ADMIN, expect, expectAccessible, openApp, test } from "./fixtures";
 
 test.describe("authentication", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
@@ -65,4 +65,39 @@ test.describe("authentication", () => {
     await page.getByRole("button", { name: "Anmelden" }).click();
     await expect(page).toHaveURL(/\/$/);
   });
+});
+
+test("a session that ends while the app is open leads to the login, which says why", async ({
+  page,
+  baseURL,
+}) => {
+  await openApp(page, "/", "Übersicht");
+  await page.waitForLoadState("networkidle");
+  // The server no longer knows the session: expired, logged out elsewhere, or a demo reset.
+  await page.context().addCookies([{ name: "rhinvoice_session", value: "ended", url: baseURL }]);
+  const nav = page.getByRole("navigation", { name: "Hauptnavigation" }).filter({ visible: true });
+  await nav.getByRole("link", { name: "Kunden" }).first().click();
+  // Whichever request notices it first (the click, or the dashboard polling) leads there.
+  await expect(page).toHaveURL(/\/login\?redirect=%2F(customers)?&expired=true$/);
+  await expect(page.getByRole("status").filter({ hasText: "Sitzung ist abgelaufen" })).toHaveText(
+    "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+  );
+  // Not the message of a wrong password.
+  await expect(page.getByText("E-Mail-Adresse oder Passwort ist falsch.")).toHaveCount(0);
+  await expectAccessible(page);
+  await page.getByLabel("E-Mail-Adresse").fill(ADMIN.email);
+  await page.getByLabel("Passwort").fill(ADMIN.password);
+  await page.getByRole("button", { name: "Anmelden" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^(Kunden|Übersicht)$/);
+
+  // In the public demo the session ends with the hourly reset, and the login says so.
+  await page.route("**/api/demo", async (route) => {
+    const response = await route.fetch();
+    const demo = (await response.json()) as Record<string, unknown>;
+    await route.fulfill({ response, json: { ...demo, enabled: true, reset_minutes: 60 } });
+  });
+  await page.goto("/login?redirect=%2F&expired=true");
+  await expect(page.getByRole("status").filter({ hasText: "zurückgesetzt" })).toHaveText(
+    "Die Demo wurde zurückgesetzt, wie alle 60 Minuten. Dabei werden alle abgemeldet: Bitte melden Sie sich erneut an.",
+  );
 });

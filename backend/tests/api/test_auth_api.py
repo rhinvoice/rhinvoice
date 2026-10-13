@@ -82,11 +82,20 @@ def test_login_logout(user_client: TestClient) -> None:
 def test_me_requires_login(client: TestClient) -> None:
     response = client.get("/api/auth/me")
     assert response.status_code == 401
-    assert response.json()["error"]["message"] == "not logged in"
+    assert response.json()["error"] == {
+        "code": "not_logged_in",
+        "message": "not logged in",
+        "details": {},
+    }
+    # Unlike a wrong password, an ended session has its own code: the interface logs out.
     client.cookies.set("rhinvoice_session", "forged")
     expired = client.get("/api/auth/me")
     assert expired.status_code == 401
-    assert expired.json()["error"]["message"] == "session expired, please log in again"
+    assert expired.json()["error"] == {
+        "code": "session_expired",
+        "message": "session expired, please log in again",
+        "details": {},
+    }
 
 
 def test_change_password(user_client: TestClient) -> None:

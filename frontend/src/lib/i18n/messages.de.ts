@@ -98,6 +98,8 @@ export const de = {
   "auth.setupSubmit": "Konto anlegen",
   "auth.loggedOut": "Sie wurden abgemeldet.",
   "auth.sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+  "auth.demoReset":
+    "Die Demo wurde zurückgesetzt, wie alle {minutes} Minuten. Dabei werden alle abgemeldet: Bitte melden Sie sich erneut an.",
 
   "validation.required": "Bitte ausfüllen.",
   "validation.email": "Bitte geben Sie eine gültige E-Mail-Adresse ein, z. B. name@firma.ch.",
@@ -112,6 +114,8 @@ export const de = {
   "error.generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
   "error.network": "Keine Verbindung zum Server. Bitte prüfen Sie Ihre Verbindung.",
   "error.authentication_failed": "E-Mail-Adresse oder Passwort ist falsch.",
+  "error.session_expired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+  "error.not_logged_in": "Sie sind nicht angemeldet.",
   "error.account_locked": "Zu viele Fehlversuche. Das Konto ist für 15 Minuten gesperrt.",
   "error.totp_required": "Bitte geben Sie den Bestätigungscode ein.",
   "error.retry": "Erneut versuchen",

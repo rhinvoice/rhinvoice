@@ -95,6 +95,8 @@ export const en: Catalog<MessageKey> = {
   "auth.setupSubmit": "Create account",
   "auth.loggedOut": "You have been logged out.",
   "auth.sessionExpired": "Your session has expired. Please log in again.",
+  "auth.demoReset":
+    "The demo was reset, as every {minutes} minutes. This logs everybody out: please log in again.",
 
   "validation.required": "Please fill in this field.",
   "validation.email": "Please enter a valid e-mail address, e.g. name@company.com.",
@@ -109,6 +111,8 @@ export const en: Catalog<MessageKey> = {
   "error.generic": "Something went wrong. Please try again.",
   "error.network": "No connection to the server. Please check your connection.",
   "error.authentication_failed": "E-mail address or password is incorrect.",
+  "error.session_expired": "Your session has expired. Please log in again.",
+  "error.not_logged_in": "You are not logged in.",
   "error.account_locked": "Too many failed attempts. The account is locked for 15 minutes.",
   "error.totp_required": "Please enter the verification code.",
   "error.retry": "Try again",

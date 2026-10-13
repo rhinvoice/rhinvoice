@@ -32,11 +32,10 @@ import { useErrorMessage } from "@/features/shared/use-error-message";
 import { cn } from "@/lib/cn";
 import { formatDate, formatBytes } from "@/lib/format";
 
-// Only the sheet, fitted to the width, like the paper preview of invoices written here:
-// the browser's PDF viewer would otherwise spend the frame on thumbnails and its toolbar.
-// Opening and downloading the PDF are buttons of the invoice. Chromium browsers follow
-// these "open parameters"; a browser that does not shows its viewer as before.
-const SHEET_ONLY = "#toolbar=0&navpanes=0&view=FitH";
+// The sheet fitted to the width, without the thumbnails the browser's PDF viewer would
+// spend a third of the frame on; its toolbar (zoom, print, download) stays. Chromium
+// browsers follow these "open parameters"; a browser that does not shows its viewer as before.
+const FIT_WIDTH = "#navpanes=0&view=FitH";
 
 /** The original PDF of an invoice taken over from another program, shown on the page. */
 export function ImportedPdf({
@@ -77,7 +76,7 @@ export function ImportedPdf({
     </div>
   ) : (
     <iframe
-      src={`${url}${SHEET_ONLY}`}
+      src={`${url}${FIT_WIDTH}`}
       title={`${title} · ${t("documents.originalPdf")}`}
       className="h-[80vh] w-full rounded-lg border bg-card"
     />

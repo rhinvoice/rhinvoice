@@ -55,6 +55,8 @@ export default defineConfig({
           page("countries/germany", "Germany", "Deutschland"),
           page("countries/austria", "Austria", "Österreich"),
         ]),
+        // Its own entry, so that everyone sees Rhinvoice is open to more countries.
+        page("countries/more-countries", "More countries", "Weitere Länder"),
         group("Invoices", "Rechnungen", [
           page("invoices/quotes", "Quotes", "Angebote"),
           page("invoices/issue-and-cancel", "Issuing and cancelling", "Ausstellen und Storno"),

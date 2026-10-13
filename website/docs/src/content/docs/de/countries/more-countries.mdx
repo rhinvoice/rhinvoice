@@ -1,0 +1,74 @@
+---
+title: Weitere Länder hinzufügen
+description: Rhinvoice lässt sich um weitere Länder erweitern. Pro Land gibt es ein Länderprofil mit Steuersätzen, Hinweisen und Pflichtangaben, zum Beispiel für die Niederlande.
+faq:
+  - q: Kann Rhinvoice um weitere Länder erweitert werden?
+    a: Ja. Alles, was sich zwischen Ländern unterscheidet, steckt in einem Länderprofil pro Land. Ein neues Land, etwa die Niederlande, ist ein neues Profil mit Steuersätzen, Hinweisen, Pflichtangaben und den amtlichen Quellen. Tests zeigen, was noch fehlt.
+  - q: Kann ich schon heute Kunden im Ausland verrechnen?
+    a: Ja. Das Land Ihrer Firma muss Schweiz, Liechtenstein, Deutschland oder Österreich sein, Ihre Kunden dürfen überall sitzen. Rhinvoice wählt den Steuerfall aus den beiden Ländern, etwa Reverse Charge in der EU oder steuerfreie Ausfuhr, und druckt den passenden Hinweis.
+  - q: Wie kommt mein Land zu Rhinvoice?
+    a: Eröffnen Sie auf GitHub ein Issue mit dem Formular «Tax or legal rule» und verlinken Sie die amtlichen Quellen. Umgesetzt wird ein Land nach der Anleitung «Adding a country» und kommt per Pull Request dazu.
+  - q: Was macht ein neues Land aufwendiger?
+    a: Eine eigene Währung neben CHF und EUR, Rechnungen in einer anderen Sprache als Deutsch oder Englisch, ein staatliches E-Rechnungsnetz wie in Italien oder ein Mehrwertsteuerrecht ausserhalb der EU. Für ein EU-Land mit Euro ist die Steuerlogik schon da.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice ist von Anfang an für **weitere Länder** gebaut. Alles, was sich zwischen Ländern unterscheidet, steckt in **einem Länderprofil pro Land**: Steuersätze mit Datum, gesetzliche Hinweise, Pflichtangaben, Zahlungs-QR-Code, Zahlenformat und die amtlichen Quellen. Der Rest von Rhinvoice fragt nur das Profil und kennt kein Land beim Namen. Ein neues Land, zum Beispiel die **Niederlande**, ist deshalb ein neues Profil und keine Änderung quer durch das Programm.
+
+<Aside type="tip" title="Kunden im Ausland gehen schon heute">
+Das Land Ihrer **Firma** muss Schweiz, Liechtenstein, Deutschland oder Österreich sein. Ihre **Kunden** dürfen überall sitzen: Rhinvoice wählt den Steuerfall aus Firmen- und Kundenland (Inland, Reverse Charge, innergemeinschaftliche Lieferung, Ausfuhr) und druckt den passenden Hinweis.
+</Aside>
+
+## Was ein Länderprofil enthält
+
+- das Mehrwertsteuerrecht: die EU-Mehrwertsteuerrichtlinie oder das Schweizer MWSTG
+- das Steuergebiet (die Schweiz zum Beispiel mit Liechtenstein)
+- die **Steuersätze mit Gültigkeitsdatum**, damit auch ältere Rechnungen richtig rechnen
+- die Wörter auf Dokumenten in Deutsch und Englisch: Name der Steuer, Bezeichnung der Steuernummer, die **gesetzlichen Hinweise** pro Steuerfall und die Anrede in E-Mails
+- die **Pflichtangaben**, die Rhinvoice vor dem Ausstellen prüft
+- Zahlenformat, **Zahlungs-QR-Code** (QR-Rechnung oder GiroCode), Standardwährung und ob die Rundung auf 5 Rappen angeboten wird
+- die **amtlichen Quellen** zu allem davon
+
+Die Oberfläche zeigt Steuernamen, Sätze und Felder aus dem Profil. Auch dort muss für ein neues Land fast nichts angepasst werden.
+
+## Beispiel: die Niederlande
+
+Die Anleitung für Entwickler führt am Beispiel der Niederlande (`NL`) durch die Arbeit:
+
+<Steps>
+
+1. **Den Ländercode** ergänzen.
+2. **Das Profil** schreiben, als Kopie des deutschen oder österreichischen, weil beide EU-Länder sind: Sätze mit Datum, Hinweise in beiden Sprachen, Pflichtangaben, Zahlungscode und Quellen.
+3. **Das Profil eintragen**, damit Rhinvoice es kennt.
+4. **Beispieldaten** für die Demo ergänzen, mit offiziellen Beispiel-IBANs, nie mit echten Konten.
+5. **Das Land in der Oberfläche** zur Auswahl stellen.
+6. **Prüfen**: Tests sagen, ob das Profil vollständig ist und was noch fehlt. Zum Schluss eine Rechnung ausstellen und das PDF ansehen.
+
+</Steps>
+
+Weil EU-Länder die Logik der Mehrwertsteuerrichtlinie teilen, braucht ein neues EU-Land mit Euro keine Änderung an der Steuerlogik. Die Niederlande zahlen in Euro, also passt dort auch der GiroCode.
+
+## Was ein Land grösser macht
+
+Manches steckt noch nicht im Profil. Das entscheidet, wie viel Arbeit ein Land ist:
+
+- **Eine eigene Währung.** Rhinvoice kennt CHF und EUR. Ein Land mit eigener Währung (zum Beispiel PLN oder SEK) braucht diese zuerst.
+- **Eine andere Sprache.** Dokumente gibt es auf Deutsch und Englisch. Erwarten Kunden ihre eigene Sprache, braucht es eine neue Sprache mit allen Texten.
+- **Ein staatliches E-Rechnungsnetz**, etwa in Italien. Jede Rechnung enthält schon heute ZUGFeRD / Factur-X nach EN 16931 ([E-Rechnung](/docs/de/invoices/e-invoice/)). Ein Pflichtnetz wäre ein eigener Baustein.
+- **Mehrwertsteuerrecht ausserhalb der EU.** Ein Land mit eigenem Recht braucht eigene Regeln für die Steuerfälle.
+
+## So kommt Ihr Land dazu
+
+1. **Wunsch melden:** Eröffnen Sie auf [GitHub](https://github.com/rhinvoice/rhinvoice/issues/new/choose) ein Issue mit dem Formular *Tax or legal rule*. Nennen Sie das Land und verlinken Sie die amtlichen Quellen: das Mehrwertsteuergesetz, die Sätze und was auf einer Rechnung stehen muss.
+2. **Umsetzen:** Entwicklerinnen und Entwickler folgen der Anleitung [Adding a country](https://github.com/rhinvoice/rhinvoice/blob/main/docs/adding-a-country.md). Mehr dazu unter [Für Entwickler](/docs/de/help/developers/).
+3. **Beitragen:** Das Land kommt per Pull Request dazu, mit den Quellen und einem PDF einer Beispielrechnung.
+
+<Aside type="caution" title="Keine Steuerberatung">
+Rhinvoice gibt keine Steuerberatung. Jede Regel in Rhinvoice nennt ihre amtliche Quelle, damit man sie prüfen kann.
+</Aside>
+
+## Häufige Fragen
+
+<Faq />

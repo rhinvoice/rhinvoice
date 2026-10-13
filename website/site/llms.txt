@@ -9,7 +9,7 @@
 - Source code: https://github.com/rhinvoice/rhinvoice
 - Licence: GNU Affero General Public License v3.0 or later (AGPL-3.0); contributions under a contributor licence agreement
 - Price: free; there is no paid version and no hosted service
-- Countries of the issuing company: Switzerland (CH), Liechtenstein (LI), Germany (DE), Austria (AT); customers can be anywhere
+- Countries of the issuing company: Switzerland (CH), Liechtenstein (LI), Germany (DE), Austria (AT); customers can be anywhere; more company countries can be added as country profiles
 - Languages: interface in German (Swiss, German and Austrian variants) and English; documents in German or English
 - Runs on: Docker on Linux, macOS or Windows (servers, NAS, Raspberry Pi 4/5, laptops); images for amd64 and arm64
 - Status: beta (0.x)
@@ -79,6 +79,7 @@ The user documentation, in English (https://rhinvoice.com/docs/) and German (htt
 - [Liechtenstein](https://rhinvoice.com/docs/countries/liechtenstein/)
 - [Germany](https://rhinvoice.com/docs/countries/germany/): USt., § 14 UStG, small businesses, GiroCode, e-invoice obligation
 - [Austria](https://rhinvoice.com/docs/countries/austria/): USt., § 11 UStG, small businesses, GiroCode
+- [More countries](https://rhinvoice.com/docs/countries/more-countries/): Rhinvoice is built to be extended; each company country is one country profile (rates, notices, mandatory details, sources), e.g. the Netherlands
 - [E-invoices](https://rhinvoice.com/docs/invoices/e-invoice/): ZUGFeRD / Factur-X and XRechnung
 - [Taking over old invoices](https://rhinvoice.com/docs/moving/old-invoices/): from the previous program, with the original PDFs
 - [Backup and restore](https://rhinvoice.com/docs/operations/backup/)

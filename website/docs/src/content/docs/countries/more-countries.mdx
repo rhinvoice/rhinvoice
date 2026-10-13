@@ -1,0 +1,74 @@
+---
+title: Adding more countries
+description: Rhinvoice can be extended to more countries. Each country has a country profile with VAT rates, notices and mandatory details, for example the Netherlands.
+faq:
+  - q: Can Rhinvoice be extended to more countries?
+    a: Yes. Everything that differs between countries lives in one country profile per country. A new country, such as the Netherlands, is a new profile with VAT rates, notices, mandatory details and the official sources. Tests show what is still missing.
+  - q: Can I invoice customers abroad today?
+    a: Yes. Your company's country must be Switzerland, Liechtenstein, Germany or Austria, but your customers can be anywhere. Rhinvoice chooses the tax treatment from both countries, such as reverse charge in the EU or a tax-free export, and prints the matching notice.
+  - q: How does my country get into Rhinvoice?
+    a: Open an issue on GitHub with the "Tax or legal rule" form and link the official sources. A country is built following the guide "Adding a country" and comes in by pull request.
+  - q: What makes a new country more work?
+    a: A currency of its own besides CHF and EUR, invoices in a language other than German or English, a national e-invoice network such as Italy's, or VAT law outside the EU. For an EU country with the euro the tax logic is already there.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice is built for **more countries** from the start. Everything that differs between countries lives in **one country profile per country**: dated VAT rates, legal notices, mandatory details, payment QR code, number format and the official sources. The rest of Rhinvoice only asks the profile and names no country. A new country, for example the **Netherlands**, is therefore a new profile, not a change throughout the program.
+
+<Aside type="tip" title="Customers abroad work today">
+Your **company's** country must be Switzerland, Liechtenstein, Germany or Austria. Your **customers** can be anywhere: Rhinvoice chooses the tax treatment from the company's and the customer's country (domestic, reverse charge, intra-Community supply, export) and prints the matching notice.
+</Aside>
+
+## What a country profile holds
+
+- the VAT law: the EU VAT Directive or the Swiss MWSTG
+- the VAT area (Switzerland, for example, together with Liechtenstein)
+- the **VAT rates with the date each applies from**, so that older invoices are right too
+- the words on documents in German and English: the tax's name, the label of the VAT number, the **legal notice** per tax treatment and the greeting in e-mails
+- the **mandatory details** Rhinvoice checks before issuing
+- number format, **payment QR code** (Swiss QR-bill or EPC QR code), default currency and whether rounding to 0.05 is offered
+- the **official sources** of all of it
+
+The interface shows tax names, rates and fields from the profile, so it needs hardly any change for a new country.
+
+## Example: the Netherlands
+
+The developer guide walks through the work with the Netherlands (`NL`) as the example:
+
+<Steps>
+
+1. **Add the country code.**
+2. **Write the profile**, as a copy of the German or Austrian one, since both are EU countries: dated rates, notices in both languages, mandatory details, payment code and sources.
+3. **Register the profile**, so that Rhinvoice knows it.
+4. **Add demo data**, with official example IBANs, never with real accounts.
+5. **Offer the country in the interface.**
+6. **Check**: tests say whether the profile is complete and what is missing. Finally issue an invoice and look at the PDF.
+
+</Steps>
+
+Since EU countries share the logic of the VAT Directive, a new EU country with the euro needs no change to the tax logic. The Netherlands pay in euros, so the EPC QR code fits there too.
+
+## What makes a country bigger
+
+Some things are not in a profile yet. They decide how much work a country is:
+
+- **A currency of its own.** Rhinvoice knows CHF and EUR. A country with its own currency (for example PLN or SEK) needs it added first.
+- **Another language.** Documents are written in German or English. If customers expect their own language, a new language with all its texts comes first.
+- **A national e-invoice network**, such as Italy's. Every invoice already contains ZUGFeRD / Factur-X following EN 16931 ([e-invoices](/docs/invoices/e-invoice/)); a mandatory network would be a module of its own.
+- **VAT law outside the EU.** A country with its own VAT law needs its own rules for the tax treatments.
+
+## How your country gets in
+
+1. **Ask for it:** open an issue on [GitHub](https://github.com/rhinvoice/rhinvoice/issues/new/choose) with the *Tax or legal rule* form. Name the country and link the official sources: the VAT law, the rates and what an invoice must state.
+2. **Build it:** developers follow the guide [Adding a country](https://github.com/rhinvoice/rhinvoice/blob/main/docs/adding-a-country.md). More under [For developers](/docs/help/developers/).
+3. **Contribute it:** the country comes in by pull request, with the sources and a PDF of an example invoice.
+
+<Aside type="caution" title="No tax advice">
+Rhinvoice gives no tax advice. Every rule in Rhinvoice names its official source, so that it can be checked.
+</Aside>
+
+## Questions
+
+<Faq />

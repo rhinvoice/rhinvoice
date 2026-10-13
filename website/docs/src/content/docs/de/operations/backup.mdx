@@ -69,7 +69,7 @@ ssh-keyscan nas.example > ssh/known_hosts
 sudo chown -R 10001 ssh && chmod 700 ssh && chmod 600 ssh/id_ed25519   # the container's user
 ```
 
-### Dropbox, Google Drive und andere Cloud-Speicher
+### Dropbox und andere Cloud-Speicher
 
 restic erreicht sie über [rclone](https://rclone.org), das im Backup-Container enthalten ist. Das erste Backup enthält alle archivierten PDFs, spätere nur noch das Geänderte, meist wenige Kilobyte.
 
@@ -100,26 +100,13 @@ restic erreicht sie über [rclone](https://rclone.org), das im Backup-Container 
    RESTIC_REPOSITORY=rclone:dropbox:Rhinvoice-Backup
    ```
 
-4. **Ausprobieren:** `docker compose exec backup rhinvoice-backup backup`. Der Ordner `Rhinvoice-Backup` erscheint in Ihrer Dropbox, *Einstellungen → Backup* zeigt das Backup.
+4. **Ausprobieren:** Warten Sie, bis `docker compose logs backup` die Zeile `waiting for requests` zeigt, und führen Sie dann `docker compose exec backup rhinvoice-backup backup` aus. Der Ordner `Rhinvoice-Backup` erscheint in Ihrer Dropbox, *Einstellungen → Backup* zeigt das Backup. Beim ersten Start dauert das Anlegen des Repositorys über rclone etwa eine Minute. Ein Backup, das Sie vorher anfordern, scheitert mit `config file already exists`, obwohl alles in Ordnung ist.
 
 </Steps>
 
 Die Dropbox-App von rclone darf auf Ihre ganze Dropbox zugreifen. Für Zugriff auf nur einen Ordner legen Sie eine eigene Dropbox-App mit «App folder»-Zugriff an ([rclone.org/dropbox](https://rclone.org/dropbox/#get-your-own-dropbox-app-id)) und ergänzen deren `client_id` und `client_secret` in beiden Befehlen.
 
-**Google Drive** funktioniert gleich. Fragen Sie nur nach Zugriff auf die Dateien, die rclone selbst anlegt (der Umfang muss beim Autorisieren gewählt werden):
-
-```bash
-rclone authorize "drive" --drive-scope drive.file
-```
-
-```bash
-read -rs TOKEN
-docker compose run --rm --no-deps backup rclone config create gdrive drive \
-  scope drive.file config_refresh_token false token "$TOKEN"
-unset TOKEN
-```
-
-und `RESTIC_REPOSITORY=rclone:gdrive:Rhinvoice-Backup`.
+**Google Drive** braucht eine eigene Client-ID, weil die gemeinsame von rclone im Lauf von 2026 abgeschaltet wird. Die Schritte stehen auf einer eigenen Seite: [Backup auf Google Drive](/docs/de/operations/backup-google-drive/).
 
 Für andere Anbieter (OneDrive, kDrive und andere WebDAV-Speicher) führen Sie `docker compose run --rm --no-deps backup rclone config` aus, antworten auf die Frage nach dem automatischen Webbrowser mit «No» und folgen der rclone-Anleitung des Anbieters. Benennen Sie das Ziel nach Belieben und verwenden Sie es in `RESTIC_REPOSITORY=rclone:<name>:<folder>`.
 
@@ -159,9 +146,45 @@ Aus dem Quellcode-Ordner: `make restore SNAPSHOT=latest`.
 
 **Auf einem neuen Rechner:** Installieren Sie Rhinvoice wie unter [Installation](/docs/de/getting-started/installation/) beschrieben, mit demselben `RESTIC_REPOSITORY` und `RESTIC_PASSWORD`. Starten Sie zuerst **nur die Datenbank** (`docker compose up -d db`), stellen Sie wie oben wieder her und starten Sie dann alles (`docker compose up -d`).
 
-<Aside type="tip" title="Einmal die Wiederherstellung ausprobieren">
-Probieren Sie nach dem Einrichten einmal eine Wiederherstellung aus, z. B. mit einer zweiten Installation neben der ersten ([mehrere Installationen auf einem Rechner](/docs/de/getting-started/installation/#mehrere-installationen-auf-einem-rechner)). Geben Sie ihr dasselbe `RESTIC_REPOSITORY` und `RESTIC_PASSWORD` nur zum Wiederherstellen und lassen Sie ihren Backup-Container damit nicht laufen (`docker compose stop backup`): Zwei Installationen, die in dasselbe Repository sichern, würden ihre Backups vermischen. Wollen Sie das wirklich, geben Sie jeder ein eigenes `BACKUP_HOST`.
+## Wiederherstellung neben der laufenden Installation ausprobieren
+
+Probieren Sie nach dem Einrichten einmal eine Wiederherstellung aus. Eine zweite Installation in einem eigenen Ordner stellt das neueste Backup wieder her, ohne die erste zu berühren ([mehrere Installationen auf einem Rechner](/docs/de/getting-started/installation/#mehrere-installationen-auf-einem-rechner)). Das Beispiel geht von einer Installation in `~/rhinvoice` mit dem Projektnamen `rhinvoice` aus. Setzen Sie Ihre eigenen Namen ein.
+
+```bash
+mkdir ~/rhinvoice-restoretest && cd ~/rhinvoice-restoretest
+cp ~/rhinvoice/compose.yml ~/rhinvoice/.env .
+# Its own project name and port, and no recurring invoices from the copy.
+# On Linux: sed -i 's/…/…/' .env (without the '').
+sed -i '' 's/^COMPOSE_PROJECT_NAME=.*/COMPOSE_PROJECT_NAME=rhinvoice-restoretest/; s/^RHINVOICE_PORT=.*/RHINVOICE_PORT=8100/' .env
+echo 'RHINVOICE_RECURRING=false' >> .env
+grep -E '^(COMPOSE_PROJECT_NAME|RHINVOICE_PORT|RHINVOICE_RECURRING)=' .env   # check all three
+
+docker compose up -d db
+# Only with an rclone target (Dropbox, Google Drive …): copy the access into the copy's volume.
+docker compose run --rm --no-deps backup rclone version
+docker run --rm -v rhinvoice_backup-rclone:/from:ro \
+  -v rhinvoice-restoretest_backup-rclone:/to alpine sh -c 'cp -a /from/. /to/'
+
+docker compose run --rm --no-deps backup snapshots
+docker compose run --rm --no-deps backup restore latest
+docker compose up -d app        # the app only, never the copy's backup container
+```
+
+Öffnen Sie `http://localhost:8100`, melden Sie sich an und sehen Sie sich einige Rechnungen an. Versenden Sie nichts aus der Kopie: Die Einstellungen des Mailservers wurden mit allem anderen wiederhergestellt. Danach entfernen Sie die Kopie:
+
+```bash
+grep '^COMPOSE_PROJECT_NAME=' .env     # must show rhinvoice-restoretest
+docker compose down -v
+cd ~ && rm -rf ~/rhinvoice-restoretest
+```
+
+<Aside type="caution" title="Der Projektname entscheidet, worauf ein Befehl wirkt">
+Ohne geänderten `COMPOSE_PROJECT_NAME` wirken alle Befehle oben, auch `down -v`, auf die echte Installation. Fehlt die Zeile in `.env`, fügen Sie sie hinzu.
 </Aside>
+
+- **Starten Sie die App mit Namen.** Ein blosses `docker compose up -d` startet auch den Backup-Container der Kopie. Zwei Installationen, die in dasselbe Repository sichern, würden ihre Backups vermischen. Wollen Sie das wirklich, geben Sie jeder ein eigenes `BACKUP_HOST`.
+- **Der rclone-Zugriff liegt pro Projekt** im Volume `<Projekt>_backup-rclone`. Ohne den `cp`-Schritt fehlt er der Kopie. `docker volume ls` listet die Volumes.
+- `RHINVOICE_RECURRING=false` verhindert, dass die Kopie die wiederkehrenden Rechnungen der echten Installation schreibt und versendet.
 
 ## Häufige Fragen
 

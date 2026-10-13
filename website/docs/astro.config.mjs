@@ -80,6 +80,7 @@ export default defineConfig({
         ]),
         group("Running it", "Betrieb", [
           page("operations/backup", "Backup and restore", "Backup und Wiederherstellen"),
+          page("operations/backup-google-drive", "Backup to Google Drive", "Backup auf Google Drive"),
           page("operations/update", "Updating", "Update"),
           page("operations/uninstall", "Uninstalling", "Deinstallieren"),
         ]),

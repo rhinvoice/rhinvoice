@@ -15,6 +15,11 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   abgeschrieben, später bezahlt, Verlust, netto und enthaltene Steuer. Jedes Land nennt sie und seine
   Steuerregel in den eigenen Worten (CH/FL Art. 41 MWSTG, DE § 17 UStG, AT § 16 UStG).
 
+### Geändert
+- Backups auf Google Drive sind mit eigener OAuth-Client-ID beschrieben, weil rclone seine gemeinsame
+  im Lauf von 2026 abschaltet: die Schritte in der Google-Cloud-Konsole, der Umstieg eines bestehenden
+  Backups und ein Wiederherstellungstest in einer zweiten Installation mit allen Befehlen.
+
 ## [0.5.6] – 2026-10-13
 
 ### Neu

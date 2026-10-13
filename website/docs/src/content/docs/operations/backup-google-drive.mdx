@@ -1,0 +1,104 @@
+---
+title: Backing up Rhinvoice to Google Drive
+description: Encrypted Rhinvoice backups to Google Drive with rclone and your own Google OAuth client ID, which is required since rclone retires its shared one in 2026.
+faq:
+  - q: Why does Google Drive need a client ID of my own?
+    a: rclone's shared Google Drive client ID is being retired and stops working during 2026. A remote that still uses it logs a NOTICE on every backup. With your own client ID the backups keep working.
+  - q: Why did my Google Drive backup stop after a week?
+    a: The Google app is still in the status "Testing". Google then ends the access after seven days. Publish the app so that its status reads "In production", and authorize again.
+  - q: Can Google read my backups?
+    a: No. restic encrypts the backups before they leave the machine. Google Drive only stores unreadable blocks, and nobody can restore them without RESTIC_PASSWORD.
+  - q: Why are there two folders of the same name in my Drive?
+    a: With the scope drive.file rclone only sees files it created itself with the same client ID. A folder you made in the browser, or one written with another client ID, is invisible to it, so it creates a second one.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice backs up to Google Drive through [rclone](https://rclone.org), which is part of the backup container, with **a Google OAuth client ID of your own**. rclone's shared client ID "is being retired and will stop working during 2026" ([rclone.org/drive](https://rclone.org/drive/#making-your-own-client-id)). Creating your own is free and takes about ten minutes. The backups are encrypted before they leave the machine.
+
+## Creating the client ID at Google
+
+The menus of the Google Cloud console change now and then. If a name below is not where you look, follow the links and compare with rclone's own steps.
+
+<Steps>
+
+1. **Create a project:** [console.cloud.google.com/projectcreate](https://console.cloud.google.com/projectcreate), any name, e.g. "Rhinvoice Backup". In all following steps this project must be the one selected at the top of the page.
+2. **Enable the Google Drive API:** [console.cloud.google.com/apis/library/drive.googleapis.com](https://console.cloud.google.com/apis/library/drive.googleapis.com), *Enable*.
+3. **Consent screen:** [console.cloud.google.com/auth/overview](https://console.cloud.google.com/auth/overview), *Get started*: an app name (e.g. "rclone"), your address as support e-mail, audience **External**, your address as contact, *Create*.
+4. **Scope:** [console.cloud.google.com/auth/scopes](https://console.cloud.google.com/auth/scopes), add `https://www.googleapis.com/auth/drive.file`, *Update*, *Save*. With this scope the client only sees the files it creates itself, not the rest of your Drive.
+5. **Client:** [console.cloud.google.com/auth/clients](https://console.cloud.google.com/auth/clients), *Create client*, type **Desktop app**. Keep the **client ID** and the **client secret** at once, in a password manager. The secret is shown only now.
+6. **Publish the app:** [console.cloud.google.com/auth/audience](https://console.cloud.google.com/auth/audience), *Publish app*. The status must read **In production**.
+
+</Steps>
+
+<Aside type="caution" title="Do not skip publishing">
+While the status is "Testing", Google ends the access after seven days. The backups would stop a week later without anything having changed. An app for your own use needs no verification by Google. When logging in you accept the warning that the app is not verified.
+</Aside>
+
+## Connecting the backup container
+
+<Steps>
+
+1. **Allow access**, on a computer with a web browser and rclone 1.75 or newer. `read` keeps ID and secret off the screen and out of the shell history:
+
+   ```bash
+   read -rs CID        # paste the client ID, press Enter
+   read -rs CSECRET    # paste the client secret, press Enter
+   rclone authorize "drive" "$CID" "$CSECRET" --drive-scope drive.file
+   ```
+
+   The scope must be chosen when authorizing. Log in and allow access. The terminal prints a token: one line starting with `{"access_token":`.
+
+2. **Hand it to the backup container**, on the server, in the Rhinvoice folder. If that is another machine, set `CID` and `CSECRET` there the same way first:
+
+   ```bash
+   read -rs TOKEN
+   docker compose run --rm --no-deps backup rclone config create gdrive drive \
+     client_id "$CID" client_secret "$CSECRET" scope drive.file \
+     config_refresh_token false token "$TOKEN"
+   unset TOKEN CID CSECRET
+   ```
+
+3. **Choose the folder** in `.env` and restart (`docker compose up -d`):
+
+   ```dotenv
+   RESTIC_REPOSITORY=rclone:gdrive:Rhinvoice-Backup
+   ```
+
+4. **Try it:** wait until `docker compose logs backup` shows `waiting for requests`, then run `docker compose exec backup rhinvoice-backup backup`. *Settings → Backup* shows the backup.
+
+</Steps>
+
+Let rclone create the folder. A folder you made yourself in the browser is invisible with `drive.file`: if `RESTIC_REPOSITORY` names such a folder, a second folder of the same name appears next to it.
+
+## Moving an existing backup to your own client ID
+
+A backup container that logs `NOTICE: … rclone's shared Google Drive client_id` still uses the shared client ID. The new client does not see what the old one wrote. The backup container therefore **creates a new, empty repository** in a second folder of the same name, and it does not back up by itself right then.
+
+<Aside type="caution" title="Start the first backup by hand">
+Until you start a backup by hand, there is no backup the installation can reach, while the dashboard still shows the last successful one.
+</Aside>
+
+Create the client ID and authorize as above, then on the server:
+
+```bash
+docker compose stop backup
+read -rs CID; read -rs CSECRET; read -rs TOKEN
+docker compose run --rm --no-deps backup rclone config delete gdrive
+docker compose run --rm --no-deps backup rclone config create gdrive drive \
+  client_id "$CID" client_secret "$CSECRET" scope drive.file \
+  config_refresh_token false token "$TOKEN"
+unset TOKEN CID CSECRET
+docker compose up -d backup
+docker compose logs -f backup                            # wait for "waiting for requests"
+docker compose exec backup rhinvoice-backup backup       # needed: the new repository is empty
+docker compose exec backup rhinvoice-backup snapshots
+docker compose exec backup rhinvoice-backup check
+```
+
+The `NOTICE` is gone from the log. The old folder with the earlier backups stays in your Drive. Delete it in the browser once the new backup is checked, or keep it until you have [tried a restore](/docs/operations/backup/#trying-a-restore-next-to-the-running-installation).
+
+## Questions
+
+<Faq />

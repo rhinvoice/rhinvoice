@@ -15,6 +15,11 @@ before 1.0, minor versions may contain breaking changes.
   paid later, loss, net and the tax contained. Each country names them and its tax rule in its own
   words (CH/LI Art. 41 MWSTG, DE § 17 UStG, AT § 16 UStG).
 
+### Changed
+- Backups to Google Drive are documented with an OAuth client ID of your own, because rclone retires
+  its shared one during 2026: the steps in the Google Cloud console, moving an existing backup over,
+  and a restore test in a second installation with every command.
+
 ## [0.5.6] – 2026-10-13
 
 ### Added

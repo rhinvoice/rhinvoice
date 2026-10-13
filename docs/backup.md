@@ -64,7 +64,7 @@ ssh-keyscan nas.example > ssh/known_hosts
 sudo chown -R 10001 ssh && chmod 700 ssh && chmod 600 ssh/id_ed25519   # the container's user
 ```
 
-### Dropbox, Google Drive and other cloud storage (rclone)
+### Dropbox and other cloud storage (rclone)
 
 restic reaches them through [rclone](https://rclone.org), which is part of the backup
 container. The backups are encrypted before they leave the machine: the cloud provider only
@@ -106,29 +106,106 @@ what changed, usually a few kilobytes.
    RESTIC_REPOSITORY=rclone:dropbox:Rhinvoice-Backup
    ```
 
-4. **Try it:** `docker compose exec backup rhinvoice-backup backup`. The folder
-   `Rhinvoice-Backup` appears in your Dropbox; *Settings → Backup* shows the backup.
-
-**Google Drive** works the same. Ask only for access to the files rclone creates itself
-(the scope must be chosen when authorizing; setting it later does not narrow the token):
-
-```bash
-rclone authorize "drive" --drive-scope drive.file
-```
-
-```bash
-read -rs TOKEN
-docker compose run --rm --no-deps backup rclone config create gdrive drive \
-  scope drive.file config_refresh_token false token "$TOKEN"
-unset TOKEN
-```
-
-and `RESTIC_REPOSITORY=rclone:gdrive:Rhinvoice-Backup`.
+4. **Try it:** wait until `docker compose logs backup` shows `waiting for requests`, then
+   run `docker compose exec backup rhinvoice-backup backup`. The folder `Rhinvoice-Backup`
+   appears in your Dropbox; *Settings → Backup* shows the backup. Creating the repository on
+   the first start takes about a minute over rclone; a backup asked for before that fails
+   with `config file already exists`, although nothing is wrong.
 
 For other providers (OneDrive, kDrive and other WebDAV storage, …) run
 `docker compose run --rm --no-deps backup rclone config`, answer "No" when asked whether to
 use a web browser automatically and follow the rclone documentation of the provider.
 Name the remote as you like and use it in `RESTIC_REPOSITORY=rclone:<name>:<folder>`.
+
+### Google Drive (rclone, with your own OAuth client)
+
+Google Drive needs a **client ID of your own**. rclone's shared one "is being retired and will
+stop working during 2026" ([rclone.org/drive](https://rclone.org/drive/#making-your-own-client-id));
+a remote that still uses it logs a `NOTICE` on every backup. Creating one is free and takes
+about ten minutes in the Google Cloud console. The menus there change now and then: if a
+name below is not where you look, follow the links, and compare with rclone's own steps.
+
+1. **Create a project:** <https://console.cloud.google.com/projectcreate>, any name (e.g.
+   "Rhinvoice Backup"). In all following steps the project must be the one selected at the top
+   of the page.
+2. **Enable the Google Drive API:**
+   <https://console.cloud.google.com/apis/library/drive.googleapis.com>, *Enable*.
+3. **Consent screen:** <https://console.cloud.google.com/auth/overview>, *Get started*: an app
+   name (e.g. "rclone"), your address as support e-mail, audience **External**, your address as
+   contact, *Create*.
+4. **Scope:** <https://console.cloud.google.com/auth/scopes>, add
+   `https://www.googleapis.com/auth/drive.file`, *Update*, *Save*. With this scope the client
+   sees only the files it creates itself, not the rest of your Drive.
+5. **Client:** <https://console.cloud.google.com/auth/clients>, *Create client*, type
+   **Desktop app**. Keep the **client ID** and the **client secret** at once (password
+   manager): the secret is shown only now.
+6. **Publish the app:** <https://console.cloud.google.com/auth/audience>, *Publish app*. The
+   status must read **In production**.
+
+> **Do not skip step 6.** While the status is "Testing", Google ends the access after seven
+> days: the backups would stop a week later without anything having changed. An app for your
+> own use needs no verification by Google; when logging in you accept the warning that the
+> app is not verified.
+
+Then, as for Dropbox, on a computer with a web browser and rclone 1.75 or newer:
+
+```bash
+read -rs CID        # paste the client ID, press Enter
+read -rs CSECRET    # paste the client secret, press Enter
+rclone authorize "drive" "$CID" "$CSECRET" --drive-scope drive.file
+```
+
+The scope must be chosen when authorizing; setting it later does not narrow the token. Log in
+and allow access; the terminal prints the token (one line starting with `{"access_token":`).
+On the server, in the Rhinvoice folder (set `CID` and `CSECRET` there the same way if it is
+another machine):
+
+```bash
+read -rs TOKEN
+docker compose run --rm --no-deps backup rclone config create gdrive drive \
+  client_id "$CID" client_secret "$CSECRET" scope drive.file \
+  config_refresh_token false token "$TOKEN"
+unset TOKEN CID CSECRET
+```
+
+Choose the folder in `.env`, restart (`docker compose up -d`) and try it as in step 4 above:
+
+```dotenv
+RESTIC_REPOSITORY=rclone:gdrive:Rhinvoice-Backup
+```
+
+**Folders you made yourself are invisible.** With `drive.file` rclone does not see a folder
+you created in the browser. If `RESTIC_REPOSITORY` names such a folder (say `Backups/…`),
+a second folder of the same name appears next to it. Let rclone create the folder.
+
+#### Moving an existing Google Drive backup to your own client ID
+
+The new client does not see what the old one wrote: the repository made with rclone's shared
+client ID is invisible to it. The backup container therefore **creates a new, empty
+repository** in a second folder of the same name, and it does not back up by itself right
+then. Until you start a backup by hand there is no backup the installation can reach, while
+the dashboard still shows the last successful one.
+
+Do steps 1 to 6 above, authorize as shown, then on the server:
+
+```bash
+docker compose stop backup
+read -rs CID; read -rs CSECRET; read -rs TOKEN
+docker compose run --rm --no-deps backup rclone config delete gdrive
+docker compose run --rm --no-deps backup rclone config create gdrive drive \
+  client_id "$CID" client_secret "$CSECRET" scope drive.file \
+  config_refresh_token false token "$TOKEN"
+unset TOKEN CID CSECRET
+docker compose up -d backup
+docker compose logs -f backup                            # wait for "waiting for requests"
+docker compose exec backup rhinvoice-backup backup       # needed: the new repository is empty
+docker compose exec backup rhinvoice-backup snapshots
+docker compose exec backup rhinvoice-backup check
+```
+
+The `NOTICE` about the shared client ID is gone from the log. The old folder with the earlier
+backups stays in your Drive; it can only be opened with the old access. Delete it in the
+browser once the new backup is checked, or keep it until you have tried a restore.
 
 ### A folder of this machine (iCloud, Nextcloud, Dropbox app, USB disk)
 
@@ -149,6 +226,7 @@ docker compose exec backup rhinvoice-backup snapshots # list the backups
 docker compose exec backup rhinvoice-backup check     # verify the repository
 docker compose exec backup rhinvoice-backup backup    # back up now
 docker compose exec backup rhinvoice-backup rclone lsd dropbox:  # an rclone target is reachable
+docker compose logs backup | grep NOTICE              # Google Drive: still on rclone's shared client ID?
 ```
 
 ## Restoring
@@ -170,11 +248,52 @@ From the source folder: `make restore SNAPSHOT=latest`.
 (`docker compose up -d db`), then restore as above and start everything
 (`docker compose up -d`). The app creates the database tables itself; the restore replaces them.
 
-Try a restore once after setting up, e.g. with a second installation next to the first
-(see [install.md](install.md), "Trying it next to an existing installation"). Give it the
-same `RESTIC_REPOSITORY` and `RESTIC_PASSWORD` only for restoring, and **do not run its backup
-container** with them (`docker compose stop backup`): two installations backing up to one
-repository would mix their backups. If you really want that, give each its own `BACKUP_HOST`.
+### Trying a restore next to the running installation
+
+Try a restore once after setting up. A second installation in its own folder restores the
+latest backup without touching the first. The example assumes the installation is in
+`~/rhinvoice` with the project name `rhinvoice`; use your own names.
+
+```bash
+mkdir ~/rhinvoice-restoretest && cd ~/rhinvoice-restoretest
+cp ~/rhinvoice/compose.yml ~/rhinvoice/.env .
+# Its own project name and port, and no recurring invoices from the copy.
+# On Linux: sed -i 's/…/…/' .env (without the '').
+sed -i '' 's/^COMPOSE_PROJECT_NAME=.*/COMPOSE_PROJECT_NAME=rhinvoice-restoretest/; s/^RHINVOICE_PORT=.*/RHINVOICE_PORT=8100/' .env
+echo 'RHINVOICE_RECURRING=false' >> .env
+grep -E '^(COMPOSE_PROJECT_NAME|RHINVOICE_PORT|RHINVOICE_RECURRING)=' .env   # check all three
+
+docker compose up -d db
+# Only with an rclone target (Dropbox, Google Drive …): the access is kept in a volume of
+# each project. Create the copy's volumes, then copy the configuration into them.
+docker compose run --rm --no-deps backup rclone version
+docker run --rm -v rhinvoice_backup-rclone:/from:ro \
+  -v rhinvoice-restoretest_backup-rclone:/to alpine sh -c 'cp -a /from/. /to/'
+
+docker compose run --rm --no-deps backup snapshots
+docker compose run --rm --no-deps backup restore latest
+docker compose up -d app        # the app only, never the copy's backup container
+```
+
+Open <http://localhost:8100>, log in and look at a few invoices. Send nothing from the copy:
+the mail server settings were restored with everything else. Then remove it:
+
+```bash
+grep '^COMPOSE_PROJECT_NAME=' .env     # must show rhinvoice-restoretest
+docker compose down -v
+cd ~ && rm -rf ~/rhinvoice-restoretest
+```
+
+- **The project name decides what a command touches.** Without a changed
+  `COMPOSE_PROJECT_NAME` every command above, also `down -v`, acts on the real installation.
+  If `.env` has no such line, add it instead of replacing it.
+- **Start the app by name.** A plain `docker compose up -d` also starts the copy's backup
+  container: two installations backing up to one repository would mix their backups. If you
+  really want that, give each its own `BACKUP_HOST`.
+- **Volume names follow the project name:** `<project>_backup-rclone`; `docker volume ls`
+  lists them.
+- `RHINVOICE_RECURRING=false` keeps the copy from writing and mailing the recurring invoices
+  of the real installation.
 
 **Database versions:** the backup container includes the tools of PostgreSQL 17, like the
 `db` container. When PostgreSQL gets a new major version, both are updated together.

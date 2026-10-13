@@ -17,6 +17,8 @@ class CountryTermsResponse(ApiModel):
     vat_number_field: str
     vat_number_hint: str
     small_business: str
+    bad_debts: str
+    write_off_hint: str
     special_rate: str | None
 
 
@@ -60,6 +62,8 @@ class CountryProfileResponse(ApiModel):
                 vat_number_field=terms.vat_number_field,
                 vat_number_hint=terms.vat_number_hint,
                 small_business=terms.small_business,
+                bad_debts=terms.bad_debts,
+                write_off_hint=terms.write_off_hint,
                 special_rate=terms.special_rate,
             )
             for language, terms in profile.terms.items()

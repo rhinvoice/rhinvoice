@@ -169,6 +169,11 @@ export const en: Catalog<MessageKey> = {
     "The date is before the last issued document. Numbers and dates must ascend.",
   "error.payment_exceeds_open_amount": "The amount is higher than the open amount.",
   "error.payment_date_in_future": "The payment date must not be in the future.",
+  "error.write_off_date_in_future": "The date of the write-off must not be in the future.",
+  "error.write_off_before_invoice":
+    "The date of the write-off must not be before the invoice date.",
+  "error.payment_before_write_off":
+    "This payment came in before the write-off. Take the write-off back first.",
   "error.unknown_placeholder":
     "Unknown placeholder. Available are {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung} and {firma}.",
   "error.already_converted": "An invoice has already been created from this quote.",
@@ -572,6 +577,7 @@ export const en: Catalog<MessageKey> = {
   },
   "status.paid": "Paid",
   "status.cancelled": "Cancelled",
+  "status.written_off": "Written off",
 
   "event.emailed": "Sent by e-mail",
   "event.reminder_emailed": "Reminder sent by e-mail",
@@ -589,6 +595,8 @@ export const en: Catalog<MessageKey> = {
   "event.reminded": "Reminder written",
   "event.imported": "Taken over from a program used before",
   "event.file_added": "File added",
+  "event.written_off": "Written off",
+  "event.write_off_removed": "Write-off taken back",
 
   "treatment.domestic": "Domestic (taxable)",
   "treatment.reverse_charge": "Reverse charge",
@@ -611,6 +619,7 @@ export const en: Catalog<MessageKey> = {
   "documents.view.overdue": "Overdue",
   "documents.view.paid": "Paid",
   "documents.view.cancelled": "Cancelled",
+  "documents.view.written_off": "Written off",
   "documents.view.sent": "Sent",
   "documents.view.accepted": "Accepted",
   "documents.view.declined": "Declined",
@@ -872,6 +881,46 @@ export const en: Catalog<MessageKey> = {
   "documents.paymentRemoved": "Payment removed.",
   "documents.payments": "Payments",
   "documents.removePayment": "Remove payment of {amount} from {date}",
+
+  "writeOff.action": "Write off …",
+  "writeOff.title": "Write off invoice {number}",
+  "writeOff.description":
+    "The invoice stays unchanged and the customer receives nothing. It no longer counts as open and is not reminded any more. If the customer pays after all, record the payment as usual.",
+  "writeOff.openAmount": "Open amount",
+  "writeOff.date": "Written off as of",
+  "writeOff.today": "Today",
+  "writeOff.endOfInvoiceYear": "End of invoice year",
+  "writeOff.dateRange": "The date lies between the invoice date and today.",
+  "writeOff.reason": "Reason",
+  "writeOff.reason.gone": "Company dissolved or bankrupt",
+  "writeOff.reason.time_barred": "Time-barred",
+  "writeOff.reason.small_amount": "Small amount",
+  "writeOff.reason.untraceable": "Cannot be found",
+  "writeOff.reason.other": "Other reason",
+  "writeOff.note": "Note",
+  "writeOff.submit": "Write off",
+  "writeOff.done": "Invoice written off.",
+  "writeOff.remove": "Take write-off back",
+  "writeOff.removeTitle": "Take the write-off back?",
+  "writeOff.removeDescription":
+    "The written-off amount is open again afterwards and can be reminded. This is noted in the history.",
+  "writeOff.removed": "Write-off taken back.",
+  "writeOff.card": "Write-off",
+  "writeOff.amount": "Written off",
+  "writeOff.writtenOffOn": "As of",
+  "writeOff.taxIncluded": "{tax} contained",
+  "writeOff.recovered": "Paid later",
+  "writeOff.remaining": "Loss",
+  "writeOff.afterWriteOff": "Came in after the write-off",
+  "writeOff.paymentDescription":
+    "Written off: {amount}. The payment takes back that much of the loss.",
+  "badDebts.description":
+    "Write-offs count in the year of their date, later payments in the year they came in.",
+  "badDebts.year": "Year",
+  "badDebts.writtenOff": "Written off",
+  "badDebts.recovered": "Paid later",
+  "badDebts.loss": "Loss",
+  "badDebts.net": "Net",
   "settings.tabBackup": "Backup",
   "backup.title": "Backup",
   "backup.description":

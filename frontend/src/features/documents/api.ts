@@ -26,6 +26,7 @@ export type DocumentPage = components["schemas"]["DocumentPage"];
 export type CurrencyTotals = components["schemas"]["CurrencyTotalsResponse"];
 export type RecordedPayment = components["schemas"]["RecordedPaymentSchema"];
 export type Attachment = components["schemas"]["AttachmentResponse"];
+export type BadDebtYear = components["schemas"]["BadDebtYearResponse"];
 
 export interface DocumentListParams {
   readonly types: readonly DocumentType[];
@@ -45,6 +46,7 @@ export const documentKeys = {
   list: (params: DocumentListParams) => ["documents", "list", params] as const,
   detail: (id: string) => ["documents", "detail", id] as const,
   dashboard: ["dashboard"] as const,
+  badDebts: ["bad-debts"] as const,
 };
 
 export function documentListQuery(params: DocumentListParams) {
@@ -114,6 +116,7 @@ function useOnChanged() {
     client.setQueryData(documentKeys.detail(document.id), document);
     void client.invalidateQueries({ queryKey: documentKeys.lists });
     void client.invalidateQueries({ queryKey: documentKeys.dashboard });
+    void client.invalidateQueries({ queryKey: documentKeys.badDebts });
   };
 }
 
@@ -268,6 +271,52 @@ export function useRemovePayment(id: string) {
         }),
       ),
     onSuccess,
+  });
+}
+
+export interface WriteOffInput {
+  readonly writtenOffOn: string;
+  readonly reason: components["schemas"]["WriteOffReason"];
+  readonly note: string;
+}
+
+/** Give up collecting the open rest of an invoice; the invoice itself stays as issued. */
+export function useWriteOff(id: string) {
+  const onSuccess = useOnChanged();
+  return useMutation({
+    mutationFn: (writeOff: WriteOffInput) =>
+      unwrap(
+        api.POST("/api/documents/{document_id}/write-off", {
+          params: { path: { document_id: id } },
+          body: {
+            written_off_on: writeOff.writtenOffOn,
+            reason: writeOff.reason,
+            note: writeOff.note,
+          },
+        }),
+      ),
+    onSuccess,
+  });
+}
+
+export function useRemoveWriteOff(id: string) {
+  const onSuccess = useOnChanged();
+  return useMutation({
+    mutationFn: () =>
+      unwrap(
+        api.DELETE("/api/documents/{document_id}/write-off", {
+          params: { path: { document_id: id } },
+        }),
+      ),
+    onSuccess,
+  });
+}
+
+/** Written-off amounts per year and currency, the latest year first. */
+export function badDebtsQuery() {
+  return queryOptions({
+    queryKey: documentKeys.badDebts,
+    queryFn: () => unwrap(api.GET("/api/bad-debts")),
   });
 }
 

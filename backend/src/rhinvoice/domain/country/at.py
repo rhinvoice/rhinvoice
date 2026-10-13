@@ -101,6 +101,13 @@ PROFILE = CountryProfile(
             vat_number_field="UID-Nummer",
             vat_number_hint="Pflicht auf Rechnungen über EUR 400, z. B. ATU12345678.",
             small_business="Kleinunternehmer nach § 6 Abs. 1 Z 27 UStG",
+            bad_debts="Forderungsausfälle",
+            write_off_hint=(
+                "Bei Sollbesteuerung berichtigen Sie die Umsatzsteuer in dem Zeitraum, in dem "
+                "die Forderung uneinbringlich wurde, und erneut, wenn doch noch gezahlt wird "
+                "(§ 16 Abs. 3 Z 1 UStG). Das Datum ist der Tag, an dem sie uneinbringlich "
+                "wurde. Bei Istbesteuerung und als Kleinunternehmer ist nichts zu berichtigen."
+            ),
             special_rate="Zweiter ermäßigter Satz",
             salutation="Guten Tag",
             closing="Mit freundlichen Grüßen",
@@ -113,6 +120,13 @@ PROFILE = CountryProfile(
             vat_number_field="VAT number (UID)",
             vat_number_hint="Required on invoices above EUR 400, e.g. ATU12345678.",
             small_business="Small business (§ 6 Abs. 1 Z 27 UStG)",
+            bad_debts="Bad debts",
+            write_off_hint=(
+                "If you pay VAT when invoicing, correct it in the period in which the amount "
+                "became uncollectible, and again if it is paid after all (§ 16 Abs. 3 Z 1 "
+                "UStG). The date is the day it became uncollectible. If you pay VAT on receipt "
+                "or are a small business, there is nothing to correct."
+            ),
             special_rate="Second reduced rate",
             salutation="Dear Sir or Madam",
             closing="Kind regards",

@@ -45,7 +45,7 @@ SWISS_RATES = (
 
 SWISS_SOURCES = (
     "https://www.estv.admin.ch/estv/de/home/mehrwertsteuer/mwst-steuersaetze.html",
-    "https://www.fedlex.admin.ch/eli/cc/2009/615/de (MWSTG Art. 23, 26)",
+    "https://www.fedlex.admin.ch/eli/cc/2009/615/de (MWSTG Art. 23, 26, 39 to 41)",
     "https://www.llv.li/de/unternehmen/steuern/mehrwertsteuer",
 )
 
@@ -75,6 +75,13 @@ SWISS_TERMS = {
             "Pflicht auf Rechnungen, wenn die Firma MWST-pflichtig ist, z. B. CHE-123.456.789 MWST."
         ),
         small_business="Nicht MWST-pflichtig (Umsatz unter CHF 100'000)",
+        bad_debts="Debitorenverluste",
+        write_off_hint=(
+            "Bei Abrechnung nach vereinbartem Entgelt ist der Betrag eine Entgeltsminderung in "
+            "der Periode, in der Sie ihn verbuchen (Art. 41 MWSTG). Bei Abrechnung nach "
+            "vereinnahmtem Entgelt ist nichts zu korrigieren, das Datum dient dann nur Ihrer "
+            "Übersicht."
+        ),
         special_rate="Sondersatz Beherbergung",
         salutation="Guten Tag",
         closing="Freundliche Grüsse",
@@ -89,6 +96,12 @@ SWISS_TERMS = {
             "Required on invoices of VAT registered companies, e.g. CHE-123.456.789 MWST."
         ),
         small_business="Not VAT registered (turnover below CHF 100,000)",
+        bad_debts="Bad debts",
+        write_off_hint=(
+            "If you account for VAT by agreed consideration, the amount reduces the "
+            "consideration in the period you book it (Art. 41 MWSTG). By received "
+            "consideration there is nothing to correct; the date is then for your overview only."
+        ),
         special_rate="Accommodation rate",
         salutation="Dear Sir or Madam",
         closing="Kind regards",

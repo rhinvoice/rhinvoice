@@ -85,6 +85,13 @@ PROFILE = CountryProfile(
             vat_number_field="USt-IdNr.",
             vat_number_hint="Oder die Steuernummer: eine der beiden muss auf der Rechnung stehen.",
             small_business="Kleinunternehmer nach § 19 UStG",
+            bad_debts="Forderungsausfälle",
+            write_off_hint=(
+                "Bei Soll-Versteuerung berichtigen Sie die Umsatzsteuer in dem Zeitraum, in dem "
+                "die Forderung uneinbringlich wurde, und erneut, wenn doch noch gezahlt wird "
+                "(§ 17 Abs. 2 Nr. 1 UStG). Das Datum ist der Tag, an dem sie uneinbringlich "
+                "wurde. Bei Ist-Versteuerung und als Kleinunternehmer ist nichts zu berichtigen."
+            ),
             special_rate=None,
             salutation="Guten Tag",
             closing="Mit freundlichen Grüßen",
@@ -97,6 +104,13 @@ PROFILE = CountryProfile(
             vat_number_field="VAT ID",
             vat_number_hint="Or the tax number: one of both must be on the invoice.",
             small_business="Small business (§ 19 UStG)",
+            bad_debts="Bad debts",
+            write_off_hint=(
+                "If you pay VAT when invoicing, correct it in the period in which the amount "
+                "became uncollectible, and again if it is paid after all (§ 17 Abs. 2 Nr. 1 "
+                "UStG). The date is the day it became uncollectible. If you pay VAT on receipt "
+                "or are a small business, there is nothing to correct."
+            ),
             special_rate=None,
             salutation="Dear Sir or Madam",
             closing="Kind regards",
@@ -114,5 +128,6 @@ PROFILE = CountryProfile(
         "https://www.gesetze-im-internet.de/ustg_1980/__14.html",
         "https://www.gesetze-im-internet.de/ustg_1980/__14a.html",
         "https://www.gesetze-im-internet.de/ustdv_1980/__33.html",
+        "https://www.gesetze-im-internet.de/ustg_1980/__17.html",
     ),
 )

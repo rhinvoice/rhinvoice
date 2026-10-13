@@ -9,7 +9,7 @@ export type ListKind = "invoice" | "quote";
 
 /** Saved views of the lists (principles.md 4.3), stored in the URL as "view". */
 export const VIEWS = {
-  invoice: ["all", "draft", "open", "overdue", "paid", "cancelled"],
+  invoice: ["all", "draft", "open", "overdue", "paid", "written_off", "cancelled"],
   quote: ["all", "draft", "sent", "accepted", "declined", "expired"],
 } as const;
 

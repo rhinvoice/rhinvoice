@@ -240,6 +240,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/bad-debts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Bad Debts
+         * @description Written-off amounts per year and currency, the latest year first.
+         */
+        get: operations["documents_bad_debts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/bank-accounts": {
         parameters: {
             query?: never;
@@ -876,6 +896,30 @@ export interface paths {
          */
         post: operations["dunning_write_reminder"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{document_id}/write-off": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write Off Invoice
+         * @description Give up collecting the open rest. The invoice stays as issued; nothing is sent.
+         */
+        post: operations["documents_write_off_invoice"];
+        /**
+         * Remove Write Off
+         * @description Take a write-off back: the rest of the invoice is open again.
+         */
+        delete: operations["documents_remove_write_off"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1770,6 +1814,22 @@ export interface components {
          * @enum {string}
          */
         BackupState: "not_set_up" | "current" | "stale";
+        /** BadDebtYearResponse */
+        BadDebtYearResponse: {
+            currency: components["schemas"]["Currency"];
+            /** Loss */
+            loss: string;
+            /** Net */
+            net: string;
+            /** Recovered */
+            recovered: string;
+            /** Tax */
+            tax: string;
+            /** Written Off */
+            written_off: string;
+            /** Year */
+            year: number;
+        };
         /** BankAccountRequest */
         BankAccountRequest: {
             /** Bank Name */
@@ -2027,6 +2087,8 @@ export interface components {
         };
         /** CountryTermsResponse */
         CountryTermsResponse: {
+            /** Bad Debts */
+            bad_debts: string;
             /** Small Business */
             small_business: string;
             /** Special Rate */
@@ -2039,6 +2101,8 @@ export interface components {
             vat_number_hint: string;
             /** Vat Number Label */
             vat_number_label: string;
+            /** Write Off Hint */
+            write_off_hint: string;
         };
         /** CreateRequest */
         CreateRequest: {
@@ -2335,7 +2399,7 @@ export interface components {
          * @description Stored status plus the derived states "overdue" and "expired".
          * @enum {string}
          */
-        DisplayStatus: "draft" | "sent" | "accepted" | "declined" | "expired" | "issued" | "partially_paid" | "overdue" | "paid" | "cancelled";
+        DisplayStatus: "draft" | "sent" | "accepted" | "declined" | "expired" | "issued" | "partially_paid" | "overdue" | "paid" | "cancelled" | "written_off";
         /** DocumentPage */
         DocumentPage: {
             /** Items */
@@ -2446,6 +2510,9 @@ export interface components {
             /** Treatment Overridden */
             treatment_overridden: boolean;
             type: components["schemas"]["DocumentType"];
+            write_off: components["schemas"]["WriteOffResponse"] | null;
+            /** Written Off Amount */
+            written_off_amount: string;
         };
         /**
          * DocumentSort
@@ -2456,7 +2523,7 @@ export interface components {
          * DocumentStatus
          * @enum {string}
          */
-        DocumentStatus: "draft" | "sent" | "accepted" | "declined" | "issued" | "partially_paid" | "paid" | "cancelled";
+        DocumentStatus: "draft" | "sent" | "accepted" | "declined" | "issued" | "partially_paid" | "paid" | "cancelled" | "written_off";
         /**
          * DocumentType
          * @enum {string}
@@ -2599,7 +2666,7 @@ export interface components {
          * EventKind
          * @enum {string}
          */
-        EventKind: "created" | "created_from" | "issued" | "sent" | "accepted" | "declined" | "converted" | "payment_added" | "payment_removed" | "cancelled" | "tax_overridden" | "reminded" | "emailed" | "reminder_emailed" | "imported" | "file_added";
+        EventKind: "created" | "created_from" | "issued" | "sent" | "accepted" | "declined" | "converted" | "payment_added" | "payment_removed" | "cancelled" | "tax_overridden" | "reminded" | "emailed" | "reminder_emailed" | "imported" | "file_added" | "written_off" | "write_off_removed";
         /** EventResponse */
         EventResponse: {
             /**
@@ -3110,6 +3177,8 @@ export interface components {
         };
         /** PaymentResponse */
         PaymentResponse: {
+            /** After Write Off */
+            after_write_off: boolean;
             /** Amount */
             amount: string;
             /**
@@ -3682,6 +3751,53 @@ export interface components {
          * @enum {string}
          */
         VatSystem: "eu" | "swiss";
+        /**
+         * WriteOffReason
+         * @enum {string}
+         */
+        WriteOffReason: "gone" | "time_barred" | "small_amount" | "untraceable" | "other";
+        /** WriteOffRequest */
+        WriteOffRequest: {
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            reason: components["schemas"]["WriteOffReason"];
+            /**
+             * Written Off On
+             * Format: date
+             */
+            written_off_on: string;
+        };
+        /**
+         * WriteOffResponse
+         * @description What was open of the invoice when collecting it was given up.
+         */
+        WriteOffResponse: {
+            /** Amount */
+            amount: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Note */
+            note: string;
+            reason: components["schemas"]["WriteOffReason"];
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Tax */
+            tax: string;
+            /**
+             * Written Off On
+             * Format: date
+             */
+            written_off_on: string;
+        };
         /** WriteReminderRequest */
         WriteReminderRequest: {
             /**
@@ -4948,6 +5064,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BackupResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    documents_bad_debts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BadDebtYearResponse"][];
                 };
             };
             /** @description Bad Request */
@@ -8446,6 +8636,162 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReminderResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    documents_write_off_invoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WriteOffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    documents_remove_write_off: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentResponse"];
                 };
             };
             /** @description Bad Request */

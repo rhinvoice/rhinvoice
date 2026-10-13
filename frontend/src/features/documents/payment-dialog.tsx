@@ -16,6 +16,7 @@ import {
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import type { DocumentDetail, PaymentInput } from "@/features/documents/api";
+import { paymentLimit } from "@/features/documents/write-off-model";
 import { FormAlert } from "@/features/shared/form-alert";
 import { fields, toApiDecimal } from "@/features/shared/form-schema";
 import { useErrorMessage } from "@/features/shared/use-error-message";
@@ -39,9 +40,12 @@ export function PaymentDialog({ document, open, onOpenChange, onSubmit }: Paymen
         <DialogHeader>
           <DialogTitle>{t("documents.addPayment")}</DialogTitle>
           <DialogDescription>
-            {t("documents.addPaymentDescription", {
-              amount: formatMoney(document.open_amount, document.currency, locale),
-            })}
+            {t(
+              document.status === "written_off"
+                ? "writeOff.paymentDescription"
+                : "documents.addPaymentDescription",
+              { amount: formatMoney(paymentLimit(document), document.currency, locale) },
+            )}
           </DialogDescription>
         </DialogHeader>
         {/* Mounted per opening, so the form starts with fresh defaults. */}
@@ -69,6 +73,8 @@ interface PaymentFormProps {
 function PaymentForm({ document, onCancel, onSubmit }: PaymentFormProps) {
   const { t, locale } = useI18n();
   const errorMessage = useErrorMessage();
+  // A written-off invoice takes payments up to what was written off.
+  const limit = paymentLimit(document);
   const schema = useMemo(() => {
     const f = fields(t, locale);
     return z
@@ -82,23 +88,23 @@ function PaymentForm({ document, onCancel, onSubmit }: PaymentFormProps) {
         const amount = toApiDecimal(values.amount, locale);
         if (values.amount !== "" && compareDecimal(amount, "0") <= 0) {
           context.addIssue({ code: "custom", path: ["amount"], message: t("validation.number") });
-        } else if (compareDecimal(amount, document.open_amount) > 0) {
+        } else if (compareDecimal(amount, limit) > 0) {
           context.addIssue({
             code: "custom",
             path: ["amount"],
             message: t("documents.paymentTooHigh", {
-              amount: formatMoney(document.open_amount, document.currency, locale),
+              amount: formatMoney(limit, document.currency, locale),
             }),
           });
         }
       });
-  }, [t, locale, document.open_amount, document.currency]);
+  }, [t, locale, limit, document.currency]);
   const form = useForm({
     resolver: zodResolver(schema),
     mode: "onTouched",
     defaultValues: {
       paid_on: todayIso(),
-      amount: formatDecimalInput(document.open_amount, locale, 2, 2),
+      amount: formatDecimalInput(limit, locale, 2, 2),
       note: "",
     },
   });

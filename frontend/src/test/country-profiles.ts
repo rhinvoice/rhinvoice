@@ -14,6 +14,9 @@ export const SWISS_PROFILE: CountryProfile = {
       vat_number_hint:
         "Pflicht auf Rechnungen, wenn die Firma MWST-pflichtig ist, z. B. CHE-123.456.789 MWST.",
       small_business: "Nicht MWST-pflichtig (Umsatz unter CHF 100'000)",
+      bad_debts: "Debitorenverluste",
+      write_off_hint:
+        "Bei Abrechnung nach vereinbartem Entgelt ist der Betrag eine Entgeltsminderung (Art. 41 MWSTG).",
       special_rate: "Sondersatz Beherbergung",
     },
     en: {
@@ -23,6 +26,9 @@ export const SWISS_PROFILE: CountryProfile = {
       vat_number_hint:
         "Required on invoices of VAT registered companies, e.g. CHE-123.456.789 MWST.",
       small_business: "Not VAT registered (turnover below CHF 100,000)",
+      bad_debts: "Bad debts",
+      write_off_hint:
+        "By agreed consideration the amount reduces the consideration (Art. 41 MWSTG).",
       special_rate: "Accommodation rate",
     },
   },
@@ -45,6 +51,9 @@ export const GERMAN_PROFILE: CountryProfile = {
       vat_number_field: "USt-IdNr.",
       vat_number_hint: "Oder die Steuernummer: eine der beiden muss auf der Rechnung stehen.",
       small_business: "Kleinunternehmer nach § 19 UStG",
+      bad_debts: "Forderungsausfälle",
+      write_off_hint:
+        "Bei Soll-Versteuerung berichtigen Sie die Umsatzsteuer (§ 17 Abs. 2 Nr. 1 UStG).",
       special_rate: null,
     },
     en: {
@@ -53,6 +62,9 @@ export const GERMAN_PROFILE: CountryProfile = {
       vat_number_field: "VAT ID",
       vat_number_hint: "Or the tax number: one of both must be on the invoice.",
       small_business: "Small business (§ 19 UStG)",
+      bad_debts: "Bad debts",
+      write_off_hint:
+        "Correct the VAT in the period it became uncollectible (§ 17 Abs. 2 Nr. 1 UStG).",
       special_rate: null,
     },
   },

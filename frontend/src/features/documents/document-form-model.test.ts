@@ -290,6 +290,8 @@ const DETAIL: DocumentDetail = {
   payments: [],
   paid_amount: "0.00",
   open_amount: "0.00",
+  write_off: null,
+  written_off_amount: "0.00",
   events: [],
   source_id: null,
   cancelled_by_id: null,

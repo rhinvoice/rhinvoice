@@ -178,6 +178,11 @@ export const de = {
     "Das Datum liegt vor dem zuletzt ausgestellten Dokument. Nummern und Daten müssen aufsteigen.",
   "error.payment_exceeds_open_amount": "Der Betrag ist höher als der offene Betrag.",
   "error.payment_date_in_future": "Das Zahlungsdatum darf nicht in der Zukunft liegen.",
+  "error.write_off_date_in_future": "Das Datum der Abschreibung darf nicht in der Zukunft liegen.",
+  "error.write_off_before_invoice":
+    "Das Datum der Abschreibung darf nicht vor dem Rechnungsdatum liegen.",
+  "error.payment_before_write_off":
+    "Diese Zahlung ging vor der Abschreibung ein. Nehmen Sie zuerst die Abschreibung zurück.",
   "error.unknown_placeholder":
     "Unbekannter Platzhalter. Möglich sind {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung} und {firma}.",
   "error.already_converted": "Aus diesem Angebot wurde bereits eine Rechnung erstellt.",
@@ -597,6 +602,7 @@ export const de = {
   },
   "status.paid": "Bezahlt",
   "status.cancelled": "Storniert",
+  "status.written_off": "Abgeschrieben",
 
   "event.emailed": "Per E-Mail versendet",
   "event.reminder_emailed": "Mahnung per E-Mail versendet",
@@ -614,6 +620,8 @@ export const de = {
   "event.reminded": "Mahnung geschrieben",
   "event.imported": "Aus früherem Programm übernommen",
   "event.file_added": "Datei hinzugefügt",
+  "event.written_off": "Abgeschrieben",
+  "event.write_off_removed": "Abschreibung zurückgenommen",
 
   "treatment.domestic": "Inland (steuerpflichtig)",
   "treatment.reverse_charge": "Reverse Charge",
@@ -636,6 +644,7 @@ export const de = {
   "documents.view.overdue": "Überfällig",
   "documents.view.paid": "Bezahlt",
   "documents.view.cancelled": "Storniert",
+  "documents.view.written_off": "Abgeschrieben",
   "documents.view.sent": "Versendet",
   "documents.view.accepted": "Angenommen",
   "documents.view.declined": "Abgelehnt",
@@ -902,6 +911,46 @@ export const de = {
   "documents.paymentRemoved": "Zahlung entfernt.",
   "documents.payments": "Zahlungen",
   "documents.removePayment": "Zahlung über {amount} vom {date} entfernen",
+
+  "writeOff.action": "Abschreiben …",
+  "writeOff.title": "Rechnung {number} abschreiben",
+  "writeOff.description":
+    "Die Rechnung bleibt unverändert und der Kunde erhält nichts. Sie gilt nicht mehr als offen und wird nicht mehr gemahnt. Zahlt der Kunde später doch, erfassen Sie die Zahlung wie gewohnt.",
+  "writeOff.openAmount": "Offener Betrag",
+  "writeOff.date": "Abgeschrieben per",
+  "writeOff.today": "Heute",
+  "writeOff.endOfInvoiceYear": "Ende Rechnungsjahr",
+  "writeOff.dateRange": "Das Datum liegt zwischen dem Rechnungsdatum und heute.",
+  "writeOff.reason": "Grund",
+  "writeOff.reason.gone": "Firma gelöscht oder Konkurs",
+  "writeOff.reason.time_barred": "Verjährt",
+  "writeOff.reason.small_amount": "Kleinbetrag",
+  "writeOff.reason.untraceable": "Nicht auffindbar",
+  "writeOff.reason.other": "Anderer Grund",
+  "writeOff.note": "Notiz",
+  "writeOff.submit": "Abschreiben",
+  "writeOff.done": "Rechnung abgeschrieben.",
+  "writeOff.remove": "Abschreibung zurücknehmen",
+  "writeOff.removeTitle": "Abschreibung zurücknehmen?",
+  "writeOff.removeDescription":
+    "Der abgeschriebene Betrag ist danach wieder offen und kann gemahnt werden. Das wird im Verlauf festgehalten.",
+  "writeOff.removed": "Abschreibung zurückgenommen.",
+  "writeOff.card": "Abschreibung",
+  "writeOff.amount": "Abgeschrieben",
+  "writeOff.writtenOffOn": "Per",
+  "writeOff.taxIncluded": "Darin enthaltene {tax}",
+  "writeOff.recovered": "Später bezahlt",
+  "writeOff.remaining": "Verlust",
+  "writeOff.afterWriteOff": "Nach der Abschreibung eingegangen",
+  "writeOff.paymentDescription":
+    "Abgeschrieben: {amount}. Die Zahlung nimmt den Verlust in dieser Höhe zurück.",
+  "badDebts.description":
+    "Abschreibungen zählen im Jahr ihres Datums, spätere Zahlungen im Jahr ihres Eingangs.",
+  "badDebts.year": "Jahr",
+  "badDebts.writtenOff": "Abgeschrieben",
+  "badDebts.recovered": "Später bezahlt",
+  "badDebts.loss": "Verlust",
+  "badDebts.net": "Netto",
   "settings.tabBackup": "Backup",
   "backup.title": "Backup",
   "backup.description":

@@ -42,6 +42,7 @@ import {
   type DocumentSort,
   type DocumentSummary,
 } from "@/features/documents/api";
+import { BadDebtsCard } from "@/features/documents/bad-debts-card";
 import { CustomerPicker } from "@/features/documents/customer-picker";
 import {
   documentAriaSort,
@@ -269,6 +270,8 @@ export function DocumentListPage({ kind, search, onSearchChange }: DocumentListP
           />
         </>
       ) : null}
+
+      {kind === "invoice" && search.view === "written_off" ? <BadDebtsCard /> : null}
 
       {selected.size > 0 ? (
         <SelectionBar

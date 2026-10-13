@@ -5,6 +5,7 @@ import {
   ArrowLeftIcon,
   BanIcon,
   Building2Icon,
+  CircleOffIcon,
   CircleCheckIcon,
   CopyIcon,
   DownloadIcon,
@@ -19,6 +20,7 @@ import {
   ThumbsUpIcon,
   Trash2Icon,
   MailIcon,
+  Undo2Icon,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -60,7 +62,9 @@ import {
   useDocumentAction,
   useMarkPaid,
   useRemovePayment,
+  useRemoveWriteOff,
   useUpdateDocument,
+  useWriteOff,
   type DocumentDetail,
 } from "@/features/documents/api";
 import { defaultTexts } from "@/features/documents/document-texts";
@@ -70,6 +74,8 @@ import { DocumentView } from "@/features/documents/document-view";
 import { AttachmentsCard, ImportedPdf } from "@/features/documents/imported-document";
 import { PaperPreview } from "@/components/paper-preview";
 import { PaymentDialog } from "@/features/documents/payment-dialog";
+import { RemoveWriteOffDialog, WriteOffDialog } from "@/features/documents/write-off-dialog";
+import { canWriteOff } from "@/features/documents/write-off-model";
 import { fetchFile, saveFile } from "@/features/documents/file-download";
 import { printPage } from "@/features/documents/print-page";
 import { companyQuery, type Company } from "@/features/shared/company-api";
@@ -294,10 +300,16 @@ function IssuedPage({ document, company }: PageProps) {
   const addPayment = useAddPayment(document.id);
   const markPaid = useMarkPaid(document.id);
   const removePayment = useRemovePayment(document.id);
+  const writeOff = useWriteOff(document.id);
+  const removeWriteOff = useRemoveWriteOff(document.id);
+  const [writeOffOpen, setWriteOffOpen] = useState(false);
+  const [removeWriteOffOpen, setRemoveWriteOffOpen] = useState(false);
   const accept = useDocumentAction("accept");
   const decline = useDocumentAction("decline");
-  const tax = termsFor(company.profile, locale).tax_name;
+  const terms = termsFor(company.profile, locale);
+  const tax = terms.tax_name;
   const payable = document.status === "issued" || document.status === "partially_paid";
+  const writtenOff = document.status === "written_off";
   const money = (amount: string) => formatMoney(amount, document.currency, locale);
   const fail = (caught: unknown) => {
     toast.error(errorMessage(caught) ?? t("error.generic"), { duration: Infinity });
@@ -334,7 +346,7 @@ function IssuedPage({ document, company }: PageProps) {
   };
 
   usePageShortcut("p", () => {
-    if (payable) setPaymentOpen(true);
+    if (payable || writtenOff) setPaymentOpen(true);
   });
   const [view, setView] = useDocumentViewMode();
   const html = useQuery({
@@ -379,6 +391,17 @@ function IssuedPage({ document, company }: PageProps) {
             </Button>
           </>
         ) : null}
+        {writtenOff ? (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setPaymentOpen(true);
+            }}
+          >
+            <HandCoinsIcon aria-hidden="true" />
+            {t("documents.addPayment")}
+          </Button>
+        ) : null}
         {document.type === "quote" && document.status === "sent" ? (
           <>
             <Button
@@ -411,7 +434,23 @@ function IssuedPage({ document, company }: PageProps) {
         <MailAction document={document} title={documentTitle(t, document)} />
         <RelatedLinks document={document} />
         <div className="ml-auto">
-          <MoreActions document={document} />
+          <MoreActions
+            document={document}
+            onWriteOff={
+              canWriteOff(document)
+                ? () => {
+                    setWriteOffOpen(true);
+                  }
+                : undefined
+            }
+            onRemoveWriteOff={
+              writtenOff
+                ? () => {
+                    setRemoveWriteOffOpen(true);
+                  }
+                : undefined
+            }
+          />
         </div>
       </div>
       <div
@@ -484,7 +523,31 @@ function IssuedPage({ document, company }: PageProps) {
           }
         />
       ) : null}
-      {payable ? (
+      {canWriteOff(document) ? (
+        <WriteOffDialog
+          document={document}
+          hint={terms.write_off_hint}
+          open={writeOffOpen}
+          onOpenChange={setWriteOffOpen}
+          onSubmit={async (input) => {
+            await writeOff.mutateAsync(input);
+            showUndoToast(t("writeOff.done"), t("common.undo"), () => {
+              removeWriteOff.mutate(undefined, { onError: fail });
+            });
+          }}
+        />
+      ) : null}
+      <RemoveWriteOffDialog
+        open={removeWriteOffOpen}
+        onOpenChange={setRemoveWriteOffOpen}
+        onConfirm={() => {
+          removeWriteOff.mutate(undefined, {
+            onSuccess: () => toast.success(t("writeOff.removed")),
+            onError: fail,
+          });
+        }}
+      />
+      {payable || writtenOff ? (
         <PaymentDialog
           document={document}
           open={paymentOpen}
@@ -534,7 +597,14 @@ function RelatedLinks({ document }: { readonly document: DocumentDetail }) {
 
 type Confirmation = "delete" | "cancel" | null;
 
-function MoreActions({ document }: { readonly document: DocumentDetail }) {
+interface MoreActionsProps {
+  readonly document: DocumentDetail;
+  /** Opens the write-off dialog; left out where the invoice cannot be written off. */
+  readonly onWriteOff?: (() => void) | undefined;
+  readonly onRemoveWriteOff?: (() => void) | undefined;
+}
+
+function MoreActions({ document, onWriteOff, onRemoveWriteOff }: MoreActionsProps) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const errorMessage = useErrorMessage();
@@ -565,7 +635,10 @@ function MoreActions({ document }: { readonly document: DocumentDetail }) {
   const canDuplicate = own && document.type !== "cancellation";
   const canRecur = own && document.type === "invoice";
   const canDelete = document.status === "draft";
-  if (!canConvert && !canCancel && !canDuplicate && !canDelete && !canRecur) return null;
+  const closing = onWriteOff !== undefined || onRemoveWriteOff !== undefined;
+  if (!canConvert && !canCancel && !canDuplicate && !canDelete && !canRecur && !closing) {
+    return null;
+  }
 
   return (
     <>
@@ -618,7 +691,19 @@ function MoreActions({ document }: { readonly document: DocumentDetail }) {
               {t("recurring.makeRecurring")}
             </DropdownMenuItem>
           ) : null}
-          {canCancel || canDelete ? <DropdownMenuSeparator /> : null}
+          {canCancel || canDelete || closing ? <DropdownMenuSeparator /> : null}
+          {onWriteOff === undefined ? null : (
+            <DropdownMenuItem onSelect={onWriteOff}>
+              <CircleOffIcon aria-hidden="true" />
+              {t("writeOff.action")}
+            </DropdownMenuItem>
+          )}
+          {onRemoveWriteOff === undefined ? null : (
+            <DropdownMenuItem onSelect={onRemoveWriteOff}>
+              <Undo2Icon aria-hidden="true" />
+              {t("writeOff.remove")}
+            </DropdownMenuItem>
+          )}
           {canCancel ? (
             <DropdownMenuItem
               onSelect={() => {

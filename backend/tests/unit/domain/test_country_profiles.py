@@ -82,6 +82,8 @@ def test_every_language_has_every_term(profile: CountryProfile) -> None:
             "vat_number_field",
             "vat_number_hint",
             "small_business",
+            "bad_debts",
+            "write_off_hint",
             "salutation",
             "closing",
         ):
@@ -134,3 +136,27 @@ def test_a_complete_company_can_invoice(profile: CountryProfile) -> None:
 def test_number_styles() -> None:
     assert profile_of(Country.CH).number_style is NumberStyle.APOSTROPHE
     assert profile_of(Country.DE).number_style is NumberStyle.DOT_COMMA
+
+
+@ALL
+def test_the_write_off_hint_names_its_legal_basis(profile: CountryProfile) -> None:
+    basis = {
+        Country.CH: "Art. 41 MWSTG",
+        Country.LI: "Art. 41 MWSTG",
+        Country.DE: "§ 17 Abs. 2 Nr. 1 UStG",
+        Country.AT: "§ 16 Abs. 3 Z 1 UStG",
+    }[profile.country]
+    for terms in profile.terms.values():
+        assert basis in terms.write_off_hint
+
+
+def test_the_countries_name_bad_debts_in_their_own_words() -> None:
+    words = {
+        country: profile_of(country).terms[Language.DE].bad_debts for country in Country
+    }
+    assert words == {
+        Country.CH: "Debitorenverluste",
+        Country.LI: "Debitorenverluste",
+        Country.DE: "Forderungsausfälle",
+        Country.AT: "Forderungsausfälle",
+    }

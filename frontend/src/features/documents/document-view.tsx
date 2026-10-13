@@ -17,6 +17,7 @@ import {
 import { remindersQuery, type DocumentDetail } from "@/features/documents/api";
 import { EInvoiceCard } from "@/features/documents/e-invoice-card";
 import { TotalsSummary } from "@/features/documents/totals-summary";
+import { parseWriteOffEvent } from "@/features/documents/write-off-model";
 import { SendMailDialog } from "@/features/shared/send-mail-dialog";
 import { formatDate, formatDateTime, formatMoney, formatNumber, formatPercent } from "@/lib/format";
 
@@ -189,6 +190,12 @@ export function DocumentView({ document, taxName, onRemovePayment }: DocumentVie
                 <dt className="text-muted-foreground">{t("documents.paid")}</dt>
                 <dd className="tabular-nums">{money(document.paid_amount)}</dd>
               </div>
+              {document.write_off === null ? null : (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">{t("writeOff.amount")}</dt>
+                  <dd className="tabular-nums">{money(document.written_off_amount)}</dd>
+                </div>
+              )}
               <div className="flex justify-between gap-4 font-semibold">
                 <dt>{t("documents.openAmount")}</dt>
                 <dd className="tabular-nums">{money(document.open_amount)}</dd>
@@ -196,6 +203,42 @@ export function DocumentView({ document, taxName, onRemovePayment }: DocumentVie
             </dl>
           ) : null}
         </Card>
+
+        {document.write_off === null ? null : (
+          <Card aria-labelledby="document-write-off">
+            <CardHeader>
+              <CardTitle id="document-write-off">{t("writeOff.card")}</CardTitle>
+            </CardHeader>
+            <dl className="flex flex-col gap-2 text-sm">
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">{t("writeOff.writtenOffOn")}</dt>
+                <dd className="tabular-nums">
+                  {formatDate(document.write_off.written_off_on, locale)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">{t("writeOff.amount")}</dt>
+                <dd className="font-medium tabular-nums">{money(document.write_off.amount)}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">
+                  {t("writeOff.taxIncluded", { tax: taxName })}
+                </dt>
+                <dd className="tabular-nums">{money(document.write_off.tax)}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">{t("writeOff.reason")}</dt>
+                <dd className="text-right">{t(`writeOff.reason.${document.write_off.reason}`)}</dd>
+              </div>
+              {document.write_off.note === "" ? null : (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">{t("writeOff.note")}</dt>
+                  <dd className="text-right">{document.write_off.note}</dd>
+                </div>
+              )}
+            </dl>
+          </Card>
+        )}
 
         {document.payments.length === 0 ? null : (
           <Card aria-labelledby="document-payments">
@@ -217,8 +260,15 @@ export function DocumentView({ document, taxName, onRemovePayment }: DocumentVie
                         {t("documents.paidOnUnknown")}
                       </span>
                     ) : null}
+                    {payment.after_write_off ? (
+                      <span className="text-xs text-muted-foreground">
+                        {t("writeOff.afterWriteOff")}
+                      </span>
+                    ) : null}
                   </div>
-                  {onRemovePayment === undefined ? null : (
+                  {/* The write-off names the rest after the earlier payments: they stay. */}
+                  {onRemovePayment === undefined ||
+                  (document.write_off !== null && !payment.after_write_off) ? null : (
                     <Button
                       variant="ghost"
                       size="icon-sm"
@@ -367,7 +417,19 @@ function EventDetail({
   const { t, locale } = useI18n();
   // The converted invoice is linked above the document (it may be deleted again).
   if (detail === "" || kind === "converted") return null;
-  if (kind === "payment_added" || kind === "payment_removed") {
+  const writtenOff = kind === "written_off" ? parseWriteOffEvent(detail) : null;
+  if (writtenOff !== null) {
+    return (
+      <span className="text-muted-foreground tabular-nums">
+        {[
+          formatMoney(writtenOff.amount, currency, locale),
+          formatDate(writtenOff.date, locale),
+          t(`writeOff.reason.${writtenOff.reason}`),
+        ].join(" · ")}
+      </span>
+    );
+  }
+  if (kind === "payment_added" || kind === "payment_removed" || kind === "write_off_removed") {
     return (
       <span className="text-muted-foreground tabular-nums">
         {formatMoney(detail, currency, locale)}

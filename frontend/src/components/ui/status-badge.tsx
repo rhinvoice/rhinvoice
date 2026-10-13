@@ -4,6 +4,7 @@ import {
   CircleAlertIcon,
   CircleCheckIcon,
   CircleDashedIcon,
+  CircleOffIcon,
   ClockIcon,
   FileCheckIcon,
   PencilLineIcon,
@@ -23,7 +24,8 @@ export type DocumentStatusTone =
   | "cancelled"
   | "accepted"
   | "declined"
-  | "expired";
+  | "expired"
+  | "written_off";
 
 const badge = cva(
   "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
@@ -40,6 +42,8 @@ const badge = cva(
         accepted: "bg-status-accepted-bg text-status-accepted-fg",
         declined: "bg-status-declined-bg text-status-declined-fg",
         expired: "bg-status-expired-bg text-status-expired-fg",
+        // Closed without money, like a cancelled invoice: the same quiet tone, its own icon.
+        written_off: "bg-status-cancelled-bg text-status-cancelled-fg",
       },
     },
   },
@@ -56,6 +60,7 @@ const ICONS: Readonly<Record<DocumentStatusTone, LucideIcon>> = {
   accepted: ThumbsUpIcon,
   declined: ThumbsDownIcon,
   expired: ClockIcon,
+  written_off: CircleOffIcon,
 };
 
 /** Status is shown with icon, text and colour – never colour alone (WCAG 1.4.1). */

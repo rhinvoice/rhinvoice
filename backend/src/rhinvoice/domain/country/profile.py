@@ -90,6 +90,10 @@ class CountryTerms:
     """When the VAT number has to be on invoices, with an example."""
     small_business: str
     """The label of the small business switch, with its legal basis."""
+    bad_debts: str
+    """What the country calls written-off invoices in its accounts."""
+    write_off_hint: str
+    """What a write-off means for the tax and which date it takes, with the legal basis."""
     special_rate: str | None
     """The name of the third rate, or None where the country has none."""
     salutation: str

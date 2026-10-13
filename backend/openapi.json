@@ -747,6 +747,49 @@
         "title": "BackupState",
         "type": "string"
       },
+      "BadDebtYearResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "loss": {
+            "title": "Loss",
+            "type": "string"
+          },
+          "net": {
+            "title": "Net",
+            "type": "string"
+          },
+          "recovered": {
+            "title": "Recovered",
+            "type": "string"
+          },
+          "tax": {
+            "title": "Tax",
+            "type": "string"
+          },
+          "written_off": {
+            "title": "Written Off",
+            "type": "string"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "currency",
+          "written_off",
+          "recovered",
+          "loss",
+          "net",
+          "tax"
+        ],
+        "title": "BadDebtYearResponse",
+        "type": "object"
+      },
       "BankAccountRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1383,6 +1426,10 @@
       "CountryTermsResponse": {
         "additionalProperties": false,
         "properties": {
+          "bad_debts": {
+            "title": "Bad Debts",
+            "type": "string"
+          },
           "small_business": {
             "title": "Small Business",
             "type": "string"
@@ -1413,6 +1460,10 @@
           "vat_number_label": {
             "title": "Vat Number Label",
             "type": "string"
+          },
+          "write_off_hint": {
+            "title": "Write Off Hint",
+            "type": "string"
           }
         },
         "required": [
@@ -1421,6 +1472,8 @@
           "vat_number_field",
           "vat_number_hint",
           "small_business",
+          "bad_debts",
+          "write_off_hint",
           "special_rate"
         ],
         "title": "CountryTermsResponse",
@@ -2251,7 +2304,8 @@
           "partially_paid",
           "overdue",
           "paid",
-          "cancelled"
+          "cancelled",
+          "written_off"
         ],
         "title": "DisplayStatus",
         "type": "string"
@@ -2615,6 +2669,20 @@
           },
           "type": {
             "$ref": "#/components/schemas/DocumentType"
+          },
+          "write_off": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WriteOffResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "written_off_amount": {
+            "title": "Written Off Amount",
+            "type": "string"
           }
         },
         "required": [
@@ -2648,6 +2716,8 @@
           "payments",
           "paid_amount",
           "open_amount",
+          "write_off",
+          "written_off_amount",
           "events",
           "source_id",
           "cancelled_by_id",
@@ -2681,7 +2751,8 @@
           "issued",
           "partially_paid",
           "paid",
-          "cancelled"
+          "cancelled",
+          "written_off"
         ],
         "title": "DocumentStatus",
         "type": "string"
@@ -3116,7 +3187,9 @@
           "emailed",
           "reminder_emailed",
           "imported",
-          "file_added"
+          "file_added",
+          "written_off",
+          "write_off_removed"
         ],
         "title": "EventKind",
         "type": "string"
@@ -4476,6 +4549,10 @@
       "PaymentResponse": {
         "additionalProperties": false,
         "properties": {
+          "after_write_off": {
+            "title": "After Write Off",
+            "type": "boolean"
+          },
           "amount": {
             "title": "Amount",
             "type": "string"
@@ -4505,7 +4582,8 @@
           "paid_on",
           "amount",
           "note",
-          "recorded_at"
+          "recorded_at",
+          "after_write_off"
         ],
         "title": "PaymentResponse",
         "type": "object"
@@ -5842,6 +5920,89 @@
         ],
         "title": "VatSystem",
         "type": "string"
+      },
+      "WriteOffReason": {
+        "enum": [
+          "gone",
+          "time_barred",
+          "small_amount",
+          "untraceable",
+          "other"
+        ],
+        "title": "WriteOffReason",
+        "type": "string"
+      },
+      "WriteOffRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Note",
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/WriteOffReason"
+          },
+          "written_off_on": {
+            "format": "date",
+            "title": "Written Off On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "written_off_on",
+          "reason"
+        ],
+        "title": "WriteOffRequest",
+        "type": "object"
+      },
+      "WriteOffResponse": {
+        "additionalProperties": false,
+        "description": "What was open of the invoice when collecting it was given up.",
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/WriteOffReason"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "tax": {
+            "title": "Tax",
+            "type": "string"
+          },
+          "written_off_on": {
+            "format": "date",
+            "title": "Written Off On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "written_off_on",
+          "amount",
+          "tax",
+          "reason",
+          "note",
+          "recorded_at"
+        ],
+        "title": "WriteOffResponse",
+        "type": "object"
       },
       "WriteReminderRequest": {
         "additionalProperties": false,
@@ -7511,6 +7672,97 @@
         "summary": "Request Backup",
         "tags": [
           "backup"
+        ]
+      }
+    },
+    "/api/bad-debts": {
+      "get": {
+        "description": "Written-off amounts per year and currency, the latest year first.",
+        "operationId": "documents_bad_debts",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BadDebtYearResponse"
+                  },
+                  "title": "Response Documents Bad Debts",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Bad Debts",
+        "tags": [
+          "documents"
         ]
       }
     },
@@ -9213,7 +9465,7 @@
               "items": {
                 "$ref": "#/components/schemas/DisplayStatus"
               },
-              "maxItems": 10,
+              "maxItems": 11,
               "title": "Status",
               "type": "array"
             }
@@ -12114,6 +12366,212 @@
         "summary": "Write Reminder",
         "tags": [
           "dunning"
+        ]
+      }
+    },
+    "/api/documents/{document_id}/write-off": {
+      "delete": {
+        "description": "Take a write-off back: the rest of the invoice is open again.",
+        "operationId": "documents_remove_write_off",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Remove Write Off",
+        "tags": [
+          "documents"
+        ]
+      },
+      "post": {
+        "description": "Give up collecting the open rest. The invoice stays as issued; nothing is sent.",
+        "operationId": "documents_write_off_invoice",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteOffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Write Off Invoice",
+        "tags": [
+          "documents"
         ]
       }
     },

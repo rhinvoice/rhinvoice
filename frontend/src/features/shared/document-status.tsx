@@ -12,7 +12,8 @@ export type DisplayStatus =
   | "partially_paid"
   | "overdue"
   | "paid"
-  | "cancelled";
+  | "cancelled"
+  | "written_off";
 
 /** Status with icon and text; overdue documents also show the days (principles.md 4.6). */
 export function DocumentStatusBadge({

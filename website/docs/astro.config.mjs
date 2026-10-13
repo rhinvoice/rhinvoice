@@ -41,6 +41,7 @@ export default defineConfig({
         LanguageSelect: "./src/components/LanguageSelect.astro",
         SocialIcons: "./src/components/SocialIcons.astro",
         ThemeSelect: "./src/components/ThemeSelect.astro",
+        Footer: "./src/components/Footer.astro",
       },
       head: [
         { tag: "meta", attrs: { name: "theme-color", content: "#f6f8fb", media: "(prefers-color-scheme: light)" } },

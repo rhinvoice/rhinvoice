@@ -22,6 +22,7 @@ VERSION_HEADING = re.compile(r"^## \[.+?\].*$", re.M)
 RELEASE = re.compile(r"^## \[(\d+\.\d+\.\d+)\]", re.M)
 SINCE = re.compile(r'^since:\s*"?([\d.]+)"?\s*$|<Since version="([\d.]+)"', re.M)
 DIST = ROOT.parent / "dist" / "docs"
+SITE = ROOT.parent / "dist"
 
 TITLE_MAX = 65
 DESCRIPTION_RANGE = (110, 170)
@@ -122,9 +123,13 @@ def check_links() -> list[str]:
         parser.feed(html.read_text(encoding="utf-8"))
         for href in parser.links:
             path = href.split("#")[0].split("?")[0]
-            if not path.startswith("/docs/"):
+            if path.startswith("/docs/"):
+                target = DIST / path.removeprefix("/docs/")
+            elif path.startswith("/") and (SITE / "index.html").is_file():
+                # A page of the landing site, checked once build.py has built it next to the docs.
+                target = SITE / path.removeprefix("/")
+            else:
                 continue
-            target = DIST / path.removeprefix("/docs/")
             if not (target / "index.html").is_file() and not target.is_file():
                 problems.append(f"{html.relative_to(DIST)}: link to {href} leads nowhere")
     return problems

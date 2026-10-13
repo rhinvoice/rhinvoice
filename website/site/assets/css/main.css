@@ -353,6 +353,32 @@ footer a { color: var(--muted); }
 /* ---------- 404 ------------------------------------------------------------ */
 
 .lost { display: grid; gap: 18px; padding-block: 96px; }
+
+/* ---------- Legal pages (Impressum, privacy) ------------------------------ */
+
+.legal { padding-block: 48px 80px; }
+.legal > * { max-width: 72ch; }
+.legal h1 { font-size: clamp(32px, 5vw, 44px); margin-block: 8px 20px; }
+.legal h2 { font-size: 24px; margin-block: 40px 12px; }
+.legal h3 { font-family: var(--body); font-size: 17px; margin-block: 24px 8px; }
+.legal p, .legal ul { margin-block: 0 14px; }
+.legal ul { padding-left: 20px; }
+.legal li { margin-bottom: 6px; }
+.legal .lead { margin-bottom: 8px; }
+.legal dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 20px; margin: 0 0 14px; }
+.legal dt { color: var(--muted); }
+.legal dd { margin: 0; }
+.legal code { background: var(--line); padding: 1px 6px; border-radius: 5px; }
+.legal .table-wrap { max-width: 100%; overflow-x: auto; margin-block: 8px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.legal table { border-collapse: collapse; width: 100%; font-size: 15px; }
+.legal th, .legal td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.legal tr:last-child td { border-bottom: 0; }
+.legal th { color: var(--muted); font-size: 13px; font-weight: 600; }
+
+@media (max-width: 560px) {
+  .legal dl { grid-template-columns: 1fr; gap: 0; }
+  .legal dd { margin-bottom: 8px; }
+}
 .lost h1 { font-size: clamp(32px, 5vw, 48px); }
 
 /* ---------- Narrow screens ------------------------------------------------- */

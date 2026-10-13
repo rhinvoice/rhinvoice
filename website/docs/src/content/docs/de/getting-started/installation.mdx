@@ -35,8 +35,8 @@ Rhinvoice besteht aus vier Containern: `app` (Weboberfläche und API), `db` (Pos
 
    ```bash
    mkdir rhinvoice && cd rhinvoice
-   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.5.5/deploy/compose.yml
-   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.5.5/.env.example -o .env
+   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.5.6/deploy/compose.yml
+   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.5.6/.env.example -o .env
    ```
 
 2. **Einstellen**: `.env` bearbeiten (siehe Tabelle unten). Setzen Sie mindestens `POSTGRES_PASSWORD` und `RHINVOICE_VERSION`.
@@ -58,7 +58,7 @@ Rhinvoice besteht aus vier Containern: `app` (Weboberfläche und API), `db` (Pos
 | Einstellung | Wert |
 |---|---|
 | `POSTGRES_PASSWORD` | ein langer Zufallswert, nur Buchstaben und Ziffern (z. B. `openssl rand -hex 24`) |
-| `RHINVOICE_VERSION` | die Version, z. B. `0.5.5`. Eine feste Version ändert sich nur, wenn Sie sie ändern; `latest` folgt jeder neuen Version |
+| `RHINVOICE_VERSION` | die Version, z. B. `0.5.6`. Eine feste Version ändert sich nur, wenn Sie sie ändern; `latest` folgt jeder neuen Version |
 | `RHINVOICE_PORT` | Port auf diesem Rechner, Standard `8000` |
 | `RHINVOICE_BIND` | `127.0.0.1` (Standard) = nur dieser Rechner; `0.0.0.0` = das ganze Netzwerk |
 | `RHINVOICE_COOKIE_SECURE` | auf `true` lassen; `false` nur für reines HTTP in einem vertrauenswürdigen Netzwerk (für `localhost` nicht nötig) |

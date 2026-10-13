@@ -1,6 +1,6 @@
 [project]
 name = "rhinvoice"
-version = "0.5.5"
+version = "0.5.6"
 description = "Self-hosted invoicing for CH, LI, DE and AT"
 readme = "README.md"
 requires-python = ">=3.13"

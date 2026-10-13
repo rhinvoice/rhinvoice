@@ -52,6 +52,8 @@ export const de = {
   "about.noAdvice": "Keine Steuerberatung, Steuersätze ohne Gewähr.",
   "about.madeBy": "made by {maker}",
   "about.byMaker": "by {maker}",
+  "about.legalNotice": "Impressum",
+  "about.privacy": "Datenschutz",
   "about.openSource": "Open Source",
 
   "palette.title": "Befehlspalette",

@@ -4,7 +4,10 @@ import { ExternalLink } from "@/components/external-link";
 import { LanguageToggle } from "@/components/i18n/language-toggle";
 import { useI18n } from "@/components/i18n/use-i18n";
 import { Card, CardDescription, CardHeader } from "@/components/ui/card";
-import { APP_VERSION, MAKER, MAKER_URL, REPOSITORY_URL, websiteUrl } from "@/lib/about";
+import { useQuery } from "@tanstack/react-query";
+
+import { demoQuery } from "@/features/shared/demo-api";
+import { APP_VERSION, MAKER, MAKER_URL, REPOSITORY_URL, legalUrls, websiteUrl } from "@/lib/about";
 
 interface AuthLayoutProps {
   readonly title: string;
@@ -16,6 +19,9 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ title, description, aside, children }: AuthLayoutProps) {
   const { t, locale } = useI18n();
+  // The public demo is run by webberz and names its legal pages; installations belong to their operators.
+  const demo = useQuery(demoQuery).data?.enabled === true;
+  const legal = legalUrls(locale);
   return (
     <main id="main" className="relative flex min-h-dvh items-center justify-center px-4 py-12">
       <div className="absolute top-3 right-3">
@@ -53,6 +59,18 @@ export function AuthLayout({ title, description, aside, children }: AuthLayoutPr
           <ExternalLink href={MAKER_URL} icon={false}>
             {t("about.madeBy", { maker: MAKER })}
           </ExternalLink>
+          {demo ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <ExternalLink href={legal.notice} icon={false}>
+                {t("about.legalNotice")}
+              </ExternalLink>
+              <span aria-hidden="true">·</span>
+              <ExternalLink href={legal.privacy} icon={false}>
+                {t("about.privacy")}
+              </ExternalLink>
+            </>
+          ) : null}
         </p>
       </div>
     </main>

@@ -5,6 +5,10 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Added
+- Legal notice and privacy notice on rhinvoice.com, linked from the website, the docs and the
+  login page of the public demo. Installations of your own do not show them.
+
 ## [0.5.5] – 2026-10-13
 
 ### Added

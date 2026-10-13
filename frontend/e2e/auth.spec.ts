@@ -37,6 +37,28 @@ test.describe("authentication", () => {
     await expectAccessible(page);
   });
 
+  test("names the legal pages in the public demo only", async ({ page }) => {
+    await page.goto("/login");
+    await expect(page.getByRole("link", { name: /made by webberz/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^Impressum/ })).toHaveCount(0);
+    // The demo itself only differs in what /api/demo answers.
+    await page.route("**/api/demo", async (route) => {
+      const response = await route.fetch();
+      const demo = (await response.json()) as Record<string, unknown>;
+      await route.fulfill({ response, json: { ...demo, enabled: true } });
+    });
+    await page.reload();
+    await expect(page.getByRole("link", { name: /^Impressum/ })).toHaveAttribute(
+      "href",
+      "https://rhinvoice.com/de/impressum/",
+    );
+    await expect(page.getByRole("link", { name: /^Datenschutz/ })).toHaveAttribute(
+      "href",
+      "https://rhinvoice.com/de/datenschutz/",
+    );
+    await expectAccessible(page);
+  });
+
   test("validates the form and shows an error summary", async ({ page }) => {
     await page.goto("/login");
     await page.getByRole("button", { name: "Anmelden" }).click();

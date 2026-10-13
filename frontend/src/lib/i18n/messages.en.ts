@@ -50,6 +50,8 @@ export const en: Catalog<MessageKey> = {
   "about.noAdvice": "No tax advice; tax rates without warranty.",
   "about.madeBy": "made by {maker}",
   "about.byMaker": "by {maker}",
+  "about.legalNotice": "Legal notice",
+  "about.privacy": "Privacy",
   "about.openSource": "Open source",
 
   "palette.title": "Command palette",

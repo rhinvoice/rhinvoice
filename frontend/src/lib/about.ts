@@ -11,6 +11,13 @@ export const LICENSE_URL = `${REPOSITORY_URL}/blob/main/LICENSE`;
 export const WEBSITE_URL = "https://rhinvoice.com/";
 export const DOCS_URL = "https://rhinvoice.com/docs/";
 
+/** The legal notice and privacy notice of rhinvoice.com and its public demos. */
+export function legalUrls(locale: Locale): { notice: string; privacy: string } {
+  return locale.startsWith("de")
+    ? { notice: `${WEBSITE_URL}de/impressum/`, privacy: `${WEBSITE_URL}de/datenschutz/` }
+    : { notice: `${WEBSITE_URL}legal-notice/`, privacy: `${WEBSITE_URL}privacy/` };
+}
+
 /** rhinvoice.com, in German for the German locales. */
 export function websiteUrl(locale: Locale): string {
   return `${WEBSITE_URL}${locale.startsWith("de") ? "de/" : ""}`;

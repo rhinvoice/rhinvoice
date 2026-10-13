@@ -5,6 +5,10 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Neu
+- Impressum und Datenschutzerklärung auf rhinvoice.com, verlinkt von der Website, der Doku und der
+  Anmeldeseite der öffentlichen Demo. Eigene Installationen zeigen sie nicht.
+
 ## [0.5.5] – 2026-10-13
 
 ### Neu

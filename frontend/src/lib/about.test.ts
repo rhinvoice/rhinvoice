@@ -9,6 +9,7 @@ import {
   LICENSE_URL,
   REPOSITORY_URL,
   docsUrl,
+  legalUrls,
   websiteUrl,
 } from "@/lib/about";
 
@@ -28,6 +29,17 @@ describe("about", () => {
   it("links to the website in the language of the interface", () => {
     expect(websiteUrl("de-CH")).toBe("https://rhinvoice.com/de/");
     expect(websiteUrl("en")).toBe("https://rhinvoice.com/");
+  });
+
+  it("names the legal pages of the website", () => {
+    expect(legalUrls("de-AT")).toEqual({
+      notice: "https://rhinvoice.com/de/impressum/",
+      privacy: "https://rhinvoice.com/de/datenschutz/",
+    });
+    expect(legalUrls("en")).toEqual({
+      notice: "https://rhinvoice.com/legal-notice/",
+      privacy: "https://rhinvoice.com/privacy/",
+    });
   });
 
   it("links into the docs in the language of the interface", () => {

@@ -6,7 +6,8 @@ test("overdue invoices get payment reminders", async ({ page }, testInfo) => {
   await page.getByRole("link", { name: "Mahnwesen" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Mahnwesen" })).toBeVisible();
   const row = page.getByRole("row").filter({ hasText: customer });
-  await expect(row.getByText("Seit 20 Tagen")).toBeVisible();
+  // The setup dates the invoice 20 days back; a run across midnight finds it a day later.
+  await expect(row.getByText(/^Seit (20|21) Tagen$/)).toBeVisible();
   await expect(row.getByText("Noch keine")).toBeVisible();
   await expectAccessible(page);
 

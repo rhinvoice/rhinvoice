@@ -122,3 +122,28 @@ h1#_top {
 starlight-theme-select label {
   --sl-select-width: 6.75em !important;
 }
+
+/*
+  On wide screens the docs stay one column of at most 85rem in the middle, like rhinvoice.com,
+  instead of pinning the navigation and the contents to the screen's edges. Starlight places
+  header and sidebars with position: fixed, so each gets the same gutter.
+*/
+@media (min-width: 85rem) {
+  :root {
+    --rh-gutter: calc((100vw - 85rem) / 2);
+  }
+  /* The outer header bar only; Starlight's inner header element uses the same class. */
+  .page > .header {
+    padding-inline: calc(var(--rh-gutter) + var(--sl-nav-pad-x));
+  }
+  .sidebar-pane {
+    inset-inline-start: var(--rh-gutter);
+    border-inline-start: 1px solid var(--sl-color-hairline-shade);
+  }
+  .main-frame {
+    padding-inline: calc(var(--sl-content-inline-start) + var(--rh-gutter)) var(--rh-gutter);
+  }
+  .right-sidebar {
+    border-inline-end: 1px solid var(--sl-color-hairline);
+  }
+}

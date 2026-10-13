@@ -3,6 +3,7 @@ import { FlaskConicalIcon } from "lucide-react";
 
 import { useI18n } from "@/components/i18n/use-i18n";
 import { demoQuery } from "@/features/shared/demo-api";
+import { websiteUrl } from "@/lib/about";
 import { countryName } from "@/lib/countries";
 
 /** A quiet strip on every page of a public demo: shared data, reset hourly, no mail. */
@@ -21,10 +22,20 @@ export function DemoBanner() {
       </span>
       <span>{t("demo.banner", { minutes: demo.reset_minutes ?? 60 })}</span>
       {demo.links.map((link) => (
-        <a key={link.country} href={link.url} className="underline underline-offset-4">
+        <a
+          key={link.country}
+          href={link.url}
+          className="inline-flex min-h-6 items-center underline underline-offset-4"
+        >
           {t("demo.countryDemo", { country: countryName(link.country, locale) })}
         </a>
       ))}
+      <a
+        href={websiteUrl(locale)}
+        className="inline-flex min-h-6 items-center underline underline-offset-4"
+      >
+        rhinvoice.com
+      </a>
     </aside>
   );
 }

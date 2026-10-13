@@ -9,6 +9,7 @@ import {
   LICENSE_URL,
   REPOSITORY_URL,
   docsUrl,
+  websiteUrl,
 } from "@/lib/about";
 
 describe("about", () => {
@@ -22,6 +23,11 @@ describe("about", () => {
     for (const url of [ISSUES_URL, CHANGELOG_URL, LICENSE_URL]) {
       expect(url.startsWith(`${REPOSITORY_URL}/`)).toBe(true);
     }
+  });
+
+  it("links to the website in the language of the interface", () => {
+    expect(websiteUrl("de-CH")).toBe("https://rhinvoice.com/de/");
+    expect(websiteUrl("en")).toBe("https://rhinvoice.com/");
   });
 
   it("links into the docs in the language of the interface", () => {

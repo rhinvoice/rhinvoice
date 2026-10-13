@@ -13,6 +13,11 @@ test.describe("authentication", () => {
 
   test("switches the language and names version and maker", async ({ page }) => {
     await page.goto("/login");
+    // The logo leads to the website, in the language of the interface.
+    await expect(page.getByRole("link", { name: /^Rhinvoice – rhinvoice\.com/ })).toHaveAttribute(
+      "href",
+      "https://rhinvoice.com/de/",
+    );
     await expect(page.getByText(/^Rhinvoice \d+\.\d+\.\d+$/)).toBeVisible();
     await expect(page.getByRole("link", { name: /made by webberz/ })).toHaveAttribute(
       "href",

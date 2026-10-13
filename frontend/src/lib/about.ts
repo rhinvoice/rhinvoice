@@ -8,7 +8,13 @@ export const ISSUES_URL = `${REPOSITORY_URL}/issues/new/choose`;
 export const CHANGELOG_URL = `${REPOSITORY_URL}/blob/main/CHANGELOG.md`;
 export const LICENSE_URL = `${REPOSITORY_URL}/blob/main/LICENSE`;
 
+export const WEBSITE_URL = "https://rhinvoice.com/";
 export const DOCS_URL = "https://rhinvoice.com/docs/";
+
+/** rhinvoice.com, in German for the German locales. */
+export function websiteUrl(locale: Locale): string {
+  return `${WEBSITE_URL}${locale.startsWith("de") ? "de/" : ""}`;
+}
 
 /** A page of the user docs (e.g. "operations/backup"), in German for the German locales. */
 export function docsUrl(page: string, locale: Locale): string {

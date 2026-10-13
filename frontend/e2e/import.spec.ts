@@ -128,5 +128,9 @@ test("the public demo takes no files and says where importing works", async ({ p
     "href",
     "https://rhinvoice.com/docs/de/getting-started/installation/",
   );
+  // Every page of the demo leads back to the website.
+  await expect(
+    page.getByRole("complementary", { name: "Demo" }).getByRole("link", { name: "rhinvoice.com" }),
+  ).toHaveAttribute("href", "https://rhinvoice.com/de/");
   await expectAccessible(page);
 });

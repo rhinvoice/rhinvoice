@@ -11,6 +11,8 @@ import {
 } from "./fixtures";
 
 test("an invoice that will not be paid is written off", async ({ page }, testInfo) => {
+  // Write off, list, later payment and taking it back in one test: more time than the default.
+  test.setTimeout(90_000);
   const customer = `Zahlungsunfähig ${unique(testInfo.project.name)} AG`;
   const customerId = await createCustomer(page, customer);
   const draft = await post<{ id: string }>(page, "/api/documents", {

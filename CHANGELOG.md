@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.5.1] – 2026-10-13
+
 ### Changed
 - The public demo takes no uploads any more: importing customers, articles and invoices is
   switched off there, and the import page says how to try it on an own installation. Request

@@ -76,7 +76,7 @@ def operation_id(route: APIRoute) -> str:
 def create_app(container: Container) -> FastAPI:
     app = FastAPI(
         title="Rhinvoice",
-        version="0.5.0",
+        version="0.5.1",
         summary="Self-hosted invoicing for CH, LI, DE and AT",
         docs_url="/api/docs",
         redoc_url=None,

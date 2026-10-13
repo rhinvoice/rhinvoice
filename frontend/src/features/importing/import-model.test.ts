@@ -5,7 +5,6 @@ import {
   MAX_UPLOAD_FILES,
   fieldLabelKey,
   invoiceFiles,
-  sizeText,
   uploadName,
   uploadProblem,
   fieldOfColumn,
@@ -163,14 +162,6 @@ describe("invoice files", () => {
       "tooMany",
     );
     expect(uploadProblem([file("a.pdf", MAX_UPLOAD_BYTES), file("b.pdf", 1)])).toBe("tooLarge");
-  });
-
-  it("writes sizes for people", () => {
-    expect(sizeText(512, "de-CH")).toBe("512 Byte");
-    expect(sizeText(2048, "de-CH")).toBe("2 kB");
-    expect(sizeText(9_227_468, "de-CH")).toBe("8.8 MB");
-    expect(sizeText(9_227_468, "de-DE")).toBe("8,8 MB");
-    expect(sizeText(9_227_468, "en")).toBe("8.8 MB");
   });
 
   it("names the fields and problems of invoices", () => {

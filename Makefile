@@ -4,7 +4,9 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 COMPOSE_DEV := docker compose -f compose.yml -f compose.dev.yml
-COMPOSE_E2E := docker compose -f compose.e2e.yml
+# compose.e2e.yml takes Gotenberg from deploy/compose.yml, whose password must be set to be
+# read at all; the test database has its own. Without it a fresh checkout (CI) stops at once.
+COMPOSE_E2E := POSTGRES_PASSWORD=e2e docker compose -f compose.e2e.yml
 DEV_DATABASE_URL := postgresql+psycopg://rhinvoice:rhinvoice-dev@127.0.0.1:5433/rhinvoice
 
 .PHONY: help

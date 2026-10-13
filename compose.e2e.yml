@@ -1,5 +1,6 @@
 # End-to-end test stack: fresh database, production image, Playwright runner.
-# Usage: make e2e   (or: docker compose -f compose.e2e.yml up --build --exit-code-from e2e)
+# Usage: make e2e   (or: POSTGRES_PASSWORD=e2e docker compose -f compose.e2e.yml up --build \
+#                         --exit-code-from e2e)
 name: rhinvoice-e2e
 
 services:

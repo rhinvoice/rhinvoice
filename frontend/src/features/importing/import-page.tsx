@@ -61,7 +61,6 @@ import {
   filterRows,
   importableCount,
   invoiceFiles,
-  sizeText,
   uploadProblem,
   mappingFromTemplate,
   problemKey,
@@ -79,7 +78,7 @@ import { demoQuery } from "@/features/shared/demo-api";
 import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { cn } from "@/lib/cn";
-import { formatMoney, formatNumber } from "@/lib/format";
+import { formatBytes, formatMoney, formatNumber } from "@/lib/format";
 import type { Locale } from "@/lib/locale";
 
 /** More rows would slow the page down; the CSV report holds all of them. */
@@ -798,7 +797,7 @@ function PdfPicker({
           <p id={`${id}-state`} className="text-sm text-muted-foreground">
             {files.length === 0 && bytes === 0
               ? t("import.pdfs.none")
-              : t("import.pdfs.chosen", { count: files.length, size: sizeText(bytes, locale) })}
+              : t("import.pdfs.chosen", { count: files.length, size: formatBytes(bytes, locale) })}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

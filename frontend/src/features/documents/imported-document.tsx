@@ -26,12 +26,11 @@ import {
   useAddFile,
   type DocumentDetail,
 } from "@/features/documents/api";
-import { sizeText } from "@/features/importing/import-model";
 import { demoQuery } from "@/features/shared/demo-api";
 import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { cn } from "@/lib/cn";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatBytes } from "@/lib/format";
 
 /** The original PDF of an invoice taken over from another program, shown on the page. */
 export function ImportedPdf({
@@ -113,7 +112,7 @@ export function AttachmentsCard({ document }: { readonly document: DocumentDetai
                 <span className="sr-only">{t("common.opensInNewTab")}</span>
               </a>
               <span className="text-xs text-muted-foreground tabular-nums">
-                {sizeText(attachment.size, locale)} ·{" "}
+                {formatBytes(attachment.size, locale)} ·{" "}
                 {formatDate(attachment.added_at.slice(0, 10), locale)}
               </span>
             </li>

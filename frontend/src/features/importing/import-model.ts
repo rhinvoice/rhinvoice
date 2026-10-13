@@ -218,20 +218,3 @@ export function uploadProblem(files: readonly Pick<File, "size">[]): "tooMany" |
   const bytes = files.reduce((sum, file) => sum + file.size, 0);
   return bytes > MAX_UPLOAD_BYTES ? "tooLarge" : null;
 }
-
-/** Size for people: "8.8 MB", "512 KB". */
-export function sizeText(bytes: number, locale: string): string {
-  const units = ["byte", "kilobyte", "megabyte"] as const;
-  let value = bytes;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
-  return new Intl.NumberFormat(locale, {
-    style: "unit",
-    unit: units[unit],
-    unitDisplay: "short",
-    maximumFractionDigits: unit === 2 ? 1 : 0,
-  }).format(value);
-}

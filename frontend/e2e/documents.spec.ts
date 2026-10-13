@@ -1,3 +1,5 @@
+import type { Download, Page } from "@playwright/test";
+
 import {
   createCustomer,
   expect,
@@ -166,13 +168,18 @@ test("create, issue, pay and cancel an invoice", async ({ page, isMobile }, test
   const second = await page.request.get(pdfUrl);
   expect((await second.body()).equals(body)).toBe(true);
   expect(second.headers().etag).toBe(first.headers().etag);
-  const [popup] = await Promise.all([
-    page.waitForEvent("popup"),
-    page.getByRole("button", { name: /^PDF/ }).click(),
-  ]);
-  // Headless Chromium has no PDF viewer: the new tab receives the PDF as a download.
-  const shown = await popup.waitForEvent("download");
-  expect(await shown.failure()).toBeNull();
+  // Headless Chromium has no PDF viewer: the new tab receives the PDF as a download. The
+  // archived PDF comes at once, so listen for it as soon as the tab exists.
+  const shown = new Promise<{ popup: Page; download: Download }>((resolve) => {
+    page.once("popup", (popup) => {
+      popup.once("download", (download) => {
+        resolve({ popup, download });
+      });
+    });
+  });
+  await page.getByRole("button", { name: /^PDF/ }).click();
+  const { popup, download: opened } = await shown;
+  expect(await opened.failure()).toBeNull();
   await popup.close();
   const [download] = await Promise.all([
     page.waitForEvent("download"),

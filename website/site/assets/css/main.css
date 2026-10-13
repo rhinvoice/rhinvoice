@@ -265,6 +265,7 @@ section.river { padding-block: 8px 24px; }
 .river .flow { stroke: var(--accent); stroke-width: 2.5; }
 .river h2 { font-family: var(--body); line-height: 1.6; }
 .stations a { font-size: 14px; }
+.more-countries { margin-top: 20px; }
 
 .stations {
   display: grid;

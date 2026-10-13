@@ -1,0 +1,102 @@
+---
+title: Was ist Rhinvoice? Kostenloses Rechnungsprogramm
+description: Rhinvoice ist ein kostenloses Open-Source-Rechnungsprogramm für die Schweiz, Liechtenstein, Deutschland und Österreich, mit QR-Rechnung, GiroCode, E-Rechnung.
+faq:
+  - q: Ist Rhinvoice wirklich kostenlos?
+    a: Ja. Rhinvoice steht unter der GNU Affero General Public License v3.0 oder später. Sie dürfen es ohne Kosten nutzen, verändern und weitergeben. Eine kostenpflichtige Version gibt es nicht.
+  - q: Gibt es Rhinvoice als Cloud-Dienst?
+    a: Nein. Sie betreiben Rhinvoice selbst mit Docker, auf einem Server, einem NAS, einem Raspberry Pi 4/5 oder Ihrem eigenen Rechner. Ihre Daten bleiben auf diesem Gerät.
+  - q: Ist Rhinvoice ein Buchhaltungsprogramm?
+    a: Nein. Rhinvoice schreibt Angebote, Rechnungen, Stornorechnungen und Mahnungen und verfolgt Zahlungen. Buchhaltung, Kontenplan, MWST- bzw. USt.-Abrechnung und Lohn gehören nicht dazu.
+  - q: Kann ich mit Rhinvoice schon echte Rechnungen schreiben?
+    a: Rhinvoice ist in der Beta-Phase (Version 0.x). Probieren Sie es zuerst auf einer Testinstallation aus, bevor Sie echte Rechnungen damit schreiben.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Rhinvoice ist ein **kostenloses Open-Source-Rechnungsprogramm** für kleine Firmen und Selbständige in der Schweiz, in Liechtenstein, Deutschland und Österreich. Es schreibt Angebote, Rechnungen, Stornorechnungen und Mahnungen mit den Steuersätzen, Pflichthinweisen, Zahlungs-QR-Codes und E-Rechnungsformaten des jeweiligen Landes und läuft mit Docker auf Ihrem eigenen Server oder Rechner.
+
+Der Name kommt von Rhein und «Invoice» (englisch für Rechnung): Der Rhein verbindet die Schweiz, Liechtenstein, Österreich und Deutschland.
+
+## Für wen ist Rhinvoice?
+
+Für Firmen mit Sitz in der Schweiz, in Liechtenstein, Deutschland oder Österreich: Einzelunternehmen, Selbständige, kleine Firmen und ihre Treuhänder oder Buchhalter. Die Kunden können überall sein. Die Oberfläche gibt es auf Deutsch (Varianten für die Schweiz, Deutschland und Österreich) und Englisch, die Dokumente auf Deutsch oder Englisch.
+
+## Was Rhinvoice kann
+
+**Dokumente**
+
+- Angebote, Rechnungen und Stornorechnungen; Angebot in Rechnung umwandeln, duplizieren, stornieren
+- Editor mit Live-Vorschau auf Papier, Positions- und Gesamtrabatt, Netto- oder Bruttopreise
+- Nummern werden beim Ausstellen vergeben, ohne Lücken. Ausgestellte Dokumente lassen sich nicht mehr ändern (Art. 958f OR, GoBD, BAO), das PDF wird mit seiner SHA-256-Prüfsumme aufbewahrt
+- Teilzahlungen, offene und überfällige Beträge, Volltextsuche und gespeicherte Ansichten
+- Mahnungen in drei Stufen mit neuen Fristen, Gebühren und Texten pro Sprache
+- Wiederkehrende Rechnungen monatlich, quartalsweise, halbjährlich oder jährlich: als Entwurf, ausgestellt oder ausgestellt und per E-Mail versendet
+- Versand per E-Mail über Ihren eigenen Mailserver, mit PDF und auf Wunsch mit XRechnung
+
+**Steuern und Länder**
+
+- Datierte Steuersätze für CH, FL, DE und AT; massgebend ist der Satz zum Leistungsdatum
+- Steuerfall automatisch bestimmt: Inland, Reverse Charge, innergemeinschaftliche Lieferung, Export, Kleinunternehmer, steuerbefreit; eine manuelle Wahl wird protokolliert
+- Waren und Dienstleistungen getrennt behandelt, auch auf gemischten Rechnungen, jeweils mit dem passenden Hinweis
+- Pflichtangaben werden vor dem Ausstellen geprüft
+- Rappenrundung auf 5 Rappen, Zahlenformate und Begriffe pro Land (MWST oder USt., «Jänner» in Österreich, «ss» in der Schweiz)
+
+**Zahlung und E-Rechnung**
+
+- Swiss QR-Rechnung mit QR- oder SCOR-Referenz (CH, FL)
+- EPC-QR-Code / GiroCode (DE, AT und für Euro-Rechnungen in den EWR)
+- ZUGFeRD / Factur-X (EN 16931) in jedem PDF, XRechnung 3.0 für deutsche Behörden
+- PDF/A-3b, drei Druckvorlagen mit Logo, Schrift und Fusszeile
+
+**Im Alltag**
+
+- Kunden und Artikel mit Archiv und Dokumentverlauf
+- Import aus CSV, XLSX und XLS; alte Rechnungen kommen mit ihren Original-PDFs
+- Übersicht: Umsatz im Vergleich zum Vorjahr, offene und überfällige Beträge, offene Angebote, beste Kunden, erwartete Zahlungseingänge
+- Befehlspalette (⌘K / Ctrl+K), Tastaturkürzel, heller und dunkler Modus; auch auf dem Smartphone nutzbar
+
+**Betrieb**
+
+- Verschlüsselte, deduplizierte Backups mit restic: täglich und nach dem Ausstellen, auf S3, SFTP, einen Ordner, Dropbox, Google Drive und weitere Ziele
+- Anmeldung mit optionaler Zwei-Faktor-Authentifizierung
+- Einrichtungsassistent beim ersten Start und eine Checkliste
+- Images für `linux/amd64` und `linux/arm64` (auch Raspberry Pi 4/5)
+
+## Die Länder im Überblick
+
+| | Schweiz | Liechtenstein | Deutschland | Österreich |
+|---|---|---|---|---|
+| Steuersätze | 8.1 / 2.6 / 3.8 % | 8.1 / 2.6 / 3.8 % | 19 / 7 % | 20 / 10 / 13 % |
+| Kleinunternehmer | nicht MWST-pflichtig | nicht MWST-pflichtig | § 19 UStG | § 6 Abs. 1 Z 27 UStG |
+| Zahlungs-QR | QR-Rechnung | QR-Rechnung | GiroCode (EPC-QR) | GiroCode (EPC-QR) |
+| Rundung | 0.05 (abschaltbar) | 0.05 (abschaltbar) | 0,01 | 0,01 |
+| E-Rechnung | ZUGFeRD / Factur-X | ZUGFeRD / Factur-X | ZUGFeRD, XRechnung | ZUGFeRD / Factur-X |
+
+Einzelheiten pro Land: [Schweiz](/docs/de/countries/switzerland/), [Liechtenstein](/docs/de/countries/liechtenstein/), [Deutschland](/docs/de/countries/germany/), [Österreich](/docs/de/countries/austria/).
+
+## Was Rhinvoice nicht ist
+
+- **Kein Cloud-Dienst.** Jede Firma betreibt Rhinvoice auf ihrem eigenen Server oder Rechner, siehe [Installation](/docs/de/getting-started/installation/).
+- **Kein Buchhaltungsprogramm.** Keine Buchhaltung, kein Kontenplan, keine MWST- bzw. USt.-Abrechnung, kein Lohn.
+- **Kein Webshop und keine Kasse.**
+- **Noch nicht fertig.** Rhinvoice ist in der Beta-Phase (0.x). Probieren Sie es zuerst auf einer Testinstallation aus, bevor Sie echte Rechnungen damit schreiben.
+
+<Aside type="caution" title="Keine Steuerberatung">
+Rhinvoice hilft Ihnen, korrekte Rechnungen zu schreiben, ersetzt aber keine Steuer- oder Rechtsberatung. Steuersätze und Regeln sind an amtlichen Quellen geprüft (ESTV, Steuerverwaltung Liechtenstein, Bundesministerien der Finanzen in Deutschland und Österreich) und ohne Gewähr. Fragen Sie im Zweifel Ihre Treuhänderin oder Ihren Steuerberater.
+</Aside>
+
+## Lizenz und Hersteller
+
+Rhinvoice steht unter der [GNU Affero General Public License v3.0 oder später](https://github.com/rhinvoice/rhinvoice/blob/main/LICENSE) (AGPL). Sie dürfen es frei nutzen, verändern und weitergeben. Wer eine veränderte Version als Dienst für andere anbietet, legt seine Änderungen unter derselben Lizenz offen. Der Quellcode liegt auf [GitHub](https://github.com/rhinvoice/rhinvoice).
+
+Rhinvoice wird von [webberz](https://www.webberz.ch/) entwickelt, einer Softwarefirma in Balgach im Schweizer Rheintal.
+
+## Ausprobieren
+
+Öffentliche Demos setzen sich jede Stunde zurück, eine pro Land: [Schweiz](https://ch.rhinvoice.com), [Deutschland](https://de.rhinvoice.com), [Österreich](https://at.rhinvoice.com). Alle Besucher teilen sich einen Zugang pro Demo. Die Demo versendet keine E-Mails und nimmt keine Dateien an.
+
+## Häufige Fragen
+
+<Faq />

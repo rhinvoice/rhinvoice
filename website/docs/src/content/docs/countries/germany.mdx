@@ -1,0 +1,107 @@
+---
+title: "Invoices in Germany: VAT, required details, e-invoices"
+description: Free, open-source invoicing program for Germany. VAT of 19 % and 7 %, required details under § 14 UStG, small business § 19 UStG, GiroCode, ZUGFeRD and XRechnung.
+faq:
+  - q: Which VAT rates does Rhinvoice charge in Germany?
+    a: 19 % and 7 % (§ 12 UStG). For supplies from 1 July to 31 December 2020 Rhinvoice uses 16 % and 5 %. The rate on the date of supply applies.
+  - q: Must the tax number or the VAT ID be on the invoice?
+    a: One of the two (§ 14 Abs. 4 Nr. 2 UStG). Rhinvoice does not issue an invoice without either. Small-amount invoices up to EUR 250 gross are the exception (§ 33 UStDV).
+  - q: Which notice does Rhinvoice print for small businesses?
+    a: German documents carry the notice "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung)." You can change the wording under Settings → Texts → Legal notices.
+  - q: From when must German companies issue e-invoices?
+    a: Businesses must be able to receive them since 2025. They must issue them for domestic B2B invoices from 2027 if their turnover in the previous year was above EUR 800,000, and from 2028 all of them (§ 27 Abs. 38 UStG). Small businesses are exempt. Rhinvoice embeds the e-invoice (ZUGFeRD) in the PDF of every issued invoice, as long as the details it needs are complete.
+  - q: Does Rhinvoice meet the GoBD?
+    a: Rhinvoice implements the immutability. Issued invoices are locked with their PDF, in the database too, the PDF is kept with its SHA-256, and corrections are made only by a cancellation invoice with its own number. Whether your bookkeeping as a whole meets the GoBD is something to settle with your tax adviser.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+A German invoice from Rhinvoice carries **19 % or 7 % VAT** (§ 12 UStG) on the date of supply, your **tax number or VAT ID** (§ 14 Abs. 4 Nr. 2 UStG), the date of supply, the legal notice for reverse charge, small businesses or tax-free supplies, a **GiroCode** (EPC QR code) and an embedded **e-invoice** (ZUGFeRD). For public authorities Rhinvoice also writes the **XRechnung**.
+
+<Aside type="note" title="No tax advice">
+As of October 2026. Rates and rules are checked against the UStG and UStDV, but without warranty. Ask your tax adviser when in doubt.
+</Aside>
+
+## Which VAT rate applies?
+
+| Valid | Standard rate | Reduced rate |
+|---|---|---|
+| since 1 January 2021 | 19 % | 7 % |
+| 1 July 2020 to 31 December 2020 | 16 % | 5 % |
+| 1 January 2007 to 30 June 2020 | 19 % | 7 % |
+
+Source: § 12 UStG; the 2020 rates come from the Zweites Corona-Steuerhilfegesetz.
+
+The rate on the **date of supply** applies: the end of the service period, else its start, else the invoice date. When issuing, Rhinvoice freezes the rate of every line.
+
+## Required details under § 14 UStG
+
+Rhinvoice checks before issuing what it can check and prints the rest from your data:
+
+- **Tax number or VAT ID** of your company (§ 14 Abs. 4 Nr. 2 UStG). Enter them under *Settings → Company*. Without either, Rhinvoice does not issue the invoice. The exception: **small-amount invoices up to EUR 250 gross** (§ 33 UStDV). The VAT ID has the form `DE123456789`.
+- **Date of supply** (§ 14 Abs. 4 Nr. 6 UStG). Without a service period, Rhinvoice prints the invoice date as the date of supply.
+- **Sequential invoice number.** Rhinvoice assigns it only when issuing, without gaps or duplicates.
+- **Net amount and VAT per rate**, your and the customer's name and address, date and lines.
+
+Small businesses state their tax number or VAT ID too (§ 34a UStDV).
+
+## Small business under § 19 UStG
+
+Switch on *Small business (§ 19 UStG)* under *Settings → Company*. Your invoices then contain no VAT and this notice:
+
+> Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).
+
+(English documents: "No VAT is charged (small business scheme).") Since 2025 the invoice states that § 19 UStG applies; this text does. You can change it under *Settings → Texts → Legal notices*.
+
+## Reverse charge and supplies abroad
+
+Rhinvoice decides the tax treatment from your country, the customer's country, whether the customer is a business and whether it has a VAT ID. Goods and services are treated separately, on the same invoice too.
+
+| Case | VAT | Notice on German documents |
+|---|---|---|
+| Customer in Germany | yes | none |
+| Service to a business in another EU country with a VAT ID | no | "Steuerschuldnerschaft des Leistungsempfängers." (§ 14a Abs. 5 UStG) |
+| Goods to a business in another EU country with a VAT ID | no | "Steuerfreie innergemeinschaftliche Lieferung (§ 4 Nr. 1 Buchst. b i. V. m. § 6a UStG)." |
+| Goods leaving the EU, private customers included | no | "Steuerfreie Ausfuhrlieferung (§ 4 Nr. 1 Buchst. a i. V. m. § 6 UStG)." |
+| Service to a business outside the EU | no | "Nicht im Inland steuerbare Leistung." |
+| Private customer inside or outside the EU (service) | yes | none |
+
+Good to know:
+
+- **No reverse charge without the customer's VAT ID.** An EU business without a VAT ID is charged German VAT. The editor points this out.
+- **Intra-Community supply**: the invoice states your VAT ID and the customer's (§ 14a Abs. 3 UStG). Rhinvoice does not issue it without both, and reminds you of the proof of arrival (Gelangensbestätigung or proof of dispatch) and the EC Sales List (Zusammenfassende Meldung).
+- **Domestic reverse charge under § 13b UStG** (for example § 13b Abs. 2 Nr. 7 UStG) is chosen by hand in the editor. Rhinvoice logs every change of the tax treatment with a reason in the history.
+- **Distance sales to private customers in the EU** keep German VAT. Rhinvoice does not track the EU-wide threshold of EUR 10,000 a year (OSS).
+
+## GiroCode (EPC QR code)
+
+Every invoice in **EUR** gets a **GiroCode** next to the payment terms, following the European Payments Council guidelines (EPC069-12). It holds your IBAN, the account holder, the amount and "Rechnung" with the invoice number as remittance text; your customer scans it with a banking app. You need an account in EUR under *Settings → Bank accounts*. Invoices in other currencies have no GiroCode, drafts a placeholder.
+
+## E-invoice: ZUGFeRD and XRechnung
+
+Since 2025, businesses in Germany must be able to **receive** e-invoices (§ 14 UStG). They must **issue** them for domestic B2B invoices in stages (§ 27 Abs. 38 UStG):
+
+| From | Who |
+|---|---|
+| 2027 | businesses with a turnover above EUR 800,000 in the previous year |
+| 2028 | all businesses |
+
+Small businesses are exempt (§ 34a UStDV).
+
+Rhinvoice embeds a **ZUGFeRD / Factur-X invoice** (profile EN 16931) in the PDF of every issued invoice by default (switch: *Settings → Print template*). If a detail it needs is missing, the PDF is created without it. The PDF looks the same to your customers; their accounting software reads the data directly. Rhinvoice shows on the invoice whether the e-invoice is embedded. For public authorities you also download the **XRechnung** (XML), with the Leitweg-ID in the field *Reference*. Details and what it needs: [e-invoice](/docs/invoices/e-invoice/).
+
+## GoBD and keeping invoices
+
+Keep invoices for **ten years** (§ 147 AO). Rhinvoice makes them immutable:
+
+- From issuing on, content and PDF are locked, directly in the database too.
+- The PDF is kept with its SHA-256 hash.
+- Corrections are made only by a [cancellation invoice](/docs/invoices/issue-and-cancel/) with its own number. Drafts can be deleted, issued invoices never.
+- Every change (issued, payment, cancellation, tax treatment) is in the history with a timestamp.
+
+Protect the data with a [backup](/docs/operations/backup/). Try everything in the demo at [de.rhinvoice.com](https://de.rhinvoice.com).
+
+## Questions
+
+<Faq />

@@ -1,0 +1,74 @@
+---
+title: "Rechnungen in Liechtenstein: MWST, QR-Rechnung, Pflichtangaben"
+description: Rechnungsprogramm für Liechtenstein, kostenlos und Open Source. MWST wie in der Schweiz (Zollvertrag) mit 8.1 %, 2.6 %, 3.8 %, QR-Rechnung und Rappenrundung.
+faq:
+  - q: Welche MWST-Sätze gelten in Liechtenstein?
+    a: Dieselben wie in der Schweiz, weil Liechtenstein das Schweizer MWST-Gesetz über den Zollvertrag anwendet. Seit 1. Januar 2024 sind das 8.1 %, 2.6 % und 3.8 % (Beherbergung).
+  - q: Muss ich einem Kunden in der Schweiz MWST verrechnen?
+    a: Ja. Die Schweiz und Liechtenstein bilden ein gemeinsames MWST-Gebiet. Für eine Liechtensteiner Firma ist ein Kunde in der Schweiz Inland, und Rhinvoice rechnet mit dem normalen Satz.
+  - q: Funktioniert die QR-Rechnung mit einer Liechtensteiner IBAN?
+    a: Ja. Die QR-Rechnung nimmt Schweizer und Liechtensteiner IBANs und QR-IBANs, in CHF oder EUR. Euro-Rechnungen an Kunden in der EU, in Island oder Norwegen bekommen zusätzlich den EPC-QR-Code.
+  - q: In welchem Format gebe ich die Liechtensteiner MWST-Nummer ein?
+    a: So, wie sie Ihnen zugeteilt wurde. Rhinvoice prüft das Format einer Liechtensteiner MWST-Nummer nicht, weil sie keine Schweizer UID ist, und druckt sie unverändert.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Liechtenstein wendet über den **Zollvertrag** das Schweizer MWST-Gesetz an. Eine Liechtensteiner Rechnung mit Rhinvoice hat deshalb dieselben **MWST-Sätze wie in der Schweiz** (seit 1. Januar 2024: 8.1 %, 2.6 %, 3.8 %), die **MWST-Nummer** Ihrer Firma, den passenden Hinweis und eine **QR-Rechnung** in CHF oder EUR. Kunden in der Schweiz sind für Sie Inland.
+
+<Aside type="note" title="Keine Steuerberatung">
+Stand: Oktober 2026. Die Sätze und Regeln sind gegen die Quellen der Steuerverwaltung Liechtenstein und der ESTV geprüft, aber ohne Gewähr. Fragen Sie im Zweifel Ihre Treuhänderin oder Ihren Treuhänder.
+</Aside>
+
+## Welcher MWST-Satz gilt?
+
+| Gültig | Normalsatz | Reduzierter Satz | Sondersatz Beherbergung |
+|---|---|---|---|
+| seit 1. Januar 2024 | 8.1 % | 2.6 % | 3.8 % |
+| 1. Januar 2018 bis 31. Dezember 2023 | 7.7 % | 2.5 % | 3.7 % |
+| 1. Januar 2011 bis 31. Dezember 2017 | 8 % | 2.5 % | 3.8 % |
+
+Quelle: ESTV, «MWST-Sätze ab 1. Januar 2024»; die Steuerverwaltung Liechtenstein wendet unter dem Zollvertrag dieselben Sätze an.
+
+Massgebend ist der Satz am **Leistungsdatum**: das Ende des Leistungszeitraums, sonst sein Beginn, sonst das Rechnungsdatum. Beim Ausstellen friert Rhinvoice den Satz jeder Position ein.
+
+## Was in Liechtenstein anders ist als in der Schweiz
+
+- **MWST-Nummer statt UID.** Die Liechtensteiner MWST-Nummer ist keine Schweizer UID. Das Feld heisst unter *Einstellungen → Firma* deshalb *MWST-Nummer*. Rhinvoice speichert sie so, wie Sie sie eingeben, und prüft kein Format.
+- **Handelsregister.** Ihre Registernummer tragen Sie im Feld *Handelsregister* ein, zum Beispiel `FL-0002.123.456-7`. Sie erscheint in der Fusszeile und dient in der E-Rechnung als Kennung Ihrer Firma.
+- **Liechtensteiner Konten.** Die QR-Rechnung nimmt Liechtensteiner IBANs und QR-IBANs genauso wie Schweizer. Für den EPC-QR-Code an Kunden in der EU braucht ein Liechtensteiner Konto keinen BIC, weil Liechtenstein im EWR liegt. Ein Schweizer Konto braucht ihn.
+- **«FL» im Import.** Beim Übernehmen von Kunden erkennt Rhinvoice «FL», «LI», «Liechtenstein» und «Fürstentum Liechtenstein» als Land.
+
+Sonst gilt alles von der Seite [Rechnungen in der Schweiz](/docs/de/countries/switzerland/): Rappenrundung auf 0.05, die Zahlenschreibweise `CHF 1’234.50` und die Hinweistexte.
+
+## Was auf der Rechnung stehen muss
+
+Wer MWST-pflichtig ist, nennt auf der Rechnung seine **MWST-Nummer** (Art. 26 Abs. 2 lit. a MWSTG, in Liechtenstein über den Zollvertrag). Fehlt sie, stellt Rhinvoice die Rechnung nicht aus und sagt, wo Sie sie ergänzen. Ohne Leistungszeitraum druckt Rhinvoice das Rechnungsdatum als Leistungsdatum.
+
+Sind Sie nicht MWST-pflichtig, wählen Sie unter *Einstellungen → Firma* den Schalter *Nicht MWST-pflichtig (Umsatz unter CHF 100'000)*. Die Rechnungen haben dann keine MWST und den Hinweis «Nicht mehrwertsteuerpflichtig.» (englische Dokumente: «No VAT is charged (small business scheme).»).
+
+## QR-Rechnung
+
+Jede Rechnung bekommt den QR-Zahlteil nach den Implementation Guidelines QR-bill von SIX. Mit einer **QR-IBAN** druckt Rhinvoice die QR-Referenz (27 Ziffern), mit einer normalen **IBAN** die Creditor Reference (SCOR, beginnt mit `RF`). Beide Referenzen bildet Rhinvoice aus der Rechnungsnummer. Die Währung ist CHF oder EUR. Kunden in der Schweiz zahlen ebenfalls mit der QR-Rechnung.
+
+## Kunden im Ausland
+
+| Fall | MWST | Hinweis auf der Rechnung |
+|---|---|---|
+| Kunde in Liechtenstein oder in der Schweiz | ja | keiner |
+| Dienstleistung an eine Firma in der EU mit UID | nein | «Übergang der Steuerschuld auf den Leistungsempfänger (Steuerschuldnerschaft des Leistungsempfängers, Reverse Charge).» |
+| Dienstleistung an alle anderen Kunden im Ausland | nein | «Ort der Leistung im Ausland, nicht der MWST unterstellt.» |
+| Ware, die das MWST-Gebiet verlässt | nein | «Steuerbefreite Ausfuhrlieferung (Art. 23 Abs. 2 Ziff. 1 MWSTG).» |
+
+Eine Ware, die von Vaduz nach St. Gallen geht, bleibt im MWST-Gebiet und wird normal besteuert. Den Steuerfall können Sie im Editor von Hand ändern, Rhinvoice hält die Änderung im Verlauf fest.
+
+## E-Rechnung und Aufbewahrung
+
+Die E-Rechnung ist freiwillig. Rhinvoice bettet trotzdem standardmässig eine **ZUGFeRD-/Factur-X-Rechnung** (EN 16931) in jedes PDF einer ausgestellten Rechnung ein, sofern die nötigen Angaben vollständig sind. Abschalten können Sie das unter *Einstellungen → Druckvorlage* ([E-Rechnung](/docs/de/invoices/e-invoice/)). Ausgestellte Rechnungen sind samt PDF gesperrt, Korrekturen gehen nur über eine [Stornorechnung](/docs/de/invoices/issue-and-cancel/).
+
+Die öffentliche Demo gibt es für die Schweiz, Deutschland und Österreich. Für Liechtenstein probieren Sie [ch.rhinvoice.com](https://ch.rhinvoice.com) aus: Sätze, QR-Rechnung und Hinweise sind dieselben.
+
+## Häufige Fragen
+
+<Faq />

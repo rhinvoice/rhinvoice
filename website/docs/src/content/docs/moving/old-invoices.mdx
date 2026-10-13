@@ -1,0 +1,86 @@
+---
+title: Taking over old invoices
+description: Bring the invoices of your previous invoicing program into Rhinvoice with their original PDFs, from a CSV or Excel list and a folder of PDFs, with a test run.
+faq:
+  - q: Can I import old invoices with their PDFs into Rhinvoice?
+    a: Yes. Rhinvoice takes over old invoices from a CSV or Excel list together with the original PDFs from a folder or ZIP file. The invoices stay unchanged and locked, with number, date, customer, amount and PDF.
+  - q: Does Rhinvoice recalculate imported invoices?
+    a: No. Rhinvoice stores the amounts of the list and the original PDF. It recalculates nothing and draws no new PDF, so the invoice you keep is the one your customer got.
+  - q: What happens if I import the same list twice?
+    a: Nothing bad. Rhinvoice skips invoice numbers that exist already. An issued invoice never changes, not even by importing it again.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice takes over the invoices of the program you used before, with their **original PDFs**. Then you can switch the old program off and still have the invoices of the last ten years in one place.
+
+<Aside type="tip" title="Every import starts with a test run">
+Rhinvoice shows you row by row what would happen, and changes nothing. Only **Take over … invoices** saves.
+</Aside>
+
+## In this order
+
+Invoices look for their customer when they are imported. So import customers and articles first ([customers and articles](/docs/moving/customers-and-articles/)), the invoices last.
+
+<Steps>
+
+1. **Customers**: *Customers → Import*
+2. **Articles**: *Articles → Import*
+3. **Invoices with their PDFs**: *Invoices → Import*
+
+</Steps>
+
+## What you need
+
+### A list of the invoices
+
+Export the invoices from the old program as CSV (UTF-8 or Windows-1252) or Excel file (`.xlsx`, `.xls`). Rhinvoice recognises the columns by their names; anything else you map by hand and save as a template.
+
+| Column | Needed | What for |
+|---|---|---|
+| Invoice number | <span class="need yes">Yes</span> | Stays exactly as it was |
+| Date | <span class="need yes">Yes</span> | Invoice date and the year in the revenue |
+| Total | <span class="need yes">Yes</span> | Amount including VAT |
+| Customer number or name | <span class="need yes">Yes</span> | Finds the customer |
+| Due date, open amount | <span class="need opt">If present</span> | Due date and open items |
+| Net amount or tax amount | <span class="need opt">If present</span> | Net amount and tax |
+| Currency, subject | <span class="need opt">If present</span> | Stored with the invoice |
+| Customer's address | <span class="need opt">If present</span> | For customers Rhinvoice does not know yet |
+
+### The PDF files
+
+Choose the folder with the PDFs; subfolders, single files and ZIP files work too. Rhinvoice finds the invoice number anywhere in the file name:
+
+```text
+✓ Rechnung R20150001.pdf
+✓ 2015/R2015-0001.pdf
+✓ 2015/20150001_korrektur.pdf   → becomes an attachment, not the invoice
+✗ Scan_0042.pdf                 → no number: left over
+```
+
+Of several files with the same number, the one with nothing else in its name is the invoice. Reminders, corrections and copies ("Mahnung", "Korrektur", "Kopie" …) are kept with the same invoice as **attachments**. Identical files are kept once; pictures and other files in the folder are left out.
+
+## What happens when you import
+
+- **The invoice stays as it was.** Rhinvoice recalculates nothing and draws no new PDF: you keep the invoice your customer got. The invoice list marks it as *Taken over*.
+- **The right number column is found.** Some programs export a counter as "invoice number" and the real number in the title ("Rechnung R20150001"). Rhinvoice takes the column whose values match the file names.
+- **Customers are found** by number, else by name. A number that belongs to a customer with a clearly different name is not used. Customers Rhinvoice does not know are created and **archived**.
+- **An invoice without an open amount counts as paid**, with one payment on its due date. Open invoices are marked as paid later like any other.
+- **Importing twice does no harm.** Numbers that exist already are skipped, so you can import the same list a second time with the PDFs.
+- **The number sequence continues** with the next free number; the result tells which number the next invoice gets.
+- **Files left over** are listed in the test run. A missing PDF can be added later on the invoice itself (*Add PDF*).
+
+<Aside type="caution" title="Keeping invoices">
+Invoices must be kept for ten years (Switzerland: Art. 958f CO, Germany: § 147 AO, Austria: § 132 BAO). Imported PDFs are locked and part of every [backup](/docs/operations/backup/). Keep the old program's export anyway until you have checked the import.
+</Aside>
+
+## Limits
+
+Per import: the list at most 5 MB and 10,000 rows, each PDF at most 20 MB, all PDFs together at most 200 MB. A browser sends at most 1000 files at once, so pack large folders as ZIP or import year by year.
+
+Imported invoices cannot be duplicated, cancelled or sent as e-invoices: they consist of their PDF.
+
+## Questions
+
+<Faq />

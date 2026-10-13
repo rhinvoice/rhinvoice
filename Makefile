@@ -23,8 +23,15 @@ install: ## Install backend and frontend dependencies
 # --- Quality gate ------------------------------------------------------------------
 
 .PHONY: qa
-qa: backend-qa frontend-qa api-check e2e backup-qa einvoice-qa ## Run every check (backend, frontend, contract, E2E, backup, e-invoices)
+qa: backend-qa frontend-qa api-check e2e backup-qa einvoice-qa docs-qa ## Run every check (backend, frontend, contract, E2E, backup, e-invoices, docs)
 	@echo "✔ make qa passed"
+
+.PHONY: docs-qa
+docs-qa: ## Docs: types, content rules (WRITING.md), build, links, audit
+	cd website/docs && pnpm run check
+	cd website/docs && pnpm run build
+	cd website/docs && pnpm run check:links
+	cd website/docs && pnpm audit --prod --audit-level high
 
 .PHONY: backend-qa
 backend-qa: backend-lint backend-types backend-arch backend-test backend-mutation backend-audit ## All backend checks

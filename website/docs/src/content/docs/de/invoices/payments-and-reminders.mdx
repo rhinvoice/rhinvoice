@@ -1,0 +1,97 @@
+---
+title: Zahlungen erfassen und Rechnungen mahnen
+description: Zahlungen und Teilzahlungen in Rhinvoice erfassen, mehrere Rechnungen auf einmal als bezahlt markieren und überfällige Rechnungen in drei Stufen mahnen.
+faq:
+  - q: Wie markiere ich eine Rechnung als bezahlt?
+    a: Auf der Rechnung mit «Als bezahlt markieren». Rhinvoice erfasst dann eine Zahlung über den ganzen offenen Betrag mit dem heutigen Datum. Für ein anderes Datum oder eine Teilzahlung nehmen Sie «Zahlung erfassen».
+  - q: Kann ich mehrere Rechnungen auf einmal als bezahlt markieren?
+    a: Ja. Wählen Sie die Rechnungen in der Liste aus und klicken Sie auf «Als bezahlt markieren». Jede bekommt eine Zahlung über ihren offenen Betrag mit dem heutigen Datum. Mit «Rückgängig» nehmen Sie alle wieder zurück.
+  - q: Wann ist eine Rechnung überfällig?
+    a: Sobald ihr Fälligkeitsdatum vorbei ist und sie noch nicht ganz bezahlt ist. Rhinvoice leitet das jeden Tag neu aus dem Fälligkeitsdatum ab.
+  - q: Wie viele Mahnstufen gibt es?
+    a: Drei. Zahlungserinnerung, 1. Mahnung und 2. Mahnung. Jede Stufe wird eine einstellbare Anzahl Tage nach der letzten Frist fällig, setzt eine neue Frist und kann eine Mahngebühr haben, die voreingestellt 0 ist.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+In Rhinvoice erfassen Sie zu jeder ausgestellten Rechnung Zahlungen mit **Datum und Betrag**, auch Teilzahlungen, und markieren eine oder mehrere Rechnungen auf einmal als bezahlt. Ist eine Rechnung nach ihrem Fälligkeitsdatum noch offen, gilt sie als *Überfällig* und lässt sich in **drei Mahnstufen** mahnen.
+
+## Zahlung erfassen
+
+Auf einer ausgestellten oder teilweise bezahlten Rechnung haben Sie zwei Knöpfe:
+
+- **Als bezahlt markieren** erfasst eine Zahlung über den ganzen offenen Betrag mit dem heutigen Datum.
+- **Zahlung erfassen** öffnet ein Formular mit *Zahlungsdatum*, Betrag und *Notiz*. Vorgeschlagen ist der offene Betrag. Für eine **Teilzahlung** ändern Sie den Betrag. Gespeichert wird mit *Zahlung speichern*.
+
+Nach einer Teilzahlung steht die Rechnung auf *Teilweise bezahlt*, ist der offene Betrag beglichen, auf *Bezahlt*. Für jede Zahlung gilt:
+
+- Der Betrag ist positiv und hat höchstens zwei Nachkommastellen.
+- Das Zahlungsdatum liegt nicht in der Zukunft.
+- Der Betrag ist nicht höher als der offene Betrag. Eine Überzahlung, etwa eine doppelte Zahlung, erstatten Sie ausserhalb von Rhinvoice.
+
+Jede Zahlung steht im *Verlauf* der Rechnung. Unter *Zahlungen* entfernen Sie eine falsch erfasste Zahlung wieder, auch das wird im Verlauf vermerkt. Direkt nach dem Erfassen bietet die Meldung unten zudem **Rückgängig** an.
+
+## Mehrere Rechnungen auf einmal als bezahlt markieren
+
+<Steps>
+
+1. Öffnen Sie *Rechnungen*, zum Beispiel mit der Ansicht *Offen*.
+2. Wählen Sie die bezahlten Rechnungen mit den Kästchen aus. Ein Kästchen im Tabellenkopf wählt alle offenen Rechnungen der Seite.
+3. Klicken Sie auf **Als bezahlt markieren**.
+
+</Steps>
+
+Jede ausgewählte Rechnung bekommt eine Zahlung über ihren offenen Betrag mit dem heutigen Datum. Kann eine davon nicht als bezahlt markiert werden, weil sie inzwischen bezahlt oder storniert ist, ändert Rhinvoice gar nichts und nennt die Rechnung. **Rückgängig** in der Meldung entfernt alle eben erfassten Zahlungen wieder. Einzelne Rechnungen markieren Sie auch direkt in ihrer Zeile mit **Bezahlt**.
+
+## Überfällige Rechnungen
+
+Eine Rechnung ist *Überfällig*, wenn sie ausgestellt oder teilweise bezahlt ist und ihr Fälligkeitsdatum vorbei ist. Diesen Status leitet Rhinvoice aus dem Datum ab, gespeichert wird er nicht. Eine Rechnung wird also am Tag nach der Fälligkeit von selbst überfällig. Stornorechnungen sind nie überfällig.
+
+Überfällige Rechnungen finden Sie in der Rechnungsliste unter *Ansicht → Überfällig*, auf der Übersicht und gesammelt unter *Rechnungen → Mahnwesen*.
+
+## Mahnen in drei Stufen
+
+*Rechnungen → Mahnwesen* zeigt alle überfälligen Rechnungen mit offenem Betrag, den bereits geschriebenen Mahnungen und dem nächsten Schritt (Spalte *Nächster Schritt*). Die drei Stufen sind:
+
+| Stufe | Wird fällig (Voreinstellung) | Neue Zahlungsfrist (Voreinstellung) |
+|---|---|---|
+| *Zahlungserinnerung* | 7 Tage nach Fälligkeit der Rechnung | 10 Tage |
+| *1. Mahnung* | 7 Tage nach Ablauf der letzten Frist | 10 Tage |
+| *2. Mahnung* | 7 Tage nach Ablauf der letzten Frist | 7 Tage |
+
+Ist eine Stufe fällig, schreiben Sie sie mit dem Knopf *Zahlungserinnerung schreiben* (bzw. *1. Mahnung schreiben* …). Rhinvoice fragt vorher nach und nennt Kunde, neue Frist und Mahngebühr. Eine Stufe vor ihrem Datum zu schreiben, geht nur mit ausdrücklicher Bestätigung. Ein zweiter Klick schreibt nie versehentlich die nächste Stufe. Jede Mahnung bleibt im Verlauf der Rechnung, pro Rechnung gibt es jede Stufe einmal.
+
+Nach der 2. Mahnung ist in Rhinvoice Schluss. Weitere Schritte wie Betreibung oder Inkasso erledigen Sie ausserhalb.
+
+### Mahnstufen einstellen
+
+Unter *Einstellungen → Mahnwesen* (oder *Mahnstufen einstellen* auf der Mahnseite) legen Sie pro Stufe fest:
+
+- nach wie vielen Tagen sie fällig wird (0 bis 365) und die *Neue Zahlungsfrist in Tagen* (1 bis 365),
+- die *Mahngebühr*,
+- den Text auf Deutsch und auf Englisch. Platzhalter sind `{faellig}` (neue Frist), `{betrag}`, `{waehrung}`, `{nummer}` und `{kunde}`.
+
+### Mahngebühren
+
+Die Mahngebühr ist **voreingestellt 0**. Sie steht in der Währung der Rechnung, ohne MWST bzw. USt., und liegt zwischen 0 und 1000 in Schritten von 0.05. Eine Gebühr verlangt je nach Land eine Vereinbarung mit dem Kunden oder belegte Kosten. Verzugszinsen rechnet Rhinvoice nicht.
+
+<Aside type="caution" title="Keine Steuerberatung">
+Rhinvoice behandelt Mahngebühren als Schadenersatz ohne Steuer (Schweiz: Art. 18 Abs. 2 lit. i MWSTG, Deutschland: UStAE 1.3 Abs. 6). Ob und welche Gebühr Sie verlangen dürfen, klären Sie im Zweifel mit Ihrer Treuhand oder Steuerberatung.
+</Aside>
+
+Zahlt der Kunde offenen Betrag plus Gebühr, erfassen Sie auf der Rechnung den offenen Betrag. Die Gebühr verbuchen Sie ausserhalb von Rhinvoice.
+
+## Mahnung als PDF
+
+Jede geschriebene Mahnung öffnen Sie auf der Mahnseite mit *PDF öffnen*. Das PDF ist die Seite der Rechnung, mit Kopf, Adresse und Fusszeile vom Tag des Ausstellens, dazu der Text der Stufe, der offene Betrag, die Gebühr und das Total. Die QR-Rechnung bzw. der EPC-QR-Code (GiroCode) fordert das Total an und trägt die Referenz der Rechnung, damit Sie die Zahlung zuordnen können.
+
+Rhinvoice speichert den Text mit der Mahnung. Das PDF sieht deshalb immer so aus wie beim Schreiben, auch wenn Sie die Einstellungen später ändern.
+
+## Rechnungen und Mahnungen per E-Mail senden
+
+Ist ein Mailserver unter *Einstellungen → E-Mail* eingerichtet, senden Sie ausgestellte Rechnungen und geschriebene Mahnungen mit **Per E-Mail senden** direkt aus Rhinvoice, mit dem PDF im Anhang. Sie prüfen Empfänger, Betreff und Text vor jedem Versand. Die Adresse des Kunden ist vorausgefüllt, bis zu fünf Empfänger sind möglich. Jede E-Mail wird im Verlauf der Rechnung vermerkt. Lehnt der Mailserver ab, zeigt Rhinvoice seine Antwort. Ohne eingerichteten Mailserver laden Sie das PDF herunter und versenden es selbst.
+
+## Häufige Fragen
+
+<Faq />

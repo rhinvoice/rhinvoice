@@ -45,6 +45,22 @@ jobs:
       - run: cd frontend && pnpm install --frozen-lockfile
       - run: make frontend-qa
 
+  docs:
+    name: Docs (types, content rules, build, links)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: website/docs/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: website/docs/pnpm-lock.yaml
+      - run: cd website/docs && pnpm install --frozen-lockfile
+      - run: make docs-qa
+
   api-contract:
     name: Generated API client is up to date
     runs-on: ubuntu-24.04

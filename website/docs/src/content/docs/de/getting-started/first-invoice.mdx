@@ -1,0 +1,96 @@
+---
+title: Die erste Rechnung schreiben
+description: Eine Rechnung in Rhinvoice Schritt für Schritt schreiben. Kunde wählen, Positionen erfassen, Live-Vorschau prüfen, ausstellen, PDF öffnen, bezahlt markieren.
+faq:
+  - q: Wann bekommt eine Rechnung ihre Nummer?
+    a: Erst beim Ausstellen. Entwürfe haben noch keine Nummer, gelöschte Entwürfe hinterlassen deshalb keine Lücken. Rhinvoice vergibt die nächste Nummer des Nummernkreises, lückenlos und ohne Doppel.
+  - q: Kann ich eine Rechnung nach dem Ausstellen noch ändern?
+    a: Nein. Ab dem Ausstellen sind Inhalt und PDF eingefroren (Art. 958f OR, GoBD, BAO). Für eine Korrektur stornieren Sie die Rechnung mit einer Stornorechnung mit eigener Nummer und schreiben eine neue.
+  - q: Wie erfasse ich eine Teilzahlung?
+    a: Öffnen Sie die Rechnung und wählen Sie Zahlung erfassen (Taste P). Tragen Sie Zahlungsdatum und erhaltenen Betrag ein. Die Rechnung zeigt dann Teilweise bezahlt mit dem offenen Betrag.
+  - q: Gibt es ein Tastaturkürzel für eine neue Rechnung?
+    a: Ja. Drücken Sie N, wenn kein Eingabefeld aktiv ist. Cmd+Enter (unter Windows und Linux Ctrl+Enter) speichert, ? zeigt alle Tastaturkürzel.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Eine Rechnung schreiben Sie in Rhinvoice im Editor: Kunde wählen, Positionen erfassen, die **Live-Vorschau** prüfen und auf *Ausstellen* klicken. Erst dann bekommt die Rechnung ihre Nummer und lässt sich nicht mehr ändern. Danach öffnen Sie das PDF, versenden es und markieren die Rechnung als bezahlt, sobald das Geld da ist.
+
+Schliessen Sie vor der ersten Rechnung den [ersten Start](/docs/de/getting-started/first-start/) ab: Land, Firma und ein Bankkonto.
+
+## 1. Kunden anlegen
+
+Der Editor wählt Kunden, die es schon gibt. Legen Sie einen unter *Kunden → Neuer Kunde* an oder importieren Sie Ihre Kunden aus einer CSV- oder Excel-Datei ([Kunden und Artikel übernehmen](/docs/de/moving/customers-and-articles/)).
+
+## 2. Den Editor öffnen
+
+Klicken Sie in der Navigation auf *Neue Rechnung* oder drücken Sie **N**, wenn kein Eingabefeld aktiv ist. Der Editor zeigt links das Formular und rechts die **Vorschau**, so wie die Rechnung auf Papier aussieht. Auf dem Smartphone oder in einem schmalen Fenster wechseln Sie zwischen *Bearbeiten* und *Vorschau*.
+
+## 3. Die Rechnung ausfüllen
+
+<Steps>
+
+1. **Kunde**: Name, Nummer oder Ort eingeben und den Kunden wählen. Rhinvoice zeigt die Adresse so, wie sie auf der Rechnung steht.
+
+2. **Daten**: *Datum* leer lassen für das Datum des Ausstellens, *Fällig am* leer lassen für die Zahlungsfrist des Kunden bzw. der Firma. Sie können auch eine *Zahlungsfrist* in Tagen wählen.
+
+3. **Positionen**: *Position hinzufügen*, dann Bezeichnung, Menge, Einheit und Preis eingeben. Beim Tippen werden Artikel vorgeschlagen. *Übernehmen* stellt die Position in die Liste. Ein Klick auf eine Position in der Liste oder in der Vorschau öffnet sie wieder. *Textzeile hinzufügen* fügt einen Zwischentitel oder Hinweis ohne Betrag ein. **Alt+↑** und **Alt+↓** verschieben eine Position.
+
+4. **Texte** (freiwillig): Einleitung, Zahlungsbedingungen und Schluss, auch aus Ihren Textbausteinen.
+
+5. **Weitere Angaben** (freiwillig): Betreff, Referenz, Leistungszeitraum, Währung und ein Rabatt auf das ganze Dokument.
+
+</Steps>
+
+Der *Steuerfall* ergibt sich aus dem Land Ihrer Firma und dem des Kunden: Inland, Reverse Charge, Export oder Kleinunternehmer, jeweils mit dem vorgeschriebenen Hinweis. Rhinvoice nimmt den Steuersatz, der am Leistungsdatum gilt. Einzelheiten pro Land: [Schweiz](/docs/de/countries/switzerland/), [Liechtenstein](/docs/de/countries/liechtenstein/), [Deutschland](/docs/de/countries/germany/), [Österreich](/docs/de/countries/austria/).
+
+## 4. Den Entwurf speichern
+
+*Speichern* (**⌘↵** auf dem Mac, **Ctrl+Enter** unter Windows und Linux) behält die Rechnung als Entwurf. Ist ein Entwurf einmal gespeichert, speichert Rhinvoice weitere Änderungen selbst. Die Leiste unten zeigt *Gespeichert* und wie lange das her ist. Einen Entwurf können Sie noch ändern oder löschen (*Entwurf löschen*).
+
+## 5. Die Rechnung ausstellen
+
+Klicken Sie auf *Ausstellen*. Rhinvoice fragt *Rechnung ausstellen?*: Die Rechnung erhält ihre endgültige Nummer und kann danach nicht mehr geändert werden. Korrekturen sind nur noch per Stornorechnung möglich. Vor dem Ausstellen prüft Rhinvoice die Pflichtangaben Ihres Landes und sagt, was fehlt.
+
+<Aside type="caution" title="Ausgestellt heisst endgültig">
+Ab dem Ausstellen sind Inhalt und PDF eingefroren, das PDF wird mit seiner SHA-256-Prüfsumme aufbewahrt. Um eine ausgestellte Rechnung zu korrigieren, stornieren Sie sie (*Stornieren* erzeugt eine Stornorechnung mit eigener Nummer) und schreiben eine neue. Siehe [Ausstellen und Storno](/docs/de/invoices/issue-and-cancel/).
+</Aside>
+
+## 6. PDF, Drucken, E-Mail
+
+Auf der ausgestellten Rechnung:
+
+- *PDF* öffnet das PDF in einem neuen Tab, *Herunterladen* speichert es, *Drucken* druckt es.
+- *Per E-Mail senden* verschickt es mit dem PDF im Anhang, sobald der Mailserver unter *Einstellungen → E-Mail* eingerichtet ist.
+
+Das PDF enthält den Zahlteil: die QR-Rechnung in der Schweiz und in Liechtenstein, den GiroCode (EPC-QR) für Rechnungen in Euro in Deutschland und Österreich. Eine E-Rechnung nach ZUGFeRD / Factur-X ist im PDF eingebettet ([E-Rechnung](/docs/de/invoices/e-invoice/)).
+
+## 7. Als bezahlt markieren
+
+Wenn das Geld da ist, öffnen Sie die Rechnung:
+
+- *Als bezahlt markieren* erfasst den vollen Betrag mit dem heutigen Datum. Die Meldung danach bietet *Rückgängig* an.
+- *Zahlung erfassen* (Taste **P**) ist für ein anderes Datum oder eine Teilzahlung: *Zahlungsdatum* und Betrag eintragen, dann *Zahlung speichern*. Die Rechnung zeigt dann *Teilweise bezahlt* und den offenen Betrag.
+
+In der Rechnungsliste markiert *Bezahlt* in einer Zeile eine einzelne Rechnung als bezahlt. Mehrere Rechnungen lassen sich auswählen und auf einmal markieren. Eine Rechnung nach ihrer Fälligkeit erscheint als *Überfällig*. Mehr dazu unter [Zahlungen und Mahnungen](/docs/de/invoices/payments-and-reminders/).
+
+## Tastaturkürzel
+
+| Taste | Aktion |
+|---|---|
+| **N** | Neue Rechnung |
+| **Q** | Neues Angebot |
+| **/** | Suche fokussieren |
+| **⌘K** / **Ctrl+K** | Befehlspalette öffnen |
+| **⌘↵** / **Ctrl+Enter** | Speichern |
+| **P** | Zahlung erfassen (im Dokument) |
+| **⌘Z** / **Ctrl+Z** | Letzte Aktion rückgängig machen (solange die Meldung sichtbar ist) |
+| **G** dann **I** | Gehe zu Rechnungen |
+| **?** | Alle Tastaturkürzel anzeigen |
+
+Einzeltasten-Kürzel sind nur aktiv, wenn kein Eingabefeld fokussiert ist.
+
+## Häufige Fragen
+
+<Faq />

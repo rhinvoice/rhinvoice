@@ -1,0 +1,124 @@
+/*
+  Starlight in the clothes of rhinvoice.com: the landing page's colours, Source Serif 4 for
+  headings (the invoices), Inter for text (the app). Fonts are self-hosted; no third parties.
+*/
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../fonts/inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../fonts/inter-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/source-serif-4-latin-600.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/source-serif-4-latin-ext-600.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Dark is Starlight's default; light follows. Same values as rhinvoice.com. */
+:root {
+  --sl-font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sl-font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", Menlo, Consolas, monospace;
+  --rh-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+
+  --sl-color-accent-low: #17283c;
+  --sl-color-accent: #6ea8e3;
+  --sl-color-accent-high: #cfe2f6;
+  --sl-color-white: #e5edf6;
+  --sl-color-gray-1: #dbe4ee;
+  --sl-color-gray-2: #b9c7d6;
+  --sl-color-gray-3: #9aabbd;
+  --sl-color-gray-4: #5d6f84;
+  --sl-color-gray-5: #26364a;
+  --sl-color-gray-6: #142030;
+  --sl-color-black: #0d1520;
+}
+
+:root[data-theme="light"] {
+  --sl-color-accent-low: #e6eff8;
+  --sl-color-accent: #1f62a3;
+  --sl-color-accent-high: #143f69;
+  --sl-color-white: #142233;
+  --sl-color-gray-1: #1d2c3e;
+  --sl-color-gray-2: #34445a;
+  --sl-color-gray-3: #566476;
+  --sl-color-gray-4: #8693a3;
+  --sl-color-gray-5: #dbe2ea;
+  --sl-color-gray-6: #eef2f7;
+  --sl-color-gray-7: #f6f8fb;
+  --sl-color-black: #ffffff;
+}
+
+/* Headings in the serif of the invoices. */
+.sl-markdown-content :is(h1, h2, h3),
+h1#_top {
+  font-family: var(--rh-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+/* Amounts and dates line up. */
+.sl-markdown-content table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Running text stays readable in width. */
+.sl-markdown-content :is(p, li) {
+  max-width: 70ch;
+}
+
+/* "Required" and "if present" in tables of columns. */
+.need {
+  display: inline-block;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  font-size: var(--sl-text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.need.yes {
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-accent);
+}
+.need.opt {
+  border: 1px solid var(--sl-color-gray-5);
+  color: var(--sl-color-gray-3);
+}
+
+/* Notes and tips in the accent blue instead of Starlight's blue and purple, in both themes. */
+:root,
+:root[data-theme="light"] {
+  --sl-color-blue-low: var(--sl-color-accent-low);
+  --sl-color-blue: var(--sl-color-accent);
+  --sl-color-blue-high: var(--sl-color-accent-high);
+  --sl-color-purple-low: var(--sl-color-accent-low);
+  --sl-color-purple: var(--sl-color-accent);
+  --sl-color-purple-high: var(--sl-color-accent-high);
+}
+
+/* "System" fits in the theme menu; Starlight sizes it for shorter words. */
+starlight-theme-select label {
+  --sl-select-width: 6.75em !important;
+}

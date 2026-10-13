@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Rhinvoice: an invoice page with the Rhine and its four countries (CH, LI, AT, DE). -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a6db0"/>
+      <stop offset="1" stop-color="#1d4f80"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="url(#g)"/>
+  <g id="mark">
+    <path d="M9 6.5h10l5 5v14a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 8 25.5v-17.5A1.5 1.5 0 0 1 9.5 6.5Z" fill="#ffffff"/>
+    <path d="M19 6.5v5h5" fill="#d6e6f6"/>
+    <path d="M11 9.8h4M11 12.4h5.5" stroke="#9db5cf" stroke-width="1.6" stroke-linecap="round"/>
+    <g transform="translate(0 1.6)">
+      <path d="M4.5 20C8 11 11 25 16 16S24.5 9 27.5 13" fill="none" stroke="#6aa6d9" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="5.74" cy="17.67" r="2.3" fill="#ffffff" stroke="#2a6db0" stroke-width="1.2"/>
+      <circle cx="11.97" cy="19.13" r="2.3" fill="#ffffff" stroke="#2a6db0" stroke-width="1.2"/>
+      <circle cx="21.34" cy="9.9" r="2.3" fill="#ffffff" stroke="#2a6db0" stroke-width="1.2"/>
+      <circle cx="27.05" cy="12.42" r="2.3" fill="#ffffff" stroke="#2a6db0" stroke-width="1.2"/>
+    </g>
+  </g>
+</svg>

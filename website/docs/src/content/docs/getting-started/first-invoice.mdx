@@ -1,0 +1,96 @@
+---
+title: Write your first invoice
+description: Write an invoice in Rhinvoice step by step. Choose a customer, add lines, check the live preview, issue it, open the PDF and mark it paid. For CH, LI, DE, AT.
+faq:
+  - q: When does an invoice get its number?
+    a: Only when you issue it. Drafts have no number yet, so deleted drafts leave no gaps. Rhinvoice assigns the next number of the invoice sequence, without gaps and without duplicates.
+  - q: Can I change an invoice after issuing it?
+    a: No. From issuing on, content and PDF are frozen (GoBD, Art. 958f CO, BAO). A correction needs a cancellation invoice with its own number; then you write a new invoice.
+  - q: How do I record a partial payment?
+    a: Open the invoice and choose Record payment (key P). Enter the payment date and the amount received; the invoice then shows as partially paid with the open amount.
+  - q: Is there a keyboard shortcut for a new invoice?
+    a: Yes. Press N anywhere outside an input field. Cmd+Enter (Ctrl+Enter on Windows and Linux) saves, and ? shows all shortcuts.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+You write an invoice in Rhinvoice in the editor: choose the customer, add the lines, check the **live preview** and click *Issue*. Only then does the invoice get its number and become unchangeable. After that you open the PDF, send it, and mark the invoice as paid when the money arrives.
+
+Before your first invoice, finish the [first start](/docs/getting-started/first-start/): country, company and a bank account.
+
+## 1. Add a customer
+
+The editor picks customers that exist already. Add one under *Customers → New customer*, or import your customers from a CSV or Excel file ([customers and articles](/docs/moving/customers-and-articles/)).
+
+## 2. Open the editor
+
+Click *New invoice* in the navigation, or press **N** anywhere outside an input field. The editor shows the form on the left and the **preview** on the right, as the invoice will look on paper. On a phone or in a narrow window you switch between *Edit* and *Preview*.
+
+## 3. Fill in the invoice
+
+<Steps>
+
+1. **Customer**: type a name, number or city and choose the customer. Rhinvoice shows the address as it will appear on the invoice.
+
+2. **Dates**: leave *Date* empty to use the date of issue, and *Due date* empty to use the payment terms of the customer or company. You can also pick *Payable within* a number of days.
+
+3. **Lines**: *Add line*, then enter description, quantity, unit and price. Articles are suggested while you type. *Apply* takes the line into the list; clicking a line in the list or in the preview opens it again. *Add text line* adds a heading or a note without amount. **Alt+↑** and **Alt+↓** move a line.
+
+4. **Texts** (optional): intro, payment terms and closing, also from your text templates.
+
+5. **More details** (optional): subject, reference, service period, currency and a discount for the whole document.
+
+</Steps>
+
+The *Tax treatment* follows from the countries of your company and the customer: domestic, reverse charge, export or small business, with the notice the law requires. Rhinvoice takes the VAT rate that applies on the service date. Details per country: [Switzerland](/docs/countries/switzerland/), [Liechtenstein](/docs/countries/liechtenstein/), [Germany](/docs/countries/germany/), [Austria](/docs/countries/austria/).
+
+## 4. Save the draft
+
+*Save* (**⌘↵** on a Mac, **Ctrl+Enter** on Windows and Linux) keeps the invoice as a draft. Once a draft is saved, Rhinvoice saves later changes by itself; the bar at the bottom shows *Saved* and how long ago. A draft can still be changed or deleted (*Delete draft*).
+
+## 5. Issue the invoice
+
+Click *Issue*. Rhinvoice asks *Issue the invoice?*: the invoice gets its final number and cannot be changed afterwards. Corrections are only possible with a cancellation invoice. Before issuing, Rhinvoice checks the mandatory details of your country and says what is missing.
+
+<Aside type="caution" title="Issued means final">
+From issuing on, content and PDF are frozen and the PDF is kept with its SHA-256 checksum. To correct an issued invoice, cancel it (*Cancel invoice* creates a cancellation invoice with its own number) and write a new one. See [Issuing and cancelling](/docs/invoices/issue-and-cancel/).
+</Aside>
+
+## 6. PDF, print, e-mail
+
+On the issued invoice:
+
+- *PDF* opens the PDF in a new tab, *Download* saves it, *Print* prints it.
+- *Send by e-mail* sends it with the PDF attached, once the mail server is set up under *Settings → E-mail*.
+
+The PDF carries the payment part: the Swiss QR-bill in Switzerland and Liechtenstein, the EPC QR code (GiroCode) for euro invoices in Germany and Austria. A ZUGFeRD / Factur-X e-invoice is embedded in the PDF ([E-invoices](/docs/invoices/e-invoice/)).
+
+## 7. Mark as paid
+
+When the money arrives, open the invoice:
+
+- *Mark as paid* records the full amount with today's date. The message that follows has *Undo*.
+- *Record payment* (key **P**) is for another date or a partial payment: enter *Payment date* and amount, then *Save payment*. The invoice then shows *Partially paid* and the open amount.
+
+In the invoice list, *Paid* in a row marks a single invoice as paid; several invoices can be selected and marked at once. An invoice past its due date shows as *Overdue*. More in [Payments and reminders](/docs/invoices/payments-and-reminders/).
+
+## Keyboard shortcuts
+
+| Key | Action |
+|---|---|
+| **N** | New invoice |
+| **Q** | New quote |
+| **/** | Focus search |
+| **⌘K** / **Ctrl+K** | Open command palette |
+| **⌘↵** / **Ctrl+Enter** | Save |
+| **P** | Record a payment (in a document) |
+| **⌘Z** / **Ctrl+Z** | Undo the last action (while its message is visible) |
+| **G** then **I** | Go to invoices |
+| **?** | Show all shortcuts |
+
+Single-key shortcuts only work while no input field is focused.
+
+## Questions
+
+<Faq />

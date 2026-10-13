@@ -1,0 +1,41 @@
+---
+title: Häufige Fragen zu Rhinvoice
+description: Antworten zu Rhinvoice, dem kostenlosen Open-Source-Rechnungsprogramm für CH, FL, DE und AT. Kosten, Lizenz, Daten, GoBD, Backup, E-Rechnung, Demo.
+faq:
+  - q: Was kostet Rhinvoice?
+    a: Nichts. Rhinvoice ist kostenlos und Open Source. Es gibt keine Bezahlversion und keinen Hosting-Dienst, und es ist nicht geplant, daraus einen kostenpflichtigen Hosting-Dienst zu machen. Sie betreiben Rhinvoice auf Ihrem eigenen Server oder Computer.
+  - q: Unter welcher Lizenz steht Rhinvoice?
+    a: Unter der GNU Affero General Public License v3.0 oder später (AGPL-3.0). Sie dürfen Rhinvoice frei nutzen, verändern und weitergeben. Wer eine veränderte Fassung anderen als Dienst anbietet, legt seine Änderungen unter derselben Lizenz offen.
+  - q: Für welche Länder ist Rhinvoice gedacht?
+    a: Für Firmen in der Schweiz, in Liechtenstein, Deutschland und Österreich, mit den MWST- bzw. USt.-Sätzen, Pflichtangaben, Hinweisen und Zahlungs-QR-Codes des jeweiligen Landes. Ihre Kunden können überall auf der Welt sitzen.
+  - q: In welchen Sprachen gibt es Rhinvoice?
+    a: Die Oberfläche gibt es auf Deutsch in den Varianten Schweiz, Deutschland und Österreich sowie auf Englisch. Dokumente schreibt Rhinvoice auf Deutsch oder Englisch.
+  - q: Wo liegen meine Daten?
+    a: Auf Ihrem eigenen Server oder Computer, in der PostgreSQL-Datenbank von Rhinvoice. Dort liegen Kunden, Artikel, Dokumente und die archivierten PDFs. Rhinvoice ist kein Cloud-Dienst, die Daten bleiben auf Ihrem Server.
+  - q: Erfüllt Rhinvoice die Unveränderbarkeit nach GoBD, Art. 958f OR und BAO?
+    a: Rhinvoice setzt sie um. Ab dem Ausstellen sind Inhalt und PDF einer Rechnung gesperrt, auch direkt in der Datenbank, und das PDF wird mit SHA-256 gespeichert. Korrekturen gehen nur über eine Stornorechnung mit eigener Nummer. Ob Ihre Buchführung insgesamt den Vorschriften entspricht, klären Sie mit Ihrer Steuerberatung oder Treuhand.
+  - q: Wie sichert Rhinvoice meine Daten?
+    a: Mit restic, verschlüsselt und dedupliziert, täglich und etwa zwei Minuten nach dem Ausstellen oder Stornieren von Dokumenten. Ziele sind S3-kompatible Speicher, SFTP, ein Ordner, Dropbox, Google Drive und andere. Rhinvoice behält 7 tägliche, 4 wöchentliche, 12 monatliche und alle jährlichen Backups.
+  - q: Kann Rhinvoice E-Rechnungen erstellen?
+    a: Ja. Jedes PDF einer ausgestellten Rechnung ist ein PDF/A-3b und enthält eine ZUGFeRD-/Factur-X-Rechnung (EN 16931), ausser Sie schalten das in der Druckvorlage aus oder es fehlen nötige Angaben. Für deutsche Behörden erstellt Rhinvoice zusätzlich die XRechnung 3.0. Beide werden mit dem KoSIT-Validator und Mustang geprüft.
+  - q: Kann ich Daten aus meinem bisherigen Rechnungsprogramm übernehmen?
+    a: Ja. Kunden, Artikel und alte Rechnungen übernimmt Rhinvoice aus CSV- und Excel-Dateien (XLSX, XLS), mit Spaltenzuordnung, Testlauf und gespeicherten Vorlagen. Alte Rechnungen kommen mit ihren Original-PDFs und bleiben unverändert.
+  - q: Brauche ich Docker?
+    a: Ja. Rhinvoice läuft mit Docker und Docker Compose, unter Linux, macOS und Windows (mit Docker Desktop). Python, Node.js oder den Quellcode brauchen Sie nicht. Für die Installation laden Sie zwei Dateien herunter, setzen in der Datei .env ein Datenbank-Passwort und starten Rhinvoice mit docker compose.
+  - q: Läuft Rhinvoice auf einem Raspberry Pi oder einem NAS?
+    a: Ja. Rhinvoice gibt es für linux/amd64 und linux/arm64, also auch für den Raspberry Pi 4 und 5. Auf einem NAS läuft es, wenn das NAS Docker mit Docker Compose ausführen kann.
+  - q: Kann ich Rhinvoice auf dem Handy benutzen?
+    a: Ja. Die Oberfläche passt sich dem Handy an. Unterwegs prüfen Sie den Status von Rechnungen, markieren sie als bezahlt und öffnen und teilen das PDF.
+  - q: Wo bekomme ich Hilfe, und gibt es eine kommerzielle Lizenz?
+    a: Fragen und Ideen gehören in die GitHub Discussions, Fehler in die GitHub Issues von rhinvoice/rhinvoice. Für eine kommerzielle Lizenz, eine Partnerschaft oder die Übernahme des Projekts schreiben Sie an hello@rhinvoice.com.
+  - q: Kann ich Rhinvoice ausprobieren, ohne es zu installieren?
+    a: Ja, in der öffentlichen Demo für die Schweiz (ch.rhinvoice.com), Deutschland (de.rhinvoice.com) und Österreich (at.rhinvoice.com). Sie setzt sich jede Stunde zurück und nimmt keine Uploads an, also keine Importe, kein Logo und keine Dateien. E-Mails verschickt sie nicht.
+---
+
+import Faq from "../../../../components/Faq.astro";
+
+Rhinvoice ist ein kostenloses Open-Source-Rechnungsprogramm für kleine Firmen in der Schweiz, in Liechtenstein, Deutschland und Österreich, das Sie selbst mit Docker betreiben. Es ist noch in der Beta-Phase (Version 0.x): Probieren Sie es zuerst auf einer Testinstallation aus. Hier die häufigsten Fragen, ausführlicher in [Installation](/docs/de/getting-started/installation/), [E-Rechnung](/docs/de/invoices/e-invoice/), [Backup](/docs/de/operations/backup/) und auf den Länderseiten für die [Schweiz](/docs/de/countries/switzerland/), [Liechtenstein](/docs/de/countries/liechtenstein/), [Deutschland](/docs/de/countries/germany/) und [Österreich](/docs/de/countries/austria/).
+
+## Häufige Fragen
+
+<Faq />

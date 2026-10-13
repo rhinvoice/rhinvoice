@@ -104,6 +104,10 @@
         "Keyboard first",
         "On the phone"
       ],
+      "softwareHelp": {
+        "@type": "CreativeWork",
+        "url": "https://rhinvoice.com/docs/"
+      },
       "screenshot": "https://rhinvoice.com/assets/img/shots/dashboard.png",
       "image": "https://rhinvoice.com/assets/img/og.png",
       "sameAs": [
@@ -177,7 +181,7 @@
 <header class="wrap top" id="top">
   <a class="brand" href="https://rhinvoice.com/"><img src="/assets/img/favicon.svg" alt="" width="30" height="30">Rhinvoice</a>
   <div class="top-end">
-    <nav aria-label="Main"><a href="#features">Features</a><a href="#install">Install</a><a href="https://github.com/rhinvoice/rhinvoice">GitHub</a></nav>
+    <nav aria-label="Main"><a href="#features">Features</a><a href="#install">Install</a><a href="/docs/">Docs</a><a href="https://github.com/rhinvoice/rhinvoice">GitHub</a></nav>
     <nav class="lang" aria-label="Language">
       <a href="https://rhinvoice.com/" hreflang="en" lang="en" aria-current="true">EN</a>
       <a href="https://rhinvoice.com/de/" hreflang="de" lang="de">DE</a>
@@ -293,7 +297,7 @@ docker compose -p rhinvoice-test up -d
 <span class="c"># optional, only on your own laptop: the short address http://rhinvoice:8000</span>
 echo "127.0.0.1 rhinvoice" | sudo tee -a /etc/hosts
 <span class="c"># and in .env: RHINVOICE_COOKIE_SECURE=false, then docker compose up -d again</span></pre>
-      <p class="note install-note">On a server: HTTPS and backups, see the <a href="https://github.com/rhinvoice/rhinvoice/blob/main/docs/install.md">install guide</a>.</p>
+      <p class="note install-note">On a server: HTTPS and backups, see the <a href="/docs/getting-started/installation/">install guide</a>.</p>
     </div>
   </section>
 </main>
@@ -301,7 +305,7 @@ echo "127.0.0.1 rhinvoice" | sudo tee -a /etc/hosts
 <footer>
   <div class="wrap">
     <span>Rhinvoice · AGPL-3.0 · No tax advice</span>
-    <nav aria-label="Footer"><a href="https://github.com/rhinvoice/rhinvoice">GitHub</a><a href="https://github.com/rhinvoice/rhinvoice/blob/main/docs/install.md">Docs</a><a href="/llms.txt">llms.txt</a><a href="https://www.webberz.ch/">made by webberz</a></nav>
+    <nav aria-label="Footer"><a href="https://github.com/rhinvoice/rhinvoice">GitHub</a><a href="/docs/">Docs</a><a href="/llms.txt">llms.txt</a><a href="https://www.webberz.ch/">made by webberz</a></nav>
   </div>
 </footer>
 

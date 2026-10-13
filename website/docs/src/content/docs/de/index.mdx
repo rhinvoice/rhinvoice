@@ -1,0 +1,58 @@
+---
+title: Rhinvoice Dokumentation
+description: Anleitung für Rhinvoice, das kostenlose Open-Source-Rechnungsprogramm für die Schweiz, Liechtenstein, Deutschland und Österreich. Installation, MWST, Backup.
+template: doc
+faq:
+  - q: Ist Rhinvoice kostenlos?
+    a: Ja. Rhinvoice ist Open Source unter der GNU Affero General Public License (AGPL) und darf kostenlos genutzt, verändert und weitergegeben werden. Es gibt keine kostenpflichtige Version und keinen gehosteten Dienst.
+  - q: Für welche Länder ist Rhinvoice gemacht?
+    a: Für Firmen in der Schweiz, in Liechtenstein, Deutschland und Österreich, mit den Steuersätzen, Pflichthinweisen und Zahlungs-QR-Codes des jeweiligen Landes. Ihre Kunden können überall sein.
+  - q: Wo liegen meine Daten?
+    a: Auf Ihrem eigenen Server oder Rechner. Rhinvoice läuft mit Docker bei Ihnen und speichert alles in einer eigenen PostgreSQL-Datenbank. Daten gehen nur dann in eine Cloud, wenn Sie diese als Backup-Ziel wählen.
+---
+
+import Faq from "../../../components/Faq.astro";
+
+Rhinvoice ist ein kostenloses Open-Source-Rechnungsprogramm für kleine Firmen in der Schweiz, in Liechtenstein, Deutschland und Österreich. Es schreibt Angebote, Rechnungen, Stornorechnungen und Mahnungen mit den Steuerregeln, Zahlungs-QR-Codes und E-Rechnungsformaten des jeweiligen Landes und läuft mit Docker auf Ihrem eigenen Server oder Rechner.
+
+## Erste Schritte
+
+- [Was ist Rhinvoice?](/docs/de/getting-started/what-is-rhinvoice/): Funktionen, Lizenz und was es nicht ist
+- [Installation](/docs/de/getting-started/installation/): Docker Compose, `.env` und das erste Benutzerkonto
+- [Erster Start](/docs/de/getting-started/first-start/): Einrichtungsassistent und Checkliste
+- [Die erste Rechnung](/docs/de/getting-started/first-invoice/): schreiben, ansehen, ausstellen, als bezahlt markieren
+
+## Länder
+
+- [Schweiz](/docs/de/countries/switzerland/): MWST-Sätze, QR-Rechnung, Pflichtangaben
+- [Liechtenstein](/docs/de/countries/liechtenstein/)
+- [Deutschland](/docs/de/countries/germany/): USt., Kleinunternehmer, GiroCode, E-Rechnung
+- [Österreich](/docs/de/countries/austria/)
+
+## Rechnungen
+
+- [Angebote](/docs/de/invoices/quotes/)
+- [Ausstellen und Storno](/docs/de/invoices/issue-and-cancel/)
+- [Zahlungen und Mahnungen](/docs/de/invoices/payments-and-reminders/)
+- [Wiederkehrende Rechnungen](/docs/de/invoices/recurring/)
+- [E-Rechnung](/docs/de/invoices/e-invoice/): ZUGFeRD / Factur-X und XRechnung
+
+## Umzug
+
+- [Kunden und Artikel übernehmen](/docs/de/moving/customers-and-articles/): Import aus CSV oder Excel
+- [Alte Rechnungen übernehmen](/docs/de/moving/old-invoices/): mit den Original-PDFs
+
+## Betrieb
+
+- [Backup und Wiederherstellen](/docs/de/operations/backup/)
+- [Update](/docs/de/operations/update/)
+- [Deinstallieren](/docs/de/operations/uninstall/)
+
+## Hilfe
+
+- [Häufige Fragen](/docs/de/help/faq/)
+- [Für Entwickler](/docs/de/help/developers/)
+
+## Häufige Fragen
+
+<Faq />

@@ -50,3 +50,4 @@ User-agent: cohere-ai
 Allow: /
 
 Sitemap: https://rhinvoice.com/sitemap.xml
+Sitemap: https://rhinvoice.com/docs/sitemap-index.xml

@@ -1,0 +1,64 @@
+---
+title: Contributing to Rhinvoice (for developers)
+description: For developers working on Rhinvoice. Source on GitHub, contributing guide, CLA, architecture decisions, adding a country, tech stack and the make qa gate.
+faq:
+  - q: Where is the source code of Rhinvoice?
+    a: On GitHub at github.com/rhinvoice/rhinvoice, under the GNU Affero General Public License v3.0 or later.
+  - q: Do I have to sign something to contribute?
+    a: Yes. Before the first pull request is merged, you accept the Contributor License Agreement by ticking its box in the pull request. You keep the copyright of your work.
+  - q: Can I add a country to Rhinvoice?
+    a: Yes. Everything that differs between countries lives in one country profile per country. The guide docs/adding-a-country.md walks through it, guided by tests. Open an issue with the official sources first.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+<Aside type="note" title="For developers">
+This page is for people who want to change Rhinvoice or contribute to it. To use Rhinvoice you do not need any of it; start with [Installation](/docs/getting-started/installation/).
+</Aside>
+
+Rhinvoice is open source on [GitHub](https://github.com/rhinvoice/rhinvoice) under the AGPL. Bug reports, tax rules with their official source and pull requests are welcome. Read [CONTRIBUTING.md](https://github.com/rhinvoice/rhinvoice/blob/main/CONTRIBUTING.md) first, and open an issue before a large change.
+
+## Where to start
+
+- [CONTRIBUTING.md](https://github.com/rhinvoice/rhinvoice/blob/main/CONTRIBUTING.md): ways to help, development setup, rules for pull requests
+- [Contributor License Agreement](https://github.com/rhinvoice/rhinvoice/blob/main/CLA.md): accepted by ticking its box in your first pull request; you keep the copyright of your work
+- [Architecture decisions](https://github.com/rhinvoice/rhinvoice/tree/main/docs/adr) in `docs/adr`: read the ADR of the area you change
+- [Adding a country](https://github.com/rhinvoice/rhinvoice/blob/main/docs/adding-a-country.md): one country profile, guided by tests
+- [Changelog](https://github.com/rhinvoice/rhinvoice/blob/main/CHANGELOG.md)
+- Questions and ideas: [GitHub discussions](https://github.com/rhinvoice/rhinvoice/discussions); bugs: [issues](https://github.com/rhinvoice/rhinvoice/issues)
+- Security issues go through a private report, never a public issue: [SECURITY.md](https://github.com/rhinvoice/rhinvoice/blob/main/SECURITY.md)
+
+## Tech stack
+
+The backend is Python 3.13 with FastAPI, SQLAlchemy 2 and Alembic on PostgreSQL, in layers (`api → infrastructure → application → domain`) that import-linter checks. The frontend is React with TypeScript and Vite, TanStack Router and Query and Tailwind CSS, with an API client generated from the OpenAPI schema. PDFs are rendered from HTML by Gotenberg and turned into PDF/A-3b with `pypdf`, the Swiss QR-bill from `qrbill`, the EPC QR code from `segno`, and backups from restic in a container of its own.
+
+## Development
+
+Requirements: Python 3.13 with uv, Node.js 22 with pnpm, Docker.
+
+```bash
+make install        # dependencies
+make dev-backend    # database on :5433 + API on :8000 (auto-reload)
+make dev-frontend   # Vite on :5173, proxies /api to the backend
+make demo           # demo customers, articles and documents
+make qa             # the full quality gate (also what CI runs)
+make help           # all targets
+```
+
+## The quality gate: make qa
+
+Rhinvoice handles money and legal documents, so every change passes `make qa`, which is also what CI runs. A pull request with a red gate is not reviewed.
+
+| Area | Tools |
+|---|---|
+| Backend | ruff (ALL), mypy --strict, pyright strict, import-linter, pytest with 100 % line and branch coverage, hypothesis, real PostgreSQL, schemathesis, mutmut (≥ 90 %), pip-audit |
+| Frontend | TypeScript strict, ESLint strict type-checked with jsx-a11y, dependency-cruiser, Vitest with 100 % coverage, pnpm audit |
+| E2E | Playwright against the production image, axe-core (WCAG 2.2 AA) in every test, screenshots light/dark × desktop/mobile |
+| E-invoices | KoSIT validator and Mustang on every sample |
+
+A few rules from CONTRIBUTING.md: money is never a float, time comes from the `Clock`, issued documents stay immutable, and everything in code is English.
+
+## Questions
+
+<Faq />

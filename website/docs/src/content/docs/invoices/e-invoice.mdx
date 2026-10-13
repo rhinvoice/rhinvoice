@@ -1,0 +1,110 @@
+---
+title: "Creating e-invoices: ZUGFeRD and XRechnung for free"
+description: Create XRechnung and ZUGFeRD e-invoices for free with Rhinvoice, open source. EN 16931 in PDF/A-3b, XRechnung 3.0 with Leitweg-ID, validated with KoSIT and Mustang.
+faq:
+  - q: Can I create an XRechnung for free with Rhinvoice?
+    a: Yes. Rhinvoice is free and open source (AGPL). For every issued invoice and cancellation invoice you download the XRechnung 3.0 as an XML file. The Leitweg-ID goes into the invoice's Reference field.
+  - q: Is every PDF invoice from Rhinvoice a ZUGFeRD invoice?
+    a: Yes, every issued invoice and cancellation invoice, as long as the required details are there. The PDF is a PDF/A-3b with an embedded ZUGFeRD / Factur-X invoice in the EN 16931 profile. Rhinvoice shows on the invoice whether the e-invoice is embedded.
+  - q: What else does an XRechnung need?
+    a: The invoice's reference (Leitweg-ID or buyer reference), your company's e-mail and phone, the customer's e-mail and a bank account. If something is missing, Rhinvoice names it when you issue.
+  - q: How does Rhinvoice check its e-invoices?
+    a: On every change to the program, sample invoices for every tax treatment go through the KoSIT validator (EN 16931 and XRechnung) and, as PDF, through Mustang (ZUGFeRD, PDF/A-3 with veraPDF). Warnings count as errors.
+  - q: For which countries does Rhinvoice create e-invoices?
+    a: For companies in Switzerland, Liechtenstein, Germany and Austria, ZUGFeRD is in every PDF. The XRechnung is meant for German public authorities. UBL, Peppol and the Austrian ebInterface are not supported.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Rhinvoice creates e-invoices for free: the PDF of every issued invoice is a **PDF/A-3b with an embedded ZUGFeRD / Factur-X invoice** (profile EN 16931), and for German public authorities you also download the **XRechnung 3.0** (CII) as XML. Rhinvoice checks both with the official validators, KoSIT and Mustang.
+
+## Two formats, one content
+
+| | ZUGFeRD / Factur-X | XRechnung |
+|---|---|---|
+| Form | embedded in the PDF (PDF/A-3b) | a separate XML file |
+| Standard | EN 16931, CII syntax | XRechnung 3.0, CII syntax |
+| For | business customers in all four countries | German public authorities |
+| Where | automatically in every PDF | open the invoice, section *E-invoice* → *XRechnung for German authorities* → *XRechnung (XML)* |
+
+**What is printed is what the e-invoice says.** Every amount in the e-invoice is an amount in the PDF; Rhinvoice recalculates nothing, also with gross prices, discounts and 5-centime rounding. The PDF looks the same to your customers, and their accounting software reads the data directly.
+
+Cancellation invoices are credit notes (type 381) in the e-invoice, referring to the cancelled invoice. Quotes, drafts and [imported old invoices](/docs/moving/old-invoices/) are no e-invoices.
+
+## ZUGFeRD in every PDF
+
+The e-invoice is on by default. The switch is under *Settings → Print template → E-invoice in the PDF (ZUGFeRD)*. On the issued invoice, the section *E-invoice* tells whether the archived PDF holds it:
+
+> The PDF holds the e-invoice (ZUGFeRD, EN 16931): accounting software reads the data directly.
+
+Rhinvoice stores the embedded XML together with the PDF and never changes either again. All PDFs from Rhinvoice are PDF/A-3b, quotes and reminders included.
+
+## XRechnung for German authorities
+
+Public authorities in Germany require the XRechnung. To create it:
+
+1. In the editor, enter the authority's **Leitweg-ID** under *Reference*. Rhinvoice writes this field into the XRechnung as the buyer reference (BT-10).
+2. Issue the invoice.
+3. Open the section *E-invoice* → *XRechnung for German authorities* and click *XRechnung (XML)*.
+
+When you send the invoice by e-mail, you can choose *Also attach the XRechnung (XML)*.
+
+## What an e-invoice needs
+
+Rhinvoice creates only complete e-invoices. If something is missing, the dialog warns you before issuing ("This invoice will be issued without e-invoice. Missing: …"). The PDF is created anyway, only without the e-invoice.
+
+**Every e-invoice (EN 16931):**
+
+| Detail | When | Where to enter it |
+|---|---|---|
+| UID, VAT ID or commercial register entry | always | *Settings → Company* |
+| VAT number or tax number | taxed or exempt invoices | *Settings → Company* |
+| Your company's VAT number | reverse charge, intra-Community supply, export | *Settings → Company* |
+| The customer's VAT number with country prefix | reverse charge, intra-Community supply | on the customer |
+
+**In addition for the XRechnung:**
+
+| Detail | Where to enter it |
+|---|---|
+| The invoice's reference (Leitweg-ID or buyer reference) | in the editor, field *Reference* |
+| Your company's e-mail | *Settings → Company* |
+| Your company's phone | *Settings → Company* |
+| The customer's e-mail | on the customer |
+| A bank account | *Settings → Bank accounts* |
+
+<Aside type="caution" title="Issued is issued">
+An issued invoice never changes, nor does its e-invoice. Whatever was missing when you issued it, add it for the next invoices.
+</Aside>
+
+## The e-invoice obligation in Germany
+
+Since 2025, businesses in Germany must be able to receive e-invoices (§ 14 UStG). They must issue them for domestic B2B invoices from 2027 if their turnover in the previous year was above EUR 800,000, and from 2028 all of them (§ 27 Abs. 38 UStG). Small businesses are exempt (§ 34a UStDV). The ZUGFeRD invoice in the PDF fulfils this when it is embedded. More on German invoices: [invoices in Germany](/docs/countries/germany/).
+
+Companies in [Switzerland](/docs/countries/switzerland/), [Liechtenstein](/docs/countries/liechtenstein/) and [Austria](/docs/countries/austria/) get the same ZUGFeRD invoice in every PDF. In Austria and Switzerland, accounting programs increasingly read ZUGFeRD PDFs directly.
+
+## Tax treatments in the e-invoice
+
+Rhinvoice gives each tax group a category according to UNCL 5305:
+
+| Category | Tax treatment |
+|---|---|
+| S | taxed normally |
+| Z | 0 % rate |
+| E | exempt; small businesses in Germany and Austria, with their notice as the reason |
+| AE | reverse charge, also from Switzerland and Liechtenstein to EU businesses |
+| K | intra-Community supply of goods, with the delivery address |
+| G | export and export delivery |
+| O | not subject to VAT: small businesses without VAT number and tax number (Switzerland, Liechtenstein) |
+
+A Swiss UID identifies the company in the e-invoice (scheme 0183) and, for VAT registered companies, is its VAT number at the same time. German tax numbers have a field of their own.
+
+## Validated with KoSIT and Mustang
+
+On every change to Rhinvoice, sample invoices for every tax treatment go through the official validators: the **KoSIT validator** for EN 16931 and XRechnung and, as PDF, **Mustang** for ZUGFeRD and PDF/A-3 (with veraPDF). Warnings count as errors.
+
+Not supported: UBL, sending via Peppol and the Austrian ebInterface.
+
+## Questions
+
+<Faq />

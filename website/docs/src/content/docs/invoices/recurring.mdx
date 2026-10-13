@@ -1,0 +1,83 @@
+---
+title: Recurring invoices and subscription billing
+description: Let Rhinvoice write recurring invoices every month, quarter, half-year or year, as a draft, issued, or issued and sent by e-mail. Free and open source.
+faq:
+  - q: Can Rhinvoice write invoices automatically every month?
+    a: Yes. A plan under "Recurring invoices" writes the same invoice every month, quarter, half-year or year. You choose whether it creates a draft, issues the invoice, or issues it and sends it by e-mail.
+  - q: What happens if the server was off for a while?
+    a: Rhinvoice catches up missed dates. Every period gets its invoice with its own service period, dated the day it is written, at most 24 per plan and run.
+  - q: What happens to dates while a plan is paused?
+    a: They are skipped. When you resume the plan, Rhinvoice continues with the next date and does not write the invoices of the pause afterwards.
+  - q: Can an invoice be written twice?
+    a: No. Every period is written exactly once, also with several app containers, after a restart or after a crash.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+For hosting, maintenance, subscriptions or flat fees you set up a **plan** in Rhinvoice. It writes the same invoice *Monthly*, *Quarterly*, *Half-yearly* or *Yearly* by itself: as a draft, issued, or issued and sent to the customer by e-mail.
+
+## Setting up a plan
+
+<Steps>
+
+1. Open *Invoices → Recurring* and click **New plan**. Or, on an existing invoice, choose *More actions → Make recurring*.
+2. Give the plan a *Name*. It is only for you, for example «Hosting Holzwerk».
+3. Choose the *Customer*, the *Interval* and the day under *First invoice on* (today or later). Under *Last invoice by* you can set an end.
+4. Under *On the date*, choose what should happen.
+5. Below, enter the invoice as in the normal editor. The preview shows the next invoice.
+6. Click **Create plan**.
+
+</Steps>
+
+Each invoice sets its date, due date and tax treatment itself when it is written; Rhinvoice determines the tax treatment automatically. Prices and texts come from the plan: if you change an article later, the plan does not change.
+
+## What happens on the date
+
+| *On the date* | Result |
+|---|---|
+| *Create a draft* | The draft waits under *Invoices* until you check and issue it |
+| *Issue* | The invoice is issued with a number; you send it yourself |
+| *Issue and send by e-mail* | The invoice is issued and sent to the customer's e-mail address |
+
+Sending by e-mail needs a mail server under *Settings → E-mail*. The mail carries the invoice's PDF. A separate XRechnung for German authorities is sent by hand from the invoice ([e-invoices](/docs/invoices/e-invoice/)).
+
+## Dates and service period
+
+All dates are counted from the first day. A monthly plan that starts on the 31st invoices on the last day of shorter months and then on the 31st again.
+
+With *Fill in the service period*, every invoice states the period it covers: from its own day to the day before the next one. The periods follow each other without gap or overlap; the last one ends with the plan.
+
+If you change the first day or the interval when editing, counting starts anew, and the new first day must be today or later.
+
+## Pausing, resuming, deleting
+
+- **Pause** stops the plan. Dates during the pause are skipped.
+- **Resume** continues with the next date. Rhinvoice does not write the dates missed during the pause afterwards.
+- **Delete plan** ends the plan. Invoices already written stay as they are.
+
+A plan with an end date is *Finished* after its last invoice. If the customer is archived, the plan still invoices them; Rhinvoice points this out, and you pause the plan if that is no longer right.
+
+## Who writes the invoices
+
+The app itself writes due invoices in the background; no extra container is needed. It looks for due plans a minute after it starts and then every ten minutes.
+
+- **Every period is written once**, also with several app containers, after a restart or after a crash.
+- **Missed dates are caught up** when the app was off for a while. Every period gets its invoice, dated the day it is written, with its own service period; at most 24 per plan and run.
+- **Problems are shown.** An invoice that cannot be issued (for example without a bank account) stays a draft; one that cannot be sent (no e-mail address for the customer, the mail server refuses) stays issued. Under *Invoices written*, the plan shows every run with its reason and invoice, and the list marks the plan as *Problem*.
+
+In the `.env` file, `RHINVOICE_RECURRING_INTERVAL` sets how often the app looks, in seconds (at least 60, preset 600), and `RHINVOICE_RECURRING=false` switches writing in the background off.
+
+When it is off, write due invoices yourself, for example from cron. The command exits with code 1 when an invoice needs attention:
+
+```bash
+docker compose exec app rhinvoice recurring
+```
+
+<Aside type="note" title="In the public demo">
+The public demo writes no recurring invoices. Try plans on an [installation](/docs/getting-started/installation/) of your own.
+</Aside>
+
+## Questions
+
+<Faq />

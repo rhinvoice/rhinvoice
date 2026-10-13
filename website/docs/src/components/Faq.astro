@@ -1,0 +1,16 @@
+---
+// The page's questions and answers from its frontmatter: the same text that search engines
+// get as FAQPage data (src/route-data.ts). Put a "## …" heading above it in the page.
+const faq = Astro.locals.starlightRoute.entry.data.faq ?? [];
+---
+
+<div class="faq">
+  {
+    faq.map(({ q, a }) => (
+      <section>
+        <h3>{q}</h3>
+        <p>{a}</p>
+      </section>
+    ))
+  }
+</div>

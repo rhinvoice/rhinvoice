@@ -1,0 +1,70 @@
+---
+title: Rhinvoice auf eine neue Version aktualisieren
+description: Rhinvoice mit Docker Compose aktualisieren. Neue Version in .env setzen, Images holen, neu starten. Die Datenbank wird automatisch migriert. Vorher ein Backup.
+faq:
+  - q: Wie aktualisiere ich Rhinvoice?
+    a: Setzen Sie RHINVOICE_VERSION in .env auf die neue Version und führen Sie docker compose pull und docker compose up -d aus. Die Datenbank wird beim Start automatisch migriert.
+  - q: Aktualisiert sich Rhinvoice selbst?
+    a: Nicht mit einer festen Version. Eine feste Version ändert sich nur, wenn Sie RHINVOICE_VERSION ändern. Mit latest holt jedes docker compose pull die neueste Version.
+  - q: Ändern sich ausgestellte Rechnungen durch ein Update?
+    a: Nein. Ausgestellte Dokumente behalten ihren Inhalt und ihr archiviertes PDF. Sie sind unveränderlich, auch in der Datenbank.
+  - q: Wo sehe ich, welche Version ich verwende?
+    a: Unten in der Navigation, neben by webberz. Ein Klick öffnet Über Rhinvoice mit einem Link zu den Neuerungen.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Für ein Update setzen Sie die neue Version in `.env`, holen die Images und starten die Container neu. Die Datenbank wird beim Start automatisch migriert. Lesen Sie vorher das Änderungsprotokoll und machen Sie ein Backup.
+
+## Vor dem Update
+
+- **Lesen Sie das [Änderungsprotokoll](https://github.com/rhinvoice/rhinvoice/blob/main/CHANGELOG.md)** (CHANGELOG, auf Englisch). Rhinvoice folgt Semantic Versioning; vor Version 1.0 können auch Nebenversionen Änderungen enthalten, die nicht rückwärtskompatibel sind. Die Versionen finden Sie unter [GitHub Releases](https://github.com/rhinvoice/rhinvoice/releases).
+- **Machen Sie ein Backup**, falls Sie eines eingerichtet haben ([Backup und Wiederherstellen](/docs/de/operations/backup/)):
+
+  ```bash
+  docker compose exec backup rhinvoice-backup backup    # back up now
+  ```
+
+## Aktualisieren
+
+<Steps>
+
+1. Setzen Sie im Ordner mit `compose.yml` und `.env` in `.env` die Einstellung `RHINVOICE_VERSION` auf die neue Version, z. B. `RHINVOICE_VERSION=0.5.3`.
+
+2. Images holen und neu starten:
+
+   ```bash
+   # set RHINVOICE_VERSION in .env to the new version, then
+   docker compose pull
+   docker compose up -d
+   ```
+
+3. Prüfen, ob alles läuft: `docker compose ps` zeigt nach einigen Sekunden «healthy».
+
+</Steps>
+
+Die Datenbank wird beim Start automatisch migriert (`RHINVOICE_RUN_MIGRATIONS=true` in `.env`).
+
+## Feste Version oder latest
+
+`.env` bestimmt, wie Rhinvoice neuen Versionen folgt:
+
+| `RHINVOICE_VERSION` | Verhalten |
+|---|---|
+| eine Version, z. B. `0.5.3` | fest: ändert sich nur, wenn Sie sie ändern |
+| `latest` | folgt jeder neuen Version beim nächsten `docker compose pull` |
+
+Für echte Rechnungen ist eine feste Version die sicherere Wahl: Sie entscheiden, wann Sie aktualisieren, und können vorher das Änderungsprotokoll lesen.
+
+<Aside type="note" title="Ausgestellte Rechnungen bleiben, wie sie sind">
+Ein Update ändert nie ausgestellte Dokumente. Sie behalten ihren Inhalt und ihr archiviertes PDF. Eine geänderte Druckvorlage gilt nur für neue PDFs.
+</Aside>
+
+## Welche Version läuft?
+
+Die Version steht unten in der Navigation, neben «by webberz». Ein Klick öffnet *Über Rhinvoice* mit einem Link zu den *Neuerungen*.
+
+## Häufige Fragen
+
+<Faq />

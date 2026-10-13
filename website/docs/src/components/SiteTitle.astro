@@ -1,0 +1,38 @@
+---
+// The logo, the name and "Docs" in the language of the page, as on the preview.
+import logo from "../assets/logo.svg";
+
+const { siteTitleHref, lang } = Astro.locals.starlightRoute;
+const docs = lang === "de" ? "Dokumentation" : "Docs";
+---
+
+<a href={siteTitleHref} class="site-title">
+  <img src={logo.src} width="28" height="28" alt="" />
+  <span translate="no">Rhinvoice</span>
+  <span class="docs">{docs}</span>
+</a>
+
+<style>
+  .site-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--sl-color-white);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .docs {
+    padding-left: 0.6rem;
+    border-left: 1px solid var(--sl-color-hairline);
+    color: var(--sl-color-gray-3);
+    font-weight: 500;
+  }
+  @media (max-width: 40rem) {
+    .docs {
+      display: none;
+    }
+  }
+</style>

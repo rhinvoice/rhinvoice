@@ -1,0 +1,41 @@
+---
+title: Frequently asked questions about Rhinvoice
+description: Answers about Rhinvoice, the free open-source invoicing program for CH, LI, DE and AT. Cost, licence, data, GoBD, backups, e-invoices, Docker, demo.
+faq:
+  - q: What does Rhinvoice cost?
+    a: Nothing. Rhinvoice is free and open source. There is no paid version and no hosted service, and there are no plans to turn it into a paid hosted service. You run Rhinvoice on your own server or computer.
+  - q: Under which licence is Rhinvoice published?
+    a: The GNU Affero General Public License v3.0 or later (AGPL-3.0). You may use, change and share Rhinvoice freely. If you offer a changed version to others as a service, you share your changes under the same licence.
+  - q: Which countries is Rhinvoice made for?
+    a: For companies in Switzerland, Liechtenstein, Germany and Austria, with each country's VAT rates, required details, notices and payment QR codes. Your customers can be anywhere in the world.
+  - q: In which languages is Rhinvoice available?
+    a: The interface is in German, in Swiss, German and Austrian variants, and in English. Rhinvoice writes documents in German or English.
+  - q: Where are my data kept?
+    a: On your own server or computer, in Rhinvoice's PostgreSQL database. It holds customers, articles, documents and the archived PDFs. Rhinvoice is not a cloud service; the data stay on your server.
+  - q: Does Rhinvoice meet the immutability rules of the GoBD, Art. 958f CO and the BAO?
+    a: Rhinvoice implements them. From issuing on, an invoice's content and PDF are locked, directly in the database too, and the PDF is kept with its SHA-256. Corrections are made only by a cancellation invoice with its own number. Whether your bookkeeping as a whole meets the rules is something to settle with your tax adviser or fiduciary.
+  - q: How does Rhinvoice back up my data?
+    a: With restic, encrypted and deduplicated, daily and about two minutes after documents were issued or cancelled. Targets are S3-compatible storage, SFTP, a folder, Dropbox, Google Drive and others. Rhinvoice keeps 7 daily, 4 weekly, 12 monthly and every yearly backup.
+  - q: Can Rhinvoice create e-invoices?
+    a: Yes. The PDF of every issued invoice is a PDF/A-3b and holds a ZUGFeRD / Factur-X invoice (EN 16931), unless you switch it off in the print template or required details are missing. For German public authorities Rhinvoice also writes the XRechnung 3.0. Both are checked with the KoSIT validator and Mustang.
+  - q: Can I take over data from the invoicing program I used before?
+    a: Yes. Rhinvoice imports customers, articles and old invoices from CSV and Excel files (XLSX, XLS), with column mapping, a test run and saved templates. Old invoices come with their original PDFs and stay unchanged.
+  - q: Do I need Docker?
+    a: Yes. Rhinvoice runs with Docker and Docker Compose, on Linux, macOS and Windows (with Docker Desktop). You need no Python, no Node.js and no source code. To install, you download two files, set a database password in the .env file and start Rhinvoice with docker compose.
+  - q: Does Rhinvoice run on a Raspberry Pi or a NAS?
+    a: Yes. Rhinvoice is published for linux/amd64 and linux/arm64, so also for the Raspberry Pi 4 and 5. It runs on a NAS that can run Docker with Docker Compose.
+  - q: Can I use Rhinvoice on my phone?
+    a: Yes. The interface adapts to the phone. On the way you check the status of invoices, mark them as paid, and open and share the PDF.
+  - q: Where do I get help, and is there a commercial licence?
+    a: Questions and ideas go to the GitHub Discussions, bugs to the GitHub Issues of rhinvoice/rhinvoice. For a commercial licence, a partnership or taking over the project, write to hello@rhinvoice.com.
+  - q: Can I try Rhinvoice without installing it?
+    a: Yes, in the public demo for Switzerland (ch.rhinvoice.com), Germany (de.rhinvoice.com) and Austria (at.rhinvoice.com). It resets every hour and takes no uploads, so no imports, no logo and no files. It sends no e-mail.
+---
+
+import Faq from "../../../components/Faq.astro";
+
+Rhinvoice is a free, open-source invoicing program for small businesses in Switzerland, Liechtenstein, Germany and Austria, which you run yourself with Docker. It is still in beta (version 0.x): try it on a test installation first. Here are the most frequent questions; more in [installation](/docs/getting-started/installation/), [e-invoice](/docs/invoices/e-invoice/), [backup](/docs/operations/backup/) and on the country pages for [Switzerland](/docs/countries/switzerland/), [Liechtenstein](/docs/countries/liechtenstein/), [Germany](/docs/countries/germany/) and [Austria](/docs/countries/austria/).
+
+## Questions
+
+<Faq />

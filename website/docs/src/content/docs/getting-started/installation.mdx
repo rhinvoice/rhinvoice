@@ -1,0 +1,132 @@
+---
+title: Installing Rhinvoice with Docker Compose
+description: Install the free invoicing program Rhinvoice with Docker Compose on a server, NAS, Raspberry Pi or laptop. Download, set the .env, start, create the first user.
+faq:
+  - q: What do I need to install Rhinvoice?
+    a: Only Docker with Docker Compose. You need no source code, no Python and no Node.js. Rhinvoice runs on Linux, macOS and Windows, on servers, NAS devices, a Raspberry Pi 4/5 or a laptop with Docker Desktop.
+  - q: How do I create the first user?
+    a: The first visit in the browser shows a one-time form for the first user account. Alternatively run docker compose exec app rhinvoice user create with your e-mail address and name.
+  - q: Does Rhinvoice run on a Raspberry Pi?
+    a: Yes. The images are published for linux/amd64 and linux/arm64, which includes Apple Silicon and the Raspberry Pi 4 and 5.
+  - q: Can I run two installations on one computer?
+    a: Yes. Give each one its own folder, port and project name, for example with COMPOSE_PROJECT_NAME and RHINVOICE_PORT in its .env file.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice is installed with **Docker Compose**: download two files, set a database password in `.env`, start the containers and open the address in your browser. You need only [Docker](https://docs.docker.com/get-docker/) with Docker Compose, no source code, no Python and no Node.js.
+
+<Aside type="caution" title="Beta">
+Rhinvoice is in early development (0.x). Tax rates and rules are provided without warranty and do not replace tax advice. Try it on a test installation before you write real invoices with it.
+</Aside>
+
+## Where it runs
+
+On a server, a NAS, a Raspberry Pi or your own laptop with Docker Desktop (macOS, Windows, Linux). Images are published for `linux/amd64` and `linux/arm64` (e.g. Apple Silicon, Raspberry Pi 4/5).
+
+Rhinvoice runs as four containers: `app` (web interface and API), `db` (PostgreSQL), `gotenberg` (turns documents into PDFs) and `backup`. Gotenberg has no port of its own and makes no requests to the internet; only the app talks to it.
+
+## Install in three steps
+
+<Steps>
+
+1. **Download** `compose.yml` and the example settings into a new folder:
+
+   ```bash
+   mkdir rhinvoice && cd rhinvoice
+   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.5.3/deploy/compose.yml
+   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.5.3/.env.example -o .env
+   ```
+
+2. **Configure**: edit `.env` (see the table below). At least set `POSTGRES_PASSWORD` and `RHINVOICE_VERSION`.
+
+3. **Start**:
+
+   ```bash
+   docker compose pull      # fetch the images of the version in .env
+   docker compose up -d
+   docker compose ps        # "healthy" after a few seconds
+   ```
+
+</Steps>
+
+`docker compose pull` matters when an older image of the same name is already on the computer (e.g. from an earlier test): `up` alone would start that one instead of downloading.
+
+## Settings in .env
+
+| Setting | Value |
+|---|---|
+| `POSTGRES_PASSWORD` | a long random value, letters and digits only (e.g. `openssl rand -hex 24`) |
+| `RHINVOICE_VERSION` | the version to run, e.g. `0.5.3`; pinned versions only change when you change them, `latest` follows every release |
+| `RHINVOICE_PORT` | port on this machine, default `8000` |
+| `RHINVOICE_BIND` | `127.0.0.1` (default) = only this machine; `0.0.0.0` = the whole network |
+| `RHINVOICE_COOKIE_SECURE` | keep `true`; use `false` only for plain HTTP in a trusted network (not needed for `localhost`) |
+| `RHINVOICE_TIMEZONE` | time zone for "today" (document dates, due dates), default `Europe/Zurich` |
+| `COMPOSE_PROJECT_NAME` | name of this installation for Docker, default `rhinvoice`; keep it once data exists |
+
+The backup settings in the same file are described in [Backup and restore](/docs/operations/backup/).
+
+## Open Rhinvoice and create the first user
+
+Open [http://rhinvoice.localhost:8000](http://rhinvoice.localhost:8000) (or [http://127.0.0.1:8000](http://127.0.0.1:8000)). Every name ending in `.localhost` points to your own computer, so this needs no entry in `/etc/hosts`; browsers treat it as secure, so logging in works without HTTPS. With `RHINVOICE_PORT=80` in `.env` the address is simply `http://rhinvoice.localhost` (if nothing else uses port 80).
+
+The first visit shows *Set up Rhinvoice*: enter your name, e-mail address and a password of at least 12 characters, then *Create account*. This account gets access to all data of the installation. Alternatively create it on the command line:
+
+```bash
+docker compose exec app rhinvoice user create --email you@example.com --name "Your Name"
+```
+
+Then the [setup wizard](/docs/getting-started/first-start/) asks for your country and company.
+
+## Trying it out with demo data
+
+On a test installation, finish the first-start wizard (country and company), then fill it with invented customers, articles and about 21 months of invoices, payments, overdue invoices and quotes:
+
+```bash
+docker compose exec app rhinvoice demo                      # or: make demo
+docker compose exec app rhinvoice demo --without-documents  # customers and articles only
+```
+
+The command only runs on an installation without customers and documents, so it never mixes with real data. When no bank account exists yet it adds the official example accounts of SIX or the ECBS; replace them before sending real invoices.
+
+## Running it on a server
+
+- Put a TLS reverse proxy (Caddy, Traefik, nginx) in front and keep `RHINVOICE_BIND=127.0.0.1`.
+- Set `RHINVOICE_FORWARDED_ALLOW_IPS` to the proxy's address and let the proxy send `Strict-Transport-Security`.
+- Session cookies are `Secure` by default; set `RHINVOICE_COOKIE_SECURE=false` only when you deliberately use plain HTTP in a trusted network.
+- Login attempts are limited per account; add per-IP rate limiting in the proxy when the instance is reachable from the internet, and turn on two-factor authentication for every user.
+- Set up [backups](/docs/operations/backup/).
+
+## Several installations on one computer
+
+Each installation needs a folder, a port and a **project name** of its own, so that containers and data stay apart. Give the name with `-p`, in every command for that installation:
+
+```bash
+RHINVOICE_PORT=8100 docker compose -p rhinvoice-try up -d
+docker compose -p rhinvoice-try ps
+docker compose -p rhinvoice-try logs -f app
+docker compose -p rhinvoice-try down -v      # remove it again, with its data
+```
+
+Easier: write the name and the port into that folder's `.env` once; then the plain commands work there:
+
+```
+COMPOSE_PROJECT_NAME=rhinvoice-try
+RHINVOICE_PORT=8100
+```
+
+Open it at [http://rhinvoice.localhost:8100](http://rhinvoice.localhost:8100).
+
+## Stopping and starting
+
+```bash
+docker compose down          # stop; the data stays in the volume "rhinvoice_db-data"
+docker compose up -d         # start again, with all data
+```
+
+How to update and how to remove Rhinvoice again: [Updating](/docs/operations/update/), [Uninstalling](/docs/operations/uninstall/).
+
+## Questions
+
+<Faq />

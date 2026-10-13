@@ -1,0 +1,68 @@
+---
+title: Angebote schreiben und in Rechnungen umwandeln
+description: Angebote mit Rhinvoice schreiben, als versendet, angenommen oder abgelehnt markieren und mit einem Klick in eine Rechnung umwandeln. Für CH, FL, DE und AT.
+faq:
+  - q: Wie wandle ich ein Angebot in eine Rechnung um?
+    a: Öffnen Sie das versendete oder angenommene Angebot und wählen Sie «In Rechnung umwandeln». Rhinvoice legt einen Rechnungsentwurf mit denselben Positionen an, den Sie prüfen und ausstellen.
+  - q: Wie lange ist ein Angebot gültig?
+    a: So lange, wie Sie im Feld «Gültig bis» eintragen. Lassen Sie das Feld leer, gilt das Angebot 30 Tage ab Datum. Danach zeigt Rhinvoice es als abgelaufen an.
+  - q: Kann ich ein versendetes Angebot noch ändern?
+    a: Nein. Mit «Als versendet markieren» erhält das Angebot seine Nummer und ist danach gesperrt. Für Änderungen duplizieren Sie es und markieren die Kopie neu als versendet.
+  - q: Kann ein Angebot mehrmals in eine Rechnung umgewandelt werden?
+    a: Nein, nur einmal. Löschen Sie den daraus entstandenen Rechnungsentwurf, lässt sich das Angebot wieder umwandeln.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Ein Angebot in Rhinvoice durchläuft die Status *Entwurf*, *Versendet* und dann *Angenommen*, *Abgelehnt* oder *Abgelaufen*. Ein versendetes oder angenommenes Angebot wandeln Sie mit **In Rechnung umwandeln** in einen Rechnungsentwurf um, ohne etwas neu zu erfassen.
+
+## Angebot erstellen
+
+<Steps>
+
+1. Öffnen Sie *Angebote → Neues Angebot*.
+2. Wählen Sie den Kunden und erfassen Sie die Positionen. Die Vorschau rechts zeigt das Angebot so, wie es gedruckt wird.
+3. Tragen Sie unter *Gültig bis* ein, wie lange das Angebot gilt. Leer gelassen sind es 30 Tage ab Datum.
+4. Klicken Sie auf **Als versendet markieren**. Das Angebot erhält seine Nummer und ist danach gesperrt.
+
+</Steps>
+
+Ein Entwurf hat noch keine Nummer und lässt sich jederzeit ändern oder im Menü *Weitere Aktionen* (der Knopf mit den drei Punkten) mit *Entwurf löschen* entfernen. Die Nummer folgt dem Nummernkreis für Angebote unter *Einstellungen → Nummernkreise*. Das voreingestellte Muster ist `A{YYYY}{NNNN}`, also zum Beispiel A20260001.
+
+<Aside type="note" title="Versendet heisst gesperrt">
+Ab *Versendet* ändert sich ein Angebot nicht mehr. Brauchen Sie eine geänderte Fassung, wählen Sie *Weitere Aktionen → Duplizieren*. Die Kopie ist ein neuer Entwurf mit demselben Inhalt.
+</Aside>
+
+## Die Status eines Angebots
+
+| Status | Bedeutung |
+|---|---|
+| *Entwurf* | In Arbeit, noch ohne Nummer |
+| *Versendet* | Nummer vergeben, Inhalt gesperrt |
+| *Angenommen* | Der Kunde hat zugesagt |
+| *Abgelehnt* | Der Kunde hat abgesagt |
+| *Abgelaufen* | Versendet, aber das Datum unter *Gültig bis* ist vorbei |
+
+*Angenommen* und *Abgelehnt* setzen Sie selbst mit den gleichnamigen Knöpfen auf dem versendeten Angebot. *Abgelaufen* setzt niemand: Rhinvoice leitet es aus dem Gültigkeitsdatum ab. In der Liste unter *Angebote* filtern Sie mit *Ansicht* nach jedem dieser Status.
+
+## In eine Rechnung umwandeln
+
+Auf einem versendeten oder angenommenen Angebot wählen Sie *Weitere Aktionen → In Rechnung umwandeln*. Rhinvoice legt einen **Rechnungsentwurf** an:
+
+- mit denselben Positionen, Rabatten und der Währung des Angebots,
+- mit den Texten, die Sie selbst geschrieben haben. Stehen im Angebot noch die Standardtexte für Angebote, bekommt der Entwurf die Standardtexte für Rechnungen,
+- mit neuen Daten: Datum und Fälligkeit setzt die Rechnung beim Ausstellen,
+- mit einem Verweis auf das Angebot. Ein versendetes Angebot gilt danach als *Angenommen*.
+
+Den Entwurf prüfen Sie, ergänzen ihn bei Bedarf und stellen ihn aus wie jede andere Rechnung ([Rechnung ausstellen und stornieren](/docs/de/invoices/issue-and-cancel/)). Der Steuersatz richtet sich dann nach dem Leistungsdatum der Rechnung, nicht nach dem des Angebots.
+
+Ein Angebot wird nur **einmal** zur Rechnung. Löschen Sie den Rechnungsentwurf, ist das Angebot wieder frei. Über *Rechnung öffnen* bzw. *Rechnungsentwurf öffnen* springen Sie vom Angebot zur Rechnung, über *Ursprungsdokument öffnen* zurück.
+
+## PDF und Versand
+
+Auf dem Angebot öffnen Sie mit **PDF** die Druckfassung in einem neuen Tab, mit **Herunterladen** speichern Sie sie, mit **Drucken** geben Sie sie direkt aus. Ist der E-Mail-Versand eingerichtet, schicken Sie ein versendetes Angebot mit **Per E-Mail senden** samt PDF an den Kunden. Der Versand steht danach im *Verlauf* des Angebots.
+
+## Häufige Fragen
+
+<Faq />

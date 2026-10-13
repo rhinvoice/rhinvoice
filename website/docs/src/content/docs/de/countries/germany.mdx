@@ -1,0 +1,107 @@
+---
+title: "Rechnungen in Deutschland: USt., Pflichtangaben, E-Rechnung"
+description: Kostenloses Open-Source-Rechnungsprogramm für Deutschland. USt. 19 % und 7 %, Pflichtangaben § 14 UStG, Kleinunternehmer § 19 UStG, ZUGFeRD und XRechnung.
+faq:
+  - q: Welche Umsatzsteuersätze rechnet Rhinvoice in Deutschland?
+    a: 19 % und 7 % (§ 12 UStG). Für Leistungen vom 1. Juli bis 31. Dezember 2020 nimmt Rhinvoice 16 % und 5 %. Massgebend ist der Satz am Leistungsdatum.
+  - q: Muss die Steuernummer oder die USt-IdNr. auf die Rechnung?
+    a: Eine der beiden (§ 14 Abs. 4 Nr. 2 UStG). Rhinvoice stellt eine Rechnung ohne beide nicht aus. Ausgenommen sind Kleinbetragsrechnungen bis 250 EUR brutto (§ 33 UStDV).
+  - q: Welchen Hinweis druckt Rhinvoice für Kleinunternehmer?
+    a: «Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).» Den Wortlaut können Sie unter Einstellungen → Texte → Gesetzliche Hinweise anpassen.
+  - q: Ab wann müssen deutsche Firmen E-Rechnungen ausstellen?
+    a: Empfangen müssen Unternehmen sie seit 2025. Ausstellen müssen sie inländische B2B-Rechnungen ab 2027, wenn der Umsatz im Vorjahr über 800.000 EUR lag, und ab 2028 alle (§ 27 Abs. 38 UStG). Kleinunternehmer sind ausgenommen. Rhinvoice bettet die E-Rechnung (ZUGFeRD) in das PDF jeder ausgestellten Rechnung ein, sofern die nötigen Angaben vollständig sind.
+  - q: Ist Rhinvoice GoBD-konform?
+    a: Rhinvoice setzt die Unveränderbarkeit um. Ausgestellte Rechnungen sind samt PDF gesperrt, auch in der Datenbank, das PDF wird mit SHA-256 gespeichert, und Korrekturen gehen nur per Stornorechnung mit eigener Nummer. Ob Ihre Buchführung insgesamt den GoBD entspricht, klären Sie mit Ihrer Steuerberatung.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Eine deutsche Rechnung mit Rhinvoice hat **19 % oder 7 % USt.** (§ 12 UStG) zum Leistungsdatum, Ihre **Steuernummer oder USt-IdNr.** (§ 14 Abs. 4 Nr. 2 UStG), das Leistungsdatum, den gesetzlichen Hinweis für Reverse Charge, Kleinunternehmer oder steuerfreie Lieferungen, einen **GiroCode** (EPC-QR-Code) und eine eingebettete **E-Rechnung** (ZUGFeRD). Für Behörden erstellt Rhinvoice zusätzlich die **XRechnung**.
+
+<Aside type="note" title="Keine Steuerberatung">
+Stand: Oktober 2026. Die Sätze und Regeln sind gegen UStG und UStDV geprüft, aber ohne Gewähr. Fragen Sie im Zweifel Ihre Steuerberaterin oder Ihren Steuerberater.
+</Aside>
+
+## Welcher Steuersatz gilt?
+
+| Gültig | Regelsatz | Ermässigter Satz |
+|---|---|---|
+| seit 1. Januar 2021 | 19 % | 7 % |
+| 1. Juli 2020 bis 31. Dezember 2020 | 16 % | 5 % |
+| 1. Januar 2007 bis 30. Juni 2020 | 19 % | 7 % |
+
+Quelle: § 12 UStG; die Sätze von 2020 aus dem Zweiten Corona-Steuerhilfegesetz.
+
+Massgebend ist der Satz am **Leistungsdatum**: das Ende des Leistungszeitraums, sonst sein Beginn, sonst das Rechnungsdatum. Beim Ausstellen friert Rhinvoice den Satz jeder Position ein.
+
+## Pflichtangaben nach § 14 UStG
+
+Rhinvoice prüft vor dem Ausstellen, was es prüfen kann, und druckt den Rest aus Ihren Daten:
+
+- **Steuernummer oder USt-IdNr.** Ihrer Firma (§ 14 Abs. 4 Nr. 2 UStG). Sie tragen sie unter *Einstellungen → Firma* in den Feldern *USt-IdNr.* oder *Steuernummer* ein. Fehlen beide, stellt Rhinvoice die Rechnung nicht aus. Ausnahme: **Kleinbetragsrechnungen bis 250 EUR brutto** (§ 33 UStDV). Die USt-IdNr. hat die Form `DE123456789`.
+- **Leistungsdatum** (§ 14 Abs. 4 Nr. 6 UStG). Ohne Leistungszeitraum druckt Rhinvoice das Rechnungsdatum als Leistungsdatum.
+- **Fortlaufende Rechnungsnummer.** Rhinvoice vergibt sie erst beim Ausstellen, ohne Lücken und ohne Doppel.
+- **Entgelt und Steuer pro Steuersatz**, Name und Anschrift von Ihnen und vom Kunden, Datum und Positionen.
+
+Auch Kleinunternehmer nennen Steuernummer oder USt-IdNr. (§ 34a UStDV).
+
+## Kleinunternehmer nach § 19 UStG
+
+Schalten Sie unter *Einstellungen → Firma* den Schalter *Kleinunternehmer nach § 19 UStG* ein. Ihre Rechnungen enthalten dann keine Umsatzsteuer und diesen Hinweis:
+
+> Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).
+
+(Englische Dokumente: «No VAT is charged (small business scheme).») Seit 2025 nennt die Rechnung, dass § 19 UStG angewendet wird; der Text tut das. Ändern können Sie ihn unter *Einstellungen → Texte → Gesetzliche Hinweise*.
+
+## Reverse Charge und Lieferungen ins Ausland
+
+Rhinvoice bestimmt den Steuerfall aus Ihrem Land, dem Land des Kunden, ob er eine Firma ist und ob er eine USt-IdNr. hat. Waren und Dienstleistungen behandelt es getrennt, auch auf derselben Rechnung.
+
+| Fall | USt. | Hinweis auf der Rechnung |
+|---|---|---|
+| Kunde in Deutschland | ja | keiner |
+| Dienstleistung an eine Firma in einem anderen EU-Land mit USt-IdNr. | nein | «Steuerschuldnerschaft des Leistungsempfängers.» (§ 14a Abs. 5 UStG) |
+| Ware an eine Firma in einem anderen EU-Land mit USt-IdNr. | nein | «Steuerfreie innergemeinschaftliche Lieferung (§ 4 Nr. 1 Buchst. b i. V. m. § 6a UStG).» |
+| Ware, die die EU verlässt, auch an Privatkunden | nein | «Steuerfreie Ausfuhrlieferung (§ 4 Nr. 1 Buchst. a i. V. m. § 6 UStG).» |
+| Dienstleistung an eine Firma ausserhalb der EU | nein | «Nicht im Inland steuerbare Leistung.» |
+| Privatkunde in der EU oder ausserhalb der EU (Dienstleistung) | ja | keiner |
+
+Gut zu wissen:
+
+- **Ohne USt-IdNr. des Kunden kein Reverse Charge.** Eine Firma in der EU ohne USt-IdNr. bekommt deutsche USt. Rhinvoice weist im Editor darauf hin.
+- **Innergemeinschaftliche Lieferung**: Auf der Rechnung stehen Ihre und die USt-IdNr. des Kunden (§ 14a Abs. 3 UStG). Rhinvoice stellt sie ohne beide nicht aus und erinnert an die Gelangensbestätigung oder den Versendungsnachweis und an die Zusammenfassende Meldung.
+- **Inländisches Reverse Charge nach § 13b UStG** (zum Beispiel § 13b Abs. 2 Nr. 7 UStG) wählen Sie im Editor von Hand. Jede Änderung des Steuerfalls hält Rhinvoice mit Begründung im Verlauf fest.
+- **Versandhandel an Privatkunden in der EU** bleibt bei deutscher USt. Die EU-weite Schwelle von 10.000 EUR im Jahr (OSS) verfolgt Rhinvoice nicht.
+
+## GiroCode (EPC-QR-Code)
+
+Jede Rechnung in **EUR** bekommt neben den Zahlungsbedingungen einen **GiroCode** nach den Richtlinien des European Payments Council (EPC069-12). Er enthält Ihre IBAN, den Kontoinhaber, den Betrag und «Rechnung» mit der Rechnungsnummer als Verwendungszweck. Der Kunde scannt ihn mit seiner Banking-App. Dafür brauchen Sie unter *Einstellungen → Bankkonten* ein Konto in EUR. Rechnungen in anderen Währungen haben keinen GiroCode, Entwürfe einen Platzhalter.
+
+## E-Rechnung: ZUGFeRD und XRechnung
+
+Seit 2025 müssen Unternehmen in Deutschland E-Rechnungen **empfangen** können (§ 14 UStG). **Ausstellen** müssen sie inländische B2B-Rechnungen stufenweise (§ 27 Abs. 38 UStG):
+
+| Ab | Wer |
+|---|---|
+| 2027 | Unternehmen mit mehr als 800.000 EUR Umsatz im Vorjahr |
+| 2028 | alle Unternehmen |
+
+Kleinunternehmer sind ausgenommen (§ 34a UStDV).
+
+Rhinvoice bettet standardmässig in das PDF jeder ausgestellten Rechnung eine **ZUGFeRD-/Factur-X-Rechnung** (Profil EN 16931) ein (Schalter: *Einstellungen → Druckvorlage*). Fehlt eine Angabe, die sie braucht, entsteht das PDF ohne sie. Das PDF ist für Ihre Kunden dasselbe wie immer, ihre Buchhaltung liest die Daten direkt. Ist die E-Rechnung eingebettet, zeigt Rhinvoice das bei der Rechnung an. Für Behörden laden Sie zusätzlich die **XRechnung** (XML) herunter, mit der Leitweg-ID im Feld *Referenz*. Details und was dafür nötig ist: [E-Rechnung](/docs/de/invoices/e-invoice/).
+
+## GoBD und Aufbewahrung
+
+Rechnungen bewahren Sie **zehn Jahre** auf (§ 147 AO). Rhinvoice sorgt für die Unveränderbarkeit:
+
+- Ab dem Ausstellen sind Inhalt und PDF gesperrt, auch direkt in der Datenbank.
+- Das PDF wird mit seinem SHA-256-Hash gespeichert.
+- Korrekturen gehen nur über eine [Stornorechnung](/docs/de/invoices/issue-and-cancel/) mit eigener Nummer. Entwürfe können Sie löschen, ausgestellte Rechnungen nie.
+- Jede Änderung (ausgestellt, Zahlung, Storno, Steuerfall) steht mit Zeitstempel im Verlauf.
+
+Sichern Sie die Daten mit einem [Backup](/docs/de/operations/backup/). Probieren Sie alles in der Demo [de.rhinvoice.com](https://de.rhinvoice.com) aus.
+
+## Häufige Fragen
+
+<Faq />

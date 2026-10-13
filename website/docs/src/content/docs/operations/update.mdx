@@ -1,0 +1,70 @@
+---
+title: Updating Rhinvoice to a new version
+description: Update Rhinvoice with Docker Compose. Set the new version in .env, pull the images, restart. Migrations run by themselves; back up and read the changelog first.
+faq:
+  - q: How do I update Rhinvoice?
+    a: Set RHINVOICE_VERSION in .env to the new version, then run docker compose pull and docker compose up -d. Database migrations run automatically on start.
+  - q: Does Rhinvoice update by itself?
+    a: Not with a pinned version. Pinned versions only change when you change RHINVOICE_VERSION. With latest, every docker compose pull fetches the newest release.
+  - q: Do issued invoices change with an update?
+    a: No. Issued documents keep their content and their archived PDF. They are immutable, also in the database.
+  - q: Where do I see which version I run?
+    a: At the foot of the navigation, next to by webberz. A click opens About Rhinvoice with a link to What's new.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+To update Rhinvoice, set the new version in `.env`, pull the images and restart the containers. Database migrations run automatically on start. Before that, read the changelog and make a backup.
+
+## Before you update
+
+- **Read the [changelog](https://github.com/rhinvoice/rhinvoice/blob/main/CHANGELOG.md).** Rhinvoice follows Semantic Versioning; before 1.0, minor versions may contain breaking changes. The versions are listed under [GitHub releases](https://github.com/rhinvoice/rhinvoice/releases).
+- **Make a backup**, if you set one up ([Backup and restore](/docs/operations/backup/)):
+
+  ```bash
+  docker compose exec backup rhinvoice-backup backup    # back up now
+  ```
+
+## Update
+
+<Steps>
+
+1. In the folder with `compose.yml` and `.env`, set `RHINVOICE_VERSION` in `.env` to the new version, e.g. `RHINVOICE_VERSION=0.5.3`.
+
+2. Pull the images and restart:
+
+   ```bash
+   # set RHINVOICE_VERSION in .env to the new version, then
+   docker compose pull
+   docker compose up -d
+   ```
+
+3. Check that everything runs: `docker compose ps` shows "healthy" after a few seconds.
+
+</Steps>
+
+Database migrations run automatically on start (`RHINVOICE_RUN_MIGRATIONS=true` in `.env`).
+
+## Pinned version or latest
+
+`.env` decides how Rhinvoice follows new releases:
+
+| `RHINVOICE_VERSION` | Behaviour |
+|---|---|
+| a version, e.g. `0.5.3` | pinned: changes only when you change it |
+| `latest` | follows every release on the next `docker compose pull` |
+
+A pinned version is the safer choice for real invoices: you decide when to update and can read the changelog first.
+
+<Aside type="note" title="Issued invoices stay as they are">
+An update never changes issued documents. They keep their content and their archived PDF. A changed print template only applies to new PDFs.
+</Aside>
+
+## Which version am I running?
+
+The version is shown at the foot of the navigation, next to "by webberz". A click opens *About Rhinvoice*, with a link to *What's new*.
+
+## Questions
+
+<Faq />

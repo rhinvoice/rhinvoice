@@ -1,0 +1,113 @@
+---
+title: Importing customers and articles (CSV, Excel)
+description: Import customers and articles from your previous invoicing program into Rhinvoice from CSV or Excel, with test run, column mapping, templates and duplicates.
+faq:
+  - q: Which files can I import into Rhinvoice?
+    a: CSV files in UTF-8 or Windows-1252, and Excel files in .xlsx and .xls format. A file may be at most 5 MB and have at most 10,000 rows.
+  - q: What happens to customers that already exist in Rhinvoice?
+    a: You choose before importing. Rhinvoice skips them, updates them or creates them anew. When updating, empty cells change nothing, so an export with fewer columns never erases data.
+  - q: Do I have to map the columns by hand?
+    a: Mostly not. Rhinvoice recognises usual column names such as "Customer number", "Postal code" or "VAT number". Whatever it does not recognise you map by hand and save as a template for the next import.
+  - q: Are former VAT rates such as 7.7 % recognised?
+    a: Yes. Rhinvoice knows the former rates of your country, such as 7.7 % and 8 % in Switzerland or 16 % and 5 % in Germany, and gives the article the matching VAT rate.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice imports customers and articles from the program you used before, from **CSV or Excel files** (`.xlsx`, `.xls`). Every import starts with a **test run** that changes nothing; Rhinvoice saves only after you have checked the result.
+
+<Aside type="tip" title="Customers and articles first, invoices last">
+Old invoices look for their customer when they are imported. So import customers and articles first, the invoices afterwards ([taking over old invoices](/docs/moving/old-invoices/)).
+</Aside>
+
+## How to import
+
+<Steps>
+
+1. Export customers or articles from the old program as a CSV or Excel file.
+2. Open *Customers → Import* or *Articles → Import* and click **Choose file**.
+3. Check the mapping of the columns under *Map columns*.
+4. Under *If the entry exists already*, choose what happens to existing entries.
+5. Check the *Result of the test run*. Every row shows whether it is *New*, *Updated*, *Skipped* or an *Error*.
+6. Click **Import … customers** or **Import … articles**. Only this saves.
+
+</Steps>
+
+The test run does the same import as the real one, only without saving. What it reports, including the numbers it assigns, is exactly what importing does.
+
+## Files and encodings
+
+- **CSV** in UTF-8 (also UTF-16 with BOM) or Windows-1252. Rhinvoice detects the delimiter, such as semicolon or comma, by itself.
+- **Excel** in the current `.xlsx` and the old `.xls` format. Rhinvoice tells the file type from the content, not from the extension.
+- **Limits** per file: at most 5 MB, 10,000 rows and 100 columns. Split larger lists into several files.
+
+## Recognising and mapping columns
+
+Rhinvoice recognises the columns by usual names, ignoring case, umlauts and punctuation. "Kunden-Nr.", "KdNr" and "Customer number" all become the customer number; "MwSt-Satz" and "VAT rate" become the VAT rate.
+
+Whatever is not recognised, you map by hand under *Map columns*: for each column of the file, choose the Rhinvoice field under *Becomes*, or *Do not import*. An example value from the file helps.
+
+**Save as template** keeps the mapping under a name. It fits every file with the same column names and is offered under *Template* at the next import; *Detected automatically* uses the recognition again. Deleting a template keeps the imported data.
+
+## What is imported
+
+### Customers
+
+| Field | Note |
+|---|---|
+| *Number* | Without one, the customer gets the next free number |
+| *Company name*, or *First name* and *Last name* | Without a company name, the customer is created as a person |
+| *Salutation*, *Contact person* | |
+| Address | *Street (with number)*, or separately with *House number*, plus *Address supplement*, *Postal code* and *City*, or both in one column (*Postal code and city*, also "CH-9470 Buchs") |
+| *Country* | As name or code; without it, your company's country applies |
+| *Email*, *Phone* | |
+| *VAT number* | |
+| *Group*, *Note* | |
+| *Currency*, *Language* | CHF or EUR, German or English |
+| *Discount in %*, *Payment terms in days*, *Tax exempt* | |
+| *Customer since* | For example from "Kunde seit", "Angelegt am" or "Created", as 14.03.2019 or 2019-03-14, also with a time |
+
+Needed is a column for the customer number or the name (company or last name). New customers also need postal code and city.
+
+### Articles
+
+| Field | Note |
+|---|---|
+| *Number* | Without one, the article gets the next free number |
+| *Name*, *Description* | New articles need a name |
+| *Unit* | As code or label, such as "Std.", "Stunden", "HUR", "pro Monat", "jährlich" |
+| *Price (company currency)*, *Price CHF*, *Price EUR* | One price per currency |
+| *VAT rate* | As a percentage or a name ("Normal", "reduziert", "befreit") |
+| *Group* | |
+| *Goods/service* | Empty counts as a service |
+
+Rhinvoice reads amounts in Swiss, German and English notation. Whether "1.500" means one thousand five hundred or one and a half depends on your company's country.
+
+### Former VAT rates
+
+Article lists of older programs often hold rates that no longer apply. Rhinvoice knows the former rates of your company's country and gives the article the matching VAT rate: in Switzerland for example the standard rates 7.7 % (2018 to 2023) and 8 % (2011 to 2017) according to the ESTV, in Germany the rates of 16 % and 5 % from 1 July to 31 December 2020. On the invoice, the rate of the date of supply then applies. A rate your country never had, such as 19 % for a Swiss company, is reported as an error of the row.
+
+## If the entry exists already
+
+A customer is the same if it has the same customer number or, without a number, the same name and postal code. An article is the same if it has the same article number or, without a number, the same name.
+
+| Choice | What happens |
+|---|---|
+| *Skip* | The existing entry stays as it is |
+| *Update* | Filled cells overwrite the entry, empty cells change nothing; street and house number change together |
+| *Create anew* | A second entry is created; if the number is taken, it gets the next free one |
+
+So you can import a file twice, for example a second time with *Update* when a column was missing.
+
+## Rows with errors
+
+Rhinvoice never guesses. A row with an unclear value (not an amount, an unknown unit, an unknown VAT rate, a currency other than CHF and EUR …) is reported with field, reason and value and not imported; it uses up no number. The other rows are imported. **Download report (CSV)** gives you all rows with their result.
+
+<Aside type="note" title="In the public demo">
+The public demo takes no files: importing is switched off there. Try it on an [installation](/docs/getting-started/installation/) of your own; with Docker that takes a few minutes.
+</Aside>
+
+## Questions
+
+<Faq />

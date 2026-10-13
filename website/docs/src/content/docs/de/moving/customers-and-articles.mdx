@@ -1,0 +1,113 @@
+---
+title: Kunden und Artikel importieren (CSV, Excel)
+description: Kunden und Artikel aus dem bisherigen Rechnungsprogramm per CSV oder Excel in Rhinvoice importieren, mit Testlauf, Spaltenzuordnung und Vorlagen.
+faq:
+  - q: Welche Dateien kann ich in Rhinvoice importieren?
+    a: CSV-Dateien in UTF-8 oder Windows-1252 und Excel-Dateien im Format .xlsx und .xls. Eine Datei darf höchstens 5 MB gross sein und höchstens 10’000 Zeilen haben.
+  - q: Was passiert mit Kunden, die es in Rhinvoice schon gibt?
+    a: Das wählen Sie vor dem Import. Rhinvoice überspringt sie, aktualisiert sie oder legt sie neu an. Beim Aktualisieren ändern leere Zellen nichts, so löscht ein Export mit weniger Spalten keine Daten.
+  - q: Muss ich die Spalten von Hand zuordnen?
+    a: Meist nicht. Rhinvoice erkennt übliche Spaltennamen wie «Kundennummer», «PLZ» oder «UID». Was es nicht erkennt, ordnen Sie von Hand zu und speichern es als Vorlage für den nächsten Import.
+  - q: Werden alte MWST-Sätze wie 7.7 % erkannt?
+    a: Ja. Rhinvoice kennt die früheren Sätze Ihres Landes, etwa 7.7 % und 8 % in der Schweiz oder 16 % und 5 % in Deutschland, und ordnet den Artikel dem passenden Steuersatz zu.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice importiert Kunden und Artikel aus Ihrem bisherigen Rechnungsprogramm aus **CSV- oder Excel-Dateien** (`.xlsx`, `.xls`). Jeder Import beginnt mit einem **Testlauf**, der nichts ändert. Erst wenn Sie das Ergebnis geprüft haben, speichert Rhinvoice.
+
+<Aside type="tip" title="Zuerst Kunden und Artikel, dann Rechnungen">
+Alte Rechnungen suchen beim Import ihren Kunden. Importieren Sie deshalb zuerst Kunden und Artikel und danach die Rechnungen ([Alte Rechnungen übernehmen](/docs/de/moving/old-invoices/)).
+</Aside>
+
+## So importieren Sie
+
+<Steps>
+
+1. Exportieren Sie Kunden bzw. Artikel aus dem alten Programm als CSV oder Excel-Datei.
+2. Öffnen Sie *Kunden → Importieren* bzw. *Artikel → Importieren* und klicken Sie auf **Datei wählen**.
+3. Prüfen Sie die Zuordnung der Spalten unter *Spalten zuordnen*.
+4. Wählen Sie unter *Wenn es den Eintrag schon gibt*, was mit vorhandenen Einträgen geschieht.
+5. Prüfen Sie das *Ergebnis des Testlaufs*. Jede Zeile zeigt, ob sie *Neu*, *Aktualisiert*, *Übersprungen* oder ein *Fehler* ist.
+6. Klicken Sie auf **… Kunden importieren** bzw. **… Artikel importieren**. Erst das speichert.
+
+</Steps>
+
+Der Testlauf führt denselben Import aus wie der echte, nur ohne zu speichern. Was er meldet, auch die vergebenen Nummern, passiert genau so beim Importieren.
+
+## Dateien und Zeichensätze
+
+- **CSV** in UTF-8 (auch UTF-16 mit BOM) oder Windows-1252. Das Trennzeichen, etwa Semikolon oder Komma, erkennt Rhinvoice selbst.
+- **Excel** im neuen Format `.xlsx` und im alten Format `.xls`. Den Dateityp liest Rhinvoice am Inhalt ab, nicht an der Endung.
+- **Grenzen** pro Datei: höchstens 5 MB, 10’000 Zeilen und 100 Spalten. Grössere Bestände teilen Sie auf mehrere Dateien auf.
+
+## Spalten erkennen und zuordnen
+
+Rhinvoice erkennt die Spalten an üblichen Namen, unabhängig von Gross- und Kleinschreibung, Umlauten und Satzzeichen. «Kunden-Nr.», «KdNr» und «Customer number» werden alle zur Kundennummer, «MwSt-Satz» und «VAT rate» zum Steuersatz.
+
+Was nicht erkannt wird, ordnen Sie unter *Spalten zuordnen* von Hand zu: Für jede Spalte der Datei wählen Sie unter *Wird zu* das Feld in Rhinvoice oder *Nicht importieren*. Ein Beispielwert aus der Datei hilft dabei.
+
+Mit **Als Vorlage speichern** sichern Sie die Zuordnung unter einem Namen. Sie passt auf alle Dateien mit denselben Spaltennamen und steht beim nächsten Import unter *Vorlage* zur Auswahl. *Automatisch erkannt* nutzt wieder die Erkennung. Löschen Sie eine Vorlage, bleiben die importierten Daten erhalten.
+
+## Was importiert wird
+
+### Kunden
+
+| Feld | Hinweis |
+|---|---|
+| *Nummer* | Fehlt sie, bekommt der Kunde die nächste freie Nummer |
+| *Firmenname* oder *Vorname* und *Nachname* | Ohne Firmenname wird der Kunde als Person angelegt |
+| *Anrede*, *Kontaktperson* | |
+| Adresse | *Strasse (mit Hausnummer)* oder getrennt mit *Hausnummer*, dazu *Adresszusatz*, *PLZ* und *Ort* oder beides in einer Spalte (*PLZ und Ort*, auch «CH-9470 Buchs») |
+| *Land* | Als Name oder Code. Fehlt es, gilt das Land Ihrer Firma |
+| *E-Mail*, *Telefon* | |
+| *UID / USt-IdNr.* | |
+| *Gruppe*, *Notiz* | |
+| *Währung*, *Sprache* | CHF oder EUR, Deutsch oder Englisch |
+| *Rabatt in %*, *Zahlungsfrist in Tagen*, *Steuerbefreit* | |
+| *Kunde seit* | Zum Beispiel aus «Kunde seit», «Angelegt am» oder «Created», als 14.03.2019 oder 2019-03-14, auch mit Uhrzeit |
+
+Nötig ist eine Spalte für die Kundennummer oder den Namen (Firma oder Nachname). Neue Kunden brauchen ausserdem PLZ und Ort.
+
+### Artikel
+
+| Feld | Hinweis |
+|---|---|
+| *Nummer* | Fehlt sie, bekommt der Artikel die nächste freie Nummer |
+| *Bezeichnung*, *Beschreibung* | Neue Artikel brauchen eine Bezeichnung |
+| *Einheit* | Als Code oder Bezeichnung, etwa «Std.», «Stunden», «HUR», «pro Monat», «jährlich» |
+| *Preis (Firmenwährung)*, *Preis CHF*, *Preis EUR* | Ein Preis pro Währung |
+| *Steuersatz* | Als Prozent oder Bezeichnung («Normal», «reduziert», «befreit») |
+| *Gruppe* | |
+| *Ware/Dienstleistung* | Leer gilt als Dienstleistung |
+
+Beträge liest Rhinvoice in Schweizer, deutscher und englischer Schreibweise. Ob «1.500» tausendfünfhundert oder eineinhalb heisst, entscheidet das Land Ihrer Firma.
+
+### Frühere Steuersätze
+
+Artikellisten älterer Programme enthalten oft Sätze, die heute nicht mehr gelten. Rhinvoice kennt die früheren Sätze des Landes Ihrer Firma und ordnet den Artikel dem passenden Steuersatz zu: in der Schweiz zum Beispiel die Normalsätze 7.7 % (2018 bis 2023) und 8 % (2011 bis 2017) laut ESTV, in Deutschland die Sätze 16 % und 5 % vom 1. Juli bis 31. Dezember 2020. Auf der Rechnung gilt dann der Satz zum Leistungsdatum. Einen Satz, den Ihr Land nie hatte, etwa 19 % bei einer Schweizer Firma, meldet Rhinvoice als Fehler der Zeile.
+
+## Wenn es den Eintrag schon gibt
+
+Gleich ist ein Kunde mit derselben Kundennummer, ohne Nummer mit demselben Namen und derselben PLZ. Gleich ist ein Artikel mit derselben Artikelnummer, ohne Nummer mit derselben Bezeichnung.
+
+| Wahl | Was passiert |
+|---|---|
+| *Überspringen* | Der vorhandene Eintrag bleibt, wie er ist |
+| *Aktualisieren* | Gefüllte Zellen überschreiben den Eintrag, leere Zellen ändern nichts. Strasse und Hausnummer ändern sich gemeinsam |
+| *Neu anlegen* | Ein zweiter Eintrag entsteht. Ist die Nummer vergeben, bekommt er die nächste freie |
+
+So können Sie eine Datei auch zweimal importieren, zum Beispiel ein zweites Mal mit *Aktualisieren*, wenn eine Spalte gefehlt hat.
+
+## Zeilen mit Fehlern
+
+Rhinvoice rät nie. Eine Zeile mit einem unklaren Wert (kein Betrag, unbekannte Einheit, unbekannter Steuersatz, Währung ausser CHF und EUR …) wird mit Feld, Grund und Wert gemeldet und nicht importiert. Sie verbraucht keine Nummer. Die übrigen Zeilen werden importiert. Mit **Bericht herunterladen (CSV)** erhalten Sie alle Zeilen mit ihrem Ergebnis.
+
+<Aside type="note" title="In der öffentlichen Demo">
+Die öffentliche Demo nimmt keine Dateien an, der Import ist dort ausgeschaltet. Probieren Sie ihn auf einer eigenen [Installation](/docs/de/getting-started/installation/) aus. Mit Docker dauert das wenige Minuten.
+</Aside>
+
+## Häufige Fragen
+
+<Faq />

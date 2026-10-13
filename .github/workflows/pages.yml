@@ -23,11 +23,24 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The docs show when each page last changed, from the git history.
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: website/docs/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
+          cache-dependency-path: website/docs/pnpm-lock.yaml
       - run: npm install --global terser
       - run: python3 website/build.py
+      # The docs go into website/dist/docs, next to the landing page.
+      - run: pnpm install --frozen-lockfile
+        working-directory: website/docs
+      - run: pnpm build
+        working-directory: website/docs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: website/dist

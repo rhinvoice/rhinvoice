@@ -1,0 +1,132 @@
+---
+title: Rhinvoice mit Docker Compose installieren
+description: Das kostenlose Rechnungsprogramm Rhinvoice mit Docker Compose installieren, auf Server, NAS, Raspberry Pi oder Laptop. Herunterladen, .env setzen, starten.
+faq:
+  - q: Was brauche ich, um Rhinvoice zu installieren?
+    a: Nur Docker mit Docker Compose. Quellcode, Python oder Node.js brauchen Sie nicht. Rhinvoice läuft unter Linux, macOS und Windows, auf Servern, NAS-Geräten, einem Raspberry Pi 4/5 oder einem Laptop mit Docker Desktop.
+  - q: Wie lege ich das erste Benutzerkonto an?
+    a: Beim ersten Aufruf im Browser zeigt Rhinvoice ein einmaliges Formular für das erste Benutzerkonto. Alternativ legen Sie es mit docker compose exec app rhinvoice user create an, mit E-Mail-Adresse und Name.
+  - q: Läuft Rhinvoice auf einem Raspberry Pi?
+    a: Ja. Die Images gibt es für linux/amd64 und linux/arm64, also auch für Apple Silicon und den Raspberry Pi 4 und 5.
+  - q: Kann ich zwei Installationen auf einem Rechner betreiben?
+    a: Ja. Jede braucht einen eigenen Ordner, einen eigenen Port und einen eigenen Projektnamen, zum Beispiel mit COMPOSE_PROJECT_NAME und RHINVOICE_PORT in ihrer .env-Datei.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice installieren Sie mit **Docker Compose**: zwei Dateien herunterladen, in `.env` ein Datenbankpasswort setzen, die Container starten und die Adresse im Browser öffnen. Sie brauchen nur [Docker](https://docs.docker.com/get-docker/) mit Docker Compose, keinen Quellcode, kein Python und kein Node.js.
+
+<Aside type="caution" title="Beta">
+Rhinvoice ist in früher Entwicklung (0.x). Steuersätze und Regeln sind ohne Gewähr und ersetzen keine Steuerberatung. Probieren Sie es zuerst auf einer Testinstallation aus, bevor Sie echte Rechnungen damit schreiben.
+</Aside>
+
+## Wo Rhinvoice läuft
+
+Auf einem Server, einem NAS, einem Raspberry Pi oder Ihrem eigenen Laptop mit Docker Desktop (macOS, Windows, Linux). Die Images gibt es für `linux/amd64` und `linux/arm64` (z. B. Apple Silicon, Raspberry Pi 4/5).
+
+Rhinvoice besteht aus vier Containern: `app` (Weboberfläche und API), `db` (PostgreSQL), `gotenberg` (erzeugt die PDFs) und `backup`. Gotenberg hat keinen eigenen Port und stellt keine Anfragen ins Internet. Nur die App spricht mit ihm.
+
+## In drei Schritten installieren
+
+<Steps>
+
+1. **Herunterladen**: `compose.yml` und die Beispiel-Einstellungen in einen neuen Ordner laden:
+
+   ```bash
+   mkdir rhinvoice && cd rhinvoice
+   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.5.3/deploy/compose.yml
+   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.5.3/.env.example -o .env
+   ```
+
+2. **Einstellen**: `.env` bearbeiten (siehe Tabelle unten). Setzen Sie mindestens `POSTGRES_PASSWORD` und `RHINVOICE_VERSION`.
+
+3. **Starten**:
+
+   ```bash
+   docker compose pull      # fetch the images of the version in .env
+   docker compose up -d
+   docker compose ps        # "healthy" after a few seconds
+   ```
+
+</Steps>
+
+`docker compose pull` ist wichtig, wenn schon ein älteres Image mit demselben Namen auf dem Rechner liegt (z. B. von einem früheren Test). `up` allein würde sonst dieses starten, statt das neue herunterzuladen.
+
+## Die Einstellungen in .env
+
+| Einstellung | Wert |
+|---|---|
+| `POSTGRES_PASSWORD` | ein langer Zufallswert, nur Buchstaben und Ziffern (z. B. `openssl rand -hex 24`) |
+| `RHINVOICE_VERSION` | die Version, z. B. `0.5.3`. Eine feste Version ändert sich nur, wenn Sie sie ändern; `latest` folgt jeder neuen Version |
+| `RHINVOICE_PORT` | Port auf diesem Rechner, Standard `8000` |
+| `RHINVOICE_BIND` | `127.0.0.1` (Standard) = nur dieser Rechner; `0.0.0.0` = das ganze Netzwerk |
+| `RHINVOICE_COOKIE_SECURE` | auf `true` lassen; `false` nur für reines HTTP in einem vertrauenswürdigen Netzwerk (für `localhost` nicht nötig) |
+| `RHINVOICE_TIMEZONE` | Zeitzone für «heute» (Dokumentdatum, Fälligkeit), Standard `Europe/Zurich` |
+| `COMPOSE_PROJECT_NAME` | Name dieser Installation für Docker, Standard `rhinvoice`; nicht mehr ändern, sobald Daten vorhanden sind |
+
+Die Backup-Einstellungen in derselben Datei beschreibt [Backup und Wiederherstellen](/docs/de/operations/backup/).
+
+## Rhinvoice öffnen und das erste Konto anlegen
+
+Öffnen Sie [http://rhinvoice.localhost:8000](http://rhinvoice.localhost:8000) (oder [http://127.0.0.1:8000](http://127.0.0.1:8000)). Jeder Name, der auf `.localhost` endet, zeigt auf Ihren eigenen Rechner. Ein Eintrag in `/etc/hosts` ist deshalb nicht nötig, und Browser behandeln die Adresse als sicher, sodass die Anmeldung ohne HTTPS funktioniert. Mit `RHINVOICE_PORT=80` in `.env` lautet die Adresse einfach `http://rhinvoice.localhost` (wenn Port 80 frei ist).
+
+Beim ersten Aufruf erscheint *Rhinvoice einrichten*: Geben Sie Ihren Namen, Ihre E-Mail-Adresse und ein Passwort mit mindestens 12 Zeichen ein und klicken Sie auf *Konto anlegen*. Dieses Konto hat Zugriff auf alle Daten der Installation. Alternativ legen Sie es auf der Kommandozeile an:
+
+```bash
+docker compose exec app rhinvoice user create --email you@example.com --name "Your Name"
+```
+
+Danach fragt der [Einrichtungsassistent](/docs/de/getting-started/first-start/) nach Land und Firma.
+
+## Mit Beispieldaten ausprobieren
+
+Schliessen Sie auf einer Testinstallation den Einrichtungsassistenten ab (Land und Firma) und füllen Sie sie dann mit erfundenen Kunden, Artikeln und rund 21 Monaten an Rechnungen, Zahlungen, überfälligen Rechnungen und Angeboten:
+
+```bash
+docker compose exec app rhinvoice demo                      # or: make demo
+docker compose exec app rhinvoice demo --without-documents  # customers and articles only
+```
+
+Der Befehl läuft nur auf einer Installation ohne Kunden und Dokumente und mischt sich so nie mit echten Daten. Gibt es noch kein Bankkonto, legt er die offiziellen Beispielkonten von SIX bzw. des ECBS an. Ersetzen Sie diese, bevor Sie echte Rechnungen verschicken.
+
+## Auf einem Server betreiben
+
+- Stellen Sie einen Reverse Proxy mit TLS davor (Caddy, Traefik, nginx) und lassen Sie `RHINVOICE_BIND=127.0.0.1`.
+- Setzen Sie `RHINVOICE_FORWARDED_ALLOW_IPS` auf die Adresse des Proxys und lassen Sie den Proxy `Strict-Transport-Security` senden.
+- Sitzungs-Cookies sind standardmässig `Secure`. Setzen Sie `RHINVOICE_COOKIE_SECURE=false` nur, wenn Sie bewusst reines HTTP in einem vertrauenswürdigen Netzwerk nutzen.
+- Anmeldeversuche sind pro Konto begrenzt. Ist die Installation aus dem Internet erreichbar, begrenzen Sie zusätzlich im Proxy pro IP-Adresse und schalten Sie für jedes Konto die Zwei-Faktor-Authentifizierung ein.
+- Richten Sie [Backups](/docs/de/operations/backup/) ein.
+
+## Mehrere Installationen auf einem Rechner
+
+Jede Installation braucht einen eigenen Ordner, einen eigenen Port und einen eigenen **Projektnamen**, damit Container und Daten getrennt bleiben. Geben Sie den Namen mit `-p` an, in jedem Befehl für diese Installation:
+
+```bash
+RHINVOICE_PORT=8100 docker compose -p rhinvoice-try up -d
+docker compose -p rhinvoice-try ps
+docker compose -p rhinvoice-try logs -f app
+docker compose -p rhinvoice-try down -v      # remove it again, with its data
+```
+
+Einfacher: Schreiben Sie Namen und Port einmal in die `.env` dieses Ordners. Dann funktionieren dort die normalen Befehle:
+
+```
+COMPOSE_PROJECT_NAME=rhinvoice-try
+RHINVOICE_PORT=8100
+```
+
+Sie erreichen diese Installation unter [http://rhinvoice.localhost:8100](http://rhinvoice.localhost:8100).
+
+## Anhalten und wieder starten
+
+```bash
+docker compose down          # stop; the data stays in the volume "rhinvoice_db-data"
+docker compose up -d         # start again, with all data
+```
+
+Wie Sie Rhinvoice aktualisieren und wieder entfernen: [Update](/docs/de/operations/update/), [Deinstallieren](/docs/de/operations/uninstall/).
+
+## Häufige Fragen
+
+<Faq />

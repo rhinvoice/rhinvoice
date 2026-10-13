@@ -1,0 +1,89 @@
+---
+title: "Rechnungen in Österreich: USt., UID, Pflichtangaben § 11 UStG"
+description: Kostenloses Open-Source-Rechnungsprogramm für Österreich. USt. 20 %, 10 % und 13 %, Pflichtangaben § 11 UStG, UID, Kleinunternehmer und GiroCode.
+faq:
+  - q: Welche Umsatzsteuersätze gelten in Österreich?
+    a: 20 % (Normalsatz), 10 % (ermässigter Satz) und 13 % (zweiter ermässigter Satz) nach § 10 UStG 1994. Rhinvoice nimmt den Satz am Leistungsdatum.
+  - q: Ab welchem Betrag muss meine UID auf der Rechnung stehen?
+    a: Bei Rechnungen über 400 EUR brutto (§ 11 Abs. 1 Z 3 lit. i und Abs. 6 UStG). Darunter ist es eine Kleinbetragsrechnung. Kleinunternehmer brauchen keine UID auf der Rechnung.
+  - q: Wann braucht die Rechnung die UID des Kunden?
+    a: Bei Rechnungen über 10.000 EUR brutto an ein Unternehmen (§ 11 Abs. 1 Z 3 lit. b UStG), ausserdem immer bei Reverse Charge und innergemeinschaftlicher Lieferung. Rhinvoice prüft die Betragsgrenze bei Geschäftskunden in Österreich und Reverse Charge sowie innergemeinschaftliche Lieferungen immer.
+  - q: Welchen Hinweis druckt Rhinvoice für Kleinunternehmer?
+    a: «Umsatzsteuerfrei aufgrund der Kleinunternehmerregelung (§ 6 Abs. 1 Z 27 UStG).» Den Wortlaut können Sie unter Einstellungen → Texte → Gesetzliche Hinweise anpassen.
+  - q: Wie lange muss ich Rechnungen in Österreich aufbewahren?
+    a: Zehn Jahre (§ 132 BAO). Rhinvoice sperrt ausgestellte Rechnungen samt PDF, Korrekturen gehen nur über eine Stornorechnung.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Eine österreichische Rechnung mit Rhinvoice hat **20 %, 10 % oder 13 % USt.** (§ 10 UStG 1994) zum Leistungsdatum, über 400 EUR Ihre **UID** (§ 11 UStG), über 10.000 EUR auch die UID Ihres Geschäftskunden, den gesetzlichen Hinweis für Reverse Charge, Kleinunternehmer oder steuerfreie Lieferungen und einen **GiroCode** (EPC-QR-Code). Mit der Oberflächensprache *Deutsch (Österreich)* schreibt Rhinvoice Monate österreichisch, mit «Jänner». Auf Dokumenten stehen Daten als Zahlen, etwa 05.01.2026.
+
+<Aside type="note" title="Keine Steuerberatung">
+Stand: Oktober 2026. Die Sätze und Regeln sind gegen das UStG 1994 und die Angaben der WKO geprüft, aber ohne Gewähr. Fragen Sie im Zweifel Ihre Steuerberaterin oder Ihren Steuerberater.
+</Aside>
+
+## Welcher Steuersatz gilt?
+
+| Satz | Wofür in Rhinvoice |
+|---|---|
+| 20 % | Normalsatz |
+| 10 % | ermässigter Satz |
+| 13 % | zweiter ermässigter Satz |
+
+Quelle: § 10 UStG 1994. Rhinvoice hat diese Sätze für Leistungen ab 1. Januar 2016 hinterlegt. Massgebend ist der Satz am **Leistungsdatum**: das Ende des Leistungszeitraums, sonst sein Beginn, sonst das Rechnungsdatum. Beim Ausstellen friert Rhinvoice den Satz jeder Position ein.
+
+## Pflichtangaben nach § 11 UStG
+
+Rhinvoice prüft vor dem Ausstellen die Beträge, ab denen eine UID nötig ist:
+
+| Rechnungsbetrag brutto | Was Rhinvoice verlangt |
+|---|---|
+| bis 400 EUR | Kleinbetragsrechnung (§ 11 Abs. 6 UStG): keine UID nötig |
+| über 400 EUR | Ihre **UID** (§ 11 Abs. 1 Z 3 lit. i UStG) |
+| über 10.000 EUR an ein Unternehmen | zusätzlich die **UID des Kunden** (§ 11 Abs. 1 Z 3 lit. b UStG) |
+
+Ihre UID tragen Sie unter *Einstellungen → Firma* im Feld *UID-Nummer* ein, in der Form `ATU12345678`. Die UID des Kunden steht beim Kunden. Rhinvoice verlangt sie über 10.000 EUR bei Geschäftskunden in Österreich. Beträge in anderen Währungen als EUR zählen nie als Kleinbetrag.
+
+Ohne Leistungszeitraum druckt Rhinvoice das Rechnungsdatum als Leistungsdatum (§ 11 Abs. 1 Z 3 lit. d UStG). Die Rechnungsnummer vergibt es erst beim Ausstellen, ohne Lücken. Dazu kommen Name und Anschrift beider Seiten, die Positionen sowie Entgelt und Steuer pro Steuersatz.
+
+## Kleinunternehmer
+
+Schalten Sie unter *Einstellungen → Firma* den Schalter *Kleinunternehmer nach § 6 Abs. 1 Z 27 UStG* ein. Ihre Rechnungen enthalten dann keine Umsatzsteuer und diesen Hinweis:
+
+> Umsatzsteuerfrei aufgrund der Kleinunternehmerregelung (§ 6 Abs. 1 Z 27 UStG).
+
+(Englische Dokumente: «No VAT is charged (small business scheme).») Eine UID verlangt Rhinvoice von Kleinunternehmern nicht. Den Wortlaut ändern Sie unter *Einstellungen → Texte → Gesetzliche Hinweise*.
+
+## Reverse Charge und Lieferungen ins Ausland
+
+Rhinvoice bestimmt den Steuerfall aus Ihrem Land, dem Land des Kunden, ob er ein Unternehmen ist und ob er eine UID hat. Waren und Dienstleistungen behandelt es getrennt, auch auf derselben Rechnung.
+
+| Fall | USt. | Hinweis auf der Rechnung |
+|---|---|---|
+| Kunde in Österreich | ja | keiner |
+| Dienstleistung an ein Unternehmen in einem anderen EU-Land mit UID | nein | «Übergang der Steuerschuld auf den Leistungsempfänger (Reverse Charge).» (§ 11 Abs. 1a UStG) |
+| Ware an ein Unternehmen in einem anderen EU-Land mit UID | nein | «Steuerfreie innergemeinschaftliche Lieferung (Art. 6 Abs. 1 i. V. m. Art. 7 UStG).» |
+| Ware, die die EU verlässt, auch an Privatkunden | nein | «Steuerfreie Ausfuhrlieferung (§ 6 Abs. 1 Z 1 i. V. m. § 7 UStG).» |
+| Dienstleistung an ein Unternehmen ausserhalb der EU | nein | «Nicht im Inland steuerbare Leistung.» |
+| Privatkunde in der EU oder ausserhalb der EU (Dienstleistung) | ja | keiner |
+
+Ohne UID des Kunden gibt es kein Reverse Charge: Ein Unternehmen in der EU ohne UID bekommt österreichische USt., und der Editor weist darauf hin. Bei innergemeinschaftlichen Lieferungen braucht Rhinvoice Ihre UID und die des Kunden und erinnert an den Nachweis, dass die Ware angekommen ist. Den Steuerfall können Sie im Editor von Hand ändern, Rhinvoice hält die Änderung mit Begründung im Verlauf fest.
+
+Versandhandel an Privatkunden in der EU bleibt bei österreichischer USt. Die EU-weite Schwelle von 10.000 EUR im Jahr (OSS) verfolgt Rhinvoice nicht.
+
+## GiroCode (EPC-QR-Code)
+
+Jede Rechnung in **EUR** bekommt neben den Zahlungsbedingungen einen **GiroCode** nach den Richtlinien des European Payments Council (EPC069-12), mit Ihrer IBAN, dem Kontoinhaber, dem Betrag und der Rechnungsnummer im Verwendungszweck. Ihr Kunde scannt ihn mit der Banking-App. Dafür brauchen Sie unter *Einstellungen → Bankkonten* ein Konto in EUR.
+
+## E-Rechnung
+
+Rhinvoice bettet standardmässig (Schalter: *Einstellungen → Druckvorlage*) in das PDF jeder ausgestellten Rechnung eine **ZUGFeRD-/Factur-X-Rechnung** (EN 16931) ein, sofern die nötigen Angaben vollständig sind. Buchhaltungsprogramme lesen sie direkt. Das österreichische Format ebInterface für die öffentliche Hand erstellt Rhinvoice nicht. Mehr unter [E-Rechnung](/docs/de/invoices/e-invoice/).
+
+## Aufbewahrung
+
+Rechnungen bewahren Sie **zehn Jahre** auf (§ 132 BAO). Ab dem Ausstellen sind Inhalt und PDF in Rhinvoice gesperrt, auch in der Datenbank, und das PDF wird mit SHA-256 gespeichert. Korrekturen gehen nur über eine [Stornorechnung](/docs/de/invoices/issue-and-cancel/) mit eigener Nummer. Sichern Sie die Daten mit einem [Backup](/docs/de/operations/backup/). Ausprobieren können Sie alles in der Demo [at.rhinvoice.com](https://at.rhinvoice.com).
+
+## Häufige Fragen
+
+<Faq />

@@ -1,0 +1,75 @@
+---
+title: Rhinvoice vollständig deinstallieren
+description: "Rhinvoice mit Containern, Daten-Volumes und Images entfernen. Sichern Sie vorher die Rechnungs-PDFs oder ein Backup: Rechnungen sind zehn Jahre aufzubewahren."
+faq:
+  - q: Wie entferne ich Rhinvoice vollständig?
+    a: Führen Sie im Ordner mit compose.yml und .env den Befehl docker compose down --volumes --rmi all aus und löschen Sie danach den Ordner. Damit verschwinden Container, Netzwerk, Daten-Volumes und Images.
+  - q: Werden meine Backups beim Deinstallieren gelöscht?
+    a: Backups im lokalen Standard-Volume von Docker werden mitgelöscht. Ein Ordner als BACKUP_LOCAL_DIR, S3, SFTP und Cloud-Ziele bleiben unberührt. Diese löschen Sie selbst, wenn Sie sie nicht mehr brauchen.
+  - q: Was muss ich vor dem Deinstallieren tun?
+    a: Bewahren Sie die PDFs Ihrer ausgestellten Rechnungen oder ein Backup ausserhalb von Docker auf. Ausgestellte Rechnungen müssen in der Regel zehn Jahre aufbewahrt werden.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Um Rhinvoice zu entfernen, führen Sie in seinem Ordner `docker compose down --volumes --rmi all` aus und löschen den Ordner. Damit sind alle Rechnungen, Kunden und Einstellungen endgültig gelöscht. Bewahren Sie deshalb vorher die PDFs Ihrer ausgestellten Rechnungen oder ein Backup ausserhalb von Docker auf.
+
+<Aside type="caution" title="Zuerst die Rechnungen sichern">
+Ausgestellte Rechnungen müssen in der Regel zehn Jahre aufbewahrt werden (Schweiz: Art. 958f OR, Deutschland: § 147 AO, Österreich: § 132 BAO). Beim Entfernen von Rhinvoice sind sie endgültig weg.
+</Aside>
+
+## 1. Ein letztes Backup
+
+Haben Sie Backups eingerichtet ([Backup und Wiederherstellen](/docs/de/operations/backup/)), machen Sie ein letztes:
+
+```bash
+docker compose exec backup rhinvoice-backup backup   # a last backup, if you set one up (backup.md)
+```
+
+## 2. Container, Daten und Images entfernen
+
+Im Ordner mit `compose.yml` und `.env`:
+
+```bash
+docker compose down --volumes --rmi all    # containers, network, data volumes and images
+cd .. && rm -r rhinvoice                   # compose.yml and .env (holds the database password)
+```
+
+`--volumes` löscht die Datenbank (`rhinvoice_db-data`) und die Backup-Volumes (`rhinvoice_backup-*`), samt dem gespeicherten Zugriff auf Dropbox oder Google Drive. Backups im lokalen Standard-Volume verschwinden mit. Ein Ordner als `BACKUP_LOCAL_DIR`, S3, SFTP und Cloud-Ziele bleiben unberührt. Diese löschen Sie selbst, wenn Sie sie nicht mehr brauchen.
+
+`--rmi all` entfernt die Images von Rhinvoice, seinem Backup, PostgreSQL und Gotenberg. Ein Image, das ein anderes Projekt noch nutzt, behält Docker und meldet das. Das ist in Ordnung.
+
+### Eine Installation mit eigenem Namen
+
+Bei einer Installation mit eigenem Projektnamen führen Sie den Befehl in ihrem Ordner aus, wenn der Name in ihrer `.env` steht (`COMPOSE_PROJECT_NAME`). Sonst geben Sie ihn an: `docker compose -p rhinvoice-try down --volumes --rmi all`. Die Prüfungen unten suchen dann nach diesem Namen statt nach `rhinvoice`.
+
+## 3. Prüfen, ob nichts übrig ist
+
+```bash
+docker ps -a --filter name=rhinvoice                   # containers: none
+docker volume ls --filter name=rhinvoice               # volumes: none
+docker image ls | grep -E "rhinvoice|gotenberg"        # images: none
+```
+
+Steht noch etwas da, z. B. Images älterer Versionen, die `--rmi all` nicht kennt:
+
+```bash
+docker image rm $(docker image ls -q --filter "reference=ghcr.io/rhinvoice/*")
+docker volume rm rhinvoice_db-data                     # one by one, as listed
+```
+
+Docker Desktop zeigt dasselbe unter *Containers*, *Images* und *Volumes*, jeweils mit einer Schaltfläche zum Löschen.
+
+## Nur anhalten
+
+Wollen Sie Rhinvoice nur pausieren, ohne Daten zu verlieren, halten Sie es stattdessen an:
+
+```bash
+docker compose down          # stop; the data stays in the volume "rhinvoice_db-data"
+docker compose up -d         # start again, with all data
+```
+
+## Häufige Fragen
+
+<Faq />

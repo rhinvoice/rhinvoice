@@ -1,0 +1,86 @@
+---
+title: Alte Rechnungen übernehmen
+description: Rechnungen aus dem bisherigen Rechnungsprogramm mit Original-PDF in Rhinvoice übernehmen, per CSV- oder Excel-Liste und PDF-Ordner, mit Testlauf, für CH, FL, DE und AT.
+faq:
+  - q: Kann ich alte Rechnungen mit PDF in Rhinvoice importieren?
+    a: Ja. Rhinvoice übernimmt alte Rechnungen aus einer CSV- oder Excel-Liste zusammen mit den Original-PDFs aus einem Ordner oder ZIP. Die Rechnungen bleiben unverändert und gesperrt, mit Nummer, Datum, Kunde, Betrag und PDF.
+  - q: Rechnet Rhinvoice übernommene Rechnungen neu?
+    a: Nein. Rhinvoice speichert die Beträge aus der Liste und das Original-PDF. Es rechnet nichts neu und erzeugt kein neues PDF, damit die aufbewahrte Rechnung genau die ist, die der Kunde bekommen hat.
+  - q: Was passiert, wenn ich dieselbe Liste zweimal importiere?
+    a: Nichts Schlimmes. Rechnungsnummern, die es schon gibt, überspringt Rhinvoice. Eine ausgestellte Rechnung ändert sich nie, auch nicht durch einen zweiten Import.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice übernimmt die Rechnungen aus Ihrem bisherigen Rechnungsprogramm, samt **Original-PDF**. Danach können Sie das alte Programm abschalten und haben trotzdem alle Rechnungen der letzten zehn Jahre an einem Ort.
+
+<Aside type="tip" title="Jeder Import beginnt mit einem Testlauf">
+Rhinvoice zeigt Ihnen Zeile für Zeile, was passieren würde, und ändert dabei nichts. Gespeichert wird erst, wenn Sie auf **… Rechnungen übernehmen** klicken.
+</Aside>
+
+## In dieser Reihenfolge
+
+Rechnungen suchen beim Import ihren Kunden. Importieren Sie deshalb zuerst Kunden und Artikel ([Kunden und Artikel übernehmen](/docs/de/moving/customers-and-articles/)) und erst danach die Rechnungen.
+
+<Steps>
+
+1. **Kunden**: *Kunden → Importieren*
+2. **Artikel**: *Artikel → Importieren*
+3. **Rechnungen mit ihren PDFs**: *Rechnungen → Importieren*
+
+</Steps>
+
+## Was Sie brauchen
+
+### Eine Liste der Rechnungen
+
+Exportieren Sie die Rechnungen aus dem alten Programm als CSV (UTF-8 oder Windows-1252) oder als Excel-Datei (`.xlsx`, `.xls`). Rhinvoice erkennt die Spalten an ihren Namen. Was es nicht erkennt, ordnen Sie von Hand zu und speichern es als Vorlage.
+
+| Spalte | Nötig | Wofür |
+|---|---|---|
+| Rechnungsnummer | <span class="need yes">Ja</span> | Bleibt genau so, wie sie war |
+| Datum | <span class="need yes">Ja</span> | Rechnungsdatum und Jahr im Umsatz |
+| Gesamtbetrag | <span class="need yes">Ja</span> | Betrag inklusive MWST bzw. USt. |
+| Kundennummer oder Name | <span class="need yes">Ja</span> | Ordnet die Rechnung dem Kunden zu |
+| Fälligkeit, offener Betrag | <span class="need opt">Wenn vorhanden</span> | Fälligkeit und offene Posten |
+| Nettobetrag oder Steuerbetrag | <span class="need opt">Wenn vorhanden</span> | Nettobetrag und Steuer |
+| Währung, Betreff | <span class="need opt">Wenn vorhanden</span> | Werden mit der Rechnung gespeichert |
+| Adresse des Kunden | <span class="need opt">Wenn vorhanden</span> | Für Kunden, die Rhinvoice noch nicht kennt |
+
+### Die PDF-Dateien
+
+Wählen Sie den Ordner mit den PDFs. Unterordner, einzelne Dateien und ZIP-Dateien gehen auch. Rhinvoice findet die Rechnungsnummer irgendwo im Dateinamen:
+
+```text
+✓ Rechnung R20150001.pdf
+✓ 2015/R2015-0001.pdf
+✓ 2015/20150001_korrektur.pdf   → wird Anhang, nicht die Rechnung
+✗ Scan_0042.pdf                 → keine Nummer: bleibt übrig
+```
+
+Gibt es mehrere Dateien mit derselben Nummer, ist die Datei ohne weiteren Zusatz im Namen die Rechnung. Mahnungen, Korrekturen und Kopien («Mahnung», «Korrektur», «Kopie» …) hängt Rhinvoice als **Anhang** an dieselbe Rechnung. Gleiche Dateien behält es nur einmal. Bilder und andere Dateien im Ordner lässt es weg.
+
+## Was beim Übernehmen passiert
+
+- **Die Rechnung bleibt, wie sie war.** Rhinvoice rechnet nichts neu und zeichnet kein neues PDF. Sie behalten genau die Rechnung, die Ihr Kunde bekommen hat. In der Rechnungsliste ist sie als *Übernommen* markiert.
+- **Die richtige Nummernspalte wird erkannt.** Manche Programme exportieren einen Zähler als «Rechnungsnummer» und die echte Nummer im Titel («Rechnung R20150001»). Rhinvoice nimmt die Spalte, deren Werte zu den Dateinamen passen.
+- **Kunden werden gefunden**, zuerst über die Nummer, dann über den Namen. Eine Nummer, die zu einem Kunden mit deutlich anderem Namen gehört, wird nicht verwendet. Kunden, die Rhinvoice nicht kennt, legt es neu an und **archiviert** sie gleich.
+- **Ohne offenen Betrag gilt eine Rechnung als bezahlt**, mit einer Zahlung am Fälligkeitsdatum. Offene Rechnungen markieren Sie später wie jede andere als bezahlt.
+- **Zweimal importieren schadet nicht.** Nummern, die es schon gibt, überspringt Rhinvoice. So können Sie dieselbe Liste auch ein zweites Mal mit den PDFs importieren.
+- **Der Nummernkreis läuft weiter** mit der nächsten freien Nummer. Das Ergebnis zeigt, welche Nummer die nächste Rechnung bekommt.
+- **Übrige Dateien** listet der Testlauf auf. Ein fehlendes PDF fügen Sie später auf der Rechnung selbst hinzu (*PDF hinzufügen*).
+
+<Aside type="caution" title="Aufbewahrung">
+Rechnungen müssen Sie zehn Jahre aufbewahren (Schweiz: Art. 958f OR, Deutschland: § 147 AO, Österreich: § 132 BAO). Übernommene PDFs sind gesperrt und Teil jedes [Backups](/docs/de/operations/backup/). Behalten Sie den Export des alten Programms trotzdem, bis Sie den Import geprüft haben.
+</Aside>
+
+## Grenzen
+
+Pro Import: die Liste höchstens 5 MB und 10’000 Zeilen, jedes PDF höchstens 20 MB, alle PDFs zusammen höchstens 200 MB. Ein Browser schickt höchstens 1000 Dateien auf einmal. Packen Sie grosse Ordner deshalb als ZIP oder importieren Sie Jahr für Jahr.
+
+Übernommene Rechnungen lassen sich nicht duplizieren, stornieren oder als E-Rechnung versenden: Sie bestehen aus ihrem PDF.
+
+## Häufige Fragen
+
+<Faq />

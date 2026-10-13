@@ -1,0 +1,98 @@
+---
+title: "Invoices in Switzerland: VAT, QR-bill, required details"
+description: Invoices in Switzerland with Rhinvoice, the free open-source invoicing program. Swiss VAT of 8.1 %, 2.6 % and 3.8 %, QR-bill, UID and 5-centime rounding.
+faq:
+  - q: Which VAT rates apply in Switzerland?
+    a: Since 1 January 2024 the rates are 8.1 % (standard), 2.6 % (reduced) and 3.8 % (accommodation). From 2018 to 2023 they were 7.7 %, 2.5 % and 3.7 %. The rate on the date of supply applies.
+  - q: What must the invoice of a VAT registered company state?
+    a: Among other things its VAT number, the UID with the suffix MWST, for example CHE-123.456.789 MWST (Art. 26 para. 2 let. a MWSTG). Rhinvoice does not issue an invoice without it, unless your company is set as not VAT registered.
+  - q: When does a QR-bill need a QR-IBAN?
+    a: Only when you use the QR reference. With a QR-IBAN Rhinvoice prints the 27-digit QR reference, with an ordinary IBAN the creditor reference (SCOR, starting with RF). Both work in CHF and EUR.
+  - q: Does Rhinvoice round totals to 5 centimes?
+    a: Yes, once you switch on cash rounding under Settings → Company. Only the CHF total is rounded to 0.05 and shown as a line of its own, "Rounding". The VAT stays exact to the centime.
+  - q: How long must invoices be kept in Switzerland?
+    a: Ten years (Art. 958f CO). Rhinvoice locks issued invoices with their PDF; corrections are made only by a cancellation invoice.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+A Swiss invoice from Rhinvoice carries the **VAT rates on the date of supply** (since 1 January 2024: 8.1 %, 2.6 %, 3.8 %), your company's **UID with the suffix MWST**, the right **legal notice** and a **QR-bill payment part** in CHF or EUR. Rhinvoice checks before issuing that the VAT number is there, and locks the invoice afterwards for the ten years you keep it.
+
+<Aside type="note" title="No tax advice">
+As of October 2026. Rates and rules are checked against the Swiss Federal Tax Administration (ESTV) and the VAT Act (MWSTG), but without warranty. Ask your fiduciary or tax adviser when in doubt.
+</Aside>
+
+## Which VAT rate applies?
+
+| Valid | Standard rate | Reduced rate | Accommodation rate |
+|---|---|---|---|
+| since 1 January 2024 | 8.1 % | 2.6 % | 3.8 % |
+| 1 January 2018 to 31 December 2023 | 7.7 % | 2.5 % | 3.7 % |
+| 1 January 2011 to 31 December 2017 | 8 % | 2.5 % | 3.8 % |
+
+Source: ESTV, "MWST-Sätze ab 1. Januar 2024" and "Entwicklung der MWST-Sätze".
+
+The rate on the **date of supply** applies: the end of the service period, else its start, else the invoice date. An invoice written in 2026 for work done in December 2023 therefore charges 7.7 %. When issuing, Rhinvoice freezes the rate of every line; later rate changes never change issued invoices.
+
+The older rates are there for invoices with an earlier date of supply and for [old invoices you take over](/docs/moving/old-invoices/).
+
+## What the invoice must state
+
+**Your company's VAT number.** A VAT registered business states the number it is registered under: the UID with the suffix MWST, for example `CHE-123.456.789 MWST` (Art. 26 para. 2 let. a MWSTG). Enter it under *Settings → Company* in the field *UID / VAT number*. Rhinvoice checks the UID's check digit. Without the number, Rhinvoice does not issue the invoice and tells you where to add it.
+
+**The date of supply.** Without a service period, Rhinvoice prints the invoice date as the date of supply. The MWSTG asks for it only when it differs from the invoice date (Art. 26 para. 2 let. d MWSTG), but it does no harm.
+
+Every invoice also prints sender and recipient, number and date, the lines and the **VAT per rate** ("MWST 8.1 % auf CHF …"). Rhinvoice assigns the number only when issuing, without gaps.
+
+## Not VAT registered
+
+With a turnover below **CHF 100,000** you are usually not VAT registered. Then switch on *Not VAT registered (turnover below CHF 100,000)* under *Settings → Company*. Your invoices contain no VAT and the notice:
+
+> Nicht mehrwertsteuerpflichtig.
+
+(English documents: "No VAT is charged (small business scheme).") The UID is then not required. You can change the wording of every notice under *Settings → Texts → Legal notices*; an empty field brings back the built-in text.
+
+## QR-bill: QR reference or SCOR
+
+Every invoice of a Swiss company gets the **QR-bill payment part** according to the SIX Implementation Guidelines QR-bill 2.3, on a page of its own with a scissors line. The account must have a Swiss or Liechtenstein IBAN; the currency is CHF or EUR.
+
+| Account under *Settings → Bank accounts* | Reference on the QR-bill |
+|---|---|
+| with a **QR-IBAN** | QR reference (QRR), 27 digits |
+| with an **IBAN** only | creditor reference (SCOR, ISO 11649), starting with `RF` |
+
+Rhinvoice builds both references from the invoice number, so you can match payments on your bank statement to the invoice. Each currency has one default account: an invoice in EUR uses your EUR account. Drafts show a placeholder in the same place, because the reference only exists once the number does.
+
+**Euro invoices to customers in the EEA** (EU, Iceland, Norway) also get the **EPC QR code** (GiroCode): banking apps there read it, but mostly not the QR-bill. For a Swiss account the EPC code needs the BIC; add it to the account, otherwise the code is left out.
+
+## 5-centime rounding
+
+Switch on *Cash rounding* under *Settings → Company*. Rhinvoice then rounds the **CHF total to 0.05** and shows the difference as a line of its own, *Rounding*. Lines and VAT stay exact to the centime, and invoices in EUR are not rounded to 5 cents.
+
+## Customers abroad
+
+Rhinvoice decides the tax treatment from your company's country, the customer's country and whether the customer is a business with a VAT number. Customers in Liechtenstein count as domestic, because Liechtenstein applies the Swiss VAT Act under the customs treaty.
+
+| Case | VAT | Notice on the invoice (German documents) |
+|---|---|---|
+| Customer in Switzerland or Liechtenstein | yes | none |
+| Service to an EU business with a VAT number | no | "Übergang der Steuerschuld auf den Leistungsempfänger (Steuerschuldnerschaft des Leistungsempfängers, Reverse Charge)." |
+| Service to any other customer abroad | no | "Ort der Leistung im Ausland, nicht der MWST unterstellt." |
+| Goods leaving Switzerland | no | "Steuerbefreite Ausfuhrlieferung (Art. 23 Abs. 2 Ziff. 1 MWSTG)." |
+
+English documents print "Reverse charge: the recipient is liable for the VAT.", "Place of supply abroad, not subject to domestic VAT." and "VAT exempt export delivery." The reverse charge notice follows the customer's country (Art. 219a(1) of the EU VAT Directive); German customers, for example, need the wording of § 14a Abs. 5 UStG, which is why it stands in brackets. For goods, the editor reminds you of the proof of export (customs). You can change the tax treatment by hand in the editor; Rhinvoice logs the change with a reason in the history.
+
+## E-invoice
+
+E-invoices are voluntary in Switzerland. Rhinvoice still embeds a **ZUGFeRD / Factur-X invoice** (EN 16931) in the PDF of every issued invoice by default (you can switch it off under *Settings → Print template*), so accounting software reads the data directly while the PDF looks the same to people. If a detail the e-invoice needs is missing, the PDF is created without it and the invoice says what was missing. Your UID identifies the company in it. More under [e-invoice](/docs/invoices/e-invoice/).
+
+## Keeping invoices
+
+Keep invoices for **ten years** (Art. 958f CO). From issuing on, content and PDF are locked in Rhinvoice, in the database too. Corrections are made only by a [cancellation invoice](/docs/invoices/issue-and-cancel/) with a number of its own. Protect the data with a [backup](/docs/operations/backup/).
+
+Companies in Liechtenstein use the same rates: see [invoices in Liechtenstein](/docs/countries/liechtenstein/).
+
+## Questions
+
+<Faq />

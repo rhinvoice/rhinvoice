@@ -1,0 +1,110 @@
+---
+title: "E-Rechnung erstellen: ZUGFeRD und XRechnung kostenlos"
+description: XRechnung und ZUGFeRD kostenlos erstellen mit Rhinvoice, Open Source. EN 16931 im PDF/A-3b, XRechnung 3.0 mit Leitweg-ID, geprüft mit KoSIT und Mustang.
+faq:
+  - q: Kann ich mit Rhinvoice kostenlos eine XRechnung erstellen?
+    a: Ja. Rhinvoice ist kostenlos und Open Source (AGPL). Zu jeder ausgestellten Rechnung und Stornorechnung laden Sie die XRechnung 3.0 als XML-Datei herunter. Die Leitweg-ID tragen Sie im Feld Referenz der Rechnung ein.
+  - q: Ist jede PDF-Rechnung aus Rhinvoice eine ZUGFeRD-Rechnung?
+    a: Ja, jede ausgestellte Rechnung und Stornorechnung, wenn alle nötigen Angaben vorhanden sind. Das PDF ist ein PDF/A-3b mit eingebetteter ZUGFeRD-/Factur-X-Rechnung im Profil EN 16931. Rhinvoice zeigt bei der Rechnung, ob die E-Rechnung eingebettet ist.
+  - q: Was braucht eine XRechnung zusätzlich?
+    a: Die Referenz der Rechnung (Leitweg-ID oder Käuferreferenz), die E-Mail und das Telefon Ihrer Firma, die E-Mail des Kunden und ein Bankkonto. Fehlt etwas, nennt Rhinvoice es beim Ausstellen.
+  - q: Wie prüft Rhinvoice seine E-Rechnungen?
+    a: Bei jeder Änderung am Programm laufen Musterrechnungen für jeden Steuerfall durch den KoSIT-Validator (EN 16931 und XRechnung) und als PDF durch Mustang (ZUGFeRD, PDF/A-3 mit veraPDF). Auch Warnungen gelten dabei als Fehler.
+  - q: Für welche Länder erstellt Rhinvoice E-Rechnungen?
+    a: Für Firmen in der Schweiz, Liechtenstein, Deutschland und Österreich steckt ZUGFeRD in jedem PDF. Die XRechnung ist für deutsche Behörden gedacht. UBL, Peppol und das österreichische ebInterface unterstützt Rhinvoice nicht.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Rhinvoice erstellt E-Rechnungen kostenlos: Jedes PDF einer ausgestellten Rechnung ist ein **PDF/A-3b mit eingebetteter ZUGFeRD-/Factur-X-Rechnung** (Profil EN 16931), und für deutsche Behörden laden Sie zusätzlich die **XRechnung 3.0** (CII) als XML herunter. Beide prüft Rhinvoice mit den offiziellen Validatoren von KoSIT und Mustang.
+
+## Zwei Formate, ein Inhalt
+
+| | ZUGFeRD / Factur-X | XRechnung |
+|---|---|---|
+| Form | im PDF eingebettet (PDF/A-3b) | eigene XML-Datei |
+| Norm | EN 16931, Syntax CII | XRechnung 3.0, Syntax CII |
+| Für wen | Geschäftskunden in allen vier Ländern | deutsche Behörden |
+| Wo | automatisch in jedem PDF | Rechnung öffnen, Abschnitt *E-Rechnung* → *XRechnung für deutsche Behörden* → *XRechnung (XML)* |
+
+**Was gedruckt ist, steht auch in der E-Rechnung.** Jeder Betrag der E-Rechnung ist ein Betrag aus dem PDF. Rhinvoice rechnet nichts neu, auch bei Bruttopreisen, Rabatten und Rappenrundung. Für Ihre Kunden sieht das PDF gleich aus, ihre Buchhaltung liest die Daten direkt.
+
+Stornorechnungen sind in der E-Rechnung Gutschriften (Typ 381) mit Verweis auf die stornierte Rechnung. Angebote, Entwürfe und [übernommene alte Rechnungen](/docs/de/moving/old-invoices/) sind keine E-Rechnungen.
+
+## ZUGFeRD in jedem PDF
+
+Die E-Rechnung ist ab Werk eingeschaltet. Sie finden den Schalter unter *Einstellungen → Druckvorlage → E-Rechnung im PDF (ZUGFeRD)*. Auf der ausgestellten Rechnung zeigt der Abschnitt *E-Rechnung*, ob das archivierte PDF sie enthält:
+
+> Das PDF enthält die E-Rechnung (ZUGFeRD, EN 16931): Buchhaltungsprogramme lesen die Daten direkt.
+
+Rhinvoice speichert die eingebettete XML-Datei zusammen mit dem PDF und ändert beide nie wieder. Alle PDFs aus Rhinvoice sind PDF/A-3b, auch Angebote und Mahnungen.
+
+## XRechnung für deutsche Behörden
+
+Behörden in Deutschland verlangen die XRechnung. So erstellen Sie sie:
+
+1. Tragen Sie im Editor unter *Referenz* die **Leitweg-ID** der Behörde ein. Rhinvoice schreibt dieses Feld als Käuferreferenz (BT-10) in die XRechnung.
+2. Stellen Sie die Rechnung aus.
+3. Öffnen Sie den Abschnitt *E-Rechnung* → *XRechnung für deutsche Behörden* und klicken Sie auf *XRechnung (XML)*.
+
+Beim Versand per E-Mail können Sie *XRechnung (XML) zusätzlich anhängen* wählen.
+
+## Welche Angaben eine E-Rechnung braucht
+
+Rhinvoice erstellt nur vollständige E-Rechnungen. Fehlt etwas, warnt schon der Dialog vor dem Ausstellen («Diese Rechnung wird ohne E-Rechnung ausgestellt. Es fehlt: …»). Das PDF entsteht trotzdem, nur ohne E-Rechnung.
+
+**Für jede E-Rechnung (EN 16931):**
+
+| Angabe | Wann | Wo eintragen |
+|---|---|---|
+| UID, USt-IdNr. oder Handelsregistereintrag | immer | *Einstellungen → Firma* |
+| MWST-Nummer, USt-IdNr. oder Steuernummer | Rechnungen mit Steuer oder steuerbefreit | *Einstellungen → Firma* |
+| MWST-Nummer bzw. USt-IdNr. Ihrer Firma | Reverse Charge, innergemeinschaftliche Lieferung, Export | *Einstellungen → Firma* |
+| UID bzw. USt-IdNr. des Kunden mit Länderkürzel | Reverse Charge, innergemeinschaftliche Lieferung | beim Kunden |
+
+**Zusätzlich für die XRechnung:**
+
+| Angabe | Wo eintragen |
+|---|---|
+| Referenz der Rechnung (Leitweg-ID oder Käuferreferenz) | im Editor, Feld *Referenz* |
+| E-Mail Ihrer Firma | *Einstellungen → Firma* |
+| Telefon Ihrer Firma | *Einstellungen → Firma* |
+| E-Mail des Kunden | beim Kunden |
+| Bankkonto | *Einstellungen → Bankkonten* |
+
+<Aside type="caution" title="Ausgestellt ist ausgestellt">
+Eine ausgestellte Rechnung ändert sich nie, auch ihre E-Rechnung nicht. Was beim Ausstellen fehlte, ergänzen Sie für die nächsten Rechnungen.
+</Aside>
+
+## Pflicht zur E-Rechnung in Deutschland
+
+Seit 2025 müssen Unternehmen in Deutschland E-Rechnungen empfangen können (§ 14 UStG). Ausstellen müssen sie inländische B2B-Rechnungen ab 2027, wenn der Umsatz im Vorjahr über 800.000 EUR lag, und ab 2028 alle (§ 27 Abs. 38 UStG). Kleinunternehmer sind ausgenommen (§ 34a UStDV). Die ZUGFeRD-Rechnung im PDF erfüllt das, wenn sie eingebettet ist. Mehr zu deutschen Rechnungen: [Rechnungen in Deutschland](/docs/de/countries/germany/).
+
+Firmen in der [Schweiz](/docs/de/countries/switzerland/), in [Liechtenstein](/docs/de/countries/liechtenstein/) und in [Österreich](/docs/de/countries/austria/) erhalten dieselbe ZUGFeRD-Rechnung in jedem PDF. In Österreich und der Schweiz lesen Buchhaltungsprogramme ZUGFeRD-PDFs zunehmend direkt.
+
+## Steuerfälle in der E-Rechnung
+
+Rhinvoice ordnet jede Steuergruppe einer Kategorie nach UNCL 5305 zu:
+
+| Kategorie | Steuerfall |
+|---|---|
+| S | normal besteuert |
+| Z | Satz 0 % |
+| E | steuerbefreit; Kleinunternehmer in Deutschland und Österreich mit ihrem Hinweis als Grund |
+| AE | Reverse Charge, auch Schweiz und Liechtenstein an EU-Firmen |
+| K | innergemeinschaftliche Lieferung von Waren, mit der Lieferadresse |
+| G | Export und Ausfuhrlieferung |
+| O | nicht steuerpflichtig: Kleinunternehmer ohne MWST-Nummer und Steuernummer (Schweiz, Liechtenstein) |
+
+Eine Schweizer UID steht als Kennung der Firma in der E-Rechnung (Schema 0183) und bei MWST-pflichtigen Firmen zugleich als MWST-Nummer. Deutsche Steuernummern stehen in einem eigenen Feld.
+
+## Geprüft mit KoSIT und Mustang
+
+Bei jeder Änderung an Rhinvoice laufen Musterrechnungen für jeden Steuerfall durch die offiziellen Prüfprogramme: den **KoSIT-Validator** für EN 16931 und XRechnung und, als PDF, **Mustang** für ZUGFeRD und PDF/A-3 (mit veraPDF). Auch Warnungen gelten als Fehler.
+
+Nicht unterstützt sind UBL, der Versand über Peppol und das österreichische ebInterface.
+
+## Häufige Fragen
+
+<Faq />

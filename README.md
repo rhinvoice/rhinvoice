@@ -8,6 +8,8 @@ Docker: your data stays on your server.
 
 Rhinvoice is in beta (0.x). Try it on a test installation before you write real invoices with it.
 
+**Documentation:** [rhinvoice.com/docs](https://rhinvoice.com/docs/) (English) · [rhinvoice.com/docs/de](https://rhinvoice.com/docs/de/) (Deutsch) · Demo: [ch.rhinvoice.com](https://ch.rhinvoice.com)
+
 ![The overview: revenue against last year, open and overdue amounts, open quotes](docs/screenshots/dashboard.png)
 
 <table>
@@ -93,6 +95,7 @@ Open <http://rhinvoice.localhost:8000> (no hosts entry needed: `.localhost` is a
 computer); the first visit offers a one-time setup form for the first user.
 To look around with sample data first: `docker compose exec app rhinvoice demo`.
 
+Step by step, with the first invoice and the rules of each country: [rhinvoice.com/docs](https://rhinvoice.com/docs/).
 Server setup, e-mail, updates and security: [`docs/install.md`](docs/install.md).
 Removing it again, with containers, data and images: [Uninstalling](docs/install.md#uninstalling).
 Backups: [`docs/backup.md`](docs/backup.md). Changes: [`CHANGELOG.md`](CHANGELOG.md).

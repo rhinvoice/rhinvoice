@@ -1,0 +1,89 @@
+---
+title: "Invoices in Austria: VAT, UID, required details § 11 UStG"
+description: Free, open-source invoicing program for Austria. VAT of 20 %, 10 % and 13 %, required details under § 11 UStG, UID, small business, reverse charge and GiroCode.
+faq:
+  - q: Which VAT rates apply in Austria?
+    a: 20 % (standard), 10 % (reduced) and 13 % (second reduced rate) under § 10 UStG 1994. Rhinvoice uses the rate on the date of supply.
+  - q: Above which amount must my UID be on the invoice?
+    a: On invoices above EUR 400 gross (§ 11 Abs. 1 Z 3 lit. i and Abs. 6 UStG); below that it is a small-amount invoice. Small businesses need no UID on the invoice.
+  - q: When does the invoice need the customer's UID?
+    a: On invoices above EUR 10,000 gross to a business (§ 11 Abs. 1 Z 3 lit. b UStG), and always for reverse charge and intra-Community supplies. Rhinvoice checks the amount limit for business customers in Austria, and reverse charge and intra-Community supplies always.
+  - q: Which notice does Rhinvoice print for small businesses?
+    a: German documents carry the notice "Umsatzsteuerfrei aufgrund der Kleinunternehmerregelung (§ 6 Abs. 1 Z 27 UStG)." You can change the wording under Settings → Texts → Legal notices.
+  - q: How long must invoices be kept in Austria?
+    a: Ten years (§ 132 BAO). Rhinvoice locks issued invoices with their PDF; corrections are made only by a cancellation invoice.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+An Austrian invoice from Rhinvoice carries **20 %, 10 % or 13 % VAT** (§ 10 UStG 1994) on the date of supply, your **UID** above EUR 400 (§ 11 UStG), above EUR 10,000 also your business customer's UID, the legal notice for reverse charge, small businesses or tax-free supplies, and a **GiroCode** (EPC QR code). With the interface language *Deutsch (Österreich)* Rhinvoice writes months the Austrian way, with "Jänner"; documents print dates as numbers, such as 05.01.2026.
+
+<Aside type="note" title="No tax advice">
+As of October 2026. Rates and rules are checked against the UStG 1994 and the Austrian Economic Chamber (WKO), but without warranty. Ask your tax adviser when in doubt.
+</Aside>
+
+## Which VAT rate applies?
+
+| Rate | In Rhinvoice |
+|---|---|
+| 20 % | standard rate |
+| 10 % | reduced rate |
+| 13 % | second reduced rate |
+
+Source: § 10 UStG 1994. Rhinvoice holds these rates for supplies from 1 January 2016. The rate on the **date of supply** applies: the end of the service period, else its start, else the invoice date. When issuing, Rhinvoice freezes the rate of every line.
+
+## Required details under § 11 UStG
+
+Before issuing, Rhinvoice checks the amounts from which a UID is needed:
+
+| Invoice total, gross | What Rhinvoice asks for |
+|---|---|
+| up to EUR 400 | small-amount invoice (§ 11 Abs. 6 UStG): no UID needed |
+| above EUR 400 | your **UID** (§ 11 Abs. 1 Z 3 lit. i UStG) |
+| above EUR 10,000 to a business | also the **customer's UID** (§ 11 Abs. 1 Z 3 lit. b UStG) |
+
+Enter your UID under *Settings → Company* in the field *VAT number (UID)*, in the form `ATU12345678`. The customer's UID belongs to the customer; Rhinvoice asks for it above EUR 10,000 for business customers in Austria. Amounts in currencies other than EUR never count as small amounts.
+
+Without a service period, Rhinvoice prints the invoice date as the date of supply (§ 11 Abs. 1 Z 3 lit. d UStG). It assigns the invoice number only when issuing, without gaps. Names and addresses of both sides, the lines and the net amount and VAT per rate complete the invoice.
+
+## Small business
+
+Switch on *Small business (§ 6 Abs. 1 Z 27 UStG)* under *Settings → Company*. Your invoices then contain no VAT and this notice:
+
+> Umsatzsteuerfrei aufgrund der Kleinunternehmerregelung (§ 6 Abs. 1 Z 27 UStG).
+
+(English documents: "No VAT is charged (small business scheme).") Rhinvoice asks small businesses for no UID. Change the wording under *Settings → Texts → Legal notices*.
+
+## Reverse charge and supplies abroad
+
+Rhinvoice decides the tax treatment from your country, the customer's country, whether the customer is a business and whether it has a UID. Goods and services are treated separately, on the same invoice too.
+
+| Case | VAT | Notice on German documents |
+|---|---|---|
+| Customer in Austria | yes | none |
+| Service to a business in another EU country with a UID | no | "Übergang der Steuerschuld auf den Leistungsempfänger (Reverse Charge)." (§ 11 Abs. 1a UStG) |
+| Goods to a business in another EU country with a UID | no | "Steuerfreie innergemeinschaftliche Lieferung (Art. 6 Abs. 1 i. V. m. Art. 7 UStG)." |
+| Goods leaving the EU, private customers included | no | "Steuerfreie Ausfuhrlieferung (§ 6 Abs. 1 Z 1 i. V. m. § 7 UStG)." |
+| Service to a business outside the EU | no | "Nicht im Inland steuerbare Leistung." |
+| Private customer inside or outside the EU (service) | yes | none |
+
+Without the customer's UID there is no reverse charge: an EU business without a UID is charged Austrian VAT, and the editor points this out. For intra-Community supplies Rhinvoice needs your UID and the customer's, and reminds you of the proof that the goods arrived. You can change the tax treatment by hand in the editor; Rhinvoice logs the change with a reason in the history.
+
+Distance sales to private customers in the EU keep Austrian VAT. Rhinvoice does not track the EU-wide threshold of EUR 10,000 a year (OSS).
+
+## GiroCode (EPC QR code)
+
+Every invoice in **EUR** gets a **GiroCode** next to the payment terms, following the European Payments Council guidelines (EPC069-12), with your IBAN, the account holder, the amount and the invoice number as remittance text. Your customer scans it with a banking app. You need an account in EUR under *Settings → Bank accounts*.
+
+## E-invoice
+
+Rhinvoice embeds a **ZUGFeRD / Factur-X invoice** (EN 16931) in the PDF of every issued invoice by default (switch: *Settings → Print template*), as long as the details it needs are complete; accounting software reads it directly. The Austrian format ebInterface for the public sector is not supported. More under [e-invoice](/docs/invoices/e-invoice/).
+
+## Keeping invoices
+
+Keep invoices for **ten years** (§ 132 BAO). From issuing on, content and PDF are locked in Rhinvoice, in the database too, and the PDF is kept with its SHA-256. Corrections are made only by a [cancellation invoice](/docs/invoices/issue-and-cancel/) with its own number. Protect the data with a [backup](/docs/operations/backup/). Try everything in the demo at [at.rhinvoice.com](https://at.rhinvoice.com).
+
+## Questions
+
+<Faq />

@@ -1,0 +1,78 @@
+---
+title: "Erster Start: Land, Firma und Bankkonto einrichten"
+description: Rhinvoice beim ersten Start einrichten. Der Assistent fragt nach Land und Firma, die Checkliste führt zu Bankkonto, Nummernkreisen, Kunden und Backup.
+faq:
+  - q: Was fragt Rhinvoice beim ersten Start?
+    a: Zwei Dinge, in einem kurzen Assistenten. Zuerst das Land Ihrer Firma (Schweiz, Liechtenstein, Deutschland oder Österreich) und ob Sie Kleinunternehmer sind, dann Name, Adresse und MWST- bzw. USt-Nummer der Firma. Alles Weitere folgt als Checkliste in der Übersicht.
+  - q: Kann ich Land und Firmendaten später ändern?
+    a: Ja. Alles aus dem Assistenten lässt sich später unter Einstellungen, Firma ändern.
+  - q: Wie zähle ich die Rechnungsnummern meines bisherigen Programms weiter?
+    a: Unter Einstellungen, Nummernkreise setzen Sie beim Nummernkreis der Rechnungen den nächsten Zähler. Die Vorschau zeigt die nächste Nummer, bevor Sie speichern.
+  - q: Kann ich die Einrichtung überspringen?
+    a: Ja. Später einrichten schliesst den Assistenten, der Schritt bleibt in der Checkliste der Übersicht offen. Die Checkliste können Sie auch ausblenden.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Beim ersten Start fragt Rhinvoice in einem Assistenten mit zwei Schritten nach dem **Land** und der **Firma**. Danach führt eine Checkliste in der Übersicht durch den Rest: Bankkonto, Nummernkreise, Kunden, die erste Rechnung und Backups. Alles lässt sich später unter *Einstellungen* ändern.
+
+Vor dem Assistenten legen Sie beim ersten Aufruf das erste Benutzerkonto an, siehe [Installation](/docs/de/getting-started/installation/).
+
+## Der Assistent: Land und Firma
+
+<Steps>
+
+1. **Land.** *Wo ist Ihre Firma?* Wählen Sie Schweiz, Liechtenstein, Deutschland oder Österreich. Das Land bestimmt Steuersätze, Pflichtangaben, Rundung und den Zahlungs-QR-Code auf der Rechnung. Sind Sie Kleinunternehmer, setzen Sie das Häkchen darunter (z. B. *Nicht MWST-pflichtig (Umsatz unter CHF 100'000)* in der Schweiz, *Kleinunternehmer nach § 19 UStG* in Deutschland, *Kleinunternehmer nach § 6 Abs. 1 Z 27 UStG* in Österreich). Rechnungen entstehen dann ohne Steuer, mit dem vorgeschriebenen Hinweis. Dann *Weiter*.
+
+2. **Firma.** *Ihre Firma*: Name und Adresse stehen als Absender auf jeder Rechnung. E-Mail, Telefon und die MWST- bzw. USt-Nummer (*UID / MWST-Nummer* in der Schweiz, *MWST-Nummer* in Liechtenstein, *USt-IdNr.* in Deutschland, *UID-Nummer* in Österreich) sind hier freiwillig. In Deutschland können Sie zusätzlich die *Steuernummer* vom Finanzamt eintragen, falls Sie keine USt-IdNr. haben. Dann *Speichern und weiter*.
+
+</Steps>
+
+*Später einrichten* schliesst den Assistenten, ohne zu speichern. Der Schritt bleibt in der Checkliste, Sie können jederzeit darauf zurückkommen.
+
+## Die Checkliste in der Übersicht
+
+Nach dem Assistenten zeigt die Übersicht *Willkommen bei Rhinvoice* mit den restlichen Schritten und wie viele davon erledigt sind. Jeder Schritt hat eine Schaltfläche, die an die richtige Stelle führt.
+
+| Schritt | Wofür | Wo |
+|---|---|---|
+| *Land und Firma* | Absender, Steuersätze und Pflichtangaben der Rechnungen | der Assistent |
+| *Bankkonto erfassen* | Für den Zahlungs-QR-Code: QR-Rechnung oder GiroCode | *Einstellungen → Bankkonten* |
+| *Nummernkreise prüfen* | Die nächste Rechnungsnummer kann an Ihr bisheriges Programm anschliessen | *Einstellungen → Nummernkreise* |
+| *Kunden erfassen oder importieren* | Einzeln anlegen oder aus einer CSV- oder Excel-Datei übernehmen | *Kunden* |
+| *Erste Rechnung schreiben* | Mit Live-Vorschau; ausgestellt wird erst auf Knopfdruck | *Neue Rechnung* |
+| *Backup einrichten* | Damit keine Rechnung verloren geht | *Einstellungen → Backup* |
+
+Ein Schritt ist erledigt, sobald die Daten da sind: ein Bankkonto, ein Kunde, eine ausgestellte Rechnung, ein erfolgreiches Backup. *Nummernkreise prüfen* gilt als erledigt, sobald Sie auf *Prüfen* klicken. *Checkliste ausblenden* entfernt die Liste aus der Übersicht. Die Meldung danach bietet *Rückgängig* an.
+
+## Bankkonto erfassen
+
+Unter *Einstellungen → Bankkonten → Konto hinzufügen* tragen Sie Bank, Kontoinhaber, IBAN, BIC und Währung ein. Erfassen Sie mindestens ein Konto pro Rechnungswährung. Pro Währung ist ein Konto das Standardkonto (*Standardkonto für diese Währung*). Das Konto erscheint in den Zahlungsangaben und im QR-Code Ihrer Rechnungen.
+
+- **Schweiz und Liechtenstein:** die QR-Rechnung. Eine **QR-IBAN** brauchen Sie nur für QR-Rechnungen mit QR-Referenz. Siehe [Schweiz](/docs/de/countries/switzerland/).
+- **Deutschland und Österreich:** der GiroCode (EPC-QR) für Rechnungen in Euro. Siehe [Deutschland](/docs/de/countries/germany/) und [Österreich](/docs/de/countries/austria/).
+
+<Aside type="tip" title="Ausgestellte Rechnungen behalten ihr Konto">
+Bereits ausgestellte Dokumente behalten ihre Kontoangaben. Ändern oder löschen Sie ein Konto später, betrifft das nur Dokumente, die noch nicht ausgestellt sind.
+</Aside>
+
+## Nummernkreise prüfen
+
+Unter *Einstellungen → Nummernkreise* sehen Sie die Muster für Rechnungen, Angebote, Stornorechnungen, Kunden und Artikel. Rechnungsnummern werden erst beim Ausstellen vergeben, lückenlos und eindeutig. Voreingestellt sind `R{YYYY}{NNNN}` für Rechnungen (z. B. R20260001), `A{YYYY}{NNNN}` für Angebote und `S{YYYY}{NNNN}` für Stornorechnungen, jeweils mit jährlichem Neubeginn.
+
+- *Muster*: `{YYYY}` Jahr, `{YY}` Jahr zweistellig, `{MM}` Monat, `{NNNN}` Zähler (Anzahl N = Mindeststellen).
+- *Nächster Zähler*: damit die Nummern ohne Lücke an Ihr bisheriges Programm anschliessen.
+- *Jährlich zurücksetzen*: braucht `{YYYY}` oder `{YY}` im Muster, sonst wiederholen sich Nummern.
+- *Nächste Nummer*: zeigt, welche Nummer das nächste Dokument bekommt.
+
+Wechseln Sie von einem anderen Programm, lesen Sie auch [Kunden und Artikel übernehmen](/docs/de/moving/customers-and-articles/) und [Alte Rechnungen übernehmen](/docs/de/moving/old-invoices/).
+
+## Wie es weitergeht
+
+- [Die erste Rechnung](/docs/de/getting-started/first-invoice/)
+- [Backup einrichten](/docs/de/operations/backup/)
+
+## Häufige Fragen
+
+<Faq />

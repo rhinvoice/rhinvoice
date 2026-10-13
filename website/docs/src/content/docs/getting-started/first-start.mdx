@@ -1,0 +1,78 @@
+---
+title: "First start: country, company and bank account"
+description: Set up Rhinvoice on first start. The wizard asks for country and company, the checklist then leads to bank account, number sequences, customers and backups.
+faq:
+  - q: What does Rhinvoice ask on first start?
+    a: Two things, in a short wizard. First the country of your company (Switzerland, Liechtenstein, Germany or Austria) and whether you are a small business, then the company's name, address and VAT number. Everything else follows as a checklist on the overview.
+  - q: Can I change the country or company details later?
+    a: Yes. Everything from the wizard can be changed later under Settings, Company.
+  - q: How do I continue the invoice numbers of my previous program?
+    a: Under Settings, Number sequences, set the next counter of the invoice sequence. The preview shows the next number before you save.
+  - q: Can I skip the setup?
+    a: Yes. Set up later closes the wizard; the step stays open in the checklist on the overview. You can also hide the checklist.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+On first start, Rhinvoice asks in a two-step wizard for the **country** and the **company**. After that, a checklist on the overview leads you through the rest: bank account, number sequences, customers, the first invoice and backups. Everything can be changed later under *Settings*.
+
+Before the wizard, the first visit asks you to create the first user account; see [Installation](/docs/getting-started/installation/).
+
+## The wizard: country and company
+
+<Steps>
+
+1. **Country.** *Where is your company?* Choose Switzerland, Liechtenstein, Germany or Austria. The country decides the VAT rates, mandatory details, rounding and the payment QR code on invoices. If you are a small business, tick the box below (e.g. *Not VAT registered (turnover below CHF 100,000)* in Switzerland, *Small business (§ 19 UStG)* in Germany, *Small business (§ 6 Abs. 1 Z 27 UStG)* in Austria): invoices are then written without VAT, with the required notice. Then *Next*.
+
+2. **Company.** *Your company*: name and address are the sender on every invoice. E-mail, phone and the VAT number (UID / VAT number in Switzerland, VAT number in Liechtenstein, VAT ID in Germany, VAT number (UID) in Austria) are optional here. In Germany you can also enter the tax number from the tax office if you have no VAT ID. Then *Save and continue*.
+
+</Steps>
+
+*Set up later* closes the wizard without saving. The step stays in the checklist, so you can come back to it.
+
+## The checklist on the overview
+
+After the wizard, the overview shows *Welcome to Rhinvoice* with the remaining steps and how many are done. Each step has a button that leads to the right place.
+
+| Step | What it is for | Where |
+|---|---|---|
+| *Country and company* | Sender, VAT rates and mandatory details of the invoices | the wizard |
+| *Add a bank account* | For the payment QR code: QR-bill or EPC QR code | *Settings → Bank accounts* |
+| *Check the number sequences* | The next invoice number can continue from your previous program | *Settings → Number sequences* |
+| *Add or import customers* | One by one or from a CSV or Excel file | *Customers* |
+| *Write the first invoice* | With live preview; it is issued only when you say so | *New invoice* |
+| *Set up backups* | So that no invoice gets lost | *Settings → Backup* |
+
+A step is done when its data exist: a bank account, a customer, an issued invoice, a successful backup. *Check the number sequences* counts as done as soon as you click *Check*. *Hide checklist* removes the list from the overview; the message that follows has an *Undo* button.
+
+## Add a bank account
+
+Under *Settings → Bank accounts → Add account* enter bank, account holder, IBAN, BIC and currency. Add at least one account per invoice currency; one account per currency is the default (*Default account for this currency*). The account appears in the payment details and the QR code of your invoices.
+
+- **Switzerland and Liechtenstein:** the Swiss QR-bill. A **QR-IBAN** is only needed for QR-bills with QR reference. See [Switzerland](/docs/countries/switzerland/).
+- **Germany and Austria:** the EPC QR code (GiroCode) for euro invoices. See [Germany](/docs/countries/germany/) and [Austria](/docs/countries/austria/).
+
+<Aside type="tip" title="Issued invoices keep their account">
+Issued documents keep the bank details they were issued with. Changing or deleting an account later only affects documents that are not issued yet.
+</Aside>
+
+## Check the number sequences
+
+Under *Settings → Number sequences* you see the patterns of invoices, quotes, cancellation invoices, customers and articles. Invoice numbers are assigned only when issuing, gapless and unique. The default patterns are `R{YYYY}{NNNN}` for invoices (e.g. R20260001), `A{YYYY}{NNNN}` for quotes and `S{YYYY}{NNNN}` for cancellation invoices, each starting again every year.
+
+- *Pattern*: `{YYYY}` year, `{YY}` two-digit year, `{MM}` month, `{NNNN}` counter (the number of N is the minimum of digits).
+- *Next counter*: to continue from your previous program without a gap.
+- *Reset every year*: needs `{YYYY}` or `{YY}` in the pattern, otherwise numbers repeat.
+- *Next number*: shows the number the next document will get.
+
+If you are moving from another program, see also [Customers and articles](/docs/moving/customers-and-articles/) and [Taking over old invoices](/docs/moving/old-invoices/).
+
+## Next steps
+
+- [Your first invoice](/docs/getting-started/first-invoice/)
+- [Set up backups](/docs/operations/backup/)
+
+## Questions
+
+<Faq />

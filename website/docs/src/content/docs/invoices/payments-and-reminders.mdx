@@ -1,0 +1,97 @@
+---
+title: Recording payments and sending payment reminders
+description: Record payments and partial payments in Rhinvoice, mark several invoices as paid at once, and send payment reminders in three levels with optional fees.
+faq:
+  - q: How do I mark an invoice as paid?
+    a: On the invoice, click "Mark as paid". Rhinvoice records a payment of the whole open amount dated today. For another date or a partial payment, use "Record payment".
+  - q: Can I mark several invoices as paid at once?
+    a: Yes. Select the invoices in the list and click "Mark as paid". Each gets a payment of its open amount dated today, and "Undo" takes them all back.
+  - q: When is an invoice overdue?
+    a: As soon as its due date has passed and it is not fully paid. Rhinvoice derives this from the due date every day; it is not stored.
+  - q: How many reminder levels are there?
+    a: Three, a payment reminder, a second and a final reminder. Each becomes due a set number of days after the last deadline, sets a new deadline and can carry a dunning fee, which is 0 by default.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+In Rhinvoice you record payments on every issued invoice with **date and amount**, partial payments included, and mark one or several invoices as paid at once. An invoice still open after its due date is *Overdue* and can be followed up in **three reminder levels**.
+
+## Recording a payment
+
+An issued or partially paid invoice has two buttons:
+
+- **Mark as paid** records a payment of the whole open amount, dated today.
+- **Record payment** opens a form with *Payment date*, amount and *Note*. The open amount is suggested; change it for a **partial payment**. *Save payment* saves it.
+
+After a partial payment the invoice is *Partially paid*; once the open amount is settled, it is *Paid*. Every payment:
+
+- is positive and has at most two decimal places,
+- is not dated in the future,
+- is not higher than the open amount. An overpayment, such as a double payment, is refunded outside Rhinvoice.
+
+Each payment appears in the invoice's *History*. Under *Payments* you remove a payment recorded by mistake; that is noted in the history too. Right after recording, the message at the bottom also offers **Undo**.
+
+## Marking several invoices as paid at once
+
+<Steps>
+
+1. Open *Invoices*, for example with the view *Open*.
+2. Tick the paid invoices. The box in the table header selects all open invoices on the page.
+3. Click **Mark as paid**.
+
+</Steps>
+
+Each selected invoice gets a payment of its open amount, dated today. If one of them cannot be marked as paid because it was paid or cancelled in the meantime, Rhinvoice changes nothing and names that invoice. **Undo** in the message removes all the payments just recorded. A single invoice can also be marked right in its row with **Paid**.
+
+## Overdue invoices
+
+An invoice is *Overdue* when it is issued or partially paid and its due date has passed. Rhinvoice derives this state from the date; it is not stored, so an invoice becomes overdue by itself on the day after its due date. Cancellation invoices are never overdue.
+
+You find overdue invoices in the invoice list under *View → Overdue*, on the overview, and together under *Invoices → Dunning*.
+
+## Reminders in three levels
+
+*Invoices → Dunning* lists all overdue invoices with their open amount, the reminders already written and the next step (column *Next step*). The three levels are:
+
+| Level | Becomes due (preset) | New deadline (preset) |
+|---|---|---|
+| *Payment reminder* | 7 days after the invoice's due date | 10 days |
+| *Second reminder* | 7 days after the last deadline | 10 days |
+| *Final reminder* | 7 days after the last deadline | 7 days |
+
+When a level is due, write it with *Write Payment reminder* (or *Write Second reminder* …). Rhinvoice asks first and names the customer, the new deadline and the dunning fee. Writing a level before its date takes an explicit confirmation, and a second click never writes the next level by accident. Each reminder stays in the invoice's history; every level is written once per invoice.
+
+After the final reminder Rhinvoice stops. Further steps, such as debt collection, happen outside Rhinvoice.
+
+### Setting up the levels
+
+Under *Settings → Dunning* (or *Set up dunning levels* on the dunning page) you set for each level:
+
+- after how many days it becomes due (0 to 365) and the *New deadline in days* (1 to 365),
+- the *Dunning fee*,
+- the text in German and in English. Placeholders are `{faellig}` (new deadline), `{betrag}`, `{waehrung}`, `{nummer}` and `{kunde}`.
+
+### Dunning fees
+
+The dunning fee is **0 by default**. It is in the invoice's currency, without VAT, and lies between 0 and 1000 in steps of 0.05. Depending on the country, a fee needs an agreement with the customer or proven costs. Rhinvoice does not calculate default interest.
+
+<Aside type="caution" title="No tax advice">
+Rhinvoice treats dunning fees as damages without VAT (Switzerland: Art. 18 para. 2 lit. i MWSTG, Germany: UStAE 1.3 para. 6). Whether and which fee you may charge is a question for your accountant or tax adviser when in doubt.
+</Aside>
+
+If the customer pays the open amount plus the fee, record the open amount on the invoice and book the fee outside Rhinvoice.
+
+## The reminder as PDF
+
+Open every written reminder on the dunning page with *Open PDF*. The PDF is the invoice's page, with header, address and footer as they were on the day of issue, plus the level's text, the open amount, the fee and the total. The Swiss QR-bill or the EPC QR code (GiroCode) asks for the total and carries the invoice's reference, so that you can match the payment.
+
+Rhinvoice stores the text with the reminder, so the PDF always looks as it did when it was written, even if you change the settings later.
+
+## Sending invoices and reminders by e-mail
+
+When a mail server is set up under *Settings → E-mail*, **Send by e-mail** sends issued invoices and written reminders straight from Rhinvoice, with the PDF attached. You check recipients, subject and text before each mail; the customer's address is prefilled, and up to five recipients are possible. Every mail is noted in the invoice's history. If the mail server refuses, Rhinvoice shows its answer. Without a mail server, download the PDF and send it yourself.
+
+## Questions
+
+<Faq />

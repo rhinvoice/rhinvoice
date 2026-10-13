@@ -1,0 +1,79 @@
+---
+title: Issuing, duplicating and cancelling invoices
+description: Issue invoices in Rhinvoice with a gapless number, a check of mandatory details and a locked PDF (GoBD, CO, BAO), and correct them with a cancellation invoice.
+faq:
+  - q: When does an invoice get its number in Rhinvoice?
+    a: Only when it is issued. The number is assigned in the same database transaction that issues the invoice, so there are neither gaps nor duplicate numbers.
+  - q: Can I still change or delete an issued invoice?
+    a: No. From issuing on, content and PDF are locked, and issued invoices can never be deleted. The only correction is a cancellation invoice, which gets a number of its own.
+  - q: How do I correct a wrong invoice?
+    a: Cancel the invoice. Rhinvoice then issues a cancellation invoice with its own number that reverses it. Then duplicate the invoice, correct the copy and issue it again.
+  - q: What does Rhinvoice check before issuing?
+    a: Among other things the mandatory details of your country, such as your VAT number or tax number, that there is at least one line with an amount, that the total is above zero and that the date is not in the future.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+When you **issue** an invoice in Rhinvoice, it gets its final number, without gaps and without duplicates. From then on its content and PDF are locked. An issued invoice cannot be changed; it can only be corrected with a **cancellation invoice**, which gets a number of its own.
+
+## Issuing an invoice
+
+<Steps>
+
+1. Write the invoice as a draft (*Invoices → New invoice*). A draft has no number yet and saves itself.
+2. Leave *Date* empty to use the date of issue. Leave *Due date* empty to use the payment terms of the customer or company.
+3. Click **Issue** and confirm *Issue the invoice?*.
+
+</Steps>
+
+If something is missing, Rhinvoice does not issue and says what to do. It checks, among other things:
+
+- the **mandatory details of your country**: in Switzerland and Liechtenstein your VAT number (unless you are not VAT-registered), in Germany your tax number or VAT ID (not on small-amount invoices up to EUR 250), in Austria your VAT ID (not up to EUR 400) and, on invoices above EUR 10,000 to businesses in Austria, also the customer's VAT ID; small businesses in Austria need neither,
+- at least **one line with an amount** and a **total above zero**; credits only arise from cancelling,
+- a **bank account** in the invoice's currency (*Settings → Bank accounts*),
+- for reverse charge, the **customer's VAT number**,
+- the **date**: not in the future and not before the last issued invoice, so that numbers and dates rise together.
+
+The number follows the sequence under *Settings → Number sequences*. The preset is `R{YYYY}{NNNN}` (for example R20260001), reset every year; the year follows the invoice's date.
+
+## What issuing locks
+
+- **The number.** It is assigned in the same database transaction as the issuing. If something fails, no number is used up, and the database itself prevents duplicate numbers.
+- **Content and VAT rates.** Lines, amounts and the VAT rate of every line are frozen. The rate of the date of supply applies; later rate changes do not apply retroactively.
+- **Sender, recipient and bank account.** Rhinvoice stores company, customer and bank account as they were when issuing. If you change a customer's address later, the invoice stays as it was. The print template of that day is kept too.
+- **The PDF.** The invoice keeps its first PDF, stored with its SHA-256 checksum.
+
+The lock is not only in the interface: the database itself refuses changes to the content and the deletion of issued documents. Status changes such as payments and cancellation remain allowed. Each invoice's *History* records when it was created, issued, paid or cancelled.
+
+<Aside type="caution" title="Legal background">
+Issued invoices must not be changed and must be kept: in Germany under the GoBD, in Switzerland under Art. 958f CO, in Austria under the BAO. Rhinvoice puts this into practice but gives no tax or legal advice.
+</Aside>
+
+## Deleting drafts
+
+Delete a draft with *Delete draft* in the *More actions* menu (the button with three dots). Issued invoices can **never** be deleted, not even by hand in the database.
+
+## Duplicating an invoice
+
+*More actions → Duplicate* creates a new draft with the same content: customer, lines, texts, discounts and currency. Date and due date are empty, and the number comes only when it is issued. This works with every invoice, also a cancelled one, and with quotes. Cancellation invoices and [invoices taken over](/docs/moving/old-invoices/) cannot be duplicated.
+
+## Cancelling an invoice
+
+An issued, partially paid or paid invoice is reversed with *More actions → Cancel invoice*. After you confirm, Rhinvoice issues a **cancellation invoice** right away:
+
+- with **its own number** from the *Cancellations* sequence (preset `S{YYYY}{NNNN}`),
+- with the same lines in negative quantity and with the invoice's frozen VAT rates, sender, recipient and rounding; its total is exactly the negative total of the invoice,
+- without introduction and payment terms, since it asks for no payment. It is due on the day it is issued and is never overdue.
+
+The invoice is then *Cancelled*. *Open cancellation invoice* and *Open cancelled invoice* take you from one to the other. A cancellation cannot be undone.
+
+<Aside type="tip" title="Correcting in two steps">
+Cancel the wrong invoice, then choose *Duplicate* on it. Correct the copy and issue it: it gets a new number.
+</Aside>
+
+If the cancelled invoice was already paid, refund the amount outside Rhinvoice; Rhinvoice does not record refunds yet.
+
+## Questions
+
+<Faq />

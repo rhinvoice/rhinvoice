@@ -1,0 +1,58 @@
+---
+title: Rhinvoice Docs
+description: Documentation of Rhinvoice, the free open-source invoicing program for Switzerland, Liechtenstein, Germany and Austria. Install, invoice, VAT, backup.
+template: doc
+faq:
+  - q: Is Rhinvoice free?
+    a: Yes. Rhinvoice is free to use, change and share under the GNU Affero General Public License (AGPL). There is no paid version and no hosted service.
+  - q: Which countries does Rhinvoice support?
+    a: Rhinvoice is made for companies in Switzerland, Liechtenstein, Germany and Austria, with the VAT rates, legal notices and payment codes of each country. Your customers can be anywhere.
+  - q: Where are my data stored?
+    a: On your own server or computer. Rhinvoice runs with Docker on your machine and keeps everything in its own PostgreSQL database; nothing goes to a cloud service unless you choose one as backup target.
+---
+
+import Faq from "../../components/Faq.astro";
+
+Rhinvoice is a free, open-source invoicing program for small businesses in Switzerland, Liechtenstein, Germany and Austria. It writes quotes, invoices, cancellation invoices and payment reminders with the VAT rules, payment codes and e-invoice formats of each country, and runs with Docker on your own server or computer.
+
+## Getting started
+
+- [What is Rhinvoice?](/docs/getting-started/what-is-rhinvoice/): features, licence and what it is not
+- [Installation](/docs/getting-started/installation/): Docker Compose, `.env` and the first user
+- [First start](/docs/getting-started/first-start/): the setup wizard and the checklist
+- [Your first invoice](/docs/getting-started/first-invoice/): write, preview, issue, mark as paid
+
+## Countries
+
+- [Switzerland](/docs/countries/switzerland/): VAT rates, QR-bill, mandatory details
+- [Liechtenstein](/docs/countries/liechtenstein/)
+- [Germany](/docs/countries/germany/): VAT, small businesses, EPC QR code, e-invoices
+- [Austria](/docs/countries/austria/)
+
+## Invoices
+
+- [Quotes](/docs/invoices/quotes/)
+- [Issuing and cancelling](/docs/invoices/issue-and-cancel/)
+- [Payments and reminders](/docs/invoices/payments-and-reminders/)
+- [Recurring invoices](/docs/invoices/recurring/)
+- [E-invoices](/docs/invoices/e-invoice/): ZUGFeRD / Factur-X and XRechnung
+
+## Moving over
+
+- [Customers and articles](/docs/moving/customers-and-articles/): import from CSV or Excel
+- [Taking over old invoices](/docs/moving/old-invoices/): with their original PDFs
+
+## Running it
+
+- [Backup and restore](/docs/operations/backup/)
+- [Updating](/docs/operations/update/)
+- [Uninstalling](/docs/operations/uninstall/)
+
+## Help
+
+- [Frequently asked questions](/docs/help/faq/)
+- [For developers](/docs/help/developers/)
+
+## Questions
+
+<Faq />

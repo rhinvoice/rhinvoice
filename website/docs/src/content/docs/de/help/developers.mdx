@@ -1,0 +1,64 @@
+---
+title: An Rhinvoice mitarbeiten (für Entwickler)
+description: Für Entwicklerinnen und Entwickler, die an Rhinvoice mitarbeiten. Quellcode auf GitHub, Beitragsregeln, CLA, Architekturentscheide, neue Länder, make qa.
+faq:
+  - q: Wo ist der Quellcode von Rhinvoice?
+    a: Auf GitHub unter github.com/rhinvoice/rhinvoice, lizenziert unter der GNU Affero General Public License v3.0 oder später.
+  - q: Muss ich etwas unterschreiben, um beizutragen?
+    a: Ja. Bevor Ihr erster Pull Request übernommen wird, akzeptieren Sie das Contributor License Agreement mit einem Häkchen im Pull Request. Das Urheberrecht an Ihrer Arbeit behalten Sie.
+  - q: Kann ich Rhinvoice um ein Land erweitern?
+    a: Ja. Alles, was sich zwischen Ländern unterscheidet, steckt in einem Länderprofil pro Land. Die Anleitung docs/adding-a-country.md führt mit Tests durch die Arbeit. Eröffnen Sie zuerst ein Issue mit den amtlichen Quellen.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Für Entwickler">
+Diese Seite richtet sich an alle, die Rhinvoice verändern oder daran mitarbeiten wollen. Um Rhinvoice zu nutzen, brauchen Sie nichts davon. Beginnen Sie mit der [Installation](/docs/de/getting-started/installation/).
+</Aside>
+
+Rhinvoice ist Open Source auf [GitHub](https://github.com/rhinvoice/rhinvoice), unter der AGPL. Fehlermeldungen, Steuerregeln mit amtlicher Quelle und Pull Requests sind willkommen. Lesen Sie zuerst [CONTRIBUTING.md](https://github.com/rhinvoice/rhinvoice/blob/main/CONTRIBUTING.md) (auf Englisch) und eröffnen Sie vor grösseren Änderungen ein Issue.
+
+## Wo Sie anfangen
+
+- [CONTRIBUTING.md](https://github.com/rhinvoice/rhinvoice/blob/main/CONTRIBUTING.md): Möglichkeiten mitzuhelfen, Entwicklungsumgebung, Regeln für Pull Requests
+- [Contributor License Agreement](https://github.com/rhinvoice/rhinvoice/blob/main/CLA.md): akzeptiert mit einem Häkchen im ersten Pull Request; das Urheberrecht an Ihrer Arbeit behalten Sie
+- [Architekturentscheide](https://github.com/rhinvoice/rhinvoice/tree/main/docs/adr) in `docs/adr`: Lesen Sie den ADR des Bereichs, den Sie ändern
+- [Ein Land hinzufügen](https://github.com/rhinvoice/rhinvoice/blob/main/docs/adding-a-country.md): ein Länderprofil, geführt von Tests
+- [Änderungsprotokoll](https://github.com/rhinvoice/rhinvoice/blob/main/CHANGELOG.md)
+- Fragen und Ideen: [GitHub Discussions](https://github.com/rhinvoice/rhinvoice/discussions), Fehler: [Issues](https://github.com/rhinvoice/rhinvoice/issues)
+- Sicherheitslücken melden Sie vertraulich, nie in einem öffentlichen Issue: [SECURITY.md](https://github.com/rhinvoice/rhinvoice/blob/main/SECURITY.md)
+
+## Technik
+
+Das Backend ist Python 3.13 mit FastAPI, SQLAlchemy 2 und Alembic auf PostgreSQL, in Schichten (`api → infrastructure → application → domain`), die import-linter prüft. Das Frontend ist React mit TypeScript und Vite, TanStack Router und Query und Tailwind CSS, mit einem API-Client, der aus dem OpenAPI-Schema erzeugt wird. PDFs rendert Gotenberg aus HTML, `pypdf` macht daraus PDF/A-3b, die QR-Rechnung mit `qrbill`, der GiroCode mit `segno`, die Backups mit restic in einem eigenen Container.
+
+## Entwickeln
+
+Voraussetzungen: Python 3.13 mit uv, Node.js 22 mit pnpm, Docker.
+
+```bash
+make install        # dependencies
+make dev-backend    # database on :5433 + API on :8000 (auto-reload)
+make dev-frontend   # Vite on :5173, proxies /api to the backend
+make demo           # demo customers, articles and documents
+make qa             # the full quality gate (also what CI runs)
+make help           # all targets
+```
+
+## Die Qualitätsprüfung: make qa
+
+Rhinvoice verarbeitet Geld und rechtlich verbindliche Dokumente. Deshalb muss jede Änderung `make qa` bestehen, das auch in der CI läuft. Ein Pull Request mit roter Prüfung wird nicht begutachtet.
+
+| Bereich | Werkzeuge |
+|---|---|
+| Backend | ruff (ALL), mypy --strict, pyright strict, import-linter, pytest mit 100 % Zeilen- und Zweigabdeckung, hypothesis, echtes PostgreSQL, schemathesis, mutmut (≥ 90 %), pip-audit |
+| Frontend | TypeScript strict, ESLint strict type-checked mit jsx-a11y, dependency-cruiser, Vitest mit 100 % Abdeckung, pnpm audit |
+| E2E | Playwright gegen das Produktions-Image, axe-core (WCAG 2.2 AA) in jedem Test, Screenshots hell/dunkel × Desktop/Mobil |
+| E-Rechnung | KoSIT-Validator und Mustang für jedes Beispiel |
+
+Einige Regeln aus CONTRIBUTING.md: Geld ist nie ein Float, die Zeit kommt aus der `Clock`, ausgestellte Dokumente bleiben unveränderlich, und im Code ist alles Englisch.
+
+## Häufige Fragen
+
+<Faq />

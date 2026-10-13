@@ -1,0 +1,79 @@
+---
+title: Rechnung ausstellen, duplizieren und stornieren
+description: Rechnungen in Rhinvoice ausstellen, mit lückenloser Nummer, Prüfung der Pflichtangaben und gesperrtem PDF (GoBD, OR, BAO), und per Stornorechnung korrigieren.
+faq:
+  - q: Wann bekommt eine Rechnung in Rhinvoice ihre Nummer?
+    a: Erst beim Ausstellen. Die Nummer wird in derselben Datenbank-Transaktion vergeben, in der die Rechnung ausgestellt wird. So entstehen weder Lücken noch doppelte Nummern.
+  - q: Kann ich eine ausgestellte Rechnung noch ändern oder löschen?
+    a: Nein. Ab dem Ausstellen sind Inhalt und PDF gesperrt, und ausgestellte Rechnungen lassen sich nie löschen. Korrigieren können Sie nur mit einer Stornorechnung, die eine eigene Nummer bekommt.
+  - q: Wie korrigiere ich eine falsche Rechnung?
+    a: Stornieren Sie die Rechnung. Rhinvoice stellt dann eine Stornorechnung mit eigener Nummer aus, die sie aufhebt. Danach duplizieren Sie die Rechnung, korrigieren die Kopie und stellen sie neu aus.
+  - q: Was prüft Rhinvoice vor dem Ausstellen?
+    a: Unter anderem die Pflichtangaben Ihres Landes, etwa Ihre MWST-Nummer, Steuernummer oder UID, dass mindestens eine Position mit Betrag vorhanden ist, dass das Total grösser als null ist und dass das Datum nicht in der Zukunft liegt.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Beim **Ausstellen** bekommt eine Rechnung in Rhinvoice ihre endgültige Nummer, lückenlos und ohne Doppel. Ab dann sind Inhalt und PDF gesperrt. Ändern lässt sich eine ausgestellte Rechnung nicht mehr, korrigieren nur mit einer **Stornorechnung**, die eine eigene Nummer bekommt.
+
+## Rechnung ausstellen
+
+<Steps>
+
+1. Erfassen Sie die Rechnung als Entwurf (*Rechnungen → Neue Rechnung*). Ein Entwurf hat noch keine Nummer und speichert sich selbst.
+2. Lassen Sie *Datum* leer, gilt das Datum des Ausstellens. Lassen Sie *Fällig am* leer, gilt die Zahlungsfrist des Kunden bzw. der Firma.
+3. Klicken Sie auf **Ausstellen** und bestätigen Sie die Frage *Rechnung ausstellen?*.
+
+</Steps>
+
+Fehlt etwas, stellt Rhinvoice nicht aus und sagt, was zu tun ist. Geprüft wird unter anderem:
+
+- die **Pflichtangaben Ihres Landes**: in der Schweiz und in Liechtenstein Ihre MWST-Nummer (ausser Sie sind nicht MWST-pflichtig), in Deutschland Steuernummer oder USt-IdNr. (nicht bei Kleinbetragsrechnungen bis 250 EUR), in Österreich Ihre UID (nicht bis 400 EUR) und bei Rechnungen über 10’000 EUR an Firmen in Österreich auch die UID des Kunden. Kleinunternehmer in Österreich brauchen beides nicht,
+- mindestens **eine Position mit Betrag** und ein **Total über null**. Gutschriften entstehen nur durch Stornieren,
+- ein **Bankkonto** in der Währung der Rechnung (*Einstellungen → Bankkonten*),
+- bei Reverse Charge die **UID bzw. USt-IdNr. des Kunden**,
+- das **Datum**: nicht in der Zukunft und nicht vor der zuletzt ausgestellten Rechnung. So steigen Nummern und Daten gemeinsam.
+
+Die Nummer folgt dem Nummernkreis unter *Einstellungen → Nummernkreise*. Voreingestellt ist `R{YYYY}{NNNN}` (zum Beispiel R20260001), jährlich zurückgesetzt. Die Jahreszahl richtet sich nach dem Datum der Rechnung.
+
+## Was beim Ausstellen gesperrt wird
+
+- **Die Nummer.** Sie wird in derselben Datenbank-Transaktion vergeben wie das Ausstellen. Bricht etwas ab, ist keine Nummer verbraucht. Doppelte Nummern verhindert zusätzlich die Datenbank selbst.
+- **Inhalt und Steuersätze.** Positionen, Beträge und der Steuersatz jeder Position werden eingefroren. Massgebend ist der Satz zum Leistungsdatum. Spätere Satzänderungen wirken nicht zurück.
+- **Absender, Empfänger und Bankkonto.** Rhinvoice speichert Firma, Kunde und Bankkonto so, wie sie beim Ausstellen waren. Ändern Sie später die Adresse eines Kunden, bleibt die Rechnung unverändert. Auch die Druckvorlage des Tages bleibt erhalten.
+- **Das PDF.** Die Rechnung behält ihr erstes PDF, gespeichert mit seinem SHA-256-Prüfwert.
+
+Diese Sperre gilt nicht nur in der Oberfläche: Die Datenbank selbst verbietet Änderungen am Inhalt und das Löschen ausgestellter Dokumente. Erlaubt bleiben Statusänderungen wie Zahlungen und Storno. Der *Verlauf* jeder Rechnung hält fest, wann sie erstellt, ausgestellt, bezahlt oder storniert wurde.
+
+<Aside type="caution" title="Rechtlicher Hintergrund">
+Ausgestellte Rechnungen dürfen nicht mehr verändert werden und sind aufzubewahren: in Deutschland nach den GoBD, in der Schweiz nach Art. 958f OR, in Österreich nach der BAO. Rhinvoice setzt das technisch um, ist aber keine Steuer- oder Rechtsberatung.
+</Aside>
+
+## Entwürfe löschen
+
+Entwürfe löschen Sie im Menü *Weitere Aktionen* (der Knopf mit den drei Punkten) mit *Entwurf löschen*. Ausgestellte Rechnungen lassen sich **nie** löschen, auch nicht von Hand in der Datenbank.
+
+## Rechnung duplizieren
+
+*Weitere Aktionen → Duplizieren* legt einen neuen Entwurf mit demselben Inhalt an: Kunde, Positionen, Texte, Rabatte und Währung. Datum und Fälligkeit sind leer, die Nummer kommt erst beim Ausstellen. Das geht mit jeder Rechnung, auch mit einer stornierten, und mit Angeboten. Stornorechnungen und [übernommene Rechnungen](/docs/de/moving/old-invoices/) lassen sich nicht duplizieren.
+
+## Rechnung stornieren
+
+Eine ausgestellte, teilweise bezahlte oder bezahlte Rechnung heben Sie mit *Weitere Aktionen → Stornieren* auf. Nach der Bestätigung stellt Rhinvoice sofort eine **Stornorechnung** aus:
+
+- mit **eigener Nummer** aus dem Nummernkreis *Stornorechnungen* (voreingestellt `S{YYYY}{NNNN}`),
+- mit denselben Positionen in negativer Menge, den eingefrorenen Steuersätzen, Absender, Empfänger und der Rundung der Rechnung. Ihr Total ist genau das negative Total der Rechnung,
+- ohne Einleitung und Zahlungsbedingungen, denn sie fordert keine Zahlung. Sie ist am Tag ihres Ausstellens fällig und gilt nie als überfällig.
+
+Die Rechnung steht danach auf *Storniert*. Über *Stornorechnung öffnen* und *Stornierte Rechnung öffnen* kommen Sie von einer zur anderen. Ein Storno lässt sich nicht rückgängig machen.
+
+<Aside type="tip" title="Korrigieren in zwei Schritten">
+Stornieren Sie die falsche Rechnung und wählen Sie danach auf ihr *Duplizieren*. Korrigieren Sie die Kopie und stellen Sie sie aus. Sie bekommt eine neue Nummer.
+</Aside>
+
+War die stornierte Rechnung schon bezahlt, erstatten Sie den Betrag ausserhalb von Rhinvoice. Eine Rückzahlung bildet Rhinvoice noch nicht ab.
+
+## Häufige Fragen
+
+<Faq />

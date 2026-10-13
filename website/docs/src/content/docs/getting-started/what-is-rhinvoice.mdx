@@ -1,0 +1,102 @@
+---
+title: What is Rhinvoice? Free open-source invoicing
+description: Rhinvoice is a free open-source invoicing program for Switzerland, Liechtenstein, Germany and Austria, with QR-bill, EPC QR code, e-invoices and VAT rules.
+faq:
+  - q: Is Rhinvoice really free?
+    a: Yes. Rhinvoice is licensed under the GNU Affero General Public License v3.0 or later. You may use, change and share it without paying; there is no paid version.
+  - q: Is there a hosted version of Rhinvoice?
+    a: No. You run Rhinvoice yourself with Docker, on a server, a NAS, a Raspberry Pi 4/5 or your own computer. Your data stay on that machine.
+  - q: Is Rhinvoice an accounting program?
+    a: No. Rhinvoice writes quotes, invoices, cancellation invoices and reminders and tracks payments. It has no bookkeeping, no ledger, no VAT returns and no payroll.
+  - q: Is Rhinvoice ready for real invoices?
+    a: Rhinvoice is in beta (version 0.x). Try it on a test installation before you write real invoices with it.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Rhinvoice is a **free, open-source invoicing program** for small businesses and freelancers in Switzerland, Liechtenstein, Germany and Austria. It writes quotes, invoices, cancellation invoices and payment reminders with each country's VAT rates, legal notices, payment QR codes and e-invoice formats, and runs with Docker on your own server or computer.
+
+The name comes from the Rhine and "invoice": the Rhine connects Switzerland, Liechtenstein, Austria and Germany.
+
+## Who it is for
+
+Rhinvoice is for companies whose seat is in Switzerland, Liechtenstein, Germany or Austria: sole traders, freelancers, small firms and their bookkeepers. Customers can be anywhere. The interface is in German (Swiss, German and Austrian variants) and English; documents are written in German or English.
+
+## What Rhinvoice does
+
+**Documents**
+
+- Quotes, invoices and cancellation invoices; turn a quote into an invoice, duplicate, cancel
+- Editor with a live paper preview, line and document discounts, net or gross prices
+- Numbers assigned when issuing, without gaps; issued documents cannot be changed (GoBD, Art. 958f CO, BAO), and the PDF is kept with its SHA-256 checksum
+- Partial payments, open and overdue amounts, full-text search and saved views
+- Payment reminders in three levels with new deadlines, fees and texts per language
+- Recurring invoices every month, quarter, half-year or year: as a draft, issued, or issued and sent by e-mail
+- Sending by e-mail through your own mail server, with the PDF and optionally the XRechnung
+
+**Taxes and countries**
+
+- Dated VAT rates for CH, LI, DE and AT; the rate of the service date applies
+- Tax treatment decided automatically: domestic, reverse charge, intra-Community supply of goods, export, small business, exempt; a manual override is logged
+- Goods and services kept apart, also on mixed invoices, each with its legal notice
+- Mandatory invoice details checked before issuing
+- Swiss 5-cent rounding, number formats and wording per country (MWST or USt., «Jänner» in Austria, «ss» in Switzerland)
+
+**Payment and e-invoices**
+
+- Swiss QR-bill with QR or creditor reference (CH, LI)
+- EPC QR code / GiroCode (DE, AT, and for euro invoices into the EEA)
+- ZUGFeRD / Factur-X (EN 16931) embedded in every PDF, XRechnung 3.0 for German public authorities
+- PDF/A-3b output, three print templates with logo, font and footer
+
+**Everyday work**
+
+- Customers and articles with archive and document history
+- Import from CSV, XLSX and XLS; old invoices come over with their original PDFs
+- Dashboard: revenue against last year, open and overdue amounts, open quotes, best customers, expected payments
+- Command palette (⌘K / Ctrl+K), keyboard shortcuts, light and dark mode; usable on the phone
+
+**Operations**
+
+- Encrypted, deduplicated backups with restic: daily and after issuing, to S3, SFTP, a folder, Dropbox, Google Drive and others
+- Login with optional two-factor authentication
+- First-start wizard and a setup checklist
+- Images for `linux/amd64` and `linux/arm64` (also Raspberry Pi 4/5)
+
+## Countries at a glance
+
+| | Switzerland | Liechtenstein | Germany | Austria |
+|---|---|---|---|---|
+| VAT rates | 8.1 / 2.6 / 3.8 % | 8.1 / 2.6 / 3.8 % | 19 / 7 % | 20 / 10 / 13 % |
+| Small business | not VAT-registered | not VAT-registered | § 19 UStG | § 6 Abs. 1 Z 27 UStG |
+| Payment code | Swiss QR-bill | Swiss QR-bill | EPC QR code | EPC QR code |
+| Rounding | 0.05 (optional) | 0.05 (optional) | 0.01 | 0.01 |
+| E-invoice | ZUGFeRD / Factur-X | ZUGFeRD / Factur-X | ZUGFeRD, XRechnung | ZUGFeRD / Factur-X |
+
+Details per country: [Switzerland](/docs/countries/switzerland/), [Liechtenstein](/docs/countries/liechtenstein/), [Germany](/docs/countries/germany/), [Austria](/docs/countries/austria/).
+
+## What Rhinvoice is not
+
+- **Not a hosted service.** Everyone runs Rhinvoice on their own server or computer; see [Installation](/docs/getting-started/installation/).
+- **Not an accounting program.** No bookkeeping, no ledger, no VAT returns, no payroll.
+- **Not a web shop or point-of-sale system.**
+- **Not finished.** Rhinvoice is in beta (0.x). Try it on a test installation before you write real invoices with it.
+
+<Aside type="caution" title="No tax advice">
+Rhinvoice helps you write correct invoices, but it gives no tax or legal advice. Tax rates and rules are checked against official sources (ESTV, the Liechtenstein tax administration, the German and Austrian ministries of finance) and provided without warranty. Ask your tax adviser when in doubt.
+</Aside>
+
+## Licence and maker
+
+Rhinvoice is licensed under the [GNU Affero General Public License v3.0 or later](https://github.com/rhinvoice/rhinvoice/blob/main/LICENSE) (AGPL). You may use, change and share it freely; if you offer a changed version as a service to others, you share your changes under the same licence. The source code is on [GitHub](https://github.com/rhinvoice/rhinvoice).
+
+Rhinvoice is made by [webberz](https://www.webberz.ch/), a software company in Balgach in the Swiss Rhine Valley.
+
+## Try it
+
+Public demos reset themselves every hour, one per country: [Switzerland](https://ch.rhinvoice.com), [Germany](https://de.rhinvoice.com), [Austria](https://at.rhinvoice.com). All visitors share one login per demo; it sends no e-mail and takes no uploads.
+
+## Questions
+
+<Faq />

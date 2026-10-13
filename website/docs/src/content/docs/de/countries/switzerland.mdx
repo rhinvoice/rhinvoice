@@ -1,0 +1,98 @@
+---
+title: "Rechnungen in der Schweiz: MWST, QR-Rechnung, Pflichtangaben"
+description: Rechnungen in der Schweiz mit Rhinvoice, dem kostenlosen Open-Source-Rechnungsprogramm. MWST 8.1 %, 2.6 % und 3.8 %, QR-Rechnung, UID und Rappenrundung.
+faq:
+  - q: Welche MWST-Sätze gelten in der Schweiz?
+    a: Seit 1. Januar 2024 gelten 8.1 % (Normalsatz), 2.6 % (reduzierter Satz) und 3.8 % (Sondersatz Beherbergung). Von 2018 bis 2023 waren es 7.7 %, 2.5 % und 3.7 %. Massgebend ist der Satz am Leistungsdatum.
+  - q: Was muss auf einer Rechnung einer MWST-pflichtigen Firma stehen?
+    a: Unter anderem die MWST-Nummer, also die UID mit dem Zusatz MWST, zum Beispiel CHE-123.456.789 MWST (Art. 26 Abs. 2 lit. a MWSTG). Rhinvoice stellt keine Rechnung aus, solange sie fehlt, ausser Ihre Firma ist als nicht MWST-pflichtig eingestellt.
+  - q: Wann braucht eine QR-Rechnung eine QR-IBAN?
+    a: Nur wenn Sie mit QR-Referenz arbeiten. Mit einer QR-IBAN druckt Rhinvoice die 27-stellige QR-Referenz, mit einer normalen IBAN die Creditor Reference (SCOR, beginnt mit RF). Beide funktionieren in CHF und EUR.
+  - q: Rundet Rhinvoice Rechnungsbeträge auf 5 Rappen?
+    a: Ja, wenn Sie unter Einstellungen → Firma die Rappenrundung einschalten. Dann wird nur der Endbetrag in CHF auf 0.05 gerundet und als eigene Zeile «Rundung» gezeigt. Die MWST bleibt auf den Rappen genau.
+  - q: Wie lange muss ich Rechnungen in der Schweiz aufbewahren?
+    a: Zehn Jahre (Art. 958f OR). Rhinvoice sperrt ausgestellte Rechnungen samt PDF, Korrekturen gehen nur über eine Stornorechnung.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Eine Schweizer Rechnung mit Rhinvoice hat die **MWST-Sätze am Leistungsdatum** (seit 1. Januar 2024: 8.1 %, 2.6 %, 3.8 %), die **UID mit Zusatz MWST** Ihrer Firma, den passenden **gesetzlichen Hinweis** und einen **QR-Zahlteil** in CHF oder EUR. Rhinvoice prüft vor dem Ausstellen, ob die MWST-Nummer da ist, und sperrt die Rechnung danach für zehn Jahre Aufbewahrung.
+
+<Aside type="note" title="Keine Steuerberatung">
+Stand: Oktober 2026. Die Sätze und Regeln sind gegen die Quellen der ESTV und das MWSTG geprüft, aber ohne Gewähr. Fragen Sie im Zweifel Ihre Treuhänderin oder Ihren Treuhänder.
+</Aside>
+
+## Welcher MWST-Satz gilt?
+
+| Gültig | Normalsatz | Reduzierter Satz | Sondersatz Beherbergung |
+|---|---|---|---|
+| seit 1. Januar 2024 | 8.1 % | 2.6 % | 3.8 % |
+| 1. Januar 2018 bis 31. Dezember 2023 | 7.7 % | 2.5 % | 3.7 % |
+| 1. Januar 2011 bis 31. Dezember 2017 | 8 % | 2.5 % | 3.8 % |
+
+Quelle: ESTV, «MWST-Sätze ab 1. Januar 2024» und «Entwicklung der MWST-Sätze».
+
+Massgebend ist der Satz am **Leistungsdatum**: das Ende des Leistungszeitraums, sonst sein Beginn, sonst das Rechnungsdatum. Eine Rechnung von 2026 für eine Arbeit im Dezember 2023 rechnet also mit 7.7 %. Beim Ausstellen friert Rhinvoice den Satz jeder Position ein. Spätere Satzänderungen ändern ausgestellte Rechnungen nicht.
+
+Die älteren Sätze braucht es für Rechnungen mit früherem Leistungsdatum und für [übernommene alte Rechnungen](/docs/de/moving/old-invoices/).
+
+## Was auf der Rechnung stehen muss
+
+**Die MWST-Nummer Ihrer Firma.** Wer MWST-pflichtig ist, nennt auf der Rechnung die Nummer, unter der er im Register eingetragen ist: die UID mit dem Zusatz MWST, zum Beispiel `CHE-123.456.789 MWST` (Art. 26 Abs. 2 lit. a MWSTG). Sie tragen sie unter *Einstellungen → Firma* im Feld *UID / MWST-Nummer* ein. Rhinvoice prüft die Prüfziffer der UID. Fehlt die Nummer, stellt Rhinvoice die Rechnung nicht aus und sagt, wo Sie sie ergänzen.
+
+**Das Leistungsdatum.** Ohne Leistungszeitraum druckt Rhinvoice das Rechnungsdatum als Leistungsdatum. Das MWSTG verlangt es nur, wenn es vom Rechnungsdatum abweicht (Art. 26 Abs. 2 lit. d MWSTG), es schadet aber nicht.
+
+Ausserdem druckt jede Rechnung Absender und Empfänger, Nummer und Datum, die Positionen und die **MWST pro Satz** («MWST 8.1 % auf CHF …»). Die Nummer vergibt Rhinvoice erst beim Ausstellen, ohne Lücken.
+
+## Nicht MWST-pflichtig
+
+Liegt Ihr Umsatz unter **CHF 100’000**, sind Sie in der Regel nicht MWST-pflichtig. Wählen Sie dann unter *Einstellungen → Firma* den Schalter *Nicht MWST-pflichtig (Umsatz unter CHF 100'000)*. Ihre Rechnungen enthalten keine MWST und den Hinweis:
+
+> Nicht mehrwertsteuerpflichtig.
+
+(Englische Dokumente: «No VAT is charged (small business scheme).») Die UID ist dann keine Pflichtangabe. Den Wortlaut aller Hinweise können Sie unter *Einstellungen → Texte → Gesetzliche Hinweise* ändern. Ein leeres Feld stellt den eingebauten Text wieder her.
+
+## QR-Rechnung: QR-Referenz oder SCOR
+
+Jede Rechnung einer Schweizer Firma bekommt den **QR-Zahlteil** nach den Implementation Guidelines QR-bill 2.3 von SIX, auf einer eigenen Seite mit Schneidelinie. Das Konto muss eine Schweizer oder Liechtensteiner IBAN haben, die Währung ist CHF oder EUR.
+
+| Konto unter *Einstellungen → Bankkonten* | Referenz auf der QR-Rechnung |
+|---|---|
+| mit **QR-IBAN** | QR-Referenz (QRR), 27 Ziffern |
+| nur mit **IBAN** | Creditor Reference (SCOR, ISO 11649), beginnt mit `RF` |
+
+Rhinvoice bildet beide Referenzen aus der Rechnungsnummer. So ordnen Sie Zahlungen auf dem Kontoauszug der Rechnung zu. Pro Währung ist ein Konto das Standardkonto: eine Rechnung in EUR nimmt Ihr EUR-Konto. Entwürfe zeigen an derselben Stelle einen Platzhalter, weil die Referenz erst mit der Nummer entsteht.
+
+**Euro-Rechnungen an Kunden im EWR** (EU, Island, Norwegen) bekommen zusätzlich den **EPC-QR-Code** (GiroCode), weil Banking-Apps dort ihn lesen und die QR-Rechnung meist nicht. Für ein Schweizer Konto braucht der EPC-Code den BIC: Tragen Sie ihn beim Konto ein, sonst entfällt der Code.
+
+## Rappenrundung
+
+Unter *Einstellungen → Firma* schalten Sie die *Rappenrundung* ein. Dann rundet Rhinvoice den **Endbetrag in CHF auf 0.05** und zeigt die Differenz als eigene Zeile *Rundung*. Die Positionen und die MWST bleiben auf den Rappen genau, und Rechnungen in EUR rundet Rhinvoice nicht auf 5 Cent.
+
+## Kunden im Ausland
+
+Rhinvoice bestimmt den Steuerfall aus dem Land Ihrer Firma, dem Land des Kunden und ob der Kunde eine Firma mit UID ist. Kunden in Liechtenstein gelten als Inland, weil Liechtenstein das MWSTG über den Zollvertrag anwendet.
+
+| Fall | MWST | Hinweis auf der Rechnung |
+|---|---|---|
+| Kunde in der Schweiz oder in Liechtenstein | ja | keiner |
+| Dienstleistung an eine Firma in der EU mit UID | nein | «Übergang der Steuerschuld auf den Leistungsempfänger (Steuerschuldnerschaft des Leistungsempfängers, Reverse Charge).» |
+| Dienstleistung an alle anderen Kunden im Ausland | nein | «Ort der Leistung im Ausland, nicht der MWST unterstellt.» |
+| Ware, die die Schweiz verlässt | nein | «Steuerbefreite Ausfuhrlieferung (Art. 23 Abs. 2 Ziff. 1 MWSTG).» |
+
+Englische Dokumente drucken «Reverse charge: the recipient is liable for the VAT.», «Place of supply abroad, not subject to domestic VAT.» und «VAT exempt export delivery.». Der Reverse-Charge-Hinweis richtet sich nach dem Land des Kunden (Art. 219a Abs. 1 MWST-Richtlinie der EU). Deutsche Kunden brauchen zum Beispiel den Wortlaut von § 14a Abs. 5 UStG, deshalb steht er in Klammern dabei. Bei Waren erinnert Sie der Editor an den Ausfuhrnachweis (Zoll). Den Steuerfall können Sie im Editor von Hand ändern, Rhinvoice hält die Änderung mit Begründung im Verlauf fest.
+
+## E-Rechnung
+
+In der Schweiz ist die E-Rechnung freiwillig. Rhinvoice bettet trotzdem standardmässig in jedes PDF einer ausgestellten Rechnung eine **ZUGFeRD-/Factur-X-Rechnung** (EN 16931) ein (abschaltbar unter *Einstellungen → Druckvorlage*). Fehlt eine Angabe, die die E-Rechnung braucht, entsteht das PDF ohne sie, und die Rechnung zeigt, was gefehlt hat. Buchhaltungsprogramme lesen die Daten dann direkt, und für Menschen sieht das PDF gleich aus. Die UID dient darin als Kennung Ihrer Firma. Mehr dazu unter [E-Rechnung](/docs/de/invoices/e-invoice/).
+
+## Aufbewahrung
+
+Rechnungen bewahren Sie **zehn Jahre** auf (Art. 958f OR). Ab dem Ausstellen sind Inhalt und PDF in Rhinvoice gesperrt, auch in der Datenbank. Korrekturen gehen nur über eine [Stornorechnung](/docs/de/invoices/issue-and-cancel/) mit eigener Nummer. Sichern Sie die Daten mit einem [Backup](/docs/de/operations/backup/).
+
+Für Firmen in Liechtenstein gelten dieselben Sätze: siehe [Rechnungen in Liechtenstein](/docs/de/countries/liechtenstein/).
+
+## Häufige Fragen
+
+<Faq />

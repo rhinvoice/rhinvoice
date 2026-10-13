@@ -1,0 +1,83 @@
+---
+title: Wiederkehrende Rechnungen und Abo-Rechnungen
+description: Wiederkehrende Rechnungen in Rhinvoice monatlich, vierteljährlich, halbjährlich oder jährlich schreiben lassen, als Entwurf, ausgestellt oder per E-Mail.
+faq:
+  - q: Kann Rhinvoice Rechnungen automatisch jeden Monat schreiben?
+    a: Ja. Ein Plan unter «Wiederkehrende Rechnungen» schreibt dieselbe Rechnung jeden Monat, jedes Quartal, jedes Halbjahr oder jedes Jahr. Sie wählen, ob ein Entwurf entsteht, ob die Rechnung ausgestellt oder ob sie zusätzlich per E-Mail versendet wird.
+  - q: Was passiert, wenn der Server eine Zeit lang aus war?
+    a: Rhinvoice holt verpasste Termine nach. Jeder Zeitraum bekommt seine Rechnung mit eigenem Leistungszeitraum, datiert auf den Tag, an dem sie geschrieben wird. Pro Plan und Lauf sind es höchstens 24.
+  - q: Was passiert mit Terminen, während ein Plan pausiert ist?
+    a: Sie entfallen. Setzen Sie den Plan fort, schreibt Rhinvoice ab dem nächsten Termin weiter und holt die Termine während der Pause nicht nach.
+  - q: Kann eine Rechnung doppelt geschrieben werden?
+    a: Nein. Jeder Zeitraum wird genau einmal geschrieben, auch mit mehreren App-Containern, nach einem Neustart oder nach einem Absturz.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Für Hosting, Wartung, Abos oder Pauschalen legen Sie in Rhinvoice einen **Plan** an. Er schreibt dieselbe Rechnung *Monatlich*, *Vierteljährlich*, *Halbjährlich* oder *Jährlich* von selbst: als Entwurf, ausgestellt oder ausgestellt und per E-Mail an den Kunden gesendet.
+
+## Plan anlegen
+
+<Steps>
+
+1. Öffnen Sie *Rechnungen → Wiederkehrend* und klicken Sie auf **Neuer Plan**. Oder wählen Sie auf einer bestehenden Rechnung *Weitere Aktionen → Wiederkehrend machen*.
+2. Geben Sie dem Plan eine *Bezeichnung*. Sie ist nur für Sie, zum Beispiel «Hosting Holzwerk».
+3. Wählen Sie *Kunde*, *Intervall* und den Tag unter *Erste Rechnung am* (heute oder später). Unter *Letzte Rechnung bis* setzen Sie bei Bedarf ein Ende.
+4. Wählen Sie unter *Am Termin*, was geschehen soll.
+5. Erfassen Sie darunter die Rechnung wie im normalen Editor. Die Vorschau zeigt die nächste Rechnung.
+6. Klicken Sie auf **Plan anlegen**.
+
+</Steps>
+
+Datum, Fälligkeit und Steuerfall setzt jede Rechnung selbst, wenn sie geschrieben wird. Den Steuerfall bestimmt Rhinvoice dabei automatisch. Preise und Texte kommen aus dem Plan: Ändern Sie später einen Artikel, ändert sich der Plan nicht.
+
+## Was am Termin geschieht
+
+| *Am Termin* | Ergebnis |
+|---|---|
+| *Entwurf erstellen* | Der Entwurf wartet unter *Rechnungen*, bis Sie ihn prüfen und ausstellen |
+| *Ausstellen* | Die Rechnung wird mit Nummer ausgestellt. Sie senden sie selbst |
+| *Ausstellen und per E-Mail senden* | Die Rechnung wird ausgestellt und an die E-Mail-Adresse des Kunden gesendet |
+
+Für den Versand per E-Mail muss ein Mailserver unter *Einstellungen → E-Mail* eingerichtet sein. Die E-Mail enthält das PDF der Rechnung. Eine separate XRechnung für deutsche Behörden senden Sie von Hand von der Rechnung aus ([E-Rechnung](/docs/de/invoices/e-invoice/)).
+
+## Termine und Leistungszeitraum
+
+Alle Termine zählen ab dem ersten Tag. Beginnt ein monatlicher Plan am 31., kommt die Rechnung in kürzeren Monaten am letzten Tag und danach wieder am 31.
+
+Mit *Leistungszeitraum eintragen* bekommt jede Rechnung den Zeitraum, den sie abdeckt: vom Tag der Rechnung bis zum Tag vor der nächsten. Die Zeiträume folgen ohne Lücke und ohne Überschneidung aufeinander. Der letzte endet mit dem Plan.
+
+Ändern Sie beim Bearbeiten den ersten Tag oder das Intervall, beginnt die Zählung neu. Der neue erste Tag muss dann heute oder später sein.
+
+## Pausieren, fortsetzen, löschen
+
+- **Pausieren** hält den Plan an. Termine während der Pause entfallen.
+- **Fortsetzen** schreibt ab dem nächsten Termin weiter. Verpasste Termine der Pause holt Rhinvoice nicht nach.
+- **Plan löschen** beendet den Plan. Bereits geschriebene Rechnungen bleiben erhalten.
+
+Ein Plan mit Enddatum steht nach der letzten Rechnung auf *Beendet*. Ist der Kunde archiviert, verrechnet ihn der Plan trotzdem weiter. Rhinvoice weist darauf hin, und Sie pausieren den Plan, wenn das nicht mehr stimmt.
+
+## Wer die Rechnungen schreibt
+
+Die App selbst schreibt fällige Rechnungen im Hintergrund, einen eigenen Container dafür braucht es nicht. Sie sucht eine Minute nach dem Start und dann alle zehn Minuten nach fälligen Plänen.
+
+- **Jeder Zeitraum wird einmal geschrieben**, auch mit mehreren App-Containern, nach einem Neustart oder nach einem Absturz.
+- **Verpasste Termine werden nachgeholt**, wenn die App eine Zeit lang aus war. Jeder Zeitraum bekommt seine Rechnung, datiert auf den Tag, an dem sie geschrieben wird, mit eigenem Leistungszeitraum. Pro Plan und Lauf sind es höchstens 24.
+- **Probleme werden angezeigt.** Lässt sich eine Rechnung nicht ausstellen (zum Beispiel ohne Bankkonto), bleibt sie ein Entwurf. Lässt sie sich nicht senden (keine E-Mail-Adresse beim Kunden, Mailserver lehnt ab), bleibt sie ausgestellt. Der Plan zeigt unter *Geschriebene Rechnungen* jeden Lauf mit dem Grund und der Rechnung und steht in der Liste auf *Problem*.
+
+In der Datei `.env` ändern Sie den Abstand in Sekunden (mindestens 60, voreingestellt 600) mit `RHINVOICE_RECURRING_INTERVAL` oder schalten das Schreiben im Hintergrund mit `RHINVOICE_RECURRING=false` ab.
+
+Ist es ausgeschaltet, schreiben Sie fällige Rechnungen selbst, zum Beispiel per Cron. Der Befehl endet mit Code 1, wenn eine Rechnung Aufmerksamkeit braucht:
+
+```bash
+docker compose exec app rhinvoice recurring
+```
+
+<Aside type="note" title="In der öffentlichen Demo">
+Die öffentliche Demo schreibt keine wiederkehrenden Rechnungen. Probieren Sie Pläne auf einer eigenen [Installation](/docs/de/getting-started/installation/) aus.
+</Aside>
+
+## Häufige Fragen
+
+<Faq />

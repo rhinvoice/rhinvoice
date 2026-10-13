@@ -6,8 +6,23 @@ The landing page of Rhinvoice, in English (`/`) and German (`/de/`), served by G
 website/
   site/      the source: hand-written HTML, one stylesheet, one small script — edit here
   build.py   minifies site/ into dist/ and puts content hashes into asset names
+  docs/      the user documentation at /docs/ (Astro Starlight), see docs/WRITING.md
   tools/     makes the images (social previews, app icons, screenshots)
   dist/      the built site (not versioned)
+```
+
+## The docs
+
+`website/docs` holds the user documentation, English at `/docs/` and German at `/docs/de/` with the
+same paths. Each page is MDX in `website/docs/src/content/docs`; the rules for writing one
+(search-friendly titles, answer first, facts only from the repository, questions and answers) are in
+[`docs/WRITING.md`](docs/WRITING.md). `make docs-qa` checks types, the writing rules, the build and
+every link; the Pages workflow builds the docs into `dist/docs` after the landing page.
+
+```bash
+cd website/docs
+pnpm install
+pnpm dev          # http://127.0.0.1:4321/docs/
 ```
 
 ## Build and look at it

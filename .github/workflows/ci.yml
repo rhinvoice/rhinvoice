@@ -1,9 +1,13 @@
 name: CI
 
+# Changes to the website, the docs or Markdown files alone need none of these checks:
+# the Website workflow checks and publishes them.
 on:
   push:
     branches: [main]
+    paths-ignore: ["website/**", "docs/**", "*.md"]
   pull_request:
+    paths-ignore: ["website/**", "docs/**", "*.md"]
 
 permissions:
   contents: read
@@ -44,22 +48,6 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: cd frontend && pnpm install --frozen-lockfile
       - run: make frontend-qa
-
-  docs:
-    name: Docs (types, content rules, build, links)
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          package_json_file: website/docs/package.json
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: website/docs/pnpm-lock.yaml
-      - run: cd website/docs && pnpm install --frozen-lockfile
-      - run: make docs-qa
 
   api-contract:
     name: Generated API client is up to date

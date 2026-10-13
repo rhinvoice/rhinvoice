@@ -1,9 +1,12 @@
 name: Website
 
+# The docs read CHANGELOG.md for their release notes. Pull requests are checked, not published.
 on:
   push:
     branches: [main]
-    paths: ["website/**", "docs/screenshots/**", ".github/workflows/pages.yml"]
+    paths: ["website/**", "docs/screenshots/**", "CHANGELOG.md", "Makefile", ".github/workflows/pages.yml"]
+  pull_request:
+    paths: ["website/**", "docs/screenshots/**", "CHANGELOG.md", "Makefile", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -12,7 +15,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -36,12 +39,13 @@ jobs:
           cache-dependency-path: website/docs/pnpm-lock.yaml
       - run: npm install --global terser
       - run: python3 website/build.py
-      # The docs go into website/dist/docs, next to the landing page.
+      # The docs go into website/dist/docs, next to the landing page: types, writing rules,
+      # build, links and audit in one go.
       - run: pnpm install --frozen-lockfile
         working-directory: website/docs
-      - run: pnpm build
-        working-directory: website/docs
-      - uses: actions/upload-pages-artifact@v3
+      - run: make docs-qa
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: website/dist
           # .well-known/security.txt and .nojekyll are dotfiles.
@@ -49,6 +53,7 @@ jobs:
 
   deploy:
     name: Publish to GitHub Pages
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-24.04
     environment:

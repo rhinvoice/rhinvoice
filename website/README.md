@@ -17,7 +17,8 @@ website/
 same paths. Each page is MDX in `website/docs/src/content/docs`; the rules for writing one
 (search-friendly titles, answer first, facts only from the repository, questions and answers) are in
 [`docs/WRITING.md`](docs/WRITING.md). `make docs-qa` checks types, the writing rules, the build and
-every link; the Pages workflow builds the docs into `dist/docs` after the landing page.
+every link. The Website workflow runs it and builds the docs into `dist/docs` after the landing
+page; changes to the website or docs alone do not start the full CI.
 
 ```bash
 cd website/docs

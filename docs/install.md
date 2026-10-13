@@ -81,8 +81,8 @@ replace them before sending real invoices.
 A public demo that resets itself every hour (one per country, behind HTTPS) is described in
 [`deploy/demo/README.md`](../deploy/demo/README.md).
 
-The stack has three containers: `app` (Rhinvoice), `db` (PostgreSQL) and `gotenberg`, which turns
-documents into PDFs. Gotenberg has no port of its own and makes no requests to the internet; only
+The stack has four containers: `app` (Rhinvoice), `db` (PostgreSQL), `gotenberg`, which turns
+documents into PDFs, and `backup` ([`backup.md`](backup.md)). Gotenberg has no port of its own and makes no requests to the internet; only
 the app talks to it. Without it, everything works except PDF download and printing.
 
 ### Sending by e-mail

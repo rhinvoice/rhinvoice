@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.6.2] – 2026-10-13
+
 ### Changed
 - The original PDF of an invoice taken over from another program is fitted to the width, without
   the thumbnails of the browser's viewer (in Chromium browsers).

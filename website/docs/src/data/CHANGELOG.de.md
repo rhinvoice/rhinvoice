@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.6.2] – 2026-10-13
+
 ### Geändert
 - Das Original-PDF einer aus einem früheren Programm übernommenen Rechnung wird auf die Breite
   eingepasst, ohne die Miniaturen des Browser-Betrachters (in Chromium-Browsern).

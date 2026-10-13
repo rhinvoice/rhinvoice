@@ -30,6 +30,15 @@ quotes the page. Write so that both can take a sentence out of the page and it i
 - End with `## Häufige Fragen` (German) or `## Questions` (English) followed by `<Faq />`.
 - Country and tax pages say once, briefly, that the page is no tax advice.
 
+## New features and release notes
+
+- A page whose feature came after the first public release (0.4.0) gets `since: X.Y.Z` in its
+  frontmatter: the title then shows "Ab Version X.Y.Z" / "Since version X.Y.Z", linked to the release
+  notes. Only part of a page is new: put `<Since version="X.Y.Z" />` next to it.
+- The release notes page (*Neuigkeiten* / *What's new*) is made from `CHANGELOG.md` and its German
+  twin `src/data/CHANGELOG.de.md`. Every release adds its entry to both, with the same version
+  heading; `scripts/check.py content` compares them.
+
 ## Facts: only from the repository
 
 Never invent a feature, a limit or a rate. Take them from:

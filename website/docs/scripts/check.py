@@ -16,6 +16,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CONTENT = ROOT / "src" / "content" / "docs"
+CHANGELOG = ROOT.parent.parent / "CHANGELOG.md"
+CHANGELOG_DE = ROOT / "src" / "data" / "CHANGELOG.de.md"
+VERSION_HEADING = re.compile(r"^## \[.+?\].*$", re.M)
+RELEASE = re.compile(r"^## \[(\d+\.\d+\.\d+)\]", re.M)
+SINCE = re.compile(r'^since:\s*"?([\d.]+)"?\s*$|<Since version="([\d.]+)"', re.M)
 DIST = ROOT.parent / "dist" / "docs"
 
 TITLE_MAX = 65
@@ -45,8 +50,23 @@ def _outside_quotes(text: str) -> str:
     return "\n".join(line for line in text.splitlines() if not line.lstrip().startswith(">"))
 
 
+def check_changelog() -> list[str]:
+    """The German release notes carry the same version headings as CHANGELOG.md, in order."""
+    if not CHANGELOG_DE.is_file():
+        return [f"{CHANGELOG_DE.relative_to(ROOT)}: the German release notes are missing"]
+    english = VERSION_HEADING.findall(CHANGELOG.read_text(encoding="utf-8"))
+    german = VERSION_HEADING.findall(CHANGELOG_DE.read_text(encoding="utf-8"))
+    if english == german:
+        return []
+    missing = [heading for heading in english if heading not in german]
+    extra = [heading for heading in german if heading not in english]
+    detail = f"missing {missing}" if missing else f"not in CHANGELOG.md {extra}" if extra else "order differs"
+    return [f"{CHANGELOG_DE.relative_to(ROOT)}: version headings differ from CHANGELOG.md, {detail}"]
+
+
 def check_content() -> list[str]:
-    problems: list[str] = []
+    problems: list[str] = check_changelog()
+    released = set(RELEASE.findall(CHANGELOG.read_text(encoding="utf-8")))
     pages = sorted(CONTENT.rglob("*.md*"))
     english = {p.relative_to(CONTENT) for p in pages if p.relative_to(CONTENT).parts[0] != "de"}
     german = {p.relative_to(CONTENT / "de") for p in pages if p.relative_to(CONTENT).parts[0] == "de"}
@@ -71,6 +91,10 @@ def check_content() -> list[str]:
             problems.append(f"{name}: at least {FAQ_MIN} questions in faq")
         elif "<Faq />" not in text:
             problems.append(f"{name}: the faq is not shown, add <Faq /> at the end")
+        for match in SINCE.finditer(text):
+            version = match.group(1) or match.group(2)
+            if version not in released:
+                problems.append(f"{name}: since version {version} is no release in CHANGELOG.md")
         if (found := FORBIDDEN.search(text)) is not None:
             problems.append(f"{name}: must not contain «{found.group(0)}»")
         if name.parts[0] == "de" and "ß" in _outside_quotes(text):

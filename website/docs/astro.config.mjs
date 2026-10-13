@@ -33,7 +33,10 @@ export default defineConfig({
       lastUpdated: true,
       customCss: ["./src/styles/rhinvoice.css"],
       routeMiddleware: "./src/route-data.ts",
-      components: { SiteTitle: "./src/components/SiteTitle.astro" },
+      components: {
+        SiteTitle: "./src/components/SiteTitle.astro",
+        PageTitle: "./src/components/PageTitle.astro",
+      },
       head: [
         { tag: "meta", attrs: { name: "theme-color", content: "#f6f8fb", media: "(prefers-color-scheme: light)" } },
         { tag: "meta", attrs: { name: "theme-color", content: "#0d1520", media: "(prefers-color-scheme: dark)" } },
@@ -74,6 +77,7 @@ export default defineConfig({
           page("operations/uninstall", "Uninstalling", "Deinstallieren"),
         ]),
         group("Help", "Hilfe", [
+          page("help/changelog", "What's new", "Neuigkeiten"),
           page("help/faq", "Frequently asked questions", "Häufige Fragen"),
           page("help/developers", "For developers", "Für Entwickler"),
         ]),

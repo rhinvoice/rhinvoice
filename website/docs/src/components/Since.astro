@@ -1,0 +1,35 @@
+---
+// "Since version 0.5.0": marks a feature newer than the first public release and links to its
+// release notes. In a page: <Since version="0.5.0" />; for a whole page: frontmatter `since`.
+import { releaseHref } from "../lib/changelog";
+
+interface Props {
+  version: string;
+}
+
+const { version } = Astro.props;
+const { lang } = Astro.locals.starlightRoute;
+const label = lang === "de" ? `Ab Version ${version}` : `Since version ${version}`;
+---
+
+<a class="since" href={releaseHref(version, lang)}>{label}</a>
+
+<style>
+  .since {
+    display: inline-block;
+    padding: 0.05rem 0.6rem;
+    border: 1px solid var(--sl-color-accent);
+    border-radius: 999px;
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-accent);
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    line-height: 1.6;
+    text-decoration: none;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+  .since:hover {
+    text-decoration: underline;
+  }
+</style>

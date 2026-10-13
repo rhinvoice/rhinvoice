@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside } from "@astrojs/starlight/components";
 
 Eine Schweizer Rechnung mit Rhinvoice hat die **MWST-Sätze am Leistungsdatum** (seit 1. Januar 2024: 8.1 %, 2.6 %, 3.8 %), die **UID mit Zusatz MWST** Ihrer Firma, den passenden **gesetzlichen Hinweis** und einen **QR-Zahlteil** in CHF oder EUR. Rhinvoice prüft vor dem Ausstellen, ob die MWST-Nummer da ist, und sperrt die Rechnung danach für zehn Jahre Aufbewahrung.
@@ -29,7 +30,7 @@ Stand: Oktober 2026. Die Sätze und Regeln sind gegen die Quellen der ESTV und d
 |---|---|---|---|
 | seit 1. Januar 2024 | 8.1 % | 2.6 % | 3.8 % |
 | 1. Januar 2018 bis 31. Dezember 2023 | 7.7 % | 2.5 % | 3.7 % |
-| 1. Januar 2011 bis 31. Dezember 2017 | 8 % | 2.5 % | 3.8 % |
+| 1. Januar 2011 bis 31. Dezember 2017 <Since version="0.4.3" /> | 8 % | 2.5 % | 3.8 % |
 
 Quelle: ESTV, «MWST-Sätze ab 1. Januar 2024» und «Entwicklung der MWST-Sätze».
 

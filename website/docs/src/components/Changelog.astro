@@ -1,0 +1,64 @@
+---
+// All releases with their notes, newest first, in the language of the page.
+import { releases, type ChangelogLang } from "../lib/changelog";
+
+const lang: ChangelogLang = Astro.locals.starlightRoute.lang === "de" ? "de" : "en";
+const dateFormat = new Intl.DateTimeFormat(lang === "de" ? "de-CH" : "en-GB", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+---
+
+<div class="changelog">
+  {
+    releases(lang).map((release) => (
+      <section aria-labelledby={release.anchor}>
+        <h2 id={release.anchor}>
+          Version {release.version}
+          {release.date && (
+            <time datetime={release.date}>{dateFormat.format(new Date(`${release.date}T00:00:00Z`))}</time>
+          )}
+        </h2>
+        {release.sections.map((section) => (
+          <>
+            <h3>{section.title}</h3>
+            <Fragment set:html={section.html} />
+          </>
+        ))}
+      </section>
+    ))
+  }
+</div>
+
+<style>
+  /* Each release starts with a line; its sections are small labels, not headings as big as it. */
+  .changelog section + section {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--sl-color-hairline);
+  }
+  .changelog h3 {
+    margin-top: 1rem;
+    font-family: var(--sl-font);
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
+  }
+  .changelog h2 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    scroll-margin-top: 5rem;
+  }
+  .changelog time {
+    font-family: var(--sl-font);
+    font-size: var(--sl-text-sm);
+    font-weight: 400;
+    color: var(--sl-color-gray-3);
+  }
+</style>

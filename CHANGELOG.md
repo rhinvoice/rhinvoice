@@ -5,6 +5,18 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Added
+- The user documentation at [rhinvoice.com/docs](https://rhinvoice.com/docs/), in English and German:
+  getting started, the rules of each country, invoices, moving over from another program, running
+  it, questions, and these release notes. Features newer than the first public release are marked
+  "Since version …".
+- How more company countries come in: one country profile per country, with the Netherlands as the
+  example (docs and landing page).
+
+### Changed
+- The interface links its guides (backup, installation, imports) to the docs in its own language
+  instead of Markdown files on GitHub.
+
 ## [0.5.3] – 2026-10-13
 
 ### Fixed

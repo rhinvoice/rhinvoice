@@ -13,6 +13,7 @@ faq:
 ---
 
 import Faq from "../../../components/Faq.astro";
+import Since from "../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Rhinvoice imports customers and articles from the program you used before, from **CSV or Excel files** (`.xlsx`, `.xls`). Every import starts with a **test run** that changes nothing; Rhinvoice saves only after you have checked the result.
@@ -66,7 +67,7 @@ Whatever is not recognised, you map by hand under *Map columns*: for each column
 | *Group*, *Note* | |
 | *Currency*, *Language* | CHF or EUR, German or English |
 | *Discount in %*, *Payment terms in days*, *Tax exempt* | |
-| *Customer since* | For example from "Kunde seit", "Angelegt am" or "Created", as 14.03.2019 or 2019-03-14, also with a time |
+| *Customer since* <Since version="0.4.3" /> | For example from "Kunde seit", "Angelegt am" or "Created", as 14.03.2019 or 2019-03-14, also with a time |
 
 Needed is a column for the customer number or the name (company or last name). New customers also need postal code and city.
 

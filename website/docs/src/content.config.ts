@@ -15,6 +15,11 @@ export const collections = {
          * engines as FAQPage data, so both always say the same.
          */
         faq: z.array(z.object({ q: z.string(), a: z.string() })).optional(),
+        /** The version that brought the page's feature, shown under the title (e.g. "0.5.0"). */
+        since: z
+          .string()
+          .regex(/^\d+\.\d+\.\d+$/)
+          .optional(),
       }),
     }),
   }),

@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../components/Faq.astro";
+import Since from "../../../components/Since.astro";
 import { Aside } from "@astrojs/starlight/components";
 
 A Swiss invoice from Rhinvoice carries the **VAT rates on the date of supply** (since 1 January 2024: 8.1 %, 2.6 %, 3.8 %), your company's **UID with the suffix MWST**, the right **legal notice** and a **QR-bill payment part** in CHF or EUR. Rhinvoice checks before issuing that the VAT number is there, and locks the invoice afterwards for the ten years you keep it.
@@ -29,7 +30,7 @@ As of October 2026. Rates and rules are checked against the Swiss Federal Tax Ad
 |---|---|---|---|
 | since 1 January 2024 | 8.1 % | 2.6 % | 3.8 % |
 | 1 January 2018 to 31 December 2023 | 7.7 % | 2.5 % | 3.7 % |
-| 1 January 2011 to 31 December 2017 | 8 % | 2.5 % | 3.8 % |
+| 1 January 2011 to 31 December 2017 <Since version="0.4.3" /> | 8 % | 2.5 % | 3.8 % |
 
 Source: ESTV, "MWST-Sätze ab 1. Januar 2024" and "Entwicklung der MWST-Sätze".
 

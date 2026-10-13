@@ -1,0 +1,26 @@
+---
+// Starlight's title, followed by "Since version …" when the page's feature is newer than the
+// first public release (frontmatter `since`).
+import Since from "./Since.astro";
+
+// Starlight's id for the page title (its "skip to content" target); not exported by the package.
+const PAGE_TITLE_ID = "_top";
+
+const { title, since } = Astro.locals.starlightRoute.entry.data;
+---
+
+<h1 id={PAGE_TITLE_ID}>{title}</h1>
+{since && <p class="page-since"><Since version={since} /></p>}
+
+<style>
+  h1 {
+    margin-top: 1rem;
+    font-size: var(--sl-text-h1);
+    line-height: var(--sl-line-height-headings);
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+  .page-since {
+    margin-top: 0.75rem;
+  }
+</style>

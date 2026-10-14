@@ -28,7 +28,7 @@ from rhinvoice.api.settings import Settings
 from rhinvoice.desktop import window
 from rhinvoice.desktop.browser import find_chromium
 from rhinvoice.desktop.config import ConfigError, DesktopConfig, load_or_create, save
-from rhinvoice.desktop.folders import data_folder
+from rhinvoice.desktop.folders import data_folder, make_private
 from rhinvoice.desktop.ports import free_port, listening
 from rhinvoice.desktop.postgres import BundledPostgres, PostgresError
 
@@ -166,7 +166,7 @@ def _log_without_console(folder: Path) -> None:
     """Write the messages to a file when there is no console (pythonw.exe, an app bundle)."""
     if sys.stdout is not None and sys.stderr is not None:
         return
-    folder.mkdir(mode=0o700, parents=True, exist_ok=True)
+    make_private(folder)
     log = (folder / "rhinvoice.log").open("a", encoding="utf-8", buffering=1)
     sys.stdout = sys.stdout or log
     sys.stderr = sys.stderr or log

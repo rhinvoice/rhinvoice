@@ -9,9 +9,13 @@ from __future__ import annotations
 
 import os
 import subprocess
-import tempfile
-from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import quote
+
+from rhinvoice.desktop.folders import make_private
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 USER = "rhinvoice"
 DATABASE = "rhinvoice"
@@ -92,10 +96,15 @@ class BundledPostgres:
         return (self._data / "PG_VERSION").exists()
 
     def _initialize(self) -> None:
-        self._data.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory() as folder:
-            password_file = Path(folder) / "password"
-            password_file.write_text(self._password, encoding="utf-8")
+        make_private(self._data.parent)
+        # Beside the database, not in the temporary folder: initdb runs with restricted
+        # rights on Windows and may not open files there. Removed right after.
+        password_file = self._data.parent / "initdb-password"
+        password_file.unlink(missing_ok=True)
+        descriptor = os.open(password_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as file:
+            file.write(self._password)
+        try:
             # No locale: the same on every system; sorting uses ICU collations (search.py).
             self._run(
                 "initdb",
@@ -106,6 +115,8 @@ class BundledPostgres:
                 "--encoding=UTF8",
                 "--no-locale",
             )
+        finally:
+            password_file.unlink()
         with (self._data / "postgresql.conf").open("a", encoding="utf-8") as config:
             config.write(SERVER_SETTINGS)
 

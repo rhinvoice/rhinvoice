@@ -7,6 +7,8 @@ import secrets
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, cast
 
+from rhinvoice.desktop.folders import make_private
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -46,7 +48,7 @@ def load_or_create(path: Path) -> DesktopConfig:
 def save(path: Path, config: DesktopConfig) -> None:
     """Write the configuration, readable for this user only."""
     # The folder holds the database: only for this user.
-    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    make_private(path.parent)
     path.touch(mode=0o600)
     path.write_text(json.dumps(asdict(config), indent=2) + "\n", encoding="utf-8")
 

@@ -8,7 +8,8 @@ writes the two parts of ADR 0022 into ``build/<target>``. On Windows:
     install/                  what the setup installs (Inno Setup packs it)
       python/                 the runtime: a standalone CPython with rhinvoice_boot only
       postgresql/             the PostgreSQL distribution (with ICU)
-      runtime.json            {"generation": N}: what app packages may expect of it
+      restic/                 restic for the backups (ADR 0023)
+      runtime.json           {"generation": N}: what app packages may expect of it
       app/                    the app package of this release (see below)
       Rhinvoice.ico
     rhinvoice-app-<version>-windows-x64.zip   the same app package, for updates
@@ -31,6 +32,7 @@ Only the standard library: it runs before anything else is installed.
 from __future__ import annotations
 
 import argparse
+import bz2
 import hashlib
 import json
 import shutil
@@ -153,6 +155,23 @@ def install_postgres(sources: dict[str, dict[str, str]], install: Path) -> None:
         shutil.rmtree(install / "postgresql" / unused, ignore_errors=True)
 
 
+def install_restic(sources: dict[str, dict[str, str]], install: Path) -> None:
+    """Unpack the restic that makes the backups (ADR 0023), named as the launcher expects."""
+    archive = fetch(sources["restic"])
+    folder = install / "restic"
+    folder.mkdir()
+    if archive.suffix == ".zip":
+        # Windows: a zip with the single restic_<version>_windows_amd64.exe.
+        with zipfile.ZipFile(archive) as zipped:
+            [name] = zipped.namelist()
+            (folder / "restic.exe").write_bytes(zipped.read(name))
+        return
+    # macOS: the program itself, compressed with bzip2.
+    program = folder / "restic"
+    program.write_bytes(bz2.decompress(archive.read_bytes()))
+    program.chmod(0o755)
+
+
 def install_static(package: Path) -> None:
     dist = ROOT / "frontend" / "dist"
     if not (dist / "index.html").exists():
@@ -184,6 +203,7 @@ def build_windows(out: Path) -> None:
     shutil.copy2(ROOT / "desktop" / "icons" / "Rhinvoice.ico", install / "Rhinvoice.ico")
     python = install_runtime_python(sources, install)
     install_postgres(sources, install)
+    install_restic(sources, install)
     brand_windows_program(sources, install)
     build_app_package(python, install / "app")
     zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-windows-x64.zip")
@@ -343,6 +363,7 @@ def build_macos(out: Path) -> None:
     start.chmod(0o755)
     install_postgres_from_app(sources, install)
     install_chromium(sources, install)
+    install_restic(sources, install)
     build_app_package(python, install / "app")
     zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-macos-arm64.zip")
     print(f"Rhinvoice {version()} (runtime {RUNTIME_GENERATION}) assembled in {bundle}")

@@ -11,6 +11,10 @@
     "rcedit": {
       "url": "https://github.com/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe",
       "sha256": "3e7801db1a5edbec91b49a24a094aad776cb4515488ea5a4ca2289c400eade2a"
+    },
+    "restic": {
+      "url": "https://github.com/restic/restic/releases/download/v0.19.1/restic_0.19.1_windows_amd64.zip",
+      "sha256": "da948ad707ed690426473aaba2046cd61f8f90f6f0e7dab6be0d5796531de67d"
     }
   },
   "macos-arm64": {
@@ -25,6 +29,10 @@
     "chromium": {
       "url": "https://storage.googleapis.com/chrome-for-testing-public/155.0.8059.79/mac-arm64/chrome-headless-shell-mac-arm64.zip",
       "sha256": "5f51504ead3d41815111cd73e79c4979df3a4e6aedc7cf6fe2b042ae037363b5"
+    },
+    "restic": {
+      "url": "https://github.com/restic/restic/releases/download/v0.19.1/restic_0.19.1_darwin_arm64.bz2",
+      "sha256": "7be0a144ccc377880f294204aa271d76e4b79554b42a751151d425ce6ebac143"
     }
   }
 }

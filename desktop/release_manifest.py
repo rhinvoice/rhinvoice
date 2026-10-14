@@ -29,7 +29,10 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 from rhinvoice.infrastructure.updates.feed import PUBLIC_KEY, read_release
 
 REPOSITORY = "https://github.com/rhinvoice/rhinvoice"
-SETUPS = {"Rhinvoice-Setup-{version}.exe": "windows-x64"}
+SETUPS = {
+    "Rhinvoice-Setup-{version}.exe": "windows-x64",
+    "Rhinvoice-{version}.dmg": "macos-arm64",
+}
 
 
 def package_entry(path: Path, version: str) -> tuple[dict[str, object], int]:

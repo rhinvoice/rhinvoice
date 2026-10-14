@@ -62,12 +62,16 @@ class SignedReleaseFeed:
             return None
 
     def _get(self, url: str) -> bytes:
-        response = self._client.get(url)
-        response.raise_for_status()
-        if len(response.content) > MAX_BYTES:
-            msg = f"{url} is larger than {MAX_BYTES} bytes"
-            raise ValueError(msg)
-        return response.content
+        content = bytearray()
+        with self._client.stream("GET", url) as response:
+            response.raise_for_status()
+            for chunk in response.iter_bytes():
+                content += chunk
+                # Stopped while reading: a huge answer never fills the memory.
+                if len(content) > MAX_BYTES:
+                    msg = f"{url} is larger than {MAX_BYTES} bytes"
+                    raise ValueError(msg)
+        return bytes(content)
 
 
 def read_release(values: object) -> Release:

@@ -5901,6 +5901,10 @@
             "title": "Current",
             "type": "string"
           },
+          "failed": {
+            "title": "Failed",
+            "type": "boolean"
+          },
           "latest": {
             "anyOf": [
               {
@@ -5941,7 +5945,8 @@
           "action",
           "notes_url",
           "setup_url",
-          "checked_at"
+          "checked_at",
+          "failed"
         ],
         "title": "UpdateResponse",
         "type": "object"

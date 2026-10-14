@@ -19,7 +19,8 @@ from typing import TYPE_CHECKING
 
 import httpx
 
-from rhinvoice.application.errors import UnavailableError
+from rhinvoice.application.errors import ConflictError, UnavailableError
+from rhinvoice_boot import load_state
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -78,14 +79,27 @@ class PackageInstaller:
         self._restart = restart
         self._client = client or httpx.Client(timeout=TIMEOUT_SECONDS, follow_redirects=True)
         self._restart_delay = restart_delay
+        self._data = data
+        self._installing = threading.Lock()
 
     def install(self, release: Release) -> None:
-        target = self._versions / release.version
-        if not target.is_dir():
-            self._put_in_place(release, release.packages[self.platform], target)
+        # One at a time: a second request would share the .partial folder.
+        if not self._installing.acquire(blocking=False):
+            raise ConflictError("an update is being installed", code="update_running")
+        try:
+            target = self._versions / release.version
+            if not target.is_dir():
+                self._put_in_place(release, release.packages[self.platform], target)
+        except BaseException:
+            self._installing.release()
+            raise
+        # Held until the program ends: the restart follows.
         timer = threading.Timer(self._restart_delay, self._restart)
         timer.daemon = True
         timer.start()
+
+    def failed(self, version: str) -> bool:
+        return version in load_state(self._data).failed
 
     def _put_in_place(self, release: Release, package: PackageFile, target: Path) -> None:
         partial = target.with_name(target.name + ".partial")

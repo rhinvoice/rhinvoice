@@ -12,9 +12,11 @@ from pathlib import Path
 import httpx
 import pytest
 
-from rhinvoice.application.errors import UnavailableError
+from rhinvoice.application.errors import ConflictError, UnavailableError
 from rhinvoice.application.updates.ports import PackageFile, Release
 from rhinvoice.desktop.updates import PackageInstaller, Restarter, platform_name
+from rhinvoice_boot import State, save_state
+from tests.helpers import raises_exactly
 
 URL = "https://github.com/rhinvoice/rhinvoice/releases/download/v0.7.0/app.zip"
 
@@ -178,3 +180,45 @@ def test_without_a_window_a_restart_stops_the_server_like_ctrl_c(
     restarter = Restarter()
     restarter.request()
     assert signals == [signal.SIGINT]
+
+
+def test_one_update_at_a_time(tmp_path: Path) -> None:
+    started = threading.Event()
+    go_on = threading.Event()
+
+    def slow(request: httpx.Request) -> httpx.Response:
+        started.set()
+        go_on.wait(5)
+        return github(PACKAGE)(request)
+
+    restarts = Restarts()
+    first = installer(tmp_path, slow, restarts)
+    worker = threading.Thread(target=first.install, args=(release(),))
+    worker.start()
+    assert started.wait(5)
+    with raises_exactly(ConflictError, "an update is being installed"):
+        first.install(release())
+    go_on.set()
+    worker.join(5)
+    assert restarts.done.wait(5)
+
+
+def test_a_failed_download_lets_the_next_attempt_run(tmp_path: Path) -> None:
+    answers = [httpx.Response(503), httpx.Response(200, content=PACKAGE)]
+
+    def flaky(_request: httpx.Request) -> httpx.Response:
+        return answers.pop(0)
+
+    restarts = Restarts()
+    attempt = installer(tmp_path, flaky, restarts)
+    with pytest.raises(UnavailableError):
+        attempt.install(release())
+    attempt.install(release())
+    assert restarts.done.wait(5)
+
+
+def test_versions_taken_back_by_the_boot_count_as_failed(tmp_path: Path) -> None:
+    save_state(tmp_path, State(active="0.6.2", failed=["0.7.0"]))
+    taken_back = installer(tmp_path, github(PACKAGE), Restarts())
+    assert taken_back.failed("0.7.0")
+    assert not taken_back.failed("0.7.1")

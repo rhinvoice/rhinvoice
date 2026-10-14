@@ -46,3 +46,7 @@ class UpdateInstaller(Protocol):
     def install(self, release: Release) -> None:
         """Download and check the release's package, put it in place and restart."""
         ...
+
+    def failed(self, version: str) -> bool:
+        """Tell whether ``version`` was installed here, did not start and was taken back."""
+        ...

@@ -29,9 +29,13 @@ class Installer:
 
     def __init__(self) -> None:
         self.installed: list[str] = []
+        self.taken_back: set[str] = set()
 
     def install(self, release: Release) -> None:
         self.installed.append(release.version)
+
+    def failed(self, version: str) -> bool:
+        return version in self.taken_back
 
 
 type ClientFactory = Callable[[Installer | None], TestClient]
@@ -78,6 +82,7 @@ def test_a_server_installation_is_told_the_release(clients: ClientFactory) -> No
         "notes_url": "https://github.com/rhinvoice/rhinvoice/releases/tag/v0.7.0",
         "setup_url": None,
         "checked_at": "2026-01-15T09:00:00Z",
+        "failed": False,
     }
     refused = client.post("/api/updates/install")
     assert refused.status_code == 409

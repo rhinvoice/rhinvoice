@@ -39,6 +39,9 @@ class UpdateStatus:
     notes_url: str | None
     setup_url: str | None
     checked_at: datetime | None
+    failed: bool = False
+    """The newest release was installed here, did not start and was taken back: the
+    version that ran before runs again, and the release is not offered again."""
 
 
 def is_newer(candidate: str, current: str) -> bool:
@@ -75,7 +78,12 @@ class UpdateHandlers:
 
     def status(self) -> UpdateStatus:
         release, checked_at = self._known
-        if release is None or not is_newer(release.version, self._current):
+        failed = (
+            release is not None
+            and self._installer is not None
+            and self._installer.failed(release.version)
+        )
+        if release is None or failed or not is_newer(release.version, self._current):
             action = UpdateAction.NONE
         elif self._installer is None:
             action = UpdateAction.COMMAND
@@ -91,6 +99,7 @@ class UpdateHandlers:
             notes_url=None if release is None else release.notes_url,
             setup_url=setup_url,
             checked_at=checked_at,
+            failed=failed,
         )
 
     def install(self) -> None:
@@ -100,6 +109,7 @@ class UpdateHandlers:
             release is None
             or installer is None
             or not is_newer(release.version, self._current)
+            or installer.failed(release.version)
             or _desktop_action(release, installer) is not UpdateAction.INSTALL
         ):
             raise ConflictError("there is no update to install here", code="no_update")

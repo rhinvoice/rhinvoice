@@ -40,11 +40,15 @@ class Installer:
     platform = "windows-x64"
     runtime = 1
 
-    def __init__(self) -> None:
+    def __init__(self, *failures: str) -> None:
         self.installed: list[Release] = []
+        self.failures = set(failures)
 
     def install(self, release: Release) -> None:
         self.installed.append(release)
+
+    def failed(self, version: str) -> bool:
+        return version in self.failures
 
 
 def handlers(
@@ -79,6 +83,7 @@ def test_before_the_first_check_nothing_is_known() -> None:
         notes_url=None,
         setup_url=None,
         checked_at=None,
+        failed=False,
     )
 
 
@@ -92,6 +97,7 @@ def test_a_server_installation_is_told_the_command() -> None:
         notes_url="https://example.org/releases/v0.7.0",
         setup_url=None,
         checked_at=NOW,
+        failed=False,
     )
 
 
@@ -167,3 +173,20 @@ def test_nothing_is_installed_before_the_first_check() -> None:
     with raises_exactly(ConflictError, "there is no update to install here"):
         handlers(RELEASE, installer=installer).install()
     assert installer.installed == []
+
+
+def test_an_update_that_was_taken_back_is_not_offered_again() -> None:
+    installer = Installer("0.7.0")
+    updates = handlers(RELEASE, installer=installer)
+    updates.refresh()
+    status = updates.status()
+    assert (status.action, status.failed, status.latest) == (UpdateAction.NONE, True, "0.7.0")
+    with raises_exactly(ConflictError, "there is no update to install here"):
+        updates.install()
+    assert installer.installed == []
+
+
+def test_a_server_installation_never_counts_a_release_as_failed() -> None:
+    updates = handlers(RELEASE)
+    updates.refresh()
+    assert not updates.status().failed

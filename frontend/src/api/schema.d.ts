@@ -3779,6 +3779,8 @@ export interface components {
             checked_at: string | null;
             /** Current */
             current: string;
+            /** Failed */
+            failed: boolean;
             /** Latest */
             latest: string | null;
             /** Notes Url */

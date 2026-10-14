@@ -20,6 +20,8 @@ class UpdateResponse(ApiModel):
     notes_url: str | None
     setup_url: str | None
     checked_at: datetime | None
+    failed: bool
+    """The newest release did not start here and was taken back; it is not offered again."""
 
     @classmethod
     def of(cls, update: UpdateStatus) -> Self:
@@ -30,6 +32,7 @@ class UpdateResponse(ApiModel):
             notes_url=update.notes_url,
             setup_url=update.setup_url,
             checked_at=update.checked_at,
+            failed=update.failed,
         )
 
 

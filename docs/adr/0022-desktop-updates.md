@@ -44,6 +44,28 @@ the program. A new setup must only be needed when the foundation changes.
 - **The last three versions are kept** (for rollback), older ones are removed after a confirmed
   start. Database copies older than the last three updates are removed as well.
 
+- **One session per data folder:** the boot holds a lock on `<data>/app/session.lock` while it
+  runs (a restart runs in its parent's session). A second start, e.g. a double click during a long
+  migration, only shows the running program once it answers and never touches the database.
+- **No time limit on proving:** a version confirms itself whenever its interface answers, as long
+  as its server runs; a slow first start (a virus scanner, a long migration) is never taken back.
+- **Taking back is resumable:** the boot first records that the version failed and that the
+  database has to be put back, then puts it back, retrying files Windows keeps locked. If that
+  still fails, the next start finishes it before anything runs; an older version never runs on a
+  migrated database. Without a copy of the database (e.g. disk full) the new version does not start.
+- **A version taken back is not offered again**; the status says so (`failed`), so the program can
+  tell that the update did not work.
+- **Closing the window stops the server** and its background jobs (a stop event for the threaded
+  server) before the database stops; the Docker path is unchanged.
+
+## The boot's interface (frozen)
+App packages run in the runtime's interpreter and use `rhinvoice_boot` from the runtime, never a
+copy of their own. These names and their meaning stay as they are within a runtime generation:
+`confirm(data)`, `RESTART` (75), `BootError`, `data_folder(...)`, `runtime_generation(install)`,
+`load_state(data).failed`, `make_private(folder)`, `log_without_console(data)`, and the launcher's
+arguments `--install-dir`, `--static-dir`, `--data-dir`, `--attach`. Changing one needs a new
+runtime generation, i.e. a new setup.
+
 ## Consequences
 - The release workflow builds one app package per platform, writes and signs the manifest and
   attaches both to the release; the private key is stored as a GitHub secret.

@@ -22,6 +22,7 @@ import shutil
 import signal
 import subprocess
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -65,6 +66,8 @@ class Program:
             creationflags=flags,
             stdout=output,
             stderr=subprocess.STDOUT,
+            # Every line in the log right away, also the last ones before a failure.
+            env={**os.environ, "PYTHONUNBUFFERED": "1"},
         )
         deadline = time.monotonic() + START_SECONDS
         while time.monotonic() < deadline:
@@ -180,9 +183,15 @@ def check(install: Path, data: Path) -> None:
         env={**os.environ, "RHINVOICE_DATABASE_URL": program.database_url()},
         check=True,
     )
+    step("the browser of this computer prints a page")
+    print_directly(install)
     step("an invoice printed as PDF by the browser of this computer")
     [invoice, *_] = api.json("GET", "/documents?type=invoice&status=overdue")["items"]
-    status, pdf = api.call("GET", f"/documents/{invoice['id']}/pdf")
+    try:
+        status, pdf = api.call("GET", f"/documents/{invoice['id']}/pdf")
+    except urllib.error.HTTPError as error:
+        msg = f"no PDF: {error} {error.read()[:500]!r}"
+        raise SystemExit(msg) from error
     if status != 200 or not pdf.startswith(b"%PDF-") or len(pdf) < PDF_MIN_BYTES:  # noqa: PLR2004
         msg = f"no PDF: status {status}, {len(pdf)} bytes, {pdf[:40]!r}"
         raise SystemExit(msg)
@@ -205,6 +214,37 @@ def check(install: Path, data: Path) -> None:
         msg = "the database still runs after the program was closed"
         raise SystemExit(msg)
     step("all good")
+
+
+PRINT_A_PAGE = """
+import sys
+from pathlib import Path
+from rhinvoice.desktop.browser import find_chromium
+from rhinvoice.infrastructure.rendering.chromium import LocalChromiumPrinter
+import os, platform
+browser = find_chromium(platform.system(), dict(os.environ), Path(sys.argv[1]))
+print("browser:", browser)
+printer = LocalChromiumPrinter(browser)
+pdf = printer.print_pdf("<!doctype html><title>Test</title><p>Rhinvoice</p>")
+printer.close()
+print("PDF bytes:", len(pdf))
+"""
+
+
+def print_directly(install: Path) -> None:
+    """Print one page with the installed program's browser, outside the web server."""
+    site_packages = install / "app" / "site-packages"
+    code = f"import site; site.addsitedir(r'{site_packages}')\n" + PRINT_A_PAGE
+    result = subprocess.run(  # noqa: S603 - the installed program
+        [install / "python" / "python.exe", "-c", code, install],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    print(result.stdout + result.stderr)
+    if result.returncode != 0:
+        msg = f"the browser could not print: {result.stderr[-1500:]}"
+        raise SystemExit(msg)
 
 
 def check_updates(program: Program, api: Api) -> None:

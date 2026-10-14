@@ -259,9 +259,11 @@ class _Shared:
 
 
 def _lines(path: Path) -> list[str]:
+    """Read the port file; not there yet or still being written means: not ready yet."""
     try:
         return path.read_text(encoding="utf-8").split()
-    except FileNotFoundError:
+    except OSError:
+        # Windows refuses to open a file while the browser writes it (sharing violation).
         return []
 
 

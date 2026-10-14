@@ -5,6 +5,7 @@ import json
 import sys
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 from pypdf import PdfReader
@@ -180,3 +181,21 @@ def test_the_settings_choose_the_printer(tmp_path: Path, monkeypatch: pytest.Mon
     gotenberg = pdf_renderer(both, html)
     assert isinstance(gotenberg, ChromiumPdfRenderer)
     assert isinstance(gotenberg.printer, GotenbergPrinter)
+
+
+def test_a_port_file_still_being_written_is_read_again(
+    chromium: LocalChromiumPrinter, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Windows refuses to open the file while the browser writes it."""
+    read_text = Path.read_text
+    refused: list[str] = []
+
+    def while_written(path: Path, *args: Any, **kwargs: Any) -> str:  # noqa: ANN401 - Path.read_text
+        if path.name == "DevToolsActivePort" and not refused:
+            refused.append(path.name)
+            raise PermissionError(13, "Permission denied", str(path))
+        return read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", while_written)
+    assert chromium.print_pdf(PAGE).startswith(b"%PDF-")
+    assert refused == ["DevToolsActivePort"]

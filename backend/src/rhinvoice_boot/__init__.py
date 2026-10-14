@@ -240,6 +240,15 @@ def _run_session(argv: Sequence[str], runtime: Runtime) -> int:
     state = load_state(runtime.data)
     if state.restore is not None:
         state = put_database_back(runtime, state)
+    if maintenance(argv):
+        # Never the trial of an update: such a run does not confirm a version, and
+        # taking it back would put the old database over a restored one.
+        package = (
+            choose(runtime.install, runtime.data, state)
+            if state.active is None
+            else _package_of(runtime, state)
+        )
+        return runtime.launch(package, [*argv, *_folders(runtime, package)])
     package = choose(runtime.install, runtime.data, state)
     if package.version != state.active and not (state.trying == package.version and state.saved):
         try:
@@ -436,6 +445,19 @@ def option(argv: Sequence[str], name: str) -> str | None:
         if argument.startswith(f"{name}="):
             return argument.split("=", 1)[1]
     return None
+
+
+MAINTENANCE = ("--restore", "--list-backups")
+"""Options that run a task of the program and end, without serving (backups, ADR 0023)."""
+
+
+def maintenance(argv: Sequence[str]) -> bool:
+    """Tell whether the program is started for a task, not to serve."""
+    return any(
+        argument == name or argument.startswith(f"{name}=")
+        for argument in argv
+        for name in MAINTENANCE
+    )
 
 
 def without_option(argv: Sequence[str], name: str) -> list[str]:

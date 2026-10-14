@@ -107,26 +107,29 @@ def test_migrate(env: Engine, capsys: pytest.CaptureFixture[str]) -> None:
     assert env is not None
 
 
-@pytest.mark.parametrize(("run_migrations", "recurring"), [("true", "true"), ("false", "false")])
+@pytest.mark.parametrize(
+    ("switched_on", "background"),
+    [("true", ["update check", "recurring invoices"]), ("false", [])],
+)
 def test_serve_runs_uvicorn(
-    env: Engine,
-    monkeypatch: pytest.MonkeyPatch,
-    run_migrations: str,
-    recurring: str,
+    env: Engine, monkeypatch: pytest.MonkeyPatch, switched_on: str, background: list[str]
 ) -> None:
+    """Migrations, the update check and recurring invoices, all on or all off."""
     calls: list[dict[str, Any]] = []
     migrations: list[str] = []
-    monkeypatch.setenv("RHINVOICE_RUN_MIGRATIONS", run_migrations)
-    monkeypatch.setenv("RHINVOICE_RECURRING", recurring)
-    jobs: list[str] = []
+    monkeypatch.setenv("RHINVOICE_RUN_MIGRATIONS", switched_on)
+    monkeypatch.setenv("RHINVOICE_RECURRING", switched_on)
+    monkeypatch.setenv("RHINVOICE_UPDATE_CHECK", switched_on)
+    started: list[str] = []
+    stopped: list[str] = []
 
     class RecordingJob(PeriodicJob):
         def start(self) -> None:
-            jobs.append("start")
+            started.append(self._thread.name)
             super().start()
 
         def stop(self, timeout: float = 30) -> None:
-            jobs.append("stop")
+            stopped.append(self._thread.name)
             super().stop(timeout)
 
     monkeypatch.setattr(cli, "PeriodicJob", RecordingJob)
@@ -147,9 +150,11 @@ def test_serve_runs_uvicorn(
             "forwarded_allow_ips": "127.0.0.1",
         },
     ]
-    assert len(migrations) == (1 if run_migrations == "true" else 0)
-    # The web server writes due recurring invoices in the background, unless switched off.
-    assert jobs == (["start", "stop"] if recurring == "true" else [])
+    assert len(migrations) == (1 if switched_on == "true" else 0)
+    # The web server looks for new releases and writes due recurring invoices in the
+    # background, unless switched off; the jobs end with it.
+    assert started == background
+    assert stopped == background
     assert env is not None
 
 

@@ -720,3 +720,24 @@ def test_a_running_program_is_not_restored_under_its_feet(
     monkeypatch.setattr(launcher, "_already_running", running)
     assert restore(install, tmp_path, "--restore", "latest") == 1
     assert not (tmp_path / "restic.jsonl").exists()
+
+
+def test_the_backup_folder_of_a_restore_is_kept_as_a_full_path(
+    install: Path,
+    data: Path,
+    restorable: Path,
+    tmp_path: Path,
+    *,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Backups go on into it: a relative path would point elsewhere at the next start."""
+    (data / "rhinvoice.json").write_text(json.dumps({"database_password": "secret"}))
+    arguments = ("--restore", "latest", "--backup-folder", "Rhinvoice-Backup")
+    assert restore(install, tmp_path, *arguments, key="K7QM-2XWP") == 1
+    assert capsys.readouterr().err == "error: give the full path of the backup folder\n"
+    monkeypatch.setenv("HOME", str(tmp_path))
+    home = f"~/{restorable.relative_to(tmp_path)}/../Rhinvoice-Backup"
+    assert restore(install, tmp_path, "--restore", "latest", "--backup-folder", home, key="K") == 0
+    saved = json.loads((data / "rhinvoice.json").read_text())["backup_folder"]
+    assert saved == str(restorable.resolve())

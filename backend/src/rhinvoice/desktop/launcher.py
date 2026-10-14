@@ -279,7 +279,7 @@ def _restore_or_list(
     if args.attach or _already_running(database, config.port):
         msg = "Rhinvoice runs: quit it first"
         raise BackupFailed(msg)
-    backups = args.backup_folder or config.backup_folder
+    backups = _backup_folder(args.backup_folder) or config.backup_folder
     if backups is None:
         msg = "name the folder of the backups: --backup-folder <folder>"
         raise BackupFailed(msg)
@@ -303,6 +303,17 @@ def _restore_or_list(
         ),
     )
     sys.stdout.write(f"Restored {args.restore} from {backups}; start Rhinvoice again.\n")
+
+
+def _backup_folder(given: Path | None) -> str | None:
+    """Keep a named backup folder as a full path: backups go on into it after the restore."""
+    if given is None:
+        return None
+    folder = given.expanduser()
+    if not folder.is_absolute():
+        msg = "give the full path of the backup folder"
+        raise BackupFailed(msg)
+    return str(folder.resolve())
 
 
 def _installer(

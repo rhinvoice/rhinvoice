@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 import rhinvoice_boot as boot
+from rhinvoice.desktop.launcher import build_parser as launcher_parser
 from rhinvoice.desktop.postgres import BundledPostgres
 from rhinvoice_boot import (
     RESTART,
@@ -501,3 +502,27 @@ def test_without_a_console_the_boot_writes_to_a_file(
 def test_with_a_console_the_messages_stay_there(data: Path) -> None:
     log_without_console(data)
     assert not (data / "rhinvoice.log").exists()
+
+
+def test_the_interface_of_the_boot_for_app_packages_stays_as_it_is() -> None:
+    """App packages use the runtime's boot (ADR 0022): renaming any of this needs a new setup."""
+    for name in (
+        "confirm",
+        "BootError",
+        "data_folder",
+        "runtime_generation",
+        "load_state",
+        "make_private",
+        "log_without_console",
+    ):
+        assert callable(getattr(boot, name)), name
+    assert RESTART == 75
+    assert {"failed"} <= set(State.__dataclass_fields__)
+    arguments = ["--install-dir", "/i", "--static-dir", "/s", "--data-dir", "/d", "--attach"]
+    parsed = launcher_parser().parse_args(arguments)
+    assert (parsed.install_dir, parsed.static_dir, parsed.data_dir, parsed.attach) == (
+        Path("/i"),
+        Path("/s"),
+        Path("/d"),
+        True,
+    )

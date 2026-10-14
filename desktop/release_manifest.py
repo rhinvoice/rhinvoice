@@ -29,9 +29,11 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 from rhinvoice.infrastructure.updates.feed import PUBLIC_KEY, read_release
 
 REPOSITORY = "https://github.com/rhinvoice/rhinvoice"
+# Without the version, so that releases/latest/download/<name> always leads to the newest
+# setup (the download buttons on rhinvoice.com); the release workflow renames them.
 SETUPS = {
-    "Rhinvoice-Setup-{version}.exe": "windows-x64",
-    "Rhinvoice-{version}.dmg": "macos-arm64",
+    "Rhinvoice-Setup-Windows.exe": "windows-x64",
+    "Rhinvoice-macOS.dmg": "macos-arm64",
 }
 
 

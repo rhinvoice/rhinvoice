@@ -90,6 +90,12 @@ jobs:
           path: build/release
           merge-multiple: true
 
+      - name: Give the setups names without the version
+        # releases/latest/download/<name> then always leads to the newest (rhinvoice.com).
+        run: |
+          mv build/release/Rhinvoice-Setup-*.exe build/release/Rhinvoice-Setup-Windows.exe
+          mv build/release/Rhinvoice-*.dmg build/release/Rhinvoice-macOS.dmg
+
       - name: Write and sign release.json (ADR 0022)
         env:
           RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}

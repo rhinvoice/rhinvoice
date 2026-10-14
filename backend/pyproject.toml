@@ -31,6 +31,11 @@ dependencies = [
 rhinvoice = "rhinvoice.api.cli:main"
 rhinvoice-desktop = "rhinvoice.desktop.launcher:main"
 
+[project.optional-dependencies]
+desktop = [
+    "pywebview>=5",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -50,6 +55,7 @@ dev = [
     "pyright>=1.1.414",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
+    "pywebview>=5",
     "ruff>=0.16.10",
     "schemathesis>=4.30.0",
     "testcontainers[postgres]>=4.15.0",

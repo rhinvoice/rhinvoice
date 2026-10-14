@@ -2,7 +2,9 @@
 
 import json
 import socket
+import sys
 import threading
+import time
 from collections.abc import Iterator
 from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -46,10 +48,23 @@ def port_of(data: Path) -> int:
     return port
 
 
+def ignore_page(_address: str, _open_page: object) -> None:
+    """Open nothing."""
+
+
+def never(_address: str) -> bool:
+    return False
+
+
+def always(_address: str) -> bool:
+    return True
+
+
 def desktop(install: Path, tmp_path: Path, recorder: Recorder) -> Desktop:
     return Desktop(
         serve=recorder.serve,
         open_page=lambda _address: None,
+        show_window=None,
         system="Linux",
         environ={"XDG_DATA_HOME": str(tmp_path / "home")},
         home=tmp_path,
@@ -110,7 +125,8 @@ def test_a_second_start_shows_the_running_one(
     opened: list[str] = []
     recorder = Recorder()
     surroundings = replace(desktop(install, tmp_path, recorder), open_page=opened.append)
-    args = build_parser().parse_args(["--no-browser"])
+    args = build_parser().parse_args(["--browser"])
+    monkeypatch.setattr(launcher, "open_when_ready", ignore_page)
 
     def serve_and_start_again(settings: Settings, host: str, port: int) -> int:
         recorder.calls.append((settings, host, port))
@@ -259,3 +275,100 @@ def test_a_database_in_an_unknown_state_stops_the_program(
     )
     assert recorder.calls == []
     assert capsys.readouterr().err == "error: pg_ctl status failed (4): \n"
+
+
+class Window:
+    """Records the windows the program shows, after its server answered."""
+
+    def __init__(self, recorder: Recorder) -> None:
+        self.recorder = recorder
+        self.shown: list[tuple[str, Path]] = []
+
+    def show(self, address: str, storage: Path) -> None:
+        self.shown.append((address, storage))
+
+    def wait(self, _address: str, timeout: float = 5) -> bool:
+        deadline = time.monotonic() + timeout
+        while not self.recorder.calls and time.monotonic() < deadline:
+            time.sleep(0.01)
+        return bool(self.recorder.calls)
+
+
+def test_the_interface_opens_in_a_window_beside_the_server(
+    install: Path, tmp_path: Path, data: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    recorder = Recorder()
+    window = Window(recorder)
+    monkeypatch.setattr(launcher, "wait_until_answers", window.wait)
+    surroundings = replace(desktop(install, tmp_path, recorder), show_window=window.show)
+    assert run(build_parser().parse_args([]), surroundings) == 0
+    assert len(recorder.calls) == 1
+    assert window.shown == [(f"http://127.0.0.1:{port_of(data)}", data / "window")]
+    # Closing the window ends the program: the database is stopped.
+    assert commands(tmp_path)[-1] == "pg_ctl stop"
+
+
+def test_a_server_that_does_not_answer_shows_no_window(
+    install: Path,
+    tmp_path: Path,
+    data: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    window = Window(Recorder())
+    monkeypatch.setattr(launcher, "wait_until_answers", never)
+    surroundings = replace(desktop(install, tmp_path, Recorder()), show_window=window.show)
+    assert run(build_parser().parse_args([]), surroundings) == 1
+    assert window.shown == []
+    address = f"http://127.0.0.1:{port_of(data)}"
+    assert capsys.readouterr().err == f"error: the web interface did not start on {address}\n"
+    assert commands(tmp_path)[-1] == "pg_ctl stop"
+
+
+@pytest.mark.usefixtures("data")
+def test_the_browser_can_be_chosen_over_the_window(
+    install: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    opened: list[str] = []
+
+    def open_when_ready(address: str, _open_page: object) -> None:
+        opened.append(address)
+
+    monkeypatch.setattr(launcher, "open_when_ready", open_when_ready)
+    recorder = Recorder()
+    window = Window(recorder)
+    surroundings = replace(desktop(install, tmp_path, recorder), show_window=window.show)
+    assert run(build_parser().parse_args(["--browser"]), surroundings) == 0
+    assert window.shown == []
+    assert len(opened) == 1
+
+
+def test_a_second_start_shows_the_running_one_in_a_window(
+    install: Path, tmp_path: Path, data: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    postgres = BundledPostgres(install / "postgresql" / "bin", data / "database", "secret", 5432)
+    postgres.start()
+    monkeypatch.setattr(launcher, "answers", always)
+    recorder = Recorder()
+    window = Window(recorder)
+    surroundings = replace(desktop(install, tmp_path, recorder), show_window=window.show)
+    assert run(build_parser().parse_args([]), surroundings) == 0
+    assert recorder.calls == []
+    assert window.shown == [(f"http://127.0.0.1:{port_of(data)}", data / "window")]
+    # As a server only, a second start shows nothing.
+    assert run(build_parser().parse_args(["--no-browser"]), surroundings) == 0
+    assert len(window.shown) == 1
+
+
+def test_without_a_console_messages_go_to_a_file(
+    install: Path, tmp_path: Path, data: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(sys, "stdout", None)
+    monkeypatch.setattr(sys, "stderr", None)
+    (data / "rhinvoice.json").write_text("{")
+    assert run(build_parser().parse_args([]), desktop(install, tmp_path, Recorder())) == 1
+    log = sys.stderr
+    assert log is not None
+    assert log is sys.stdout
+    log.close()  # the program keeps it open until it ends
+    assert (data / "rhinvoice.log").read_text().startswith("error: ")

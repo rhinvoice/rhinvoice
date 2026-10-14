@@ -21,6 +21,7 @@ import json
 import os
 import platform
 import shutil
+import site
 import subprocess
 import sys
 import traceback
@@ -72,15 +73,13 @@ class Package:
 @dataclass(frozen=True, slots=True)
 class State:
     active: str | None = None
-    """The version to start; None: the newest that fits."""
-    previous: str | None = None
-    """The version that ran before the active one (to go back to)."""
-    pending: bool = False
-    """The active version has not yet answered once: it is taken back if it ends before."""
+    """The version that last answered: the one to go back to."""
+    trying: str | None = None
+    """A version on its first start: it is taken back if it ends before it answered."""
     saved: bool = False
-    """The database was copied before the pending version's first start."""
+    """The database was copied before the first start of ``trying``."""
     failed: list[str] = field(default_factory=list[str])
-    """Versions that did not start; never chosen again."""
+    """Versions that did not start after an update; never chosen again."""
 
 
 def state_file(data: Path) -> Path:
@@ -88,7 +87,7 @@ def state_file(data: Path) -> Path:
 
 
 def load_state(data: Path) -> State:
-    """Read the state; a missing or damaged file means: start the newest package."""
+    """Read the state; a missing or damaged file means: nothing ran yet."""
     try:
         values = json.loads(state_file(data).read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -96,22 +95,17 @@ def load_state(data: Path) -> State:
     if not isinstance(values, dict):
         return State()
     fields = cast("dict[str, object]", values)
-    active, previous, failed = (
-        fields.get("active"),
-        fields.get("previous"),
-        fields.get("failed", []),
-    )
-    pending, saved = fields.get("pending", False), fields.get("saved", False)
+    active, trying = fields.get("active"), fields.get("trying")
+    saved, failed = fields.get("saved", False), fields.get("failed", [])
     if (
         not isinstance(active, str | None)
-        or not isinstance(previous, str | None)
-        or not isinstance(pending, bool)
+        or not isinstance(trying, str | None)
         or not isinstance(saved, bool)
         or not isinstance(failed, list)
     ):
         return State()
     versions = [str(version) for version in cast("list[object]", failed)]
-    return State(active, previous, pending=pending, saved=saved, failed=versions)
+    return State(active, trying, saved=saved, failed=versions)
 
 
 def save_state(data: Path, state: State) -> None:
@@ -125,16 +119,8 @@ def save_state(data: Path, state: State) -> None:
 def confirm(data: Path) -> None:
     """Record that the running version works (called by it once its interface answers)."""
     state = load_state(data)
-    if state.pending:
-        save_state(data, replace(state, pending=False))
-
-
-def switch_to(data: Path, version: str) -> None:
-    """Start ``version`` next time; it has to prove itself (called by the updater)."""
-    state = load_state(data)
-    save_state(
-        data, replace(state, active=version, previous=state.active, pending=True, saved=False)
-    )
+    if state.trying is not None:
+        save_state(data, replace(state, active=state.trying, trying=None, saved=False))
 
 
 def runtime_generation(install: Path) -> int:
@@ -169,12 +155,12 @@ def packages(install: Path, data: Path) -> list[Package]:
 
 
 def choose(install: Path, data: Path, state: State) -> Package:
+    """Take the newest package that fits and did not fail, from the setup or an update."""
     candidates = [p for p in packages(install, data) if p.version not in state.failed]
     if not candidates:
         msg = f"no app package fits the runtime in {install}"
         raise BootError(msg)
-    active = [package for package in candidates if package.version == state.active]
-    return (active or candidates)[0]
+    return candidates[0]
 
 
 @dataclass(frozen=True, slots=True)
@@ -184,16 +170,17 @@ class Runtime:
     install: Path
     data: Path
     launch: Callable[[Package, list[str]], int]
-    restart: Callable[[], None]
+    restart: Callable[[], int]
+    """Starts the boot anew in a new process and returns its exit code."""
 
 
 def run(argv: Sequence[str], runtime: Runtime) -> int:
     state = load_state(runtime.data)
     package = choose(runtime.install, runtime.data, state)
-    proving = state.pending and state.active == package.version
-    if proving and not state.saved:
+    first_start = package.version != state.active
+    if first_start and not (state.trying == package.version and state.saved):
         copy_database(runtime, f"before-{package.version}")
-        state = replace(state, saved=True)
+        state = replace(state, trying=package.version, saved=True)
         save_state(runtime.data, state)
     arguments = [
         *argv,
@@ -206,17 +193,18 @@ def run(argv: Sequence[str], runtime: Runtime) -> int:
     except Exception:  # noqa: BLE001 - a broken package must not keep the previous one from starting
         traceback.print_exc()
         code = 1
-    if proving and load_state(runtime.data).pending:
+    # Only an update is taken back: without a version that ran before, there is none to
+    # go back to, and the next start tries again (it may have been the computer, not us).
+    if load_state(runtime.data).trying == package.version and state.active is not None:
         take_back(runtime, package.version)
-        runtime.restart()
-        return code
+        return runtime.restart()
     if code == RESTART:
-        runtime.restart()
+        return runtime.restart()
     return code
 
 
 def take_back(runtime: Runtime, version: str) -> None:
-    """Return to the previous version and the database as it was before the update."""
+    """Return to the database as it was before the failed version; never choose it again."""
     state = load_state(runtime.data)
     stop_database(runtime)
     database = runtime.data / "database"
@@ -228,14 +216,7 @@ def take_back(runtime: Runtime, version: str) -> None:
             database.rename(failed)
         shutil.copytree(saved, database)
     save_state(
-        runtime.data,
-        State(
-            active=state.previous,
-            previous=None,
-            pending=False,
-            saved=False,
-            failed=[*state.failed, version],
-        ),
+        runtime.data, replace(state, trying=None, saved=False, failed=[*state.failed, version])
     )
 
 
@@ -264,14 +245,21 @@ def stop_database(runtime: Runtime) -> None:
 
 def launch(package: Package, arguments: list[str], module: str = LAUNCHER) -> int:
     """Run the package's launcher in this process."""
-    sys.path.insert(0, str(package.folder / "site-packages"))
+    # As a site folder, so that the .pth files of its libraries apply; first on the path.
+    before = list(sys.path)
+    site.addsitedir(str(package.folder / "site-packages"))
+    sys.path[:] = [entry for entry in sys.path if entry not in before] + before
     main: Callable[[list[str]], int] = __import__(module, fromlist=["main"]).main
     return main(arguments)
 
 
-def restart() -> None:
-    """Replace this process with a new start of the boot (it reads the state anew)."""
-    os.execv(sys.executable, [sys.executable, "-m", "rhinvoice_boot", *sys.argv[1:]])  # noqa: S606 - this program
+def restart() -> int:
+    """Start the boot anew and wait for it: it reads the state and imports a package afresh.
+
+    A child, not a replacement: on Windows a replaced process would lose the setup's
+    shortcut, the console and the request to close.
+    """
+    return subprocess.call([sys.executable, "-m", "rhinvoice_boot", *sys.argv[1:]])  # noqa: S603 - this program
 
 
 def option(argv: Sequence[str], name: str) -> str | None:

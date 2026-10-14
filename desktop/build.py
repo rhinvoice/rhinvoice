@@ -2,12 +2,18 @@
 
     python desktop/build.py windows
 
-writes ``build/windows/app`` with the layout that ``rhinvoice.desktop.launcher`` expects:
+writes the two parts of ADR 0022 into ``build/windows``:
 
-    python/      a standalone CPython with Rhinvoice and its locked dependencies
-    postgresql/  the PostgreSQL distribution (with ICU)
-    static/      the built web interface (frontend/dist, build it first)
-    Rhinvoice.ico
+    install/                  what the setup installs (Inno Setup packs it)
+      python/                 the runtime: a standalone CPython with rhinvoice_boot only
+      postgresql/             the PostgreSQL distribution (with ICU)
+      runtime.json            {"generation": N}: what app packages may expect of it
+      app/                    the app package of this release (see below)
+      Rhinvoice.ico
+    rhinvoice-app-<version>-windows-x64.zip   the same app package, for updates
+
+An app package holds ``site-packages/`` (Rhinvoice and its locked dependencies),
+``static/`` (the built web interface: build frontend/dist first) and ``manifest.json``.
 
 Every download is pinned in sources.json and checked against its SHA-256. Needs uv.
 Only the standard library: it runs before anything else is installed.
@@ -34,6 +40,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BACKEND = ROOT / "backend"
 DOWNLOADS = ROOT / "build" / "downloads"
+RUNTIME_GENERATION = 1
+"""Raise it when the runtime changes in a way app packages depend on (new Python or
+PostgreSQL major version): packages built afterwards then need the new setup."""
 # Not needed to run the server; about a third of the PostgreSQL download.
 POSTGRES_UNUSED = ("include", "doc", "symbols", "pgAdmin 4", "StackBuilder")
 
@@ -79,8 +88,23 @@ def unpack_single_folder(archive: Path, target: Path) -> None:
         shutil.move(top, target)
 
 
-def install_python(sources: dict[str, dict[str, str]], app: Path, python: Path) -> None:
-    unpack_single_folder(fetch(sources["python"]), app / "python")
+def install_runtime_python(sources: dict[str, dict[str, str]], install: Path) -> Path:
+    """Unpack CPython and put the boot into its site-packages; return its interpreter."""
+    unpack_single_folder(fetch(sources["python"]), install / "python")
+    shutil.copytree(
+        BACKEND / "src" / "rhinvoice_boot",
+        install / "python" / "Lib" / "site-packages" / "rhinvoice_boot",
+        ignore=shutil.ignore_patterns("__pycache__"),
+    )
+    (install / "runtime.json").write_text(
+        json.dumps({"generation": RUNTIME_GENERATION}) + "\n", encoding="utf-8"
+    )
+    return install / "python" / "python.exe"
+
+
+def build_app_package(python: Path, package: Path) -> None:
+    """Install Rhinvoice with its locked dependencies for ``python`` into ``package``."""
+    site_packages = package / "site-packages"
     with tempfile.TemporaryDirectory() as temporary:
         folder = Path(temporary)
         requirements = folder / "requirements.txt"
@@ -91,32 +115,45 @@ def install_python(sources: dict[str, dict[str, str]], app: Path, python: Path) 
         )  # fmt: skip
         run("uv", "build", "--wheel", "--out-dir", folder, cwd=BACKEND)
         [wheel] = folder.glob("rhinvoice-*.whl")
-        uv_pip = ("uv", "pip", "install", "--python", python, "--link-mode", "copy")
+        uv_pip = ("uv", "pip", "install", "--python", python, "--target", site_packages)
         run(*uv_pip, "--require-hashes", "--requirement", requirements)
         run(*uv_pip, "--no-deps", wheel)
+    # The boot belongs to the runtime; a package must not bring its own.
+    shutil.rmtree(site_packages / "rhinvoice_boot")
+    install_static(package)
+    manifest = {"version": version(), "runtime": RUNTIME_GENERATION}
+    (package / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
 
-def install_postgres(sources: dict[str, dict[str, str]], app: Path) -> None:
-    unpack_single_folder(fetch(sources["postgresql"]), app / "postgresql")
+def zip_app_package(package: Path, target: Path) -> None:
+    """Pack the app package for updates; its files sit at the top of the archive."""
+    with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+        for path in sorted(package.rglob("*")):
+            if path.is_file() and "__pycache__" not in path.parts:
+                archive.write(path, path.relative_to(package).as_posix())
+
+
+def install_postgres(sources: dict[str, dict[str, str]], install: Path) -> None:
+    unpack_single_folder(fetch(sources["postgresql"]), install / "postgresql")
     for unused in POSTGRES_UNUSED:
-        shutil.rmtree(app / "postgresql" / unused, ignore_errors=True)
+        shutil.rmtree(install / "postgresql" / unused, ignore_errors=True)
 
 
-def install_static(app: Path) -> None:
+def install_static(package: Path) -> None:
     dist = ROOT / "frontend" / "dist"
     if not (dist / "index.html").exists():
         msg = "frontend/dist is missing: build the web interface first (pnpm run build)"
         raise SystemExit(msg)
-    shutil.copytree(dist, app / "static")
+    shutil.copytree(dist, package / "static")
 
 
-def brand_windows_program(sources: dict[str, dict[str, str]], app: Path) -> None:
+def brand_windows_program(sources: dict[str, dict[str, str]], install: Path) -> None:
     """Start as Rhinvoice.exe, so that the taskbar shows Rhinvoice's icon and name."""
-    program = app / "python" / "Rhinvoice.exe"
-    shutil.copy2(app / "python" / "pythonw.exe", program)
+    program = install / "python" / "Rhinvoice.exe"
+    shutil.copy2(install / "python" / "pythonw.exe", program)
     run(
         fetch(sources["rcedit"]), program,
-        "--set-icon", app / "Rhinvoice.ico",
+        "--set-icon", install / "Rhinvoice.ico",
         "--set-version-string", "FileDescription", "Rhinvoice",
         "--set-version-string", "ProductName", "Rhinvoice",
         "--set-version-string", "CompanyName", "Webberz",
@@ -127,15 +164,16 @@ def brand_windows_program(sources: dict[str, dict[str, str]], app: Path) -> None
 
 def build_windows(out: Path) -> None:
     sources = json.loads((ROOT / "desktop" / "sources.json").read_text(encoding="utf-8"))["windows"]
-    app = out / "app"
+    install = out / "install"
     shutil.rmtree(out, ignore_errors=True)
-    app.mkdir(parents=True)
-    shutil.copy2(ROOT / "desktop" / "icons" / "Rhinvoice.ico", app / "Rhinvoice.ico")
-    install_python(sources, app, app / "python" / "python.exe")
-    install_postgres(sources, app)
-    install_static(app)
-    brand_windows_program(sources, app)
-    print(f"Rhinvoice {version()} assembled in {app}")
+    install.mkdir(parents=True)
+    shutil.copy2(ROOT / "desktop" / "icons" / "Rhinvoice.ico", install / "Rhinvoice.ico")
+    python = install_runtime_python(sources, install)
+    install_postgres(sources, install)
+    brand_windows_program(sources, install)
+    build_app_package(python, install / "app")
+    zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-windows-x64.zip")
+    print(f"Rhinvoice {version()} (runtime {RUNTIME_GENERATION}) assembled in {out}")
 
 
 def main() -> None:

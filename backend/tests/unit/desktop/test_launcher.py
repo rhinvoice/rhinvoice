@@ -18,7 +18,7 @@ from rhinvoice.desktop import launcher
 from rhinvoice.desktop.launcher import Desktop, build_parser, run, wait_until_answers, when_ready
 from rhinvoice.desktop.ports import free_port
 from rhinvoice.desktop.postgres import BundledPostgres
-from rhinvoice_boot import load_state, switch_to
+from rhinvoice_boot import State, load_state, save_state
 from tests.unit.desktop.tools import commands
 
 
@@ -253,11 +253,12 @@ def health() -> Iterator[str]:
 def test_once_the_server_answers_the_version_is_confirmed_and_opened(
     health: str, tmp_path: Path
 ) -> None:
-    switch_to(tmp_path, "0.7.0")  # an update that still has to prove itself
+    # An update that still has to prove itself.
+    save_state(tmp_path, State(active="0.6.2", trying="0.7.0", saved=True))
     opened: list[str] = []
     assert when_ready(health, tmp_path, opened.append)
     assert opened == [health]
-    assert not load_state(tmp_path).pending
+    assert load_state(tmp_path) == State(active="0.7.0")
 
 
 def test_a_server_that_never_answers_is_not_waited_for_forever() -> None:

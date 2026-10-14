@@ -4,9 +4,9 @@
 
 Starts the installed program on the user's empty data folder (without window), creates the first
 user and the company, fills in the demo data, prints an invoice as PDF, kills the program
-and starts it again (the database left running must be taken over), and ends it the way
-Windows asks a program to close. Only the standard library: it runs beside the
-installation, not inside it.
+and starts it again (the database left running must be taken over), installs an update and
+a broken update (taken back, ADR 0022), and ends it the way Windows asks a program to close.
+Only the standard library: it runs beside the installation, not inside it.
 """
 
 # A test script reports its steps on the console; it is no package.
@@ -18,6 +18,7 @@ import argparse
 import http.cookiejar
 import json
 import os
+import shutil
 import signal
 import subprocess
 import time
@@ -60,7 +61,7 @@ class Program:
         flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
         output = (self.data.parent / "rhinvoice-smoke-test.log").open("ab")
         self.process = subprocess.Popen(  # noqa: S603 - the installed program
-            [python, "-m", "rhinvoice.desktop", "--no-browser"],
+            [python, "-m", "rhinvoice_boot", "--no-browser"],
             creationflags=flags,
             stdout=output,
             stderr=subprocess.STDOUT,
@@ -91,10 +92,26 @@ class Program:
         self.running().kill()
         self.running().wait()
 
-    def close(self) -> int:
+    def close(self) -> None:
         """Ask the program to end, as Windows does when the user logs off."""
         self.running().send_signal(getattr(signal, "CTRL_BREAK_EVENT", signal.SIGINT))
-        return self.running().wait(timeout=60)
+        self.running().wait(timeout=60)
+        # After an update the program may run as a child of the boot: give it time to end.
+        deadline = time.monotonic() + 60
+        while self.database_running() and time.monotonic() < deadline:
+            time.sleep(1)
+
+    def state(self) -> dict[str, Any]:
+        state: dict[str, Any] = json.loads((self.data / "app" / "state.json").read_text())
+        return state
+
+    def put_update(self, version: str) -> Path:
+        """Put a copy of the installed app package into the data folder as ``version``."""
+        package = self.data / "app" / "versions" / version
+        shutil.copytree(self.install / "app", package)
+        manifest = json.loads((package / "manifest.json").read_text())
+        (package / "manifest.json").write_text(json.dumps({**manifest, "version": version}))
+        return package
 
     def database_url(self) -> str:
         password = json.loads((self.data / "rhinvoice.json").read_text())["database_password"]
@@ -153,12 +170,13 @@ def check(install: Path, data: Path) -> None:
         },
     )
     step("demo data")
+    site_packages = install / "app" / "site-packages"
+    demo = (
+        f"import site; site.addsitedir(r'{site_packages}'); "
+        "from rhinvoice.api.cli import main; raise SystemExit(main(['demo']))"
+    )
     subprocess.run(  # noqa: S603 - the installed program
-        [
-            install / "python" / "python.exe",
-            "-c",
-            "from rhinvoice.api.cli import main; raise SystemExit(main(['demo']))",
-        ],
+        [install / "python" / "python.exe", "-c", demo],
         env={**os.environ, "RHINVOICE_DATABASE_URL": program.database_url()},
         check=True,
     )
@@ -180,12 +198,41 @@ def check(install: Path, data: Path) -> None:
     if api.json("GET", "/documents?type=invoice")["total"] < 1:
         msg = "the invoices are gone after the restart"
         raise SystemExit(msg)
+    check_updates(program, api)
     step("closed: the database stops with the program")
     program.close()
     if program.database_running():
         msg = "the database still runs after the program was closed"
         raise SystemExit(msg)
     step("all good")
+
+
+def check_updates(program: Program, api: Api) -> None:
+    step("an update: the newer app package starts after a copy of the database")
+    program.close()
+    program.put_update("99.0.0")
+    program.start()
+    if program.state().get("active") != "99.0.0":
+        msg = f"the update did not become active: {program.state()}"
+        raise SystemExit(msg)
+    if not (program.data / "backups" / "database-before-99.0.0" / "PG_VERSION").exists():
+        msg = "no copy of the database was taken before the update"
+        raise SystemExit(msg)
+    if api.json("GET", "/documents?type=invoice")["total"] < 1:
+        msg = "the invoices are gone after the update"
+        raise SystemExit(msg)
+    step("a broken update is taken back, the previous version starts")
+    program.close()
+    broken = program.put_update("99.0.1")
+    shutil.rmtree(broken / "site-packages" / "rhinvoice")
+    program.start()
+    state = program.state()
+    if state.get("active") != "99.0.0" or "99.0.1" not in state.get("failed", []):
+        msg = f"the broken update was not taken back: {state}"
+        raise SystemExit(msg)
+    if api.json("GET", "/documents?type=invoice")["total"] < 1:
+        msg = "the invoices are gone after taking the update back"
+        raise SystemExit(msg)
 
 
 def report(error: BaseException, data: Path) -> None:

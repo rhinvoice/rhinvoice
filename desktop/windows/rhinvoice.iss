@@ -1,4 +1,5 @@
-; Rhinvoice for Windows: installs the program folder of desktop/build.py (ADR 0021).
+; Rhinvoice for Windows: installs the runtime and app package of desktop/build.py
+; (ADR 0021, 0022). Later app packages come as updates inside the program.
 ; Built in CI: iscc /DAppVersion=x.y.z desktop\windows\rhinvoice.iss
 ;
 ; Installs for the current user only (no administrator rights). The data folder
@@ -42,17 +43,18 @@ Name: "en"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
-Source: "..\..\build\windows\app\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\..\build\windows\install\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [InstallDelete]
 ; An update replaces the program completely; old files must not mix with new ones.
 Type: filesandordirs; Name: "{app}\python"
 Type: filesandordirs; Name: "{app}\postgresql"
+Type: filesandordirs; Name: "{app}\app"
 Type: filesandordirs; Name: "{app}\static"
 
 [Icons]
-Name: "{autoprograms}\Rhinvoice"; Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice.desktop"; WorkingDir: "{app}"; IconFilename: "{app}\Rhinvoice.ico"
-Name: "{autodesktop}\Rhinvoice"; Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice.desktop"; WorkingDir: "{app}"; IconFilename: "{app}\Rhinvoice.ico"; Tasks: desktopicon
+Name: "{autoprograms}\Rhinvoice"; Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice_boot"; WorkingDir: "{app}"; IconFilename: "{app}\Rhinvoice.ico"
+Name: "{autodesktop}\Rhinvoice"; Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice_boot"; WorkingDir: "{app}"; IconFilename: "{app}\Rhinvoice.ico"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice.desktop"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,Rhinvoice}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice_boot"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,Rhinvoice}"; Flags: nowait postinstall skipifsilent

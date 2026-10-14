@@ -2,8 +2,8 @@
 
 import importlib
 import json
-import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -24,7 +24,6 @@ from rhinvoice_boot import (
     packages,
     run,
     save_state,
-    switch_to,
     version_key,
     without_option,
 )
@@ -71,8 +70,9 @@ class Program:
             confirm(self.data)
         return self.code
 
-    def restart(self) -> None:
+    def restart(self) -> int:
         self.restarts += 1
+        return self.code
 
 
 def runtime(install: Path, data: Path, program: Program) -> Runtime:
@@ -95,9 +95,13 @@ def test_the_newest_package_that_fits_the_runtime_is_chosen(
     found = packages(runtime_folder, data)
     assert [p.version for p in found] == ["0.7.0", "0.6.2"]
     assert choose(runtime_folder, data, State()).version == "0.7.0"
-    # The active one wins, unless it failed.
-    assert choose(runtime_folder, data, State(active="0.6.2")).version == "0.6.2"
-    assert choose(runtime_folder, data, State(active="0.7.0", failed=["0.7.0"])).version == "0.6.2"
+    # One that failed is never chosen again, also when it is the newest.
+    assert choose(runtime_folder, data, State(failed=["0.7.0"])).version == "0.6.2"
+
+
+def test_a_newer_setup_wins_over_an_older_update(runtime_folder: Path, data: Path) -> None:
+    update(data, "0.6.1")
+    assert choose(runtime_folder, data, State(active="0.6.1")).version == "0.6.2"
 
 
 def test_without_a_fitting_package_nothing_starts(runtime_folder: Path, data: Path) -> None:
@@ -113,17 +117,9 @@ def test_a_runtime_without_its_description_asks_for_the_setup(install: Path, dat
 
 @pytest.mark.parametrize(
     "content",
-    [
-        "{",
-        "[]",
-        '{"active": 1}',
-        '{"previous": 1}',
-        '{"pending": "yes"}',
-        '{"saved": "yes"}',
-        '{"failed": "0.7.0"}',
-    ],
+    ["{", "[]", '{"active": 1}', '{"trying": 1}', '{"saved": "yes"}', '{"failed": "0.7.0"}'],
 )
-def test_a_damaged_state_starts_the_newest_package(data: Path, content: str) -> None:
+def test_a_damaged_state_counts_as_nothing_ran_yet(data: Path, content: str) -> None:
     (data / "app").mkdir(parents=True)
     (data / "app" / "state.json").write_text(content)
     assert load_state(data) == State()
@@ -131,19 +127,17 @@ def test_a_damaged_state_starts_the_newest_package(data: Path, content: str) -> 
 
 def test_the_state_is_kept_between_starts(data: Path) -> None:
     assert load_state(data) == State()
-    state = State(active="0.7.0", previous="0.6.2", pending=True, saved=True, failed=["0.6.9"])
+    state = State(active="0.6.2", trying="0.7.0", saved=True, failed=["0.6.9"])
     save_state(data, state)
     assert load_state(data) == state
 
 
-def test_an_update_has_to_prove_itself_once(data: Path) -> None:
-    save_state(data, State(active="0.6.2"))
-    switch_to(data, "0.7.0")
-    assert load_state(data) == State(active="0.7.0", previous="0.6.2", pending=True)
+def test_a_version_on_its_first_start_proves_itself_once(data: Path) -> None:
+    save_state(data, State(active="0.6.2", trying="0.7.0", saved=True))
     confirm(data)
-    assert load_state(data) == State(active="0.7.0", previous="0.6.2")
+    assert load_state(data) == State(active="0.7.0")
     confirm(data)  # nothing left to confirm
-    assert load_state(data) == State(active="0.7.0", previous="0.6.2")
+    assert load_state(data) == State(active="0.7.0")
 
 
 def test_the_chosen_package_is_started_with_its_folders(runtime_folder: Path, data: Path) -> None:
@@ -161,6 +155,17 @@ def test_the_chosen_package_is_started_with_its_folders(runtime_folder: Path, da
         )
     ]  # fmt: skip
     assert program.restarts == 0
+    assert load_state(data) == State(active="0.6.2")
+
+
+def test_a_first_installation_that_fails_is_tried_again(runtime_folder: Path, data: Path) -> None:
+    program = Program(data, works=False, code=1)
+    assert run([], runtime(runtime_folder, data, program)) == 1
+    # There is no version to go back to: nothing is taken back or marked as failed.
+    assert program.restarts == 0
+    assert load_state(data).failed == []
+    run([], runtime(runtime_folder, data, Program(data)))
+    assert load_state(data) == State(active="0.6.2")
 
 
 def test_the_program_may_ask_to_be_started_again(runtime_folder: Path, data: Path) -> None:
@@ -173,15 +178,21 @@ def database(install: Path, data: Path) -> BundledPostgres:
     return BundledPostgres(install / "postgresql" / "bin", data / "database", "secret", 5432)
 
 
+def installed(runtime_folder: Path, data: Path) -> None:
+    """Run 0.6.2 once, with a database that holds invoices."""
+    run([], runtime(runtime_folder, data, Program(data)))
+    postgres = database(runtime_folder, data)
+    postgres.start()
+    postgres.stop()
+    (data / "database" / "invoices").write_text("before the update")
+
+
 def test_an_update_that_works_keeps_a_copy_of_the_database_from_before(
     runtime_folder: Path, data: Path, tmp_path: Path
 ) -> None:
-    postgres = database(runtime_folder, data)
-    postgres.start()  # left running by the version that downloaded the update
-    (data / "database" / "invoices").write_text("before the update")
+    installed(runtime_folder, data)
+    database(runtime_folder, data).start()  # left running by the version that downloaded it
     update(data, "0.7.0")
-    save_state(data, State(active="0.6.2"))
-    switch_to(data, "0.7.0")
     program = Program(data)
     assert run([], runtime(runtime_folder, data, program)) == 0
     assert [version for version, _ in program.started] == ["0.7.0"]
@@ -189,18 +200,18 @@ def test_an_update_that_works_keeps_a_copy_of_the_database_from_before(
     assert (copy / "invoices").read_text() == "before the update"
     # The copy is taken of the stopped database.
     assert commands(tmp_path)[-2:] == ["pg_ctl status", "pg_ctl stop"]
-    assert load_state(data) == State(active="0.7.0", previous="0.6.2", saved=True)
+    assert load_state(data) == State(active="0.7.0")
+    # Later starts of the same version copy nothing.
+    shutil.rmtree(copy)
+    run([], runtime(runtime_folder, data, Program(data)))
+    assert not copy.exists()
 
 
 def test_an_update_that_fails_is_taken_back_with_its_database(
     runtime_folder: Path, data: Path
 ) -> None:
-    database(runtime_folder, data).start()
-    database(runtime_folder, data).stop()
-    (data / "database" / "invoices").write_text("before the update")
+    installed(runtime_folder, data)
     update(data, "0.7.0")
-    save_state(data, State(active="0.6.2"))
-    switch_to(data, "0.7.0")
 
     class Migrating(Program):
         def launch(self, chosen: Package, arguments: list[str]) -> int:
@@ -222,21 +233,18 @@ def test_an_update_that_fails_is_taken_back_with_its_database(
 def test_an_update_without_a_database_yet_is_taken_back_without_one(
     runtime_folder: Path, data: Path
 ) -> None:
+    run([], runtime(runtime_folder, data, Program(data)))
     update(data, "0.7.0")
-    switch_to(data, "0.7.0")
-    program = Program(data, works=False, code=1)
-    assert run([], runtime(runtime_folder, data, program)) == 1
+    run([], runtime(runtime_folder, data, Program(data, works=False, code=1)))
     assert not (data / "database").exists()
-    assert load_state(data) == State(active=None, failed=["0.7.0"])
+    assert load_state(data) == State(active="0.6.2", failed=["0.7.0"])
 
 
 def test_a_failed_update_whose_database_vanished_gets_the_copy_back(
     runtime_folder: Path, data: Path
 ) -> None:
-    database(runtime_folder, data).start()
-    database(runtime_folder, data).stop()
+    installed(runtime_folder, data)
     update(data, "0.7.0")
-    switch_to(data, "0.7.0")
 
     class Deleting(Program):
         def launch(self, chosen: Package, arguments: list[str]) -> int:
@@ -244,7 +252,20 @@ def test_a_failed_update_whose_database_vanished_gets_the_copy_back(
             return super().launch(chosen, arguments)
 
     run([], runtime(runtime_folder, data, Deleting(data, works=False, code=1)))
-    assert (data / "database" / "PG_VERSION").exists()
+    assert (data / "database" / "invoices").read_text() == "before the update"
+
+
+def test_an_interrupted_first_start_does_not_copy_the_database_again(
+    runtime_folder: Path, data: Path
+) -> None:
+    installed(runtime_folder, data)
+    update(data, "0.7.0")
+    # The computer went off during the first start of 0.7.0, after the copy.
+    save_state(data, State(active="0.6.2", trying="0.7.0", saved=True))
+    copy = data / "backups" / "database-before-0.7.0"
+    run([], runtime(runtime_folder, data, Program(data)))
+    assert not copy.exists()
+    assert load_state(data) == State(active="0.7.0")
 
 
 def test_the_launcher_of_the_package_runs_in_this_process(
@@ -261,16 +282,17 @@ def test_the_launcher_of_the_package_runs_in_this_process(
     assert sys.path[0] == str(folder / "site-packages")
 
 
-def test_a_restart_replaces_the_process(monkeypatch: pytest.MonkeyPatch) -> None:
-    calls: list[tuple[str, list[str]]] = []
+def test_a_restart_runs_the_boot_anew_and_waits_for_it(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[list[str]] = []
 
-    def execv(path: str, arguments: list[str]) -> None:
-        calls.append((path, arguments))
+    def call(arguments: list[str]) -> int:
+        calls.append(arguments)
+        return 7
 
-    monkeypatch.setattr(os, "execv", execv)
+    monkeypatch.setattr(subprocess, "call", call)
     monkeypatch.setattr(sys, "argv", ["rhinvoice_boot", "--browser"])
-    boot.restart()
-    assert calls == [(sys.executable, [sys.executable, "-m", "rhinvoice_boot", "--browser"])]
+    assert boot.restart() == 7
+    assert calls == [[sys.executable, "-m", "rhinvoice_boot", "--browser"]]
 
 
 def test_options_are_read_in_both_spellings() -> None:
@@ -305,16 +327,17 @@ def test_main_reports_a_runtime_it_cannot_use(
 
 
 def test_a_package_that_cannot_even_start_is_taken_back(runtime_folder: Path, data: Path) -> None:
+    run([], runtime(runtime_folder, data, Program(data)))
     update(data, "0.7.0")
-    switch_to(data, "0.7.0")
 
     class Broken(Program):
         def launch(self, chosen: Package, arguments: list[str]) -> int:
             self.started.append((chosen.version, arguments))
             raise ImportError(chosen.version)
 
-    program = Broken(data)
-    assert run([], runtime(runtime_folder, data, program)) == 1
+    program = Broken(data, code=4)
+    # The previous version starts in its place; its exit code is the program's.
+    assert run([], runtime(runtime_folder, data, program)) == 4
     assert load_state(data).failed == ["0.7.0"]
     assert program.restarts == 1
 

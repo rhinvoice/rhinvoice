@@ -1,6 +1,6 @@
 name: Desktop
 
-# The installation without Docker (ADR 0021): builds the Windows setup, installs it on a
+# The installation without Docker (ADR 0021, 0022): builds the Windows setup and app package, installs it on a
 # fresh Windows, checks it like a user would (desktop/smoke_test.py) and keeps the setup
 # as a download of the run.
 on:
@@ -70,7 +70,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: Rhinvoice-Setup-windows
-          path: build/windows/Rhinvoice-Setup-*.exe
+          path: |
+            build/windows/Rhinvoice-Setup-*.exe
+            build/windows/rhinvoice-app-*.zip
           retention-days: 14
 
       - name: Install it silently for this user

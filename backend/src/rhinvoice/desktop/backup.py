@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
 from rhinvoice.application.backup.ports import BackupFailed, BackupTarget, FolderSuggestion
-from rhinvoice.desktop.config import load_or_create, save
+from rhinvoice.desktop.config import load_or_create, update
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
@@ -126,19 +126,19 @@ class DesktopBackupSetup:
         except OSError as error:
             msg = f"the folder cannot be created: {error.strerror or error}"
             raise BackupFailed(msg) from error
-        config = load_or_create(self._config)
-        key = config.backup_key or new_recovery_key()
+        key = load_or_create(self._config).backup_key or new_recovery_key()
         # Creates the repository, or opens the one there: a wrong key is refused here.
         self._archive_for(path, key).prepare()
-        save(self._config, replace(config, backup_folder=str(path), backup_key=key))
+        update(
+            self._config, lambda config: replace(config, backup_folder=str(path), backup_key=key)
+        )
         return key
 
     def recovery_key(self) -> str | None:
         return load_or_create(self._config).backup_key
 
     def confirm_key(self) -> None:
-        config = load_or_create(self._config)
-        save(self._config, replace(config, backup_key_confirmed=True))
+        update(self._config, lambda config: replace(config, backup_key_confirmed=True))
 
 
 class CurrentArchive:
@@ -167,8 +167,8 @@ class CurrentArchive:
         due = verified is None or now - datetime.fromisoformat(verified) >= VERIFY_EVERY
         self._current().maintain(verify=verify or due)
         if verify or due:
-            config = load_or_create(self._config)
-            save(self._config, replace(config, backup_verified_at=now.isoformat()))
+            stamp = now.isoformat()
+            update(self._config, lambda config: replace(config, backup_verified_at=stamp))
 
     def _current(self) -> PreparedArchive:
         config = load_or_create(self._config)

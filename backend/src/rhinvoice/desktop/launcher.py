@@ -33,7 +33,7 @@ from rhinvoice.application.backup.ports import BackupFailed
 from rhinvoice.desktop import window
 from rhinvoice.desktop.backup import CurrentArchive, DesktopBackupSetup, cloud_folders
 from rhinvoice.desktop.browser import find_chromium
-from rhinvoice.desktop.config import ConfigError, DesktopConfig, load_or_create, save
+from rhinvoice.desktop.config import ConfigError, DesktopConfig, load_or_create, save, update
 from rhinvoice.desktop.ports import free_port, listening
 from rhinvoice.desktop.postgres import BundledPostgres, PostgresError
 from rhinvoice.desktop.updates import PackageInstaller, Restarter, platform_name
@@ -296,10 +296,12 @@ def _restore_or_list(
     finally:
         database.stop()
     # Backups go on into the same folder, with the key that opened it.
-    restored = replace(
-        config, backup_folder=str(backups), backup_key=key, backup_key_confirmed=True
+    update(
+        folder / "rhinvoice.json",
+        lambda kept: replace(
+            kept, backup_folder=str(backups), backup_key=key, backup_key_confirmed=True
+        ),
     )
-    save(folder / "rhinvoice.json", restored)
     sys.stdout.write(f"Restored {args.restore} from {backups}; start Rhinvoice again.\n")
 
 

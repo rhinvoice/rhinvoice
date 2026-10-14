@@ -3,16 +3,21 @@
 from __future__ import annotations
 
 import json
+import os
 import secrets
+import threading
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, cast
 
 from rhinvoice_boot import make_private
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
 
 DEFAULT_PORT = 8000
+_CHANGING = threading.Lock()
+"""The API's threads and the backup job change the file at the same time."""
 PASSWORD_BYTES = 24
 
 
@@ -58,11 +63,27 @@ def load_or_create(path: Path) -> DesktopConfig:
 
 
 def save(path: Path, config: DesktopConfig) -> None:
-    """Write the configuration, readable for this user only."""
+    """Write the configuration, readable for this user only, whole or not at all.
+
+    It holds the database password and the recovery key: a write cut short must not
+    leave half a file.
+    """
     # The folder holds the database: only for this user.
     make_private(path.parent)
-    path.touch(mode=0o600)
-    path.write_text(json.dumps(asdict(config), indent=2) + "\n", encoding="utf-8")
+    temporary = path.with_name(f"{path.name}.tmp")
+    temporary.unlink(missing_ok=True)
+    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as file:
+        file.write(json.dumps(asdict(config), indent=2) + "\n")
+    temporary.replace(path)
+
+
+def update(path: Path, change: Callable[[DesktopConfig], DesktopConfig]) -> DesktopConfig:
+    """Read, change and write the configuration as one step for the threads of this program."""
+    with _CHANGING:
+        changed = change(load_or_create(path))
+        save(path, changed)
+        return changed
 
 
 def _fields(values: object) -> dict[str, object]:

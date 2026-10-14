@@ -8,7 +8,7 @@ import pytest
 
 from rhinvoice.desktop.browser import browser_candidates, find_chromium
 from rhinvoice.desktop.config import ConfigError, DesktopConfig, load_or_create
-from rhinvoice.desktop.folders import data_folder
+from rhinvoice_boot import data_folder
 from tests.helpers import raises_exactly
 
 HOME = Path("/home/anna")

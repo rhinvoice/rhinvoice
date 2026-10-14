@@ -15,9 +15,10 @@ import pytest
 
 from rhinvoice.api.settings import Settings
 from rhinvoice.desktop import launcher
-from rhinvoice.desktop.launcher import Desktop, build_parser, open_when_ready, run
+from rhinvoice.desktop.launcher import Desktop, build_parser, run, wait_until_answers, when_ready
 from rhinvoice.desktop.ports import free_port
 from rhinvoice.desktop.postgres import BundledPostgres
+from rhinvoice_boot import load_state, switch_to
 from tests.unit.desktop.tools import commands
 
 
@@ -49,8 +50,9 @@ def port_of(data: Path) -> int:
     return port
 
 
-def ignore_page(_address: str, _open_page: object) -> None:
+def ignore_page(_address: str, _folder: Path, _open_page: object = None) -> bool:
     """Open nothing."""
+    return True
 
 
 def never(_address: str) -> bool:
@@ -127,7 +129,7 @@ def test_a_second_start_shows_the_running_one(
     recorder = Recorder()
     surroundings = replace(desktop(install, tmp_path, recorder), open_page=opened.append)
     args = build_parser().parse_args(["--browser"])
-    monkeypatch.setattr(launcher, "open_when_ready", ignore_page)
+    monkeypatch.setattr(launcher, "when_ready", ignore_page)
 
     def serve_and_start_again(settings: Settings, host: str, port: int) -> int:
         recorder.calls.append((settings, host, port))
@@ -209,10 +211,11 @@ def test_the_browser_opens_the_interface(
 ) -> None:
     opened: list[tuple[str, object]] = []
 
-    def open_when_ready(address: str, open_page: object) -> None:
+    def when_ready(address: str, _folder: Path, open_page: object = None) -> bool:
         opened.append((address, open_page))
+        return True
 
-    monkeypatch.setattr(launcher, "open_when_ready", open_when_ready)
+    monkeypatch.setattr(launcher, "when_ready", when_ready)
     surroundings = desktop(install, tmp_path, Recorder())
     run(build_parser().parse_args([]), surroundings)
     assert opened == [(f"http://127.0.0.1:{port_of(data)}", surroundings.open_page)]
@@ -247,16 +250,18 @@ def health() -> Iterator[str]:
     server.server_close()
 
 
-def test_the_page_opens_once_the_server_answers(health: str) -> None:
+def test_once_the_server_answers_the_version_is_confirmed_and_opened(
+    health: str, tmp_path: Path
+) -> None:
+    switch_to(tmp_path, "0.7.0")  # an update that still has to prove itself
     opened: list[str] = []
-    assert open_when_ready(health, opened.append, timeout=5)
+    assert when_ready(health, tmp_path, opened.append)
     assert opened == [health]
+    assert not load_state(tmp_path).pending
 
 
-def test_a_server_that_never_answers_opens_nothing() -> None:
-    opened: list[str] = []
-    assert not open_when_ready(f"http://127.0.0.1:{free_port()}", opened.append, timeout=0.6)
-    assert opened == []
+def test_a_server_that_never_answers_is_not_waited_for_forever() -> None:
+    assert not wait_until_answers(f"http://127.0.0.1:{free_port()}", timeout=0.6)
 
 
 def test_a_database_in_an_unknown_state_stops_the_program(
@@ -332,10 +337,11 @@ def test_the_browser_can_be_chosen_over_the_window(
 ) -> None:
     opened: list[str] = []
 
-    def open_when_ready(address: str, _open_page: object) -> None:
+    def when_ready(address: str, _folder: Path, _open_page: object = None) -> bool:
         opened.append(address)
+        return True
 
-    monkeypatch.setattr(launcher, "open_when_ready", open_when_ready)
+    monkeypatch.setattr(launcher, "when_ready", when_ready)
     recorder = Recorder()
     window = Window(recorder)
     surroundings = replace(desktop(install, tmp_path, recorder), show_window=window.show)

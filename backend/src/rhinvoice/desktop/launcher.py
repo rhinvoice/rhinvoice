@@ -28,9 +28,10 @@ from rhinvoice.api.settings import Settings
 from rhinvoice.desktop import window
 from rhinvoice.desktop.browser import find_chromium
 from rhinvoice.desktop.config import ConfigError, DesktopConfig, load_or_create, save
-from rhinvoice.desktop.folders import data_folder, make_private
+from rhinvoice.desktop.folders import make_private
 from rhinvoice.desktop.ports import free_port, listening
 from rhinvoice.desktop.postgres import BundledPostgres, PostgresError
+from rhinvoice_boot import confirm, data_folder
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -60,6 +61,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--data-dir", type=Path, help="where the database and settings live")
     parser.add_argument("--install-dir", type=Path, help="the installed program's folder")
+    parser.add_argument(
+        "--static-dir", type=Path, help="the web interface (default: static in the install folder)"
+    )
     parser.add_argument("--browser", action="store_true", help="use the browser, not a window")
     parser.add_argument(
         "--no-browser", action="store_true", help="open neither window nor browser (a server)"
@@ -106,7 +110,7 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
         settings = Settings(
             database_url=database.url,
             chromium_path=find_chromium(desktop.system, desktop.environ, install),
-            static_dir=install / "static",
+            static_dir=args.static_dir or install / "static",
             # Only this computer reaches the server, over http; Safari refuses secure
             # cookies there.
             cookie_secure=False,
@@ -138,15 +142,13 @@ def _serve(
     address = _address(port)
     sys.stdout.write(f"Rhinvoice runs on {address} (data: {folder})\n")
     if args.no_browser or args.browser or desktop.show_window is None:
-        if not args.no_browser:
-            threading.Thread(
-                target=open_when_ready, args=(address, desktop.open_page), daemon=True
-            ).start()
+        open_page = None if args.no_browser else desktop.open_page
+        threading.Thread(target=when_ready, args=(address, folder, open_page), daemon=True).start()
         return desktop.serve(settings, HOST, port)
     # The window needs the main thread (macOS); the server runs beside it and ends with
     # the program when the window is closed.
     threading.Thread(target=desktop.serve, args=(settings, HOST, port), daemon=True).start()
-    if not wait_until_answers(address):
+    if not when_ready(address, folder):
         msg = f"the web interface did not start on {address}"
         raise TimeoutError(msg)
     _show(args, desktop, address, folder)
@@ -196,15 +198,18 @@ def _failed(error: Exception) -> int:
     return 1
 
 
-def open_when_ready(
-    address: str,
-    open_page: Callable[[str], object],
-    timeout: float = READY_TIMEOUT_SECONDS,
+def when_ready(
+    address: str, folder: Path, open_page: Callable[[str], object] | None = None
 ) -> bool:
-    """Open the web interface once it answers; tell whether it did in time."""
-    if not wait_until_answers(address, timeout):
+    """Wait for the web interface; then tell the boot that this version works and open it.
+
+    Tell whether it answered in time. An update that never gets here is taken back.
+    """
+    if not wait_until_answers(address):
         return False
-    open_page(address)
+    confirm(folder)
+    if open_page is not None:
+        open_page(address)
     return True
 
 

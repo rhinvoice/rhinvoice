@@ -51,6 +51,7 @@ Type: filesandordirs; Name: "{app}\python"
 Type: filesandordirs; Name: "{app}\postgresql"
 Type: filesandordirs; Name: "{app}\app"
 Type: filesandordirs; Name: "{app}\static"
+Type: filesandordirs; Name: "{app}\restic"
 
 [Icons]
 Name: "{autoprograms}\Rhinvoice"; Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice_boot"; WorkingDir: "{app}"; IconFilename: "{app}\Rhinvoice.ico"

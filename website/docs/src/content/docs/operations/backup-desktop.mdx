@@ -1,0 +1,64 @@
+---
+title: Backups in the program for Windows and Mac
+description: Set up Rhinvoice backups without Docker. Choose a folder in OneDrive, Dropbox, iCloud Drive or Google Drive, keep the recovery key, restore.
+faq:
+  - q: Where does the program back up to?
+    a: To a folder you choose, preferably one that OneDrive, Dropbox, iCloud Drive or Google Drive keeps in sync. Then a copy lives outside the computer. A network drive or a USB disk works the same way.
+  - q: What happens if I lose the recovery key?
+    a: As long as the computer works, Settings, Backup, Show key shows it again. If the computer is lost and the key was kept nowhere else, nobody can restore the backups.
+  - q: Can the Docker installation restore these backups?
+    a: Yes. They are the same restic backups as the backup container's. Use the folder as RESTIC_REPOSITORY and the key as RESTIC_PASSWORD.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+The [program for Windows and Mac](/docs/getting-started/install-desktop/) backs up its database itself, with the same [restic](https://restic.net) as the backup container of the Docker installation: **encrypted, deduplicated and compressed**, daily, about two minutes after issuing or cancelling, and at the push of a button. It keeps 7 daily, 4 weekly, 12 monthly and every yearly backup. If Rhinvoice is not running at 02:00, it makes the daily backup at the next start.
+
+## Setting it up
+
+<Steps>
+
+1. Open *Settings → Backup*, for example through the item **Set up backups** of the checklist on the overview.
+
+2. **Choose a folder.** Rhinvoice suggests the OneDrive, Dropbox, iCloud Drive and Google Drive folders it finds on the computer, each with a subfolder `Rhinvoice-Backup`. Under **Another folder …** you enter a full path, such as a network drive or a USB disk. A missing folder is created. Click **Continue to the key**.
+
+3. **Keep the recovery key.** Rhinvoice shows the key that encrypts the backups. Copy it into your password manager or print it, apart from this computer. Tick **I have stored the key safely** and click **Set up backups**.
+
+</Steps>
+
+The first backup starts within half a minute. *Settings → Backup* lists the last backups, and the overview warns when the last successful one is older than 24 hours. Later, **Show key** shows the key again and **Change folder** chooses another folder; the key stays the same.
+
+<Aside type="caution" title="No key, no restore">
+Rhinvoice keeps the key in its data folder so that backups run without asking. If the computer is lost, that copy is lost too. Only the key you kept elsewhere opens the backups then.
+</Aside>
+
+## Restoring
+
+Restoring **replaces all data** with the state of a backup, in a single transaction: if anything fails, nothing changes. Quit Rhinvoice first.
+
+**Windows** (PowerShell):
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -m rhinvoice_boot --list-backups
+& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -m rhinvoice_boot --restore latest
+```
+
+**Mac** (Terminal):
+
+```bash
+/Applications/Rhinvoice.app/Contents/MacOS/Rhinvoice --list-backups
+/Applications/Rhinvoice.app/Contents/MacOS/Rhinvoice --restore latest
+```
+
+`--list-backups` shows the backups with ID and time. Instead of `latest`, give an ID to bring back an older backup. Then start Rhinvoice as usual; the restored state is backed up again right away.
+
+**On a new computer:** install Rhinvoice, wait until the cloud service has downloaded the `Rhinvoice-Backup` folder, and name it with `--backup-folder`. Rhinvoice then asks for the recovery key and afterwards backs up into the same folder:
+
+```bash
+/Applications/Rhinvoice.app/Contents/MacOS/Rhinvoice --restore latest --backup-folder "/Users/anna/Library/CloudStorage/OneDrive-Personal/Rhinvoice-Backup"
+```
+
+## Frequently asked questions
+
+<Faq />

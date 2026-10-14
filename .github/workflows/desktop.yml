@@ -1,0 +1,88 @@
+name: Desktop
+
+# The installation without Docker (ADR 0021): builds the Windows setup, installs it on a
+# fresh Windows, checks it like a user would (desktop/smoke_test.py) and keeps the setup
+# as a download of the run.
+on:
+  push:
+    branches: [feat/native-install]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "desktop/**"
+      - ".github/workflows/desktop.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows setup (build, install, smoke test)
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Build the web interface
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/cache@v4
+        with:
+          path: build/downloads
+          key: desktop-downloads-${{ hashFiles('desktop/sources.json') }}
+
+      - name: Assemble the program folder
+        run: python desktop/build.py windows
+
+      - name: Build the setup
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup --yes --no-progress }
+          $version = python desktop/build.py version
+          & $iscc "/DAppVersion=$version" desktop\windows\rhinvoice.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem build\windows\Rhinvoice-Setup-*.exe | Format-Table Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Rhinvoice-Setup-windows
+          path: build/windows/Rhinvoice-Setup-*.exe
+          retention-days: 14
+
+      - name: Install it silently for this user
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem build\windows\Rhinvoice-Setup-*.exe | Select-Object -First 1
+          Start-Process -FilePath $setup.FullName -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
+          if (-not (Test-Path "$env:LOCALAPPDATA\Programs\Rhinvoice\python\Rhinvoice.exe")) {
+            throw "Rhinvoice was not installed"
+          }
+
+      - name: Smoke test the installed program
+        shell: pwsh
+        run: python desktop/smoke_test.py "$env:LOCALAPPDATA\Programs\Rhinvoice"
+

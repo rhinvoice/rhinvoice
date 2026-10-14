@@ -1,0 +1,22 @@
+{
+  "windows": {
+    "python": {
+      "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.13.16+20261013-x86_64-pc-windows-msvc-install_only.tar.gz",
+      "sha256": "e1f9233e780fbe951e531b0eb207d794e1c3fb39d523a6f481f4fc01ef2b6ca5"
+    },
+    "postgresql": {
+      "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.0/postgresql-17.11.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "85829f743e2697c55f1a5e8b210c53b90dd1f578448fc01cb9c4dc9e0a8e3827"
+    },
+    "rcedit": {
+      "url": "https://github.com/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe",
+      "sha256": "3e7801db1a5edbec91b49a24a094aad776cb4515488ea5a4ca2289c400eade2a"
+    }
+  },
+  "macos-arm64": {
+    "python": {
+      "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.13.16+20261013-aarch64-apple-darwin-install_only.tar.gz",
+      "sha256": "ca0e6a70fb75a0984751bd75493e3de77680aef7fbd0fea9b903c299537b3423"
+    }
+  }
+}

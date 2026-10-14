@@ -1,5 +1,6 @@
 """rhinvoice-desktop: database, settings, browser and server put together."""
 
+import importlib
 import json
 import socket
 import sys
@@ -372,3 +373,8 @@ def test_without_a_console_messages_go_to_a_file(
     assert log is sys.stdout
     log.close()  # the program keeps it open until it ends
     assert (data / "rhinvoice.log").read_text().startswith("error: ")
+
+
+def test_the_installers_start_the_launcher() -> None:
+    entry = importlib.import_module("rhinvoice.desktop.__main__")
+    assert entry.main is launcher.main

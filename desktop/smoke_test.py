@@ -108,6 +108,13 @@ class Program:
         state: dict[str, Any] = json.loads((self.data / "app" / "state.json").read_text())
         return state
 
+    def confirmed(self, version: str) -> dict[str, Any]:
+        """Wait until ``version`` confirmed itself (just after its interface first answered)."""
+        deadline = time.monotonic() + 30
+        while self.state().get("active") != version and time.monotonic() < deadline:
+            time.sleep(0.5)
+        return self.state()
+
     def put_update(self, version: str) -> Path:
         """Put a copy of the installed app package into the data folder as ``version``."""
         package = self.data / "app" / "versions" / version
@@ -252,8 +259,8 @@ def check_updates(program: Program, api: Api) -> None:
     program.close()
     program.put_update("99.0.0")
     program.start()
-    if program.state().get("active") != "99.0.0":
-        msg = f"the update did not become active: {program.state()}"
+    if (state := program.confirmed("99.0.0")).get("active") != "99.0.0":
+        msg = f"the update did not become active: {state}"
         raise SystemExit(msg)
     if not (program.data / "backups" / "database-before-99.0.0" / "PG_VERSION").exists():
         msg = "no copy of the database was taken before the update"

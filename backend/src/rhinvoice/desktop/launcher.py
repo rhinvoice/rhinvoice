@@ -18,16 +18,16 @@ import threading
 import time
 import urllib.request
 import webbrowser
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from rhinvoice.api.cli import serve
 from rhinvoice.api.settings import Settings
 from rhinvoice.desktop.browser import find_chromium
-from rhinvoice.desktop.config import ConfigError, load_or_create
+from rhinvoice.desktop.config import ConfigError, load_or_create, save
 from rhinvoice.desktop.folders import data_folder
-from rhinvoice.desktop.ports import PortInUseError, free_port, require_free
+from rhinvoice.desktop.ports import free_port, listening
 from rhinvoice.desktop.postgres import BundledPostgres, PostgresError
 
 if TYPE_CHECKING:
@@ -78,12 +78,23 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
     folder: Path = args.data_dir or data_folder(desktop.system, desktop.environ, desktop.home)
     try:
         config = load_or_create(folder / "rhinvoice.json")
-        require_free(config.port)
-    except (ConfigError, PortInUseError, OSError) as error:
+    except (ConfigError, OSError) as error:
         return _failed(error)
     database = BundledPostgres(
         install / "postgresql" / "bin", folder / "database", config.database_password, free_port()
     )
+    try:
+        if _already_running(database, config.port):
+            # Started a second time (a double click too many): show the running one.
+            desktop.open_page(_address(config.port))
+            sys.stdout.write(f"Rhinvoice runs already on {_address(config.port)}\n")
+            return 0
+        if listening(config.port):
+            # Another program has the port: take a free one and keep it for the next starts.
+            config = replace(config, port=free_port())
+            save(folder / "rhinvoice.json", config)
+    except (PostgresError, OSError) as error:
+        return _failed(error)
     try:
         database.start()
         settings = Settings(
@@ -94,7 +105,7 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
             # cookies there.
             cookie_secure=False,
         )
-        address = f"http://{HOST}:{config.port}"
+        address = _address(config.port)
         if not args.no_browser:
             threading.Thread(
                 target=open_when_ready, args=(address, desktop.open_page), daemon=True
@@ -111,6 +122,25 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
             _failed(error)
 
 
+def _already_running(database: BundledPostgres, port: int) -> bool:
+    # Its own database runs and its port answers. A database left over from a killed
+    # program has no web interface: then it is restarted (BundledPostgres.start).
+    return database.running() and answers(_address(port))
+
+
+def _address(port: int) -> str:
+    return f"http://{HOST}:{port}"
+
+
+def answers(address: str) -> bool:
+    """Tell whether the web interface at this address answers."""
+    try:
+        with urllib.request.urlopen(f"{address}/api/health", timeout=2):  # noqa: S310 - our own address
+            return True
+    except OSError:
+        return False
+
+
 def _failed(error: Exception) -> int:
     sys.stderr.write(f"error: {error}\n")
     return 1
@@ -124,10 +154,8 @@ def open_when_ready(
     """Open the web interface once it answers; tell whether it did in time."""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        try:
-            with urllib.request.urlopen(f"{address}/api/health", timeout=2):  # noqa: S310 - our own address
-                open_page(address)
-                return True
-        except OSError:
-            time.sleep(READY_POLL_SECONDS)
+        if answers(address):
+            open_page(address)
+            return True
+        time.sleep(READY_POLL_SECONDS)
     return False

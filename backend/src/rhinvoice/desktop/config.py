@@ -30,10 +30,7 @@ def load_or_create(path: Path) -> DesktopConfig:
     """Read the configuration, or write a new one with a random database password."""
     if not path.exists():
         config = DesktopConfig(database_password=secrets.token_hex(PASSWORD_BYTES))
-        # The folder holds the database: only for this user.
-        path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-        path.touch(mode=0o600)
-        path.write_text(json.dumps(asdict(config), indent=2) + "\n", encoding="utf-8")
+        save(path, config)
         return config
     try:
         values = _fields(json.loads(path.read_text(encoding="utf-8")))
@@ -44,6 +41,14 @@ def load_or_create(path: Path) -> DesktopConfig:
     except (ValueError, TypeError) as error:
         msg = f"{path} is damaged: {error}"
         raise ConfigError(msg) from error
+
+
+def save(path: Path, config: DesktopConfig) -> None:
+    """Write the configuration, readable for this user only."""
+    # The folder holds the database: only for this user.
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    path.touch(mode=0o600)
+    path.write_text(json.dumps(asdict(config), indent=2) + "\n", encoding="utf-8")
 
 
 def _fields(values: object) -> dict[str, object]:

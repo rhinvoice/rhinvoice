@@ -76,9 +76,13 @@ class BundledPostgres:
         if not self._has_database():
             self._run("createdb", *self._connection(), DATABASE, password=True)
 
+    def running(self) -> bool:
+        """Tell whether the server runs (started by this program, now or earlier)."""
+        return self._exists() and self._running()
+
     def stop(self) -> None:
         """Stop the server if it runs."""
-        if self._exists() and self._running():
+        if self.running():
             self._halt()
 
     def _halt(self) -> None:

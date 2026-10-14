@@ -4,6 +4,7 @@ import json
 import socket
 import threading
 from collections.abc import Iterator
+from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from rhinvoice.api.settings import Settings
 from rhinvoice.desktop import launcher
 from rhinvoice.desktop.launcher import Desktop, build_parser, open_when_ready, run
 from rhinvoice.desktop.ports import free_port
+from rhinvoice.desktop.postgres import BundledPostgres
 from tests.unit.desktop.tools import commands
 
 
@@ -86,15 +88,55 @@ def test_folders_given_on_the_command_line_win(install: Path, tmp_path: Path) ->
     assert (data / "database" / "PG_VERSION").exists()
 
 
-def test_a_port_in_use_stops_the_program_before_the_database_starts(
-    install: Path, tmp_path: Path, data: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_a_port_in_use_is_left_to_its_program(install: Path, tmp_path: Path, data: Path) -> None:
+    taken = port_of(data)
+    recorder = Recorder()
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
-        listener.bind(("127.0.0.1", port_of(data)))
+        listener.bind(("127.0.0.1", taken))
         listener.listen()
-        assert run(build_parser().parse_args([]), desktop(install, tmp_path, Recorder())) == 1
-    assert capsys.readouterr().err.startswith(f"error: port {port_of(data)} is in use")
-    assert commands(tmp_path) == []
+        assert (
+            run(build_parser().parse_args(["--no-browser"]), desktop(install, tmp_path, recorder))
+            == 0
+        )
+    [(_settings, _host, port)] = recorder.calls
+    # Another port, kept for the next starts (bookmarks stay valid from then on).
+    assert port != taken
+    assert port_of(data) == port
+
+
+def test_a_second_start_shows_the_running_one(
+    install: Path, tmp_path: Path, data: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    opened: list[str] = []
+    recorder = Recorder()
+    surroundings = replace(desktop(install, tmp_path, recorder), open_page=opened.append)
+    args = build_parser().parse_args(["--no-browser"])
+
+    def serve_and_start_again(settings: Settings, host: str, port: int) -> int:
+        recorder.calls.append((settings, host, port))
+
+        # While the first one runs, the user starts the program again.
+        def answers(address: str) -> bool:
+            return address.endswith(f":{port}")
+
+        monkeypatch.setattr(launcher, "answers", answers)
+        assert run(args, replace(surroundings, serve=recorder.serve)) == 0
+        return 0
+
+    assert run(args, replace(surroundings, serve=serve_and_start_again)) == 0
+    assert len(recorder.calls) == 1
+    assert opened == [f"http://127.0.0.1:{port_of(data)}"]
+
+
+def test_a_database_left_by_a_killed_program_is_not_taken_for_a_running_one(
+    install: Path, tmp_path: Path, data: Path
+) -> None:
+    # The program was killed: its database still runs, but nothing answers on its port.
+    BundledPostgres(install / "postgresql" / "bin", data / "database", "secret", 5432).start()
+    recorder = Recorder()
+    args = build_parser().parse_args(["--no-browser"])
+    assert run(args, desktop(install, tmp_path, recorder)) == 0
+    assert len(recorder.calls) == 1
 
 
 def test_a_damaged_configuration_stops_the_program(
@@ -198,3 +240,22 @@ def test_a_server_that_never_answers_opens_nothing() -> None:
     opened: list[str] = []
     assert not open_when_ready(f"http://127.0.0.1:{free_port()}", opened.append, timeout=0.6)
     assert opened == []
+
+
+def test_a_database_in_an_unknown_state_stops_the_program(
+    install: Path,
+    tmp_path: Path,
+    data: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    postgres = BundledPostgres(install / "postgresql" / "bin", data / "database", "secret", 5432)
+    postgres.start()
+    postgres.stop()
+    monkeypatch.setenv("FAKE_POSTGRES_STATUS", "4")
+    recorder = Recorder()
+    assert (
+        run(build_parser().parse_args(["--no-browser"]), desktop(install, tmp_path, recorder)) == 1
+    )
+    assert recorder.calls == []
+    assert capsys.readouterr().err == "error: pg_ctl status failed (4): \n"

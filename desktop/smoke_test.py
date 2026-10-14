@@ -2,7 +2,7 @@
 
     python desktop/smoke_test.py <install folder>
 
-Starts the installed program on an empty data folder (without window), creates the first
+Starts the installed program on the user's empty data folder (without window), creates the first
 user and the company, fills in the demo data, prints an invoice as PDF, kills the program
 and starts it again (the database left running must be taken over), and ends it the way
 Windows asks a program to close. Only the standard library: it runs beside the
@@ -20,7 +20,6 @@ import json
 import os
 import signal
 import subprocess
-import tempfile
 import time
 import urllib.request
 from pathlib import Path
@@ -59,10 +58,9 @@ class Program:
         """Start the program; return its port once the web interface answers."""
         python = self.install / "python" / "python.exe"
         flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-        self.data.mkdir(parents=True, exist_ok=True)
-        output = (self.data.parent / "program.log").open("ab")
+        output = (self.data.parent / "rhinvoice-smoke-test.log").open("ab")
         self.process = subprocess.Popen(  # noqa: S603 - the installed program
-            [python, "-m", "rhinvoice.desktop", "--no-browser", "--data-dir", self.data],
+            [python, "-m", "rhinvoice.desktop", "--no-browser"],
             creationflags=flags,
             stdout=output,
             stderr=subprocess.STDOUT,
@@ -193,7 +191,12 @@ def check(install: Path, data: Path) -> None:
 def report(error: BaseException, data: Path) -> None:
     """Show why it failed as a GitHub annotation, readable without the run's log."""
     lines = [f"{type(error).__name__}: {error}"]
-    for log in (data.parent / "program.log", data / "rhinvoice.log", data / "postgresql.log"):
+    logs = (
+        data.parent / "rhinvoice-smoke-test.log",
+        data / "rhinvoice.log",
+        data / "postgresql.log",
+    )
+    for log in logs:
         if log.exists():
             tail = log.read_text(encoding="utf-8", errors="replace").splitlines()[-40:]
             lines += [f"--- {log.name}", *tail]
@@ -206,13 +209,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("install", type=Path)
     args = parser.parse_args()
-    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
-        data = Path(folder) / "Rhinvoice"
-        try:
-            check(args.install, data)
-        except BaseException as error:
-            report(error, data)
-            raise
+    # The folder the program uses for this user, as on a real computer (a fresh one in CI).
+    data = Path(os.environ["LOCALAPPDATA"]) / "Rhinvoice"
+    if data.exists():
+        msg = f"{data} exists: the smoke test needs a computer without Rhinvoice data"
+        raise SystemExit(msg)
+    try:
+        check(args.install, data)
+    except BaseException as error:
+        report(error, data)
+        raise
 
 
 if __name__ == "__main__":

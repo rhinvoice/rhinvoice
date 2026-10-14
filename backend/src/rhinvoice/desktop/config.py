@@ -32,6 +32,8 @@ class DesktopConfig:
     """The recovery key that encrypts the backups (the restic password)."""
     backup_key_confirmed: bool = False
     """The person confirmed that the key is kept elsewhere."""
+    backup_verified_at: str | None = None
+    """When the backups were last pruned and checked (ISO 8601)."""
 
 
 def load_or_create(path: Path) -> DesktopConfig:
@@ -48,6 +50,7 @@ def load_or_create(path: Path) -> DesktopConfig:
             backup_folder=_optional_text(values, "backup_folder"),
             backup_key=_optional_text(values, "backup_key"),
             backup_key_confirmed=_flag(values, "backup_key_confirmed"),
+            backup_verified_at=_optional_text(values, "backup_verified_at"),
         )
     except (ValueError, TypeError) as error:
         msg = f"{path} is damaged: {error}"

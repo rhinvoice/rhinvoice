@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import secrets
 from dataclasses import replace
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
@@ -27,6 +28,7 @@ KEY_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 """Without 0/O and 1/I, which are easily mixed up when the key is typed from paper."""
 KEY_GROUPS = 8
 GROUP_LENGTH = 4
+VERIFY_EVERY = timedelta(days=7)
 """8 groups of 4 characters out of 32: 160 bits."""
 
 
@@ -142,15 +144,31 @@ class DesktopBackupSetup:
 class CurrentArchive:
     """The ``BackupArchive`` port: the repository in the folder set up right now."""
 
-    def __init__(self, config: Path, archive_for: Callable[[Path, str], PreparedArchive]) -> None:
+    def __init__(
+        self,
+        config: Path,
+        archive_for: Callable[[Path, str], PreparedArchive],
+        now: Callable[[], datetime],
+    ) -> None:
         self._config = config
         self._archive_for = archive_for
+        self._now = now
 
     def back_up(self) -> Snapshot:
         return self._current().back_up()
 
     def maintain(self, *, verify: bool) -> None:
-        self._current().maintain(verify=verify)
+        """Verify on Sundays (as the backup container), and whenever a week passed without.
+
+        A laptop that is off every Sunday would otherwise never prune or check.
+        """
+        verified = load_or_create(self._config).backup_verified_at
+        now = self._now()
+        due = verified is None or now - datetime.fromisoformat(verified) >= VERIFY_EVERY
+        self._current().maintain(verify=verify or due)
+        if verify or due:
+            config = load_or_create(self._config)
+            save(self._config, replace(config, backup_verified_at=now.isoformat()))
 
     def _current(self) -> PreparedArchive:
         config = load_or_create(self._config)

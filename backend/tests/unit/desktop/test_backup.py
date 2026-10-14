@@ -2,6 +2,7 @@
 
 import json
 import re
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -126,7 +127,7 @@ def test_the_archive_follows_the_folder_set_up_right_now(
     def archive_for(folder: Path, key: str) -> Archive:
         return Archive(folder, key, log)
 
-    archive = CurrentArchive(config, archive_for)
+    archive = CurrentArchive(config, archive_for, lambda: datetime(2026, 3, 9, tzinfo=UTC))
     with raises_exactly(BackupFailed, "backups are not set up"):
         archive.back_up()
     key = setup(config, log).set_up(str(tmp_path / "first"))
@@ -189,3 +190,22 @@ def test_cloud_folders_elsewhere(tmp_path: Path) -> None:
     assert cloud_folders("Linux", {}, tmp_path) == [
         FolderSuggestion("Dropbox", str(tmp_path / "Dropbox" / FOLDER_NAME))
     ]
+
+
+def test_a_week_without_verification_verifies_also_on_a_weekday(
+    config: Path, log: list[str], tmp_path: Path
+) -> None:
+    """A laptop that is off every Sunday still prunes and checks its backups once a week."""
+    now = datetime(2026, 3, 9, 10, 0, tzinfo=UTC)  # a Monday
+    moments = iter([now, now + timedelta(days=6), now + timedelta(days=7)])
+
+    def archive_for(folder: Path, key: str) -> Archive:
+        return Archive(folder, key, log)
+
+    archive = CurrentArchive(config, archive_for, lambda: next(moments))
+    setup(config, log).set_up(str(tmp_path / "backups"))
+    archive.maintain(verify=False)  # never verified yet
+    archive.maintain(verify=False)  # six days later
+    archive.maintain(verify=False)  # a week later
+    assert [entry.rsplit(" ", 1)[1] for entry in log[1:]] == ["True", "False", "True"]
+    assert stored(config)["backup_verified_at"] == "2026-03-16T10:00:00+00:00"

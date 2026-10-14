@@ -22,6 +22,7 @@ import time
 import urllib.request
 import webbrowser
 from dataclasses import dataclass, replace
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
@@ -244,7 +245,8 @@ def _backups(
     def suggestions() -> list[FolderSuggestion]:
         return cloud_folders(desktop.system, desktop.environ, desktop.home)
 
-    return DesktopBackupSetup(config, archive_for, suggestions), CurrentArchive(config, archive_for)
+    archive = CurrentArchive(config, archive_for, lambda: datetime.now(UTC))
+    return DesktopBackupSetup(config, archive_for, suggestions), archive
 
 
 def _restic(install: Path) -> Path | None:

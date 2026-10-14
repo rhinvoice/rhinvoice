@@ -59,9 +59,13 @@ class Program:
         """Start the program; return its port once the web interface answers."""
         python = self.install / "python" / "python.exe"
         flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+        self.data.mkdir(parents=True, exist_ok=True)
+        output = (self.data.parent / "program.log").open("ab")
         self.process = subprocess.Popen(  # noqa: S603 - the installed program
             [python, "-m", "rhinvoice.desktop", "--no-browser", "--data-dir", self.data],
             creationflags=flags,
+            stdout=output,
+            stderr=subprocess.STDOUT,
         )
         deadline = time.monotonic() + START_SECONDS
         while time.monotonic() < deadline:
@@ -186,12 +190,29 @@ def check(install: Path, data: Path) -> None:
     step("all good")
 
 
+def report(error: BaseException, data: Path) -> None:
+    """Show why it failed as a GitHub annotation, readable without the run's log."""
+    lines = [f"{type(error).__name__}: {error}"]
+    for log in (data.parent / "program.log", data / "rhinvoice.log", data / "postgresql.log"):
+        if log.exists():
+            tail = log.read_text(encoding="utf-8", errors="replace").splitlines()[-40:]
+            lines += [f"--- {log.name}", *tail]
+    text = "\n".join(lines)
+    print(text)
+    print("::error title=Smoke test::" + text.replace("%", "%25").replace("\n", "%0A"))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("install", type=Path)
     args = parser.parse_args()
-    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as data:
-        check(args.install, Path(data) / "Rhinvoice")
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
+        data = Path(folder) / "Rhinvoice"
+        try:
+            check(args.install, data)
+        except BaseException as error:
+            report(error, data)
+            raise
 
 
 if __name__ == "__main__":

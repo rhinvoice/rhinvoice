@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from rhinvoice.application.backup.ports import BackupFailed, Snapshot
+from rhinvoice.infrastructure.backup import restic as restic_module
 from rhinvoice.infrastructure.backup.restic import ResticArchive, summary
 from tests.helpers import raises_exactly
 
@@ -27,7 +28,12 @@ def restic(tmp_path_factory: pytest.TempPathFactory) -> Path:
 def log(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     path = tmp_path / "restic.jsonl"
     monkeypatch.setenv("FAKE_RESTIC_LOG", str(path))
-    for name in ("FAKE_RESTIC_FAIL", "FAKE_RESTIC_CAT_CODE", "FAKE_RESTIC_NO_SUMMARY"):
+    for name in (
+        "FAKE_RESTIC_FAIL",
+        "FAKE_RESTIC_CAT_CODE",
+        "FAKE_RESTIC_NO_SUMMARY",
+        "FAKE_RESTIC_HANG",
+    ):
         monkeypatch.delenv(name, raising=False)
     return path
 
@@ -273,3 +279,21 @@ def test_a_restic_that_cannot_be_started_fails_the_backup(tmp_path: Path, log: P
         archive.back_up()
     with pytest.raises(BackupFailed, match=r"^restic cannot be started: "):
         archive.restore("latest", Path("/psql"))
+
+
+@pytest.mark.parametrize(
+    ("hanging", "message"),
+    [
+        ("cat", "restic did not answer within 1 seconds (cat)"),
+        ("backup", "restic did not answer within 2 seconds (backup)"),
+    ],
+)
+def test_a_hanging_restic_fails_instead_of_blocking_the_backups(
+    archive: ResticArchive, monkeypatch: pytest.MonkeyPatch, hanging: str, message: str
+) -> None:
+    """E.g. a cloud folder whose files are not downloaded yet, or a network drive gone."""
+    monkeypatch.setattr(restic_module, "SHORT_SECONDS", 1)
+    monkeypatch.setattr(restic_module, "LONG_SECONDS", 2)
+    monkeypatch.setenv("FAKE_RESTIC_HANG", hanging)
+    with raises_exactly(BackupFailed, message):
+        archive.back_up()

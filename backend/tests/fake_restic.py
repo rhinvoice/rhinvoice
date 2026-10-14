@@ -5,7 +5,8 @@ Started as ``fake_restic.py <arguments>``. The repository exists once its folder
 password and database the environment gave it. FAKE_RESTIC_FAIL names a command that
 fails with FAKE_RESTIC_ERROR on stderr; FAKE_RESTIC_CAT_CODE replaces the exit code of
 ``cat config`` (e.g. 1: wrong password); FAKE_RESTIC_NO_SUMMARY leaves out the summary;
-FAKE_RESTIC_DUMP replaces the complete dump that ``dump`` writes.
+FAKE_RESTIC_DUMP replaces the complete dump that ``dump`` writes; FAKE_RESTIC_HANG names
+a command that hangs.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 DATABASE = ("PGHOST", "PGPORT", "PGUSER", "PGPASSWORD", "PGDATABASE")
@@ -43,6 +45,8 @@ def main() -> int:
             "database": [environ.get(name) for name in DATABASE],
         }
         log.write(json.dumps(entry) + "\n")
+    if environ.get("FAKE_RESTIC_HANG") == command:
+        time.sleep(30)
     if environ.get("FAKE_RESTIC_FAIL") == command:
         error = environ.get("FAKE_RESTIC_ERROR", "Fatal: something went wrong") + "\n"
         # UTF-8, whatever the console uses (restic writes UTF-8 on Windows too).

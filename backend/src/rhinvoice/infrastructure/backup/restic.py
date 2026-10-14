@@ -34,6 +34,10 @@ REQUEST_BACKUP = (
 """After a restore: the restored state gets a backup of its own once backups run."""
 RETENTION = ("--keep-daily", "7", "--keep-weekly", "4", "--keep-monthly", "12")
 """And every yearly backup: invoices are kept for ten years and more (OR 958f, GoBD, BAO)."""
+SHORT_SECONDS = 60
+"""For opening the repository: a folder that does not answer within a minute is unusable."""
+LONG_SECONDS = 4 * 3600
+"""For backing up, pruning, checking and restoring; the first backup may hold years of PDFs."""
 NO_WINDOW: int = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 """No console window for restic and pg_dump on Windows (Rhinvoice.exe has none)."""
 
@@ -60,14 +64,17 @@ class ResticArchive:
 
     def prepare(self) -> None:
         """Create the repository when there is none yet; raise BackupFailed if impossible."""
-        found = self._run("cat", "config")
+        found = self._run("cat", "config", timeout=SHORT_SECONDS)
         if found.returncode == 0:
             return
         if found.returncode != NO_REPOSITORY:
             raise BackupFailed(summary(found.stderr))
         created = self._run("init")
         # Created meanwhile by another process: "config file already exists" is no failure.
-        if created.returncode != 0 and self._run("cat", "config").returncode != 0:
+        if (
+            created.returncode != 0
+            and self._run("cat", "config", timeout=SHORT_SECONDS).returncode != 0
+        ):
             raise BackupFailed(summary(created.stderr))
 
     def back_up(self) -> Snapshot:
@@ -149,13 +156,24 @@ class ResticArchive:
             if replaced.returncode != 0:
                 raise BackupFailed(summary(replaced.stderr))
 
-    def _run(self, *arguments: str) -> subprocess.CompletedProcess[str]:
-        return self._call([str(self._restic), *arguments])
+    def _run(
+        self, *arguments: str, timeout: float | None = None
+    ) -> subprocess.CompletedProcess[str]:
+        return self._call([str(self._restic), *arguments], timeout=timeout)
 
     def _call(
-        self, command: list[str], *, stdout: IO[bytes] | None = None, quiet: bool = False
+        self,
+        command: list[str],
+        *,
+        stdout: IO[bytes] | None = None,
+        quiet: bool = False,
+        timeout: float | None = None,
     ) -> subprocess.CompletedProcess[str]:
-        """Run restic or psql; output is UTF-8 whatever the locale (restic writes UTF-8)."""
+        """Run restic or psql; output is UTF-8 whatever the locale (restic writes UTF-8).
+
+        Never without a time limit: a hanging tool would block every later backup.
+        """
+        limit = LONG_SECONDS if timeout is None else timeout
         environment = {**os.environ, **self._environment}
         if quiet:
             environment["PGOPTIONS"] = "-c client_min_messages=warning"
@@ -169,7 +187,15 @@ class ResticArchive:
                 check=False,
                 env=environment,
                 creationflags=NO_WINDOW,
+                timeout=limit,
             )
+        except subprocess.TimeoutExpired as error:
+            name = Path(command[0]).stem
+            task = next(
+                part for part in command[1:] if not part.startswith("-") and part != LOCK_WAIT
+            )
+            msg = f"{name} did not answer within {limit:g} seconds ({task})"
+            raise BackupFailed(msg) from error
         except OSError as error:
             # E.g. quarantined by a virus scanner, or removed.
             msg = f"{Path(command[0]).stem} cannot be started: {error}"

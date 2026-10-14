@@ -31,6 +31,14 @@ export function backupRefreshInterval(backup: Backup | undefined): number {
     : IDLE_REFRESH_MS;
 }
 
+/**
+ * The API refuses a backup by hand until one has run: without a backup container or folder,
+ * and in the program without Docker also before the company is set up.
+ */
+export function canBackUpNow(backup: Backup): boolean {
+  return backup.state !== "not_set_up";
+}
+
 /** The message of the latest run if it failed. */
 export function lastFailure(backup: Backup): string | null {
   const latest = backup.runs[0];

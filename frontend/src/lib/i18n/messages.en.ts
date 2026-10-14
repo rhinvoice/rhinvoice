@@ -985,6 +985,8 @@ export const en: Catalog<MessageKey> = {
   "error.backup_by_container": "Backups are set up in the backup container here (see the guide).",
   "backup.folder": "Backups go to {folder}.",
   "backup.changeFolder": "Change folder",
+  "backup.firstBackup":
+    "The first backup starts shortly, once the company details are set up (Settings → Company). After that you can back up here at any time.",
   "backup.folderUnusable": "This folder cannot be used: {reason}",
   "backup.setup.title": "Set up backups",
   "backup.setup.changeTitle": "Choose another folder",

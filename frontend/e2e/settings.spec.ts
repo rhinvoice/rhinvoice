@@ -222,6 +222,9 @@ test("the program without Docker sets up its backup folder and recovery key", as
   await expect(
     page.getByRole("status").filter({ hasText: "Angefordert, startet in Kürze." }),
   ).toBeVisible();
+  // Before the first backup ran, the API refuses one by hand: no button, a hint instead.
+  await expect(page.getByRole("button", { name: "Jetzt sichern" })).toHaveCount(0);
+  await expect(page.getByText(/Das erste Backup startet in Kürze/)).toBeVisible();
   const finish = page.getByRole("button", { name: "Backup einrichten" });
   await expect(finish).toBeDisabled();
   await expectAccessible(page);

@@ -23,7 +23,7 @@ import {
   type BackupRun,
   type BackupSetup,
 } from "@/features/backup/api";
-import { backupActivity, setupStep } from "@/features/backup/backup-model";
+import { backupActivity, canBackUpNow, setupStep } from "@/features/backup/backup-model";
 import { FolderChooser, RecoveryKey } from "@/features/backup/backup-setup";
 import { BackupBadge, BackupSummary } from "@/features/backup/backup-status";
 import { FormAlert } from "@/features/shared/form-alert";
@@ -141,17 +141,21 @@ function BackupState({
         </p>
       ) : (
         <div className="flex flex-wrap items-center gap-3">
-          <Button
-            disabled={activity !== "idle" || request.isPending}
-            onClick={() => {
-              request.mutate(undefined, {
-                onSuccess: () => toast.success(t("backup.requested")),
-                onError: (caught) => toast.error(errorMessage(caught) ?? t("error.generic")),
-              });
-            }}
-          >
-            {t("backup.now")}
-          </Button>
+          {canBackUpNow(backup) ? (
+            <Button
+              disabled={activity !== "idle" || request.isPending}
+              onClick={() => {
+                request.mutate(undefined, {
+                  onSuccess: () => toast.success(t("backup.requested")),
+                  onError: (caught) => toast.error(errorMessage(caught) ?? t("error.generic")),
+                });
+              }}
+            >
+              {t("backup.now")}
+            </Button>
+          ) : (
+            <p className="w-full text-sm text-muted-foreground">{t("backup.firstBackup")}</p>
+          )}
           {setup?.key_confirmed === true ? (
             <>
               <Button variant="outline" onClick={onShowKey}>

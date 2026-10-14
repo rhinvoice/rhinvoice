@@ -7,6 +7,7 @@ import {
   OTHER_FOLDER,
   backupActivity,
   backupRefreshInterval,
+  canBackUpNow,
   chosenFolder,
   initialFolderChoice,
   keyGroups,
@@ -135,5 +136,13 @@ describe("chosenFolder", () => {
 describe("keyGroups", () => {
   it("splits the key where it is read aloud", () => {
     expect(keyGroups("K7QM-2XWP-9DTA")).toEqual(["K7QM", "2XWP", "9DTA"]);
+  });
+});
+
+describe("canBackUpNow", () => {
+  it("is refused until the first backup ran (no company yet, or no target)", () => {
+    expect(canBackUpNow(backup({ state: "not_set_up" }))).toBe(false);
+    expect(canBackUpNow(backup({ state: "current" }))).toBe(true);
+    expect(canBackUpNow(backup({ state: "stale" }))).toBe(true);
   });
 });

@@ -1019,6 +1019,8 @@ export const de = {
     "Backups werden hier im Backup-Container eingerichtet (siehe Anleitung).",
   "backup.folder": "Die Backups gehen nach {folder}.",
   "backup.changeFolder": "Ordner ändern",
+  "backup.firstBackup":
+    "Das erste Backup startet in Kürze, sobald die Firmendaten eingerichtet sind (Einstellungen → Firma). Danach können Sie hier jederzeit sichern.",
   "backup.folderUnusable": "Dieser Ordner lässt sich nicht verwenden: {reason}",
   "backup.setup.title": "Backup einrichten",
   "backup.setup.changeTitle": "Anderen Ordner wählen",

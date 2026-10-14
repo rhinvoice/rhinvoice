@@ -67,3 +67,55 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  desktop:
+    name: Desktop setups and app packages
+    uses: ./.github/workflows/desktop.yml
+
+  github-release:
+    name: GitHub release (setups, app packages, signed release.json)
+    # The release appears only when everything it announces exists: the images and the setups.
+    needs: [image, backup-image, desktop]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: actions/download-artifact@v4
+        with:
+          path: build/release
+          merge-multiple: true
+
+      - name: Write and sign release.json (ADR 0022)
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+        run: |
+          if [ -z "$RELEASE_SIGNING_KEY" ]; then
+            echo "::error::The secret RELEASE_SIGNING_KEY is missing: without a signed release.json no installation learns of this release."
+            exit 1
+          fi
+          uv run --project backend python desktop/release_manifest.py "${GITHUB_REF_NAME#v}" build/release
+          ls -l build/release
+
+      - name: Release notes from the changelog
+        run: |
+          python3 - "${GITHUB_REF_NAME#v}" <<'PY' > build/notes.md
+          import re, sys
+          version = sys.argv[1]
+          text = open("CHANGELOG.md", encoding="utf-8").read()
+          match = re.search(rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|\Z)", text, re.S | re.M)
+          if match is None:
+              sys.exit(f"CHANGELOG.md has no section for {version}")
+          print(match.group(1).strip())
+          PY
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --title "Rhinvoice ${GITHUB_REF_NAME#v}" \
+            --notes-file build/notes.md build/release/*

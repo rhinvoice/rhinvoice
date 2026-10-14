@@ -30,14 +30,21 @@ class Archive:
         self.maintained: list[bool] = []
         self.backup_error: str | None = None
         self.maintain_error: str | None = None
+        self.crash: Exception | None = None
+        """An error the archive should never raise, but might (a bug, a vanished program)."""
+        self.maintain_crash: Exception | None = None
 
     def back_up(self) -> Snapshot:
+        if self.crash is not None:
+            raise self.crash
         if self.backup_error is not None:
             raise BackupFailed(self.backup_error)
         self.backups += 1
         return Snapshot(snapshot_id=f"snap{self.backups}", data_added=1000 * self.backups)
 
     def maintain(self, *, verify: bool) -> None:
+        if self.maintain_crash is not None:
+            raise self.maintain_crash
         if self.maintain_error is not None:
             raise BackupFailed(self.maintain_error)
         self.maintained.append(verify)
@@ -227,3 +234,31 @@ def test_old_handled_requests_are_removed(setup: Setup) -> None:
     setup.request(BackupReason.MANUAL)
     setup.worker.tick()
     assert [request.reason for request in setup.store.backup_requests] == [BackupReason.MANUAL]
+
+
+def test_an_unexpected_error_fails_the_run_instead_of_leaving_it_running(
+    setup: Setup, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A run left running would block the daily backup and start anew every half minute."""
+    setup.archive.crash = UnicodeDecodeError("utf-8", b"\xe8", 0, 1, "invalid start byte")
+    setup.request(BackupReason.MANUAL)
+    assert setup.worker.tick() is BackupReason.MANUAL
+    [run] = setup.runs()
+    assert run.status is RunStatus.FAILED
+    assert run.message == (
+        "unexpected error: UnicodeDecodeError: 'utf-8' codec can't decode byte 0xe8 "
+        "in position 0: invalid start byte"
+    )
+    assert "backup failed unexpectedly" in caplog.text
+
+
+def test_an_unexpected_error_in_the_maintenance_keeps_the_backup() -> None:
+    nightly = Setup(MONDAY.replace(hour=2))
+    nightly.archive.maintain_crash = OSError("restic vanished")
+    nightly.worker.tick()
+    [run] = nightly.store.backup_runs
+    assert run.status is RunStatus.SUCCEEDED
+    assert run.message == (
+        "backed up, but the repository maintenance failed: "
+        "unexpected error: OSError: restic vanished"
+    )

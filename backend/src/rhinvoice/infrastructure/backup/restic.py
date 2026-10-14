@@ -12,7 +12,7 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import cast
+from typing import IO, cast
 
 from sqlalchemy.engine import make_url
 
@@ -127,49 +127,53 @@ class ResticArchive:
             # In a file, not in memory: the dump holds every archived PDF.
             dump = Path(folder) / DUMP_NAME
             with dump.open("wb") as file:
-                fetched = subprocess.run(  # noqa: S603 - the bundled restic, arguments built here
+                fetched = self._call(
                     [str(self._restic), "dump", "--tag", TAG, snapshot, f"/{DUMP_NAME}"],
                     stdout=file,
-                    stderr=subprocess.PIPE,
-                    check=False,
-                    env={**os.environ, **self._environment},
-                    creationflags=NO_WINDOW,
                 )
             if fetched.returncode != 0:
-                raise BackupFailed(summary(fetched.stderr.decode(errors="replace")))
+                raise BackupFailed(summary(fetched.stderr))
             if not _complete(dump):
                 msg = "the backup is incomplete, nothing was changed"
                 raise BackupFailed(msg)
             # (The dump empties the search_path, hence the schema name.)
-            replaced = subprocess.run(  # noqa: S603 - the bundled psql, arguments built here
+            replaced = self._call(
                 [
                     str(psql), "-X", "-q", "-v", "ON_ERROR_STOP=1", "--single-transaction",
                     "-c", "DROP SCHEMA public CASCADE", "-c", "CREATE SCHEMA public",
                     "-f", str(dump),
                     "-c", REQUEST_BACKUP,
                 ],
-                capture_output=True,
-                text=True,
-                check=False,
-                env={
-                    **os.environ,
-                    **self._environment,
-                    "PGOPTIONS": "-c client_min_messages=warning",
-                },
-                creationflags=NO_WINDOW,
+                quiet=True,
             )  # fmt: skip
             if replaced.returncode != 0:
                 raise BackupFailed(summary(replaced.stderr))
 
     def _run(self, *arguments: str) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(  # noqa: S603 - the bundled restic, arguments built here
-            [str(self._restic), *arguments],
-            capture_output=True,
-            text=True,
-            check=False,
-            env={**os.environ, **self._environment},
-            creationflags=NO_WINDOW,
-        )
+        return self._call([str(self._restic), *arguments])
+
+    def _call(
+        self, command: list[str], *, stdout: IO[bytes] | None = None, quiet: bool = False
+    ) -> subprocess.CompletedProcess[str]:
+        """Run restic or psql; output is UTF-8 whatever the locale (restic writes UTF-8)."""
+        environment = {**os.environ, **self._environment}
+        if quiet:
+            environment["PGOPTIONS"] = "-c client_min_messages=warning"
+        try:
+            return subprocess.run(  # noqa: S603 - the bundled tools, arguments built here
+                command,
+                stdout=subprocess.PIPE if stdout is None else stdout,
+                stderr=subprocess.PIPE,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+                env=environment,
+                creationflags=NO_WINDOW,
+            )
+        except OSError as error:
+            # E.g. quarantined by a virus scanner, or removed.
+            msg = f"{Path(command[0]).stem} cannot be started: {error}"
+            raise BackupFailed(msg) from error
 
 
 def summary(errors: str) -> str:

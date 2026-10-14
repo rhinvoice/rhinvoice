@@ -246,3 +246,30 @@ def test_a_database_url_without_details_uses_the_defaults(
     )
     archive.back_up()
     assert calls(log)[-1]["database"] == ["127.0.0.1", "5432", "", "", ""]
+
+
+@pytest.mark.parametrize(
+    ("latin1", "message"),
+    [(False, "Fatal: unable to open C:\\Users\\Boček\\OneDrive"), (True, "Fatal: caf�")],
+)
+def test_error_output_is_read_as_utf_8_whatever_it_holds(
+    archive: ResticArchive, monkeypatch: pytest.MonkeyPatch, *, latin1: bool, message: str
+) -> None:
+    """A message the locale cannot decode must still fail the run, not crash it."""
+    monkeypatch.setenv("FAKE_RESTIC_FAIL", "backup")
+    monkeypatch.setenv("FAKE_RESTIC_ERROR", "Fatal: café" if latin1 else message)
+    if latin1:
+        monkeypatch.setenv("FAKE_RESTIC_LATIN1", "1")
+    with raises_exactly(BackupFailed, message):
+        archive.back_up()
+
+
+def test_a_restic_that_cannot_be_started_fails_the_backup(tmp_path: Path, log: Path) -> None:
+    """E.g. restic.exe quarantined by a virus scanner."""
+    del log
+    missing = tmp_path / "restic" / "restic.exe"
+    archive = ResticArchive(missing, Path("/pg_dump"), tmp_path / "repo", "key", DATABASE_URL)
+    with pytest.raises(BackupFailed, match=r"^restic cannot be started: "):
+        archive.back_up()
+    with pytest.raises(BackupFailed, match=r"^restic cannot be started: "):
+        archive.restore("latest", Path("/psql"))

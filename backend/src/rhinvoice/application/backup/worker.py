@@ -9,6 +9,7 @@ database must never become the latest backup.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
 from typing import TYPE_CHECKING
@@ -26,6 +27,8 @@ if TYPE_CHECKING:
     from rhinvoice.application.backup.ports import BackupArchive, BackupRun, PendingRequest
     from rhinvoice.application.uow import UnitOfWorkFactory
     from rhinvoice.domain.shared.clock import Clock
+
+logger = logging.getLogger(__name__)
 
 DAILY_AT = time(2, 0)
 QUIET = timedelta(seconds=120)
@@ -115,16 +118,19 @@ class BackupWorker:
             uow.commit()
         try:
             snapshot = self.archive.back_up()
-        except BackupFailed as error:
-            self._finish(run_id, RunOutcome(RunStatus.FAILED, message=str(error)), handled=False)
+        # Any error ends the run: one left running would block the daily backup and start
+        # anew every half minute.
+        except Exception as error:  # noqa: BLE001
+            outcome = RunOutcome(RunStatus.FAILED, message=_message(error))
+            self._finish(run_id, outcome, handled=False)
             return
         message = None
         if reason is BackupReason.DAILY:
             local = self.clock.now().astimezone(self.zone)
             try:
                 self.archive.maintain(verify=local.weekday() == SUNDAY)
-            except BackupFailed as error:
-                message = f"backed up, but the repository maintenance failed: {error}"
+            except Exception as error:  # noqa: BLE001 - the backup itself is made
+                message = f"backed up, but the repository maintenance failed: {_message(error)}"
         outcome = RunOutcome(
             RunStatus.SUCCEEDED, snapshot.snapshot_id, snapshot.data_added, message
         )
@@ -137,3 +143,11 @@ class BackupWorker:
             if handled:
                 uow.backups.take_requests(run_id, now)
             uow.commit()
+
+
+def _message(error: Exception) -> str:
+    """Name a failure for the settings page; an unexpected one is also logged."""
+    if isinstance(error, BackupFailed):
+        return str(error)
+    logger.error("backup failed unexpectedly", exc_info=error)
+    return f"unexpected error: {type(error).__name__}: {error}"

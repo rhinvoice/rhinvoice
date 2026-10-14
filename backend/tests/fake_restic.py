@@ -44,7 +44,11 @@ def main() -> int:
         }
         log.write(json.dumps(entry) + "\n")
     if environ.get("FAKE_RESTIC_FAIL") == command:
-        sys.stderr.write(environ.get("FAKE_RESTIC_ERROR", "Fatal: something went wrong") + "\n")
+        error = environ.get("FAKE_RESTIC_ERROR", "Fatal: something went wrong") + "\n"
+        # UTF-8, whatever the console uses (restic writes UTF-8 on Windows too).
+        sys.stderr.buffer.write(
+            error.encode() if "FAKE_RESTIC_LATIN1" not in environ else error.encode("latin-1")
+        )
         return 1
     repository = Path(environ["RESTIC_REPOSITORY"])
     if command == "cat":

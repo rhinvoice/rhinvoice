@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import type { Backup, BackupRun } from "@/features/backup/api";
+import type { Backup, BackupRun, BackupSetup } from "@/features/backup/api";
 import {
   BUSY_REFRESH_MS,
   IDLE_REFRESH_MS,
+  OTHER_FOLDER,
   backupActivity,
   backupRefreshInterval,
+  chosenFolder,
+  initialFolderChoice,
+  keyGroups,
   lastFailure,
+  setupStep,
 } from "@/features/backup/backup-model";
 
 function run(overrides: Partial<BackupRun>): BackupRun {
@@ -74,5 +79,61 @@ describe("lastFailure", () => {
     expect(
       lastFailure(backup({ runs: [run({ status: "failed", message: "unreachable" }), run({})] })),
     ).toBe("unreachable");
+  });
+});
+
+const ONEDRIVE = "C:\\Users\\anna\\OneDrive\\Rhinvoice-Backup";
+const DROPBOX = "C:\\Users\\anna\\Dropbox\\Rhinvoice-Backup";
+
+function setup(overrides: Partial<BackupSetup>): BackupSetup {
+  return {
+    folder: null,
+    suggestions: [
+      { name: "OneDrive", path: ONEDRIVE },
+      { name: "Dropbox", path: DROPBOX },
+    ],
+    key_confirmed: false,
+    ...overrides,
+  };
+}
+
+describe("setupStep", () => {
+  it("chooses a folder, then confirms the key", () => {
+    expect(setupStep(setup({}))).toBe("choose");
+    expect(setupStep(setup({ key_confirmed: true }))).toBe("choose");
+    expect(setupStep(setup({ folder: ONEDRIVE }))).toBe("key");
+    expect(setupStep(setup({ folder: ONEDRIVE, key_confirmed: true }))).toBe("ready");
+  });
+});
+
+describe("initialFolderChoice", () => {
+  it("suggests the first cloud folder found", () => {
+    expect(initialFolderChoice(setup({}))).toEqual({ choice: ONEDRIVE, other: "" });
+    expect(initialFolderChoice(setup({ suggestions: [] }))).toEqual({
+      choice: OTHER_FOLDER,
+      other: "",
+    });
+  });
+
+  it("keeps the folder in use", () => {
+    expect(initialFolderChoice(setup({ folder: DROPBOX }))).toEqual({ choice: DROPBOX, other: "" });
+    expect(initialFolderChoice(setup({ folder: "E:\\Backup" }))).toEqual({
+      choice: OTHER_FOLDER,
+      other: "E:\\Backup",
+    });
+  });
+});
+
+describe("chosenFolder", () => {
+  it("is the suggested folder or the typed one", () => {
+    expect(chosenFolder({ choice: ONEDRIVE, other: "E:\\Backup" })).toBe(ONEDRIVE);
+    expect(chosenFolder({ choice: OTHER_FOLDER, other: "  E:\\Backup " })).toBe("E:\\Backup");
+    expect(chosenFolder({ choice: OTHER_FOLDER, other: "  " })).toBeNull();
+  });
+});
+
+describe("keyGroups", () => {
+  it("splits the key where it is read aloud", () => {
+    expect(keyGroups("K7QM-2XWP-9DTA")).toEqual(["K7QM", "2XWP", "9DTA"]);
   });
 });

@@ -38,6 +38,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useLogout, type User } from "@/features/auth/api";
 import { companyQuery } from "@/features/company/api";
 import { undoRegistry } from "@/features/shared/undo";
+import { UpdateCard } from "@/features/updates/update-notice";
 import { APP_VERSION, MAKER } from "@/lib/about";
 import { cn } from "@/lib/cn";
 import { modifierLabel } from "@/lib/shortcuts";
@@ -244,11 +245,14 @@ export function AppShell({ user }: { readonly user: User }) {
               {collapsed ? null : <span>{t("nav.collapse")}</span>}
             </Button>
             {collapsed ? null : (
-              <AboutLine
-                onOpen={() => {
-                  setAboutOpen(true);
-                }}
-              />
+              <>
+                <UpdateCard />
+                <AboutLine
+                  onOpen={() => {
+                    setAboutOpen(true);
+                  }}
+                />
+              </>
             )}
           </div>
         </nav>
@@ -360,7 +364,8 @@ export function AppShell({ user }: { readonly user: User }) {
               }}
             />
           </nav>
-          <div className="mt-auto">
+          <div className="mt-auto flex flex-col">
+            <UpdateCard />
             <AboutLine
               onOpen={() => {
                 setMobileNavOpen(false);

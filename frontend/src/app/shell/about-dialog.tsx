@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { UpdateSection } from "@/features/updates/update-notice";
 import {
   APP_VERSION,
   CHANGELOG_URL,
@@ -57,6 +58,7 @@ export function AboutDialog({
           </li>
         </ul>
         <p className="text-xs text-muted-foreground">{t("about.noAdvice")}</p>
+        <UpdateSection />
         <p className="border-t pt-4 text-sm text-muted-foreground">
           <ExternalLink href={MAKER_URL} icon={false} className="text-foreground">
             {t("about.madeBy", { maker: MAKER })}

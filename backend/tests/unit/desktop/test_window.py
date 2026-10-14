@@ -43,7 +43,7 @@ def test_the_window_shows_the_address_and_keeps_its_login(
     assert webview.created == [
         (
             ("Rhinvoice", "http://127.0.0.1:8000"),
-            {"width": 1280, "height": 860, "min_size": (960, 640)},
+            {"width": 1280, "height": 860, "min_size": (960, 640), "zoomable": True},
         )
     ]
     assert webview.started == [{"private_mode": False, "storage_path": str(tmp_path / "window")}]

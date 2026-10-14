@@ -41,7 +41,10 @@ def show(address: str, storage: Path) -> None:
     webview.settings["ALLOW_DOWNLOADS"] = True
     webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
     # pywebview leaves the type of one of its parameters open (url: str | Unknown).
+    # Zoomable: pywebview otherwise listens to every wheel event to block Ctrl+wheel, and
+    # WebKit then ignores scrolling on a page with overscroll-behavior (no rubber band,
+    # index.css). Zooming also helps reading (WCAG 1.4.4).
     webview.create_window(  # pyright: ignore[reportUnknownMemberType]
-        TITLE, address, width=SIZE[0], height=SIZE[1], min_size=MIN_SIZE
+        TITLE, address, width=SIZE[0], height=SIZE[1], min_size=MIN_SIZE, zoomable=True
     )
     webview.start(private_mode=False, storage_path=str(storage))

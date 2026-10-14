@@ -212,9 +212,10 @@ test("the program without Docker sets up its backup folder and recovery key", as
 
   await page.getByRole("radio", { name: /OneDrive/ }).check();
   await page.getByRole("button", { name: "Weiter zum Schlüssel" }).click();
+  // The button is gone with the folder list: focus moves to the key.
   await expect(
     page.getByRole("heading", { name: "Ihr Wiederherstellungs-Schlüssel" }),
-  ).toBeVisible();
+  ).toBeFocused();
   const shown = page.getByRole("group", { name: "Wiederherstellungs-Schlüssel" });
   await expect(shown).toContainText("K7QM");
   await expect(shown).toContainText("Q5ZU");

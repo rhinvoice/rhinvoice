@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { CheckIcon, CopyIcon } from "lucide-react";
-import { useState, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/components/i18n/use-i18n";
@@ -185,10 +185,19 @@ export function RecoveryKey({
   const confirm = useConfirmRecoveryKey();
   const [kept, setKept] = useState(false);
   const key = query.data?.key;
+  const title = useRef<HTMLHeadingElement>(null);
+  // Shown in place of the folder list, whose button is gone: focus moves to the key.
+  useEffect(() => {
+    if (mustConfirm) {
+      title.current?.focus();
+    }
+  }, [mustConfirm]);
   return (
     <Card aria-labelledby="backup-key-title">
       <CardHeader>
-        <CardTitle id="backup-key-title">{t("backup.key.title")}</CardTitle>
+        <CardTitle id="backup-key-title" ref={title} tabIndex={-1} className="outline-none">
+          {t("backup.key.title")}
+        </CardTitle>
         <CardDescription>{t("backup.key.description")}</CardDescription>
       </CardHeader>
       <FormAlert message={query.isError ? errorMessage(query.error) : null} />

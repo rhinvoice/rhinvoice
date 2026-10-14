@@ -1,4 +1,5 @@
 import io
+import threading
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -305,3 +306,32 @@ def test_a_newer_database_is_refused(
             connection.execute(
                 text("UPDATE alembic_version SET version_num = :head"), {"head": HEAD}
             )
+
+
+def test_a_server_in_a_thread_ends_when_asked_to(
+    env: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The program window of the installation without Docker stops its server this way."""
+    monkeypatch.setenv("RHINVOICE_RUN_MIGRATIONS", "false")
+    monkeypatch.setenv("RHINVOICE_RECURRING", "false")
+    monkeypatch.setenv("RHINVOICE_UPDATE_CHECK", "false")
+    ended = threading.Event()
+
+    class Server:
+        def __init__(self, config: uvicorn.Config) -> None:
+            assert (config.host, config.port) == ("127.0.0.1", 9001)
+            assert isinstance(config.app, FastAPI)
+            config.app.state.container.engine.dispose()
+            self.should_exit = False
+
+        def run(self) -> None:
+            while not self.should_exit:
+                ended.wait(0.01)
+            ended.set()
+
+    monkeypatch.setattr(uvicorn, "Server", Server)
+    stop = threading.Event()
+    threading.Timer(0.1, stop.set).start()
+    assert cli.serve(Settings(), "127.0.0.1", 9001, stop=stop) == 0
+    assert ended.is_set()
+    assert env is not None

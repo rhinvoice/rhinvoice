@@ -12,7 +12,7 @@ import subprocess
 from typing import TYPE_CHECKING
 from urllib.parse import quote
 
-from rhinvoice.desktop.folders import make_private
+from rhinvoice_boot import make_private
 
 if TYPE_CHECKING:
     from pathlib import Path

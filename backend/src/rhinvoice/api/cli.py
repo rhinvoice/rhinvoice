@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import getpass
 import sys
+import threading
 from typing import TYPE_CHECKING
 
 from rhinvoice.api.container import build_container
@@ -23,6 +24,8 @@ from rhinvoice.infrastructure.scheduling import PeriodicJob
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+    from fastapi import FastAPI
 
     from rhinvoice.api.container import Container
     from rhinvoice.application.updates.ports import UpdateInstaller
@@ -114,19 +117,21 @@ def _serve(args: argparse.Namespace, settings: Settings) -> int:
     return serve(settings, args.host, args.port, args.forwarded_allow_ips)
 
 
-def serve(
+def serve(  # noqa: PLR0913 - the server's options; the last two only for the desktop
     settings: Settings,
     host: str,
     port: int,
     forwarded_allow_ips: str = "127.0.0.1",
+    *,
     installer: UpdateInstaller | None = None,
+    stop: threading.Event | None = None,
 ) -> int:
     """Run the web server until it is stopped (also used by the installation without Docker).
 
     ``installer``: the installation without Docker installs updates itself (ADR 0022).
+    ``stop``: ends the server when set; for a server in a thread, which signals cannot
+    reach (the program window of the installation without Docker).
     """
-    import uvicorn  # noqa: PLC0415 - only needed for this command
-
     from rhinvoice.api.app import create_app  # noqa: PLC0415
 
     if not _known_schema(settings):
@@ -134,6 +139,23 @@ def serve(
     if settings.run_migrations:
         upgrade(settings.database_url)
     container = build_container(settings, installer=installer)
+    try:
+        jobs = _background_jobs(settings, container)
+    except NotADemoDatabaseError as error:
+        sys.stderr.write(f"error: {error}\n")
+        return 1
+    for job in jobs:
+        job.start()
+    try:
+        _run_server(create_app(container), host, port, forwarded_allow_ips, stop)
+    finally:
+        for job in jobs:
+            job.stop()
+    return 0
+
+
+def _background_jobs(settings: Settings, container: Container) -> list[PeriodicJob]:
+    """List the jobs beside the server; a public demo is reset first (refused on real data)."""
     jobs: list[PeriodicJob] = []
     if settings.update_check and not settings.demo:
         jobs.append(
@@ -145,11 +167,7 @@ def serve(
             )
         )
     if settings.demo:
-        try:
-            reset_demo(settings, container)
-        except NotADemoDatabaseError as error:
-            sys.stderr.write(f"error: {error}\n")
-            return 1
+        reset_demo(settings, container)
         jobs.append(
             PeriodicJob(
                 lambda: reset_demo(settings, container),
@@ -168,20 +186,32 @@ def serve(
                 name="recurring invoices",
             )
         )
-    for job in jobs:
-        job.start()
-    try:
+    return jobs
+
+
+def _run_server(
+    app: FastAPI, host: str, port: int, forwarded_allow_ips: str, stop: threading.Event | None
+) -> None:
+    import uvicorn  # noqa: PLC0415 - only needed for this command
+
+    if stop is None:
+        # The Docker setup and `rhinvoice serve`: stopped by signals, as always.
         uvicorn.run(
-            create_app(container),
-            host=host,
-            port=port,
-            proxy_headers=True,
-            forwarded_allow_ips=forwarded_allow_ips,
+            app, host=host, port=port, proxy_headers=True, forwarded_allow_ips=forwarded_allow_ips
         )
-    finally:
-        for job in jobs:
-            job.stop()
-    return 0
+        return
+    server = uvicorn.Server(
+        uvicorn.Config(
+            app, host=host, port=port, proxy_headers=True, forwarded_allow_ips=forwarded_allow_ips
+        )
+    )
+
+    def end_when_stopped() -> None:
+        stop.wait()
+        server.should_exit = True
+
+    threading.Thread(target=end_when_stopped, daemon=True).start()
+    server.run()
 
 
 def _recurring(_args: argparse.Namespace, settings: Settings) -> int:

@@ -2,6 +2,7 @@
 
 import importlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -13,6 +14,7 @@ import rhinvoice_boot as boot
 from rhinvoice.desktop.postgres import BundledPostgres
 from rhinvoice_boot import (
     RESTART,
+    SESSION,
     BootError,
     Package,
     Runtime,
@@ -20,10 +22,13 @@ from rhinvoice_boot import (
     choose,
     confirm,
     load_state,
+    log_without_console,
     option,
     packages,
+    prune,
     run,
     save_state,
+    session,
     version_key,
     without_option,
 )
@@ -345,3 +350,154 @@ def test_a_package_that_cannot_even_start_is_taken_back(runtime_folder: Path, da
 def test_the_setup_starts_the_boot() -> None:
     entry = importlib.import_module("rhinvoice_boot.__main__")
     assert entry.main is boot.main
+
+
+def test_a_second_start_only_shows_the_running_program(runtime_folder: Path, data: Path) -> None:
+    program = Program(data)
+    with session(data) as first:
+        assert first
+        # Another process: the environment of this one says it holds the session.
+        os.environ.pop(SESSION)
+        try:
+            run(["--no-browser"], runtime(runtime_folder, data, program))
+        finally:
+            os.environ[SESSION] = "1"
+    [(_version, arguments)] = program.started
+    assert arguments[-1] == "--attach"
+    assert load_state(data) == State()  # nothing changed by the second start
+
+
+def test_a_restarted_boot_runs_in_its_parents_session(data: Path) -> None:
+    with session(data) as first, session(data) as child:
+        assert first
+        assert child
+
+
+def test_a_database_that_could_not_be_put_back_is_put_back_at_the_next_start(
+    runtime_folder: Path, data: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    installed(runtime_folder, data)
+    update(data, "0.7.0")
+    monkeypatch.setattr(boot, "RETRY_PAUSE_SECONDS", 0)
+    real_copytree = shutil.copytree
+    calls = 0
+
+    def copy_once_then_fail(source: Path, target: Path) -> object:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise OSError("disk full")
+        return real_copytree(source, target)
+
+    monkeypatch.setattr(shutil, "copytree", copy_once_then_fail)
+
+    class Migrating(Program):
+        def launch(self, chosen: Package, arguments: list[str]) -> int:
+            (self.data / "database" / "invoices").write_text("half migrated")
+            return super().launch(chosen, arguments)
+
+    with pytest.raises(BootError, match="could not be put back"):
+        run([], runtime(runtime_folder, data, Migrating(data, works=False, code=1)))
+    assert load_state(data) == State(active="0.6.2", failed=["0.7.0"], restore="0.7.0")
+    # The next start puts the database back before anything runs.
+    program = Program(data)
+    run([], runtime(runtime_folder, data, program))
+    assert (data / "database" / "invoices").read_text() == "before the update"
+    assert [version for version, _ in program.started] == ["0.6.2"]
+    assert load_state(data) == State(active="0.6.2", failed=["0.7.0"])
+
+
+def test_a_file_that_windows_keeps_locked_for_a_moment_is_tried_again(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(boot, "RETRY_PAUSE_SECONDS", 0)
+    attempts: list[int] = []
+
+    def locked_twice() -> None:
+        attempts.append(1)
+        if len(attempts) < 3:
+            raise PermissionError("used by another process")
+
+    def locked() -> None:
+        raise PermissionError("used by another process")
+
+    boot.retry(locked_twice)
+    assert len(attempts) == 3
+    with pytest.raises(PermissionError):
+        boot.retry(locked, attempts=2)
+
+
+def test_without_a_copy_of_the_database_the_previous_version_starts(
+    runtime_folder: Path,
+    data: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    installed(runtime_folder, data)
+    update(data, "0.7.0")
+
+    def disk_full(_source: Path, _target: Path) -> object:
+        raise OSError("disk full")
+
+    monkeypatch.setattr(shutil, "copytree", disk_full)
+    program = Program(data)
+    run([], runtime(runtime_folder, data, program))
+    assert [version for version, _ in program.started] == ["0.6.2"]
+    assert "no copy of the database before 0.7.0: disk full" in capsys.readouterr().err
+    assert load_state(data) == State(active="0.6.2")
+
+
+def test_without_a_copy_and_without_the_previous_package_nothing_starts(
+    runtime_folder: Path, data: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    installed(runtime_folder, data)
+    save_state(data, State(active="0.5.0"))  # its package was removed
+    update(data, "0.7.0")
+
+    def disk_full(_source: Path, _target: Path) -> object:
+        raise OSError("disk full")
+
+    monkeypatch.setattr(shutil, "copytree", disk_full)
+    with raises_exactly(BootError, "the version that ran before (0.5.0) is no longer installed"):
+        run([], runtime(runtime_folder, data, Program(data)))
+
+
+def test_confirming_keeps_the_last_three_versions_and_copies(data: Path) -> None:
+    for version in ("0.6.0", "0.6.1", "0.6.2", "0.7.0", "0.10.0"):
+        update(data, version)
+        (data / "backups" / f"database-before-{version}").mkdir(parents=True)
+        (data / "backups" / f"database-failed-{version}").mkdir(parents=True)
+    (data / "app" / "versions" / "0.11.0.partial").mkdir()  # a download in progress
+    save_state(data, State(active="0.7.0", trying="0.10.0", saved=True))
+    confirm(data)
+    versions = sorted(f.name for f in (data / "app" / "versions").iterdir())
+    assert versions == ["0.10.0", "0.11.0.partial", "0.6.1", "0.6.2", "0.7.0"]
+    copies = sorted(f.name for f in (data / "backups").iterdir())
+    assert copies == [
+        "database-before-0.10.0", "database-before-0.6.2", "database-before-0.7.0",
+        "database-failed-0.10.0", "database-failed-0.6.2", "database-failed-0.7.0",
+    ]  # fmt: skip
+
+
+def test_pruning_without_updates_or_copies_does_nothing(data: Path) -> None:
+    prune(data, "0.6.2")
+    assert not data.exists()
+
+
+def test_without_a_console_the_boot_writes_to_a_file(
+    data: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(sys, "stdout", None)
+    monkeypatch.setattr(sys, "stderr", None)
+    log_without_console(data)
+    log = sys.stderr
+    assert log is not None
+    assert log is sys.stdout
+    log.write("error: x\n")
+    log.close()
+    assert (data / "rhinvoice.log").read_text() == "error: x\n"
+
+
+def test_with_a_console_the_messages_stay_there(data: Path) -> None:
+    log_without_console(data)
+    assert not (data / "rhinvoice.log").exists()

@@ -28,11 +28,17 @@ from rhinvoice.api.settings import Settings
 from rhinvoice.desktop import window
 from rhinvoice.desktop.browser import find_chromium
 from rhinvoice.desktop.config import ConfigError, DesktopConfig, load_or_create, save
-from rhinvoice.desktop.folders import make_private
 from rhinvoice.desktop.ports import free_port, listening
 from rhinvoice.desktop.postgres import BundledPostgres, PostgresError
 from rhinvoice.desktop.updates import PackageInstaller, Restarter, platform_name
-from rhinvoice_boot import RESTART, BootError, confirm, data_folder, runtime_generation
+from rhinvoice_boot import (
+    RESTART,
+    BootError,
+    confirm,
+    data_folder,
+    log_without_console,
+    runtime_generation,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -40,15 +46,23 @@ if TYPE_CHECKING:
     from rhinvoice.application.updates.ports import UpdateInstaller
 
 HOST = "127.0.0.1"
-READY_TIMEOUT_SECONDS = 60.0
+ATTACH_SECONDS = 600.0
+"""How long a second start waits for the first one (which may migrate a large database)."""
+SERVER_STOP_SECONDS = 30.0
 READY_POLL_SECONDS = 0.25
 
 
 class Server(Protocol):
     def __call__(
-        self, settings: Settings, host: str, port: int, *, installer: UpdateInstaller | None = None
+        self,
+        settings: Settings,
+        host: str,
+        port: int,
+        *,
+        installer: UpdateInstaller | None = None,
+        stop: threading.Event | None = None,
     ) -> int:
-        """Run the web server until it is stopped (api.cli.serve)."""
+        """Run the web server until it is stopped, or until ``stop`` is set (api.cli.serve)."""
         ...
 
 
@@ -83,6 +97,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--no-browser", action="store_true", help="open neither window nor browser (a server)"
     )
+    parser.add_argument(
+        "--attach", action="store_true", help="only show the program that already runs (the boot)"
+    )
     return parser
 
 
@@ -105,8 +122,10 @@ def main(argv: Sequence[str] | None = None) -> int:
 def run(args: argparse.Namespace, desktop: Desktop) -> int:
     install: Path = args.install_dir or desktop.install
     folder: Path = args.data_dir or data_folder(desktop.system, desktop.environ, desktop.home)
+    if args.attach:
+        return _attach(args, desktop, folder)
     try:
-        _log_without_console(folder)
+        log_without_console(folder)
         config = load_or_create(folder / "rhinvoice.json")
         database = BundledPostgres(
             install / "postgresql" / "bin",
@@ -188,19 +207,37 @@ def _serve(  # noqa: PLR0913 - the parts of one start (keywords for the update's
         open_page = None if args.no_browser else desktop.open_page
         threading.Thread(target=when_ready, args=(address, folder, open_page), daemon=True).start()
         return desktop.serve(settings, HOST, port, installer=installer)
-    # The window needs the main thread (macOS); the server runs beside it and ends with
-    # the program when the window is closed.
+    # The window needs the main thread (macOS); the server runs beside it. Closing the
+    # window stops the server and its background jobs before the database stops.
     if desktop.close_window is not None:
         restarter.use_window(desktop.close_window)
-    threading.Thread(
+    stop = threading.Event()
+    server = threading.Thread(
         target=desktop.serve,
         args=(settings, HOST, port),
-        kwargs={"installer": installer},
+        kwargs={"installer": installer, "stop": stop},
         daemon=True,
-    ).start()
-    if not when_ready(address, folder):
-        msg = f"the web interface did not start on {address}"
-        raise TimeoutError(msg)
+    )
+    server.start()
+    try:
+        # No time limit: a first start may migrate for a while, and a version that works
+        # must never be taken for a failed one.
+        if not when_ready(address, folder, running=server.is_alive):
+            msg = f"the web interface did not start on {address}"
+            raise OSError(msg)
+        _show(args, desktop, address, folder)
+    finally:
+        stop.set()
+        server.join(SERVER_STOP_SECONDS)
+    return 0
+
+
+def _attach(args: argparse.Namespace, desktop: Desktop, folder: Path) -> int:
+    """Show the program that already runs on this data folder, once it answers."""
+    address = _address(load_or_create(folder / "rhinvoice.json").port)
+    deadline = time.monotonic() + ATTACH_SECONDS
+    if not wait_until_answers(address, running=lambda: time.monotonic() < deadline):
+        return _failed(OSError(f"Rhinvoice runs already, but does not answer on {address}"))
     _show(args, desktop, address, folder)
     return 0
 
@@ -212,16 +249,6 @@ def _show(args: argparse.Namespace, desktop: Desktop, address: str, folder: Path
         desktop.open_page(address)
     else:
         desktop.show_window(address, folder / "window")
-
-
-def _log_without_console(folder: Path) -> None:
-    """Write the messages to a file when there is no console (pythonw.exe, an app bundle)."""
-    if sys.stdout is not None and sys.stderr is not None:
-        return
-    make_private(folder)
-    log = (folder / "rhinvoice.log").open("a", encoding="utf-8", buffering=1)
-    sys.stdout = sys.stdout or log
-    sys.stderr = sys.stderr or log
 
 
 def _already_running(database: BundledPostgres, port: int) -> bool:
@@ -249,13 +276,16 @@ def _failed(error: Exception) -> int:
 
 
 def when_ready(
-    address: str, folder: Path, open_page: Callable[[str], object] | None = None
+    address: str,
+    folder: Path,
+    open_page: Callable[[str], object] | None = None,
+    running: Callable[[], bool] = lambda: True,
 ) -> bool:
     """Wait for the web interface; then tell the boot that this version works and open it.
 
-    Tell whether it answered in time. An update that never gets here is taken back.
+    Tell whether it answered while ``running``. An update that never gets here is taken back.
     """
-    if not wait_until_answers(address):
+    if not wait_until_answers(address, running):
         return False
     confirm(folder)
     if open_page is not None:
@@ -263,10 +293,9 @@ def when_ready(
     return True
 
 
-def wait_until_answers(address: str, timeout: float = READY_TIMEOUT_SECONDS) -> bool:
-    """Wait for the web interface; tell whether it answered in time."""
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
+def wait_until_answers(address: str, running: Callable[[], bool]) -> bool:
+    """Wait for the web interface as long as ``running``; tell whether it answered."""
+    while running():
         if answers(address):
             return True
         time.sleep(READY_POLL_SECONDS)

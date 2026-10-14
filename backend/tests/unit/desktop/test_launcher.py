@@ -7,7 +7,7 @@ import socket
 import sys
 import threading
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -30,12 +30,20 @@ class Recorder:
         self.result = result
         self.calls: list[tuple[Settings, str, int]] = []
         self.installers: list[UpdateInstaller | None] = []
+        self.stops: list[threading.Event | None] = []
 
     def serve(
-        self, settings: Settings, host: str, port: int, *, installer: UpdateInstaller | None = None
+        self,
+        settings: Settings,
+        host: str,
+        port: int,
+        *,
+        installer: UpdateInstaller | None = None,
+        stop: threading.Event | None = None,
     ) -> int:
         self.calls.append((settings, host, port))
         self.installers.append(installer)
+        self.stops.append(stop)
         return self.result
 
 
@@ -62,7 +70,7 @@ def ignore_page(_address: str, _folder: Path, _open_page: object = None) -> bool
     return True
 
 
-def never(_address: str) -> bool:
+def never_answers(_address: str, _running: Callable[[], bool]) -> bool:
     return False
 
 
@@ -140,8 +148,14 @@ def test_a_second_start_shows_the_running_one(
     monkeypatch.setattr(launcher, "when_ready", ignore_page)
 
     def serve_and_start_again(
-        settings: Settings, host: str, port: int, *, installer: UpdateInstaller | None = None
+        settings: Settings,
+        host: str,
+        port: int,
+        *,
+        installer: UpdateInstaller | None = None,
+        stop: threading.Event | None = None,
     ) -> int:
+        del stop
         del installer
         recorder.calls.append((settings, host, port))
 
@@ -273,7 +287,9 @@ def test_once_the_server_answers_the_version_is_confirmed_and_opened(
 
 
 def test_a_server_that_never_answers_is_not_waited_for_forever() -> None:
-    assert not wait_until_answers(f"http://127.0.0.1:{free_port()}", timeout=0.6)
+    deadline = time.monotonic() + 0.6
+    address = f"http://127.0.0.1:{free_port()}"
+    assert not wait_until_answers(address, running=lambda: time.monotonic() < deadline)
 
 
 def test_a_database_in_an_unknown_state_stops_the_program(
@@ -305,8 +321,8 @@ class Window:
     def show(self, address: str, storage: Path) -> None:
         self.shown.append((address, storage))
 
-    def wait(self, _address: str, timeout: float = 5) -> bool:
-        deadline = time.monotonic() + timeout
+    def wait(self, _address: str, _running: Callable[[], bool]) -> bool:
+        deadline = time.monotonic() + 5
         while not self.recorder.calls and time.monotonic() < deadline:
             time.sleep(0.01)
         return bool(self.recorder.calls)
@@ -322,7 +338,10 @@ def test_the_interface_opens_in_a_window_beside_the_server(
     assert run(build_parser().parse_args([]), surroundings) == 0
     assert len(recorder.calls) == 1
     assert window.shown == [(f"http://127.0.0.1:{port_of(data)}", data / "window")]
-    # Closing the window ends the program: the database is stopped.
+    # Closing the window stops the server, then the database.
+    [stop] = recorder.stops
+    assert stop is not None
+    assert stop.is_set()
     assert commands(tmp_path)[-1] == "pg_ctl stop"
 
 
@@ -334,7 +353,7 @@ def test_a_server_that_does_not_answer_shows_no_window(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     window = Window(Recorder())
-    monkeypatch.setattr(launcher, "wait_until_answers", never)
+    monkeypatch.setattr(launcher, "wait_until_answers", never_answers)
     surroundings = replace(desktop(install, tmp_path, Recorder()), show_window=window.show)
     assert run(build_parser().parse_args([]), surroundings) == 1
     assert window.shown == []
@@ -428,8 +447,14 @@ def test_after_an_update_the_boot_is_asked_to_start_again(
     monkeypatch.setattr(signal, "raise_signal", raise_signal)
 
     def serve_and_update(
-        settings: Settings, host: str, port: int, *, installer: UpdateInstaller | None = None
+        settings: Settings,
+        host: str,
+        port: int,
+        *,
+        installer: UpdateInstaller | None = None,
+        stop: threading.Event | None = None,
     ) -> int:
+        del stop
         del settings, host, port
         assert installer is not None
         # An update that is already in place: the program only restarts.
@@ -458,3 +483,30 @@ def test_in_a_window_an_update_closes_the_window(
     [installer] = recorder.installers
     assert installer is None  # no runtime: the window still gets the restart wiring
     assert window.shown == [(f"http://127.0.0.1:{port_of(data)}", data / "window")]
+
+
+def test_a_second_start_shows_the_first_once_it_answers(
+    install: Path, tmp_path: Path, data: Path, health: str
+) -> None:
+    port = int(health.rsplit(":", 1)[1])
+    (data / "rhinvoice.json").write_text(json.dumps({"database_password": "x", "port": port}))
+    opened: list[str] = []
+    surroundings = replace(desktop(install, tmp_path, Recorder()), open_page=opened.append)
+    assert run(build_parser().parse_args(["--attach"]), surroundings) == 0
+    assert opened == [health]
+    assert commands(tmp_path) == []  # the database belongs to the first one
+
+
+@pytest.mark.usefixtures("data")
+def test_a_first_start_that_never_answers_is_reported(
+    install: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(launcher, "ATTACH_SECONDS", 0.3)
+    assert run(build_parser().parse_args(["--attach"]), desktop(install, tmp_path, Recorder())) == 1
+    assert (
+        "Rhinvoice runs already, but does not answer on http://127.0.0.1:"
+        in capsys.readouterr().err
+    )

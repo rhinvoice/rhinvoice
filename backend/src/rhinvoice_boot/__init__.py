@@ -24,14 +24,22 @@ import shutil
 import site
 import subprocess
 import sys
+import time
 import traceback
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, BinaryIO, cast
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, Sequence
+    from collections.abc import Callable, Generator, Mapping, Sequence
 
+KEEP = 3
+"""App packages of updates and database copies kept for going back (ADR 0022)."""
+RETRIES = 10
+RETRY_PAUSE_SECONDS = 0.5
+SESSION = "RHINVOICE_BOOT_SESSION"
+"""Set in the environment of a boot that runs inside the session of its parent."""
 RESTART = 75
 """Exit code with which the program asks to be started again (after an update)."""
 LAUNCHER = "rhinvoice.desktop.launcher"
@@ -53,6 +61,16 @@ def data_folder(system: str, environ: Mapping[str, str], home: Path) -> Path:
     if system == "Darwin":
         return home / "Library" / "Application Support" / "Rhinvoice"
     return Path(environ.get("XDG_DATA_HOME") or home / ".local" / "share") / "rhinvoice"
+
+
+def make_private(folder: Path) -> None:
+    """Create a folder that only this user can open.
+
+    On Windows the folders below %LOCALAPPDATA% are the user's own already. There Python
+    turns 0o700 into an access list that the database's tools cannot pass: they run with
+    restricted rights (PostgreSQL does that on purpose).
+    """
+    folder.mkdir(mode=0o777 if sys.platform == "win32" else 0o700, parents=True, exist_ok=True)
 
 
 def version_key(version: str) -> tuple[int, ...]:
@@ -80,6 +98,9 @@ class State:
     """The database was copied before the first start of ``trying``."""
     failed: list[str] = field(default_factory=list[str])
     """Versions that did not start after an update; never chosen again."""
+    restore: str | None = None
+    """The database from before this version still has to be put back (a take-back that
+    could not finish, e.g. a file Windows kept locked): done before anything starts."""
 
 
 def state_file(data: Path) -> Path:
@@ -95,17 +116,18 @@ def load_state(data: Path) -> State:
     if not isinstance(values, dict):
         return State()
     fields = cast("dict[str, object]", values)
-    active, trying = fields.get("active"), fields.get("trying")
+    active, trying, restore = fields.get("active"), fields.get("trying"), fields.get("restore")
     saved, failed = fields.get("saved", False), fields.get("failed", [])
     if (
         not isinstance(active, str | None)
         or not isinstance(trying, str | None)
+        or not isinstance(restore, str | None)
         or not isinstance(saved, bool)
         or not isinstance(failed, list)
     ):
         return State()
     versions = [str(version) for version in cast("list[object]", failed)]
-    return State(active, trying, saved=saved, failed=versions)
+    return State(active, trying, saved=saved, failed=versions, restore=restore)
 
 
 def save_state(data: Path, state: State) -> None:
@@ -117,10 +139,37 @@ def save_state(data: Path, state: State) -> None:
 
 
 def confirm(data: Path) -> None:
-    """Record that the running version works (called by it once its interface answers)."""
+    """Record that the running version works (called by it once its interface answers).
+
+    Part of the interface that app packages use (see ADR 0022): keep its name and meaning.
+    """
     state = load_state(data)
     if state.trying is not None:
         save_state(data, replace(state, active=state.trying, trying=None, saved=False))
+        prune(data, state.trying)
+
+
+def prune(data: Path, active: str, keep: int = KEEP) -> None:
+    """Keep the last ``keep`` app packages of updates and database copies; remove the rest."""
+    versions = data / "app" / "versions"
+    found: list[Path] = list(versions.iterdir()) if versions.is_dir() else []
+    packages = [
+        folder
+        for folder in found
+        if folder.is_dir() and folder.suffix != ".partial" and folder.name != active
+    ]
+    _remove_oldest(packages, "", keep)
+    backups = data / "backups"
+    for kind in ("database-before-", "database-failed-"):
+        copies = [f for f in backups.glob(f"{kind}*") if f.is_dir()] if backups.is_dir() else []
+        _remove_oldest(copies, kind, keep)
+
+
+def _remove_oldest(folders: list[Path], prefix: str, keep: int) -> None:
+    """Remove all but the ``keep`` newest folders named ``<prefix><version>``."""
+    ordered = sorted(folders, key=lambda folder: version_key(folder.name.removeprefix(prefix)))
+    for folder in ordered[: max(len(ordered) - keep, 0)]:
+        shutil.rmtree(folder, ignore_errors=True)
 
 
 def runtime_generation(install: Path) -> int:
@@ -175,21 +224,31 @@ class Runtime:
 
 
 def run(argv: Sequence[str], runtime: Runtime) -> int:
+    with session(runtime.data) as owner:
+        if not owner:
+            # Started again while it runs (or migrates): only show the running program.
+            package = choose(runtime.install, runtime.data, load_state(runtime.data))
+            return runtime.launch(package, [*argv, *_folders(runtime, package), "--attach"])
+        return _run_session(argv, runtime)
+
+
+def _run_session(argv: Sequence[str], runtime: Runtime) -> int:
     state = load_state(runtime.data)
+    if state.restore is not None:
+        state = put_database_back(runtime, state)
     package = choose(runtime.install, runtime.data, state)
-    first_start = package.version != state.active
-    if first_start and not (state.trying == package.version and state.saved):
-        copy_database(runtime, f"before-{package.version}")
-        state = replace(state, trying=package.version, saved=True)
-        save_state(runtime.data, state)
-    arguments = [
-        *argv,
-        "--install-dir", str(runtime.install),
-        "--static-dir", str(package.folder / "static"),
-        "--data-dir", str(runtime.data),
-    ]  # fmt: skip
+    if package.version != state.active and not (state.trying == package.version and state.saved):
+        try:
+            copy_database(runtime, f"before-{package.version}")
+        except (OSError, subprocess.CalledProcessError) as error:
+            # No copy, no update: the version that ran before starts instead.
+            sys.stderr.write(f"error: no copy of the database before {package.version}: {error}\n")
+            package = _package_of(runtime, state)
+        else:
+            state = replace(state, trying=package.version, saved=True)
+            save_state(runtime.data, state)
     try:
-        code = runtime.launch(package, arguments)
+        code = runtime.launch(package, [*argv, *_folders(runtime, package)])
     except Exception:  # noqa: BLE001 - a broken package must not keep the previous one from starting
         traceback.print_exc()
         code = 1
@@ -203,21 +262,75 @@ def run(argv: Sequence[str], runtime: Runtime) -> int:
     return code
 
 
+def _folders(runtime: Runtime, package: Package) -> list[str]:
+    return [
+        "--install-dir", str(runtime.install),
+        "--static-dir", str(package.folder / "static"),
+        "--data-dir", str(runtime.data),
+    ]  # fmt: skip
+
+
+def _package_of(runtime: Runtime, state: State) -> Package:
+    """Find the package of the version that ran before."""
+    for package in packages(runtime.install, runtime.data):
+        if package.version == state.active:
+            return package
+    msg = f"the version that ran before ({state.active}) is no longer installed"
+    raise BootError(msg)
+
+
 def take_back(runtime: Runtime, version: str) -> None:
-    """Return to the database as it was before the failed version; never choose it again."""
+    """Never choose the failed version again, and put back the database from before it."""
     state = load_state(runtime.data)
-    stop_database(runtime)
-    database = runtime.data / "database"
     saved = runtime.data / "backups" / f"database-before-{version}"
-    if saved.is_dir():
-        failed = runtime.data / "backups" / f"database-failed-{version}"
-        shutil.rmtree(failed, ignore_errors=True)
-        if database.exists():
-            database.rename(failed)
-        shutil.copytree(saved, database)
-    save_state(
-        runtime.data, replace(state, trying=None, saved=False, failed=[*state.failed, version])
+    # The decision is written first: if putting the database back fails, the next start
+    # tries again before anything runs, and the failed version never starts again.
+    state = replace(
+        state,
+        trying=None,
+        saved=False,
+        failed=[*state.failed, version],
+        restore=version if saved.is_dir() else None,
     )
+    save_state(runtime.data, state)
+    if state.restore is not None:
+        put_database_back(runtime, state)
+
+
+def put_database_back(runtime: Runtime, state: State) -> State:
+    """Replace the database with the copy from before ``state.restore``; keep the other aside."""
+    version = state.restore
+    saved = runtime.data / "backups" / f"database-before-{version}"
+    database = runtime.data / "database"
+    failed = runtime.data / "backups" / f"database-failed-{version}"
+    try:
+        stop_database(runtime)
+        if failed.exists():
+            retry(lambda: shutil.rmtree(failed))
+        if database.exists():
+            retry(lambda: database.rename(failed))
+        shutil.copytree(saved, database)
+    except (OSError, subprocess.CalledProcessError) as error:
+        msg = (
+            f"the database from before {version} could not be put back ({error}); "
+            f"the copy is in {saved}"
+        )
+        raise BootError(msg) from error
+    state = replace(state, restore=None)
+    save_state(runtime.data, state)
+    return state
+
+
+def retry(action: Callable[[], object], attempts: int = RETRIES) -> None:
+    """Repeat a file operation that Windows may refuse while a scanner holds a file."""
+    for _ in range(attempts - 1):
+        try:
+            action()
+        except OSError:
+            time.sleep(RETRY_PAUSE_SECONDS)
+        else:
+            return
+    action()  # the last attempt: its error is the answer
 
 
 def copy_database(runtime: Runtime, name: str) -> None:
@@ -229,6 +342,45 @@ def copy_database(runtime: Runtime, name: str) -> None:
     target = runtime.data / "backups" / f"database-{name}"
     shutil.rmtree(target, ignore_errors=True)
     shutil.copytree(database, target)
+
+
+@contextmanager
+def session(data: Path) -> Generator[bool]:
+    """Hold the data folder for this program; yield whether this boot got it.
+
+    A boot started by its parent (a restart) runs in the parent's session.
+    """
+    if os.environ.get(SESSION) == "1":
+        yield True
+        return
+    make_private(data)
+    folder = data / "app"
+    folder.mkdir(exist_ok=True)
+    with (folder / "session.lock").open("a+b") as handle:
+        if not _lock(handle):
+            yield False
+            return
+        os.environ[SESSION] = "1"
+        try:
+            yield True
+        finally:
+            del os.environ[SESSION]
+
+
+def _lock(handle: BinaryIO) -> bool:
+    """Take the lock without waiting; the system releases it when this process ends."""
+    try:
+        if sys.platform == "win32":  # pragma: no cover - the CI smoke test runs this on Windows
+            import msvcrt  # noqa: PLC0415
+
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl  # noqa: PLC0415
+
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        return False
+    return True
 
 
 def stop_database(runtime: Runtime) -> None:
@@ -286,10 +438,21 @@ def without_option(argv: Sequence[str], name: str) -> list[str]:
     return kept
 
 
+def log_without_console(data: Path) -> None:
+    """Write the messages to rhinvoice.log when there is no console (Rhinvoice.exe)."""
+    if sys.stdout is not None and sys.stderr is not None:
+        return
+    make_private(data)
+    log = (data / "rhinvoice.log").open("a", encoding="utf-8", buffering=1)
+    sys.stdout = sys.stdout or log
+    sys.stderr = sys.stderr or log
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = list(sys.argv[1:] if argv is None else argv)
     given = option(arguments, "--data-dir")
     data = Path(given) if given else data_folder(platform.system(), os.environ, Path.home())
+    log_without_console(data)
     # The bundled interpreter lives in <install>/python.
     runtime = Runtime(Path(sys.prefix).parent, data, launch, restart)
     try:

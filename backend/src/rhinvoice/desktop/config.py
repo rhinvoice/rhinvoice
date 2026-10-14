@@ -7,7 +7,7 @@ import secrets
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, cast
 
-from rhinvoice.desktop.folders import make_private
+from rhinvoice_boot import make_private
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -250,11 +250,13 @@ ignore_imports = ["rhinvoice.domain.country.registry -> rhinvoice.domain.country
 [tool.mutmut]
 # The whole package is copied so that tests can import every layer; only the
 # domain and application layers are mutated (quality gate: >= 90 %).
-source_paths = ["src/rhinvoice/"]
+source_paths = ["src/rhinvoice/", "src/rhinvoice_boot/"]
 # Ports are pure interfaces (Protocols) without behaviour to mutate.
 do_not_mutate = [
     "src/rhinvoice/api/*",
     "src/rhinvoice/infrastructure/*",
+    "src/rhinvoice/desktop/*",
+    "src/rhinvoice_boot/*",
     "src/rhinvoice/__init__.py",
     "src/rhinvoice/application/*/ports.py",
     "src/rhinvoice/application/uow.py",

@@ -156,6 +156,14 @@ def test_only_an_offered_package_is_installed(
 ) -> None:
     updates = handlers(release, installer=installer)
     updates.refresh()
-    with raises_exactly(ConflictError, "there is no update to install here"):
+    with raises_exactly(ConflictError, "there is no update to install here") as refused:
         updates.install()
+    assert refused.value.code == "no_update"
     assert installer is None or installer.installed == []
+
+
+def test_nothing_is_installed_before_the_first_check() -> None:
+    installer = Installer()
+    with raises_exactly(ConflictError, "there is no update to install here"):
+        handlers(RELEASE, installer=installer).install()
+    assert installer.installed == []

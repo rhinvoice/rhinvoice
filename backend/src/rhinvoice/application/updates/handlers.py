@@ -77,8 +77,10 @@ class UpdateHandlers:
         release, checked_at = self._known
         if release is None or not is_newer(release.version, self._current):
             action = UpdateAction.NONE
+        elif self._installer is None:
+            action = UpdateAction.COMMAND
         else:
-            action = self._action(release)
+            action = _desktop_action(release, self._installer)
         setup_url = None
         if release is not None and self._installer is not None:
             setup_url = release.setups.get(self._installer.platform)
@@ -93,18 +95,19 @@ class UpdateHandlers:
 
     def install(self) -> None:
         release, _ = self._known
+        installer = self._installer
         if (
             release is None
-            or self._installer is None
-            or self.status().action != UpdateAction.INSTALL
+            or installer is None
+            or not is_newer(release.version, self._current)
+            or _desktop_action(release, installer) is not UpdateAction.INSTALL
         ):
             raise ConflictError("there is no update to install here", code="no_update")
-        self._installer.install(release)
+        installer.install(release)
 
-    def _action(self, release: Release) -> UpdateAction:
-        installer = self._installer
-        if installer is None:
-            return UpdateAction.COMMAND
-        if installer.platform not in release.packages or release.runtime > installer.runtime:
-            return UpdateAction.SETUP
-        return UpdateAction.INSTALL
+
+def _desktop_action(release: Release, installer: UpdateInstaller) -> UpdateAction:
+    """Install the release's package, unless there is none for this platform and runtime."""
+    if installer.platform not in release.packages or release.runtime > installer.runtime:
+        return UpdateAction.SETUP
+    return UpdateAction.INSTALL

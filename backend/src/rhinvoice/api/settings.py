@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     chromium_path: Path | None = None
     """Chrome, Edge or Chromium on this computer that prints the PDFs when there is no
     Gotenberg (installations without Docker, ADR 0021). Without either there are no PDFs."""
+    update_check: bool = True
+    """Ask GitHub once a day whether a newer release exists, to show it in the program
+    (ADR 0022). Off: nothing leaves this installation for it."""
     recurring: bool = True
     """Write due recurring invoices in the background of ``rhinvoice serve``."""
     recurring_interval: int = Field(default=600, ge=60)

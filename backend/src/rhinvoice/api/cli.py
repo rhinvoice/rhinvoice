@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from rhinvoice.api.container import Container
+    from rhinvoice.application.updates.ports import UpdateInstaller
 
 
 def _read_password(args: argparse.Namespace) -> str:
@@ -53,6 +54,9 @@ def _user_create(args: argparse.Namespace, settings: Settings) -> int:
 
 
 FIRST_RECURRING_RUN = 60
+FIRST_UPDATE_CHECK = 30
+"""Seconds after the start: the program is up before it asks GitHub."""
+UPDATE_CHECK_INTERVAL = 24 * 60 * 60
 """Seconds after the start before recurring invoices are looked at."""
 
 
@@ -110,8 +114,17 @@ def _serve(args: argparse.Namespace, settings: Settings) -> int:
     return serve(settings, args.host, args.port, args.forwarded_allow_ips)
 
 
-def serve(settings: Settings, host: str, port: int, forwarded_allow_ips: str = "127.0.0.1") -> int:
-    """Run the web server until it is stopped (also used by the installation without Docker)."""
+def serve(
+    settings: Settings,
+    host: str,
+    port: int,
+    forwarded_allow_ips: str = "127.0.0.1",
+    installer: UpdateInstaller | None = None,
+) -> int:
+    """Run the web server until it is stopped (also used by the installation without Docker).
+
+    ``installer``: the installation without Docker installs updates itself (ADR 0022).
+    """
     import uvicorn  # noqa: PLC0415 - only needed for this command
 
     from rhinvoice.api.app import create_app  # noqa: PLC0415
@@ -120,8 +133,17 @@ def serve(settings: Settings, host: str, port: int, forwarded_allow_ips: str = "
         return 1
     if settings.run_migrations:
         upgrade(settings.database_url)
-    container = build_container(settings)
+    container = build_container(settings, installer=installer)
     jobs: list[PeriodicJob] = []
+    if settings.update_check and not settings.demo:
+        jobs.append(
+            PeriodicJob(
+                container.updates.refresh,
+                interval=UPDATE_CHECK_INTERVAL,
+                first_delay=FIRST_UPDATE_CHECK,
+                name="update check",
+            )
+        )
     if settings.demo:
         try:
             reset_demo(settings, container)

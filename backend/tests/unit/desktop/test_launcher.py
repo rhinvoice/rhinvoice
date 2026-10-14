@@ -2,6 +2,7 @@
 
 import importlib
 import json
+import signal
 import socket
 import sys
 import threading
@@ -14,11 +15,13 @@ from pathlib import Path
 import pytest
 
 from rhinvoice.api.settings import Settings
+from rhinvoice.application.updates.ports import Release, UpdateInstaller
 from rhinvoice.desktop import launcher
 from rhinvoice.desktop.launcher import Desktop, build_parser, run, wait_until_answers, when_ready
 from rhinvoice.desktop.ports import free_port
 from rhinvoice.desktop.postgres import BundledPostgres
-from rhinvoice_boot import State, load_state, save_state
+from rhinvoice.desktop.updates import PackageInstaller
+from rhinvoice_boot import RESTART, State, load_state, save_state
 from tests.unit.desktop.tools import commands
 
 
@@ -26,9 +29,13 @@ class Recorder:
     def __init__(self, result: int = 0) -> None:
         self.result = result
         self.calls: list[tuple[Settings, str, int]] = []
+        self.installers: list[UpdateInstaller | None] = []
 
-    def serve(self, settings: Settings, host: str, port: int) -> int:
+    def serve(
+        self, settings: Settings, host: str, port: int, *, installer: UpdateInstaller | None = None
+    ) -> int:
         self.calls.append((settings, host, port))
+        self.installers.append(installer)
         return self.result
 
 
@@ -69,6 +76,7 @@ def desktop(install: Path, tmp_path: Path, recorder: Recorder) -> Desktop:
         open_page=lambda _address: None,
         show_window=None,
         system="Linux",
+        machine="x86_64",
         environ={"XDG_DATA_HOME": str(tmp_path / "home")},
         home=tmp_path,
         install=install,
@@ -131,7 +139,10 @@ def test_a_second_start_shows_the_running_one(
     args = build_parser().parse_args(["--browser"])
     monkeypatch.setattr(launcher, "when_ready", ignore_page)
 
-    def serve_and_start_again(settings: Settings, host: str, port: int) -> int:
+    def serve_and_start_again(
+        settings: Settings, host: str, port: int, *, installer: UpdateInstaller | None = None
+    ) -> int:
+        del installer
         recorder.calls.append((settings, host, port))
 
         # While the first one runs, the user starts the program again.
@@ -385,3 +396,65 @@ def test_without_a_console_messages_go_to_a_file(
 def test_the_installers_start_the_launcher() -> None:
     entry = importlib.import_module("rhinvoice.desktop.__main__")
     assert entry.main is launcher.main
+
+
+@pytest.mark.usefixtures("data")
+def test_started_by_the_boot_it_can_install_updates(install: Path, tmp_path: Path) -> None:
+    (install / "runtime.json").write_text('{"generation": 1}')
+    recorder = Recorder()
+    run(build_parser().parse_args(["--no-browser"]), desktop(install, tmp_path, recorder))
+    [installer] = recorder.installers
+    assert isinstance(installer, PackageInstaller)
+    assert (installer.platform, installer.runtime) == ("linux-x64", 1)
+
+
+@pytest.mark.usefixtures("data")
+def test_without_a_runtime_there_is_nothing_to_install_into(install: Path, tmp_path: Path) -> None:
+    recorder = Recorder()
+    run(build_parser().parse_args(["--no-browser"]), desktop(install, tmp_path, recorder))
+    assert recorder.installers == [None]
+
+
+@pytest.mark.usefixtures("data")
+def test_after_an_update_the_boot_is_asked_to_start_again(
+    install: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (install / "runtime.json").write_text('{"generation": 1}')
+    stopped = threading.Event()
+
+    def raise_signal(_signal: int) -> None:
+        stopped.set()
+
+    monkeypatch.setattr(signal, "raise_signal", raise_signal)
+
+    def serve_and_update(
+        settings: Settings, host: str, port: int, *, installer: UpdateInstaller | None = None
+    ) -> int:
+        del settings, host, port
+        assert installer is not None
+        # An update that is already in place: the program only restarts.
+        (tmp_path / "home" / "rhinvoice" / "app" / "versions" / "0.7.0").mkdir(parents=True)
+        installer.install(Release("0.7.0", "https://x", 1))
+        assert stopped.wait(5)  # the server was stopped as by Ctrl+C
+        return 0
+
+    surroundings = replace(desktop(install, tmp_path, Recorder()), serve=serve_and_update)
+    assert run(build_parser().parse_args(["--no-browser"]), surroundings) == RESTART
+
+
+def test_in_a_window_an_update_closes_the_window(
+    install: Path, tmp_path: Path, data: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    recorder = Recorder()
+    window = Window(recorder)
+    closed: list[str] = []
+    monkeypatch.setattr(launcher, "wait_until_answers", window.wait)
+    surroundings = replace(
+        desktop(install, tmp_path, recorder),
+        show_window=window.show,
+        close_window=lambda: closed.append("closed"),
+    )
+    run(build_parser().parse_args([]), surroundings)
+    [installer] = recorder.installers
+    assert installer is None  # no runtime: the window still gets the restart wiring
+    assert window.shown == [(f"http://127.0.0.1:{port_of(data)}", data / "window")]

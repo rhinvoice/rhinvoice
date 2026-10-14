@@ -22,6 +22,14 @@ def available() -> bool:
     return importlib.util.find_spec("webview") is not None
 
 
+def close() -> None:
+    """Close the program's windows: the program then ends (to restart after an update)."""
+    import webview  # noqa: PLC0415 - only in the installers
+
+    for shown in list(webview.windows):
+        shown.destroy()
+
+
 def show(address: str, storage: Path) -> None:
     """Show the web interface in a window until it is closed.
 

@@ -8,6 +8,7 @@ license = "AGPL-3.0-or-later"
 dependencies = [
     "alembic>=1.20.0",
     "argon2-cffi>=25.1.0",
+    "cryptography>=45",
     "defusedxml>=0.7.1",
     "fastapi>=0.143.0",
     "httpx>=0.28",
@@ -33,7 +34,6 @@ rhinvoice-desktop = "rhinvoice.desktop.launcher:main"
 
 [project.optional-dependencies]
 desktop = [
-    "cryptography>=45",
     "pywebview>=5",
 ]
 

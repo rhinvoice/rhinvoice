@@ -30,6 +30,7 @@ from rhinvoice.api.routers import (
     recurring,
     reference,
     texts,
+    updates,
 )
 from rhinvoice.api.schemas import ApiModel
 from rhinvoice.infrastructure.db.uow import database_is_reachable
@@ -59,6 +60,7 @@ API_ROUTERS: tuple[APIRouter, ...] = (
     recurring.router,
     reference.router,
     texts.router,
+    updates.router,
 )
 
 

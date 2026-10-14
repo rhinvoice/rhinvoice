@@ -22,6 +22,7 @@ from rhinvoice.application.numbering.handlers import NumberingHandlers
 from rhinvoice.application.onboarding.handlers import OnboardingHandlers
 from rhinvoice.application.recurring.handlers import RecurringHandlers
 from rhinvoice.application.text.handlers import TextHandlers
+from rhinvoice.application.updates.handlers import UpdateHandlers
 from rhinvoice.domain.shared.clock import Clock, SystemClock
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork, make_engine
 from rhinvoice.infrastructure.einvoice.cii import CiiWriter
@@ -32,12 +33,14 @@ from rhinvoice.infrastructure.rendering.chromium import LocalChromiumPrinter
 from rhinvoice.infrastructure.rendering.html import JinjaDocumentRenderer
 from rhinvoice.infrastructure.rendering.pdf import ChromiumPdfRenderer, GotenbergPrinter
 from rhinvoice.infrastructure.security import Argon2PasswordHasher, PyOtpTotpService
+from rhinvoice.infrastructure.updates.feed import SignedReleaseFeed, installed_version
 
 if TYPE_CHECKING:
     from sqlalchemy import Engine
 
     from rhinvoice.api.settings import Settings
     from rhinvoice.application.document.printing import PdfRenderer
+    from rhinvoice.application.updates.ports import UpdateInstaller
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,6 +64,7 @@ class Container:
     demo: DemoHandlers
     mail: MailHandlers
     recurring: RecurringHandlers
+    updates: UpdateHandlers
     demo_reset: threading.Event = field(default_factory=threading.Event)
     """Set while a public demo is being reset: the API answers 503 meanwhile."""
 
@@ -74,7 +78,12 @@ def pdf_renderer(settings: Settings, html: JinjaDocumentRenderer) -> PdfRenderer
     return None
 
 
-def build_container(settings: Settings, clock: Clock | None = None) -> Container:
+def build_container(
+    settings: Settings,
+    clock: Clock | None = None,
+    installer: UpdateInstaller | None = None,
+) -> Container:
+    """``installer``: given by the installation without Docker, which installs updates itself."""
     engine = make_engine(settings.database_url)
     effective_clock = clock or SystemClock(settings.zone)
 
@@ -111,7 +120,10 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
         content=PrintedMailContent(printing),
         sender=SmtpSender(),
     )
+    # A public demo is reset all the time; it has nothing to update.
+    feed = SignedReleaseFeed() if settings.update_check and not settings.demo else None
     return Container(
+        updates=UpdateHandlers(feed, installed_version(), effective_clock, installer),
         settings=settings,
         engine=engine,
         clock=effective_clock,

@@ -21,7 +21,7 @@ import urllib.request
 import webbrowser
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 from rhinvoice.api.cli import serve
 from rhinvoice.api.settings import Settings
@@ -31,28 +31,43 @@ from rhinvoice.desktop.config import ConfigError, DesktopConfig, load_or_create,
 from rhinvoice.desktop.folders import make_private
 from rhinvoice.desktop.ports import free_port, listening
 from rhinvoice.desktop.postgres import BundledPostgres, PostgresError
-from rhinvoice_boot import confirm, data_folder
+from rhinvoice.desktop.updates import PackageInstaller, Restarter, platform_name
+from rhinvoice_boot import RESTART, BootError, confirm, data_folder, runtime_generation
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+    from rhinvoice.application.updates.ports import UpdateInstaller
 
 HOST = "127.0.0.1"
 READY_TIMEOUT_SECONDS = 60.0
 READY_POLL_SECONDS = 0.25
 
 
+class Server(Protocol):
+    def __call__(
+        self, settings: Settings, host: str, port: int, *, installer: UpdateInstaller | None = None
+    ) -> int:
+        """Run the web server until it is stopped (api.cli.serve)."""
+        ...
+
+
 @dataclass(frozen=True, slots=True)
 class Desktop:
     """What the program needs from its surroundings; tests replace these."""
 
-    serve: Callable[[Settings, str, int], int]
+    serve: Server
     open_page: Callable[[str], object]
     show_window: Callable[[str, Path], None] | None
     """Shows the address in a program window until it is closed; None without windows."""
     system: str
+    machine: str
+    """platform.machine(): the processor, for the update package (x64 or arm64)."""
     environ: dict[str, str]
     home: Path
     install: Path
+    close_window: Callable[[], None] | None = None
+    """Closes the window that show_window shows (for a restart after an update)."""
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -76,7 +91,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         serve=serve,
         open_page=webbrowser.open,
         show_window=window.show if window.available() else None,
+        close_window=window.close if window.available() else None,
         system=platform.system(),
+        machine=platform.machine(),
         environ=dict(os.environ),
         home=Path.home(),
         # The bundled interpreter lives in <install>/python.
@@ -115,7 +132,13 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
             # cookies there.
             cookie_secure=False,
         )
-        return _serve(args, desktop, settings, config.port, folder)
+        restarter = Restarter()
+        installer = _installer(desktop, install, folder, restarter)
+        code = _serve(
+            args, desktop, settings, config.port, folder, installer=installer, restarter=restarter
+        )
+        # After an update the boot starts the program again, with the new version.
+        return RESTART if restarter.requested.is_set() else code
     # ValueError: settings from RHINVOICE_* variables that are not valid.
     except (PostgresError, ValueError, OSError) as error:
         return _failed(error)
@@ -136,18 +159,45 @@ def _own_port(config: DesktopConfig, folder: Path) -> DesktopConfig:
     return moved
 
 
-def _serve(
-    args: argparse.Namespace, desktop: Desktop, settings: Settings, port: int, folder: Path
+def _installer(
+    desktop: Desktop, install: Path, folder: Path, restarter: Restarter
+) -> PackageInstaller | None:
+    """Install updates when started by the boot of an installed runtime (ADR 0022)."""
+    try:
+        runtime = runtime_generation(install)
+    except BootError:
+        # Started from a source tree or a virtual environment: nothing to install into.
+        return None
+    platform = platform_name(desktop.system, desktop.machine)
+    return PackageInstaller(folder, platform, runtime, restarter.request)
+
+
+def _serve(  # noqa: PLR0913 - the parts of one start (keywords for the update's)
+    args: argparse.Namespace,
+    desktop: Desktop,
+    settings: Settings,
+    port: int,
+    folder: Path,
+    *,
+    installer: PackageInstaller | None,
+    restarter: Restarter,
 ) -> int:
     address = _address(port)
     sys.stdout.write(f"Rhinvoice runs on {address} (data: {folder})\n")
     if args.no_browser or args.browser or desktop.show_window is None:
         open_page = None if args.no_browser else desktop.open_page
         threading.Thread(target=when_ready, args=(address, folder, open_page), daemon=True).start()
-        return desktop.serve(settings, HOST, port)
+        return desktop.serve(settings, HOST, port, installer=installer)
     # The window needs the main thread (macOS); the server runs beside it and ends with
     # the program when the window is closed.
-    threading.Thread(target=desktop.serve, args=(settings, HOST, port), daemon=True).start()
+    if desktop.close_window is not None:
+        restarter.use_window(desktop.close_window)
+    threading.Thread(
+        target=desktop.serve,
+        args=(settings, HOST, port),
+        kwargs={"installer": installer},
+        daemon=True,
+    ).start()
     if not when_ready(address, folder):
         msg = f"the web interface did not start on {address}"
         raise TimeoutError(msg)

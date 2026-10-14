@@ -12,7 +12,7 @@ import subprocess
 from typing import TYPE_CHECKING
 from urllib.parse import quote
 
-from rhinvoice_boot import make_private
+from rhinvoice_boot import NO_WINDOW, make_private
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -72,6 +72,8 @@ class BundledPostgres:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             check=False,
+            # The server inherits the hidden console: no black window stays open (Windows).
+            creationflags=NO_WINDOW,
         )
         if started.returncode != 0:
             msg = f"pg_ctl start failed ({started.returncode}): see {self.log}"
@@ -159,6 +161,7 @@ class BundledPostgres:
             text=True,
             check=False,
             env=environ,
+            creationflags=NO_WINDOW,
         )
 
 

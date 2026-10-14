@@ -1,13 +1,19 @@
 """The bundled PostgreSQL, against stand-ins for its tools (tests/fake_postgres.py)."""
 
 import stat
+import subprocess
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from rhinvoice.desktop.postgres import SERVER_SETTINGS, BundledPostgres, PostgresError
+from rhinvoice_boot import NO_WINDOW
 from tests.helpers import raises_exactly
 from tests.unit.desktop.tools import calls, commands
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 PASSWORD = "secret/with:odd@characters"
 
@@ -128,3 +134,22 @@ def test_an_unknown_server_state_is_reported(
     monkeypatch.setenv("FAKE_POSTGRES_STATUS", "4")
     with raises_exactly(PostgresError, "pg_ctl status failed (4): "):
         database(install, tmp_path).start()
+
+
+def test_no_tool_opens_a_console_window(
+    install: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """On Windows every command-line tool would show a black window (Rhinvoice.exe has none)."""
+    flags: list[object] = []
+    run: Callable[..., subprocess.CompletedProcess[Any]] = subprocess.run
+
+    def spy(*args: Any, **kwargs: Any) -> subprocess.CompletedProcess[Any]:  # noqa: ANN401 - subprocess.run
+        flags.append(kwargs.get("creationflags"))
+        return run(*args, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", spy)
+    postgres = database(install, tmp_path)
+    postgres.start()
+    postgres.stop()
+    assert flags
+    assert set(flags) == {NO_WINDOW}

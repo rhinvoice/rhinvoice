@@ -43,6 +43,9 @@ SESSION = "RHINVOICE_BOOT_SESSION"
 RESTART = 75
 """Exit code with which the program asks to be started again (after an update)."""
 LAUNCHER = "rhinvoice.desktop.launcher"
+NO_WINDOW: int = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+"""Windows opens a console window for every command-line tool a program without a console
+starts (Rhinvoice.exe); this flag keeps them hidden. 0 elsewhere."""
 NOT_RUNNING = 3
 """Exit code of ``pg_ctl status`` when no server runs on the data folder."""
 
@@ -389,10 +392,12 @@ def stop_database(runtime: Runtime) -> None:
         return
     pg_ctl = str(runtime.install / "postgresql" / "bin" / "pg_ctl")
     pgdata = f"--pgdata={runtime.data / 'database'}"
-    status = subprocess.run([pg_ctl, "status", pgdata], capture_output=True, check=False)  # noqa: S603 - the bundled tool
+    status = subprocess.run(  # noqa: S603 - the bundled tool
+        [pg_ctl, "status", pgdata], capture_output=True, check=False, creationflags=NO_WINDOW
+    )
     if status.returncode != NOT_RUNNING:
         stop = [pg_ctl, "stop", "--wait", "--mode=fast", pgdata]
-        subprocess.run(stop, capture_output=True, check=True)  # noqa: S603 - the bundled tool
+        subprocess.run(stop, capture_output=True, check=True, creationflags=NO_WINDOW)  # noqa: S603 - the bundled tool
 
 
 def launch(package: Package, arguments: list[str], module: str = LAUNCHER) -> int:

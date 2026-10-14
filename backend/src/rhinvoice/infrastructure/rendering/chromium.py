@@ -56,6 +56,8 @@ PRINT_OPTIONS: dict[str, object] = {
     "generateTaggedPDF": True,
 }
 PAGE_FILE = "rhinvoice-page.html"
+NO_WINDOW: int = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+"""No console window for the browser on Windows (chrome-headless-shell is a console program)."""
 
 
 class ProtocolError(Exception):
@@ -121,6 +123,7 @@ class LocalChromiumPrinter:
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                creationflags=NO_WINDOW,
             )
         except OSError as error:
             profile.cleanup()

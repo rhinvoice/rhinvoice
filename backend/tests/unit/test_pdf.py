@@ -1,4 +1,4 @@
-"""The Gotenberg adapter, against a simulated Gotenberg (httpx.MockTransport)."""
+"""The PDF renderer with Gotenberg, against a simulated Gotenberg (httpx.MockTransport)."""
 
 import io
 from collections.abc import Callable
@@ -20,7 +20,8 @@ from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.infrastructure.rendering.html import JinjaDocumentRenderer
 from rhinvoice.infrastructure.rendering.pdf import (
-    GotenbergPdfRenderer,
+    ChromiumPdfRenderer,
+    GotenbergPrinter,
     pdf_file_name,
     pdf_title,
 )
@@ -94,7 +95,7 @@ def test_the_page_is_sent_to_gotenberg(store: Store) -> None:
 
     client = httpx.Client(transport=httpx.MockTransport(handle))
     html = JinjaDocumentRenderer()
-    renderer = GotenbergPdfRenderer("http://gotenberg:3000/", html, client)
+    renderer = ChromiumPdfRenderer(html, GotenbergPrinter("http://gotenberg:3000/", client))
     printed = model(store, language=Language.EN)
     content = renderer.pdf(printed, b"<invoice/>")
     [request] = requests
@@ -153,7 +154,9 @@ def test_failures_of_gotenberg_are_reported(
     store: Store, respond: Callable[[httpx.Request], httpx.Response], message: str
 ) -> None:
     client = httpx.Client(transport=httpx.MockTransport(respond))
-    renderer = GotenbergPdfRenderer("http://gotenberg:3000", JinjaDocumentRenderer(), client)
+    renderer = ChromiumPdfRenderer(
+        JinjaDocumentRenderer(), GotenbergPrinter("http://gotenberg:3000", client)
+    )
     with raises_exactly(UnavailableError, message):
         renderer.pdf(model(store))
 
@@ -165,7 +168,7 @@ def store() -> Store:
 
 def test_without_a_client_a_default_one_is_used(store: Store) -> None:
     # Port 9 (discard) refuses connections on any normal machine.
-    renderer = GotenbergPdfRenderer("http://127.0.0.1:9", JinjaDocumentRenderer())
+    renderer = ChromiumPdfRenderer(JinjaDocumentRenderer(), GotenbergPrinter("http://127.0.0.1:9"))
     with raises_exactly(UnavailableError, "the PDF service (Gotenberg) is not reachable"):
         renderer.pdf(model(store))
 

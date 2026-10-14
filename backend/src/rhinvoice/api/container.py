@@ -28,14 +28,16 @@ from rhinvoice.infrastructure.einvoice.cii import CiiWriter
 from rhinvoice.infrastructure.importing.reader import SpreadsheetReader
 from rhinvoice.infrastructure.mail.content import PrintedMailContent
 from rhinvoice.infrastructure.mail.smtp import SmtpSender
+from rhinvoice.infrastructure.rendering.chromium import LocalChromiumPrinter
 from rhinvoice.infrastructure.rendering.html import JinjaDocumentRenderer
-from rhinvoice.infrastructure.rendering.pdf import GotenbergPdfRenderer
+from rhinvoice.infrastructure.rendering.pdf import ChromiumPdfRenderer, GotenbergPrinter
 from rhinvoice.infrastructure.security import Argon2PasswordHasher, PyOtpTotpService
 
 if TYPE_CHECKING:
     from sqlalchemy import Engine
 
     from rhinvoice.api.settings import Settings
+    from rhinvoice.application.document.printing import PdfRenderer
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +65,15 @@ class Container:
     """Set while a public demo is being reset: the API answers 503 meanwhile."""
 
 
+def pdf_renderer(settings: Settings, html: JinjaDocumentRenderer) -> PdfRenderer | None:
+    """Gotenberg in the Docker setup, else a browser on this computer, else no PDFs."""
+    if settings.gotenberg_url is not None:
+        return ChromiumPdfRenderer(html, GotenbergPrinter(settings.gotenberg_url))
+    if settings.chromium_path is not None:
+        return ChromiumPdfRenderer(html, LocalChromiumPrinter(settings.chromium_path))
+    return None
+
+
 def build_container(settings: Settings, clock: Clock | None = None) -> Container:
     engine = make_engine(settings.database_url)
     effective_clock = clock or SystemClock(settings.zone)
@@ -76,11 +87,7 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
     customers = CustomerHandlers(uow=uow, clock=effective_clock)
     articles = ArticleHandlers(uow=uow, clock=effective_clock)
     html = JinjaDocumentRenderer(settings.theme_dir)
-    pdf = (
-        None
-        if settings.gotenberg_url is None
-        else GotenbergPdfRenderer(settings.gotenberg_url, html)
-    )
+    pdf = pdf_renderer(settings, html)
     printing = PrintHandlers(
         uow=uow,
         clock=effective_clock,

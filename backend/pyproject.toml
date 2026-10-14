@@ -23,6 +23,7 @@ dependencies = [
     "segno>=1.6",
     "sqlalchemy>=2",
     "uvicorn[standard]>=0.54.0",
+    "websockets>=15",
     "xlrd>=2.0.2",
 ]
 
@@ -177,6 +178,7 @@ forbidden_modules = [
     "pyotp",
     "qrbill",
     "segno",
+    "websockets",
     "rhinvoice.infrastructure",
     "rhinvoice.application",
     "rhinvoice.api",
@@ -201,6 +203,7 @@ forbidden_modules = [
     "pyotp",
     "qrbill",
     "segno",
+    "websockets",
 ]
 
 [[tool.importlinter.contracts]]

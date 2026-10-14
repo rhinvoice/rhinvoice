@@ -1,14 +1,17 @@
-"""PDFs through Gotenberg (headless Chromium): the HTML page of the print template.
+"""PDFs from the HTML page of the print template, printed by a headless Chromium.
 
 The same Chromium that shows the preview prints the page, so the PDF looks
 exactly like the preview. Fonts are embedded (static Inter weights); the PDF is
 tagged for screen readers. Every PDF is made a PDF/A-3b afterwards, invoices
 with their e-invoice embedded (see pdfa.py).
+
+Which Chromium prints is a ``PagePrinter``: Gotenberg in the Docker setup, or a
+browser on this computer for installations without Docker (chromium.py, ADR 0021).
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 import httpx
 
@@ -46,16 +49,22 @@ def pdf_title(model: PrintModel) -> str:
     return f"{title} {document.number}"
 
 
-class GotenbergPdfRenderer:
-    def __init__(
-        self,
-        base_url: str,
-        html: JinjaDocumentRenderer,
-        client: httpx.Client | None = None,
-    ) -> None:
-        self._url = base_url.rstrip("/") + CONVERT_PATH
+class PagePrinter(Protocol):
+    def print_pdf(self, page: str) -> bytes:
+        """Print a complete HTML page (A4, fonts and images inline) as a PDF."""
+        ...
+
+
+class ChromiumPdfRenderer:
+    """The ``PdfRenderer`` port: the template's page, printed and made a PDF/A."""
+
+    def __init__(self, html: JinjaDocumentRenderer, printer: PagePrinter) -> None:
         self._html = html
-        self._client = client or httpx.Client(timeout=TIMEOUT_SECONDS)
+        self._printer = printer
+
+    @property
+    def printer(self) -> PagePrinter:
+        return self._printer
 
     def pdf(self, model: PrintModel, e_invoice: bytes | None = None) -> bytes:
         document = model.view.document
@@ -72,7 +81,7 @@ class GotenbergPdfRenderer:
                 "" if e_invoice is None else "ZUGFeRD",
             ),
         )
-        return to_pdfa(self._convert(self._html.html(model)), info, e_invoice)
+        return to_pdfa(self._printer.print_pdf(self._html.html(model)), info, e_invoice)
 
     def reminder_pdf(self, reminder: ReminderPrint) -> bytes:
         model = reminder.model
@@ -87,9 +96,17 @@ class GotenbergPdfRenderer:
                 "" if model.recipient is None else model.recipient.display_name,
             ),
         )
-        return to_pdfa(self._convert(self._html.reminder_html(reminder)), info)
+        return to_pdfa(self._printer.print_pdf(self._html.reminder_html(reminder)), info)
 
-    def _convert(self, page: str) -> bytes:
+
+class GotenbergPrinter:
+    """The ``PagePrinter`` of the Docker setup: Gotenberg's Chromium."""
+
+    def __init__(self, base_url: str, client: httpx.Client | None = None) -> None:
+        self._url = base_url.rstrip("/") + CONVERT_PATH
+        self._client = client or httpx.Client(timeout=TIMEOUT_SECONDS)
+
+    def print_pdf(self, page: str) -> bytes:
         try:
             response = self._client.post(
                 self._url,

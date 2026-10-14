@@ -35,7 +35,10 @@ class Settings(BaseSettings):
     theme_dir: Path | None = None
     """Folder with templates that replace the built-in ones (layout, document, reminder, css)."""
     gotenberg_url: str | None = None
-    """Base URL of Gotenberg, e.g. http://gotenberg:3000; without it there are no PDFs."""
+    """Base URL of Gotenberg, e.g. http://gotenberg:3000 (the Docker setup)."""
+    chromium_path: Path | None = None
+    """Chrome, Edge or Chromium on this computer that prints the PDFs when there is no
+    Gotenberg (installations without Docker, ADR 0021). Without either there are no PDFs."""
     recurring: bool = True
     """Write due recurring invoices in the background of ``rhinvoice serve``."""
     recurring_interval: int = Field(default=600, ge=60)

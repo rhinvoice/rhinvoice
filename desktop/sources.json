@@ -17,6 +17,14 @@
     "python": {
       "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.13.16+20261013-aarch64-apple-darwin-install_only.tar.gz",
       "sha256": "ca0e6a70fb75a0984751bd75493e3de77680aef7fbd0fea9b903c299537b3423"
+    },
+    "postgresql": {
+      "url": "https://github.com/PostgresApp/PostgresApp/releases/download/v2.9.6/Postgres-2.9.6-17.dmg",
+      "sha256": "b38bb00b8c8702a568270aab85995c550f7f93d1503b818efdc5ff9a519b7168"
+    },
+    "chromium": {
+      "url": "https://storage.googleapis.com/chrome-for-testing-public/155.0.8059.79/mac-arm64/chrome-headless-shell-mac-arm64.zip",
+      "sha256": "5f51504ead3d41815111cd73e79c4979df3a4e6aedc7cf6fe2b042ae037363b5"
     }
   }
 }

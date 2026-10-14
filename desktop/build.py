@@ -1,8 +1,9 @@
 """Assemble the program folder of the installation without Docker (ADR 0021).
 
-    python desktop/build.py windows
+    python desktop/build.py windows     (on Windows)
+    python desktop/build.py macos       (on a Mac with Apple silicon)
 
-writes the two parts of ADR 0022 into ``build/windows``:
+writes the two parts of ADR 0022 into ``build/<target>``. On Windows:
 
     install/                  what the setup installs (Inno Setup packs it)
       python/                 the runtime: a standalone CPython with rhinvoice_boot only
@@ -11,6 +12,11 @@ writes the two parts of ADR 0022 into ``build/windows``:
       app/                    the app package of this release (see below)
       Rhinvoice.ico
     rhinvoice-app-<version>-windows-x64.zip   the same app package, for updates
+
+On macOS the same parts sit in ``Rhinvoice.app/Contents/Resources``; the bundle starts
+``Contents/MacOS/Rhinvoice``, a script that runs a copy of the interpreter from
+``Contents/MacOS`` (so that macOS shows Rhinvoice's name and icon) with PYTHONHOME set to
+the bundled Python, plus a headless Chromium for the PDFs (macOS has no Edge).
 
 An app package holds ``site-packages/`` (Rhinvoice and its locked dependencies),
 ``static/`` (the built web interface: build frontend/dist first) and ``manifest.json``.
@@ -90,16 +96,22 @@ def unpack_single_folder(archive: Path, target: Path) -> None:
 
 def install_runtime_python(sources: dict[str, dict[str, str]], install: Path) -> Path:
     """Unpack CPython and put the boot into its site-packages; return its interpreter."""
-    unpack_single_folder(fetch(sources["python"]), install / "python")
+    python = install / "python"
+    unpack_single_folder(fetch(sources["python"]), python)
+    if (python / "python.exe").exists():
+        interpreter, site_packages = python / "python.exe", python / "Lib" / "site-packages"
+    else:
+        interpreter = python / "bin" / "python3"
+        [site_packages] = python.glob("lib/python3.*/site-packages")
     shutil.copytree(
         BACKEND / "src" / "rhinvoice_boot",
-        install / "python" / "Lib" / "site-packages" / "rhinvoice_boot",
+        site_packages / "rhinvoice_boot",
         ignore=shutil.ignore_patterns("__pycache__"),
     )
     (install / "runtime.json").write_text(
         json.dumps({"generation": RUNTIME_GENERATION}) + "\n", encoding="utf-8"
     )
-    return install / "python" / "python.exe"
+    return interpreter
 
 
 def build_app_package(python: Path, package: Path) -> None:
@@ -118,8 +130,10 @@ def build_app_package(python: Path, package: Path) -> None:
         uv_pip = ("uv", "pip", "install", "--python", python, "--target", site_packages)
         run(*uv_pip, "--require-hashes", "--requirement", requirements)
         run(*uv_pip, "--no-deps", wheel)
-    # The boot belongs to the runtime; a package must not bring its own.
+    # The boot belongs to the runtime; a package must not bring its own. PyObjC's own tests
+    # come with its wheel (macOS only).
     shutil.rmtree(site_packages / "rhinvoice_boot")
+    shutil.rmtree(site_packages / "PyObjCTest", ignore_errors=True)
     install_static(package)
     manifest = {"version": version(), "runtime": RUNTIME_GENERATION}
     (package / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
@@ -176,18 +190,179 @@ def build_windows(out: Path) -> None:
     print(f"Rhinvoice {version()} (runtime {RUNTIME_GENERATION}) assembled in {out}")
 
 
+INFO_PLIST = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key><string>Rhinvoice</string>
+  <key>CFBundleDisplayName</key><string>Rhinvoice</string>
+  <key>CFBundleIdentifier</key><string>com.webberz.rhinvoice</string>
+  <key>CFBundleExecutable</key><string>Rhinvoice</string>
+  <key>CFBundleIconFile</key><string>Rhinvoice</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>{version}</string>
+  <key>CFBundleVersion</key><string>{version}</string>
+  <key>LSApplicationCategoryType</key><string>public.app-category.business</string>
+  <key>LSMinimumSystemVersion</key><string>12.0</string>
+  <key>NSHighResolutionCapable</key><true/>
+  <key>NSHumanReadableCopyright</key><string>Webberz, AGPL-3.0</string>
+</dict>
+</plist>
+"""
+MACOS_START = """#!/bin/sh
+# Rhinvoice: start the boot with the bundled Python (ADR 0021, 0022). The interpreter
+# lies in Contents/MacOS, so that macOS shows the app's name and icon.
+contents="$(cd "$(dirname "$0")/.." && pwd)"
+export PYTHONHOME="$contents/Resources/python"
+# Started from the Finder, the output would be lost: keep it where Console.app finds it.
+if [ ! -t 1 ]; then
+    mkdir -p "$HOME/Library/Logs/Rhinvoice"
+    exec >>"$HOME/Library/Logs/Rhinvoice/rhinvoice.log" 2>&1
+fi
+exec "$contents/MacOS/python3" -m rhinvoice_boot "$@"
+"""
+
+
+POSTGRES_PROGRAMS = {
+    "postgres", "pg_ctl", "initdb", "psql", "createdb", "pg_dump", "pg_dumpall", "pg_restore",
+    "pg_upgrade", "pg_isready", "pg_controldata", "pg_resetwal",
+}  # fmt: skip
+"""The server and the tools the runtime or a future upgrade use; Postgres.app has many more."""
+POSTGRES_UNUSED_EXTENSIONS = ("postgis", "address_standardizer", "libpgrouting", "pgrouting")
+"""PostGIS and pgRouting with their geodata libraries: three quarters of Postgres.app."""
+
+
+def linked_libraries(binary: Path) -> list[Path]:
+    """List the libraries a Mach-O file loads from beside itself (@loader_path)."""
+    output = subprocess.run(  # noqa: S603 - a build tool
+        ["/usr/bin/otool", "-L", str(binary)], capture_output=True, text=True, check=True
+    ).stdout
+    references = (line.strip().split(" ")[0] for line in output.splitlines()[1:])
+    return [
+        binary.parent / reference.removeprefix("@loader_path/")
+        for reference in references
+        if reference.startswith("@loader_path/")
+    ]
+
+
+def remove_unused_postgres_parts(postgresql: Path) -> None:
+    for program in (postgresql / "bin").iterdir():
+        if program.name not in POSTGRES_PROGRAMS:
+            program.unlink()
+    for folder in (
+        postgresql / "lib" / "postgresql",
+        postgresql / "share" / "postgresql" / "extension",
+    ):
+        for path in folder.iterdir():
+            if path.name.startswith(POSTGRES_UNUSED_EXTENSIONS):
+                path.unlink()
+    for unused in ("doc", "man", "info", "gdal", "proj"):
+        shutil.rmtree(postgresql / "share" / unused, ignore_errors=True)
+    shutil.rmtree(postgresql / "lib" / "gdalplugins", ignore_errors=True)
+
+
+def keep_needed_libraries(postgresql: Path) -> None:
+    """Follow the libraries from the programs and modules, as the loader will; drop the rest."""
+    pending = [
+        *(postgresql / "bin").iterdir(),
+        *(postgresql / "lib" / "postgresql").glob("*.dylib"),
+    ]
+    needed: set[str] = set()
+    while pending:
+        for library in linked_libraries(pending.pop()):
+            real = library.resolve()
+            if real.name not in needed:
+                pending.append(real)
+            needed |= {library.name, real.name}
+    for path in (postgresql / "lib").iterdir():
+        if not path.is_dir() and path.name not in needed:
+            path.unlink()
+
+
+def trim_postgres(postgresql: Path) -> None:
+    """Keep the server, its tools and what they load, with only the arm64 code."""
+    remove_unused_postgres_parts(postgresql)
+    keep_needed_libraries(postgresql)
+    for path in [*(postgresql / "bin").iterdir(), *(postgresql / "lib").rglob("*.dylib")]:
+        if path.is_file() and not path.is_symlink() and is_universal(path):
+            run("lipo", path, "-thin", "arm64", "-output", path)
+
+
+def is_universal(binary: Path) -> bool:
+    """Tell whether a Mach-O file holds code for more than one processor."""
+    archs = subprocess.run(  # noqa: S603 - a build tool
+        ["/usr/bin/lipo", "-archs", str(binary)], capture_output=True, text=True, check=False
+    ).stdout.split()
+    return len(archs) > 1
+
+
+def install_postgres_from_app(sources: dict[str, dict[str, str]], install: Path) -> None:
+    """Copy PostgreSQL out of the pinned Postgres.app disk image (relocatable, with ICU)."""
+    with tempfile.TemporaryDirectory() as mount:
+        run(
+            "hdiutil",
+            "attach",
+            "-nobrowse",
+            "-readonly",
+            "-mountpoint",
+            mount,
+            fetch(sources["postgresql"]),
+        )
+        try:
+            [version] = (Path(mount) / "Postgres.app" / "Contents" / "Versions").glob("1*")
+            shutil.copytree(version, install / "postgresql", symlinks=True)
+        finally:
+            run("hdiutil", "detach", mount)
+    shutil.rmtree(install / "postgresql" / "include", ignore_errors=True)
+    trim_postgres(install / "postgresql")
+
+
+def install_chromium(sources: dict[str, dict[str, str]], install: Path) -> None:
+    """Unpack the headless Chromium that prints the PDFs, keeping its file modes."""
+    with tempfile.TemporaryDirectory() as temporary:
+        run("ditto", "-x", "-k", fetch(sources["chromium"]), temporary)
+        [top] = list(Path(temporary).iterdir())
+        shutil.move(top, install / "chromium")
+
+
+def build_macos(out: Path) -> None:
+    sources = json.loads((ROOT / "desktop" / "sources.json").read_text(encoding="utf-8"))
+    sources = sources["macos-arm64"]
+    bundle = out / "Rhinvoice.app"
+    contents = bundle / "Contents"
+    install = contents / "Resources"
+    shutil.rmtree(out, ignore_errors=True)
+    install.mkdir(parents=True)
+    (contents / "MacOS").mkdir()
+    (contents / "Info.plist").write_text(INFO_PLIST.format(version=version()), encoding="utf-8")
+    shutil.copy2(ROOT / "desktop" / "icons" / "Rhinvoice.icns", install / "Rhinvoice.icns")
+    python = install_runtime_python(sources, install)
+    shutil.copy2(python.resolve(), contents / "MacOS" / "python3")
+    start = contents / "MacOS" / "Rhinvoice"
+    start.write_text(MACOS_START, encoding="utf-8")
+    start.chmod(0o755)
+    install_postgres_from_app(sources, install)
+    install_chromium(sources, install)
+    build_app_package(python, install / "app")
+    zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-macos-arm64.zip")
+    print(f"Rhinvoice {version()} (runtime {RUNTIME_GENERATION}) assembled in {bundle}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("target", choices=["windows", "version"])
-    parser.add_argument("--out", type=Path, default=ROOT / "build" / "windows")
+    parser.add_argument("target", choices=["windows", "macos", "version"])
+    parser.add_argument("--out", type=Path, help="default: build/<target>")
     args = parser.parse_args()
     if args.target == "version":
         print(version())
         return
-    if sys.platform != "win32":
-        msg = "the Windows program folder is assembled on Windows (its Python runs there)"
+    # The bundled interpreter installs the packages: it must run on this computer.
+    needed = {"windows": "win32", "macos": "darwin"}[args.target]
+    if sys.platform != needed:
+        msg = f"the {args.target} program is assembled on {args.target}"
         raise SystemExit(msg)
-    build_windows(args.out)
+    out = args.out or ROOT / "build" / args.target
+    (build_windows if args.target == "windows" else build_macos)(out)
 
 
 if __name__ == "__main__":

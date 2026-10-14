@@ -242,3 +242,11 @@ def test_codes_are_random_and_easy_to_type() -> None:
         assert not set(first + second) & set("01IO")
         assert (first + second).isalnum()
         assert (first + second).isupper() or (first + second).isdigit()
+
+
+def test_without_a_requested_code_there_is_nothing_to_confirm(
+    reset: PasswordReset, delivery: Delivery
+) -> None:
+    with raises_exactly(ConflictError, INVALID):
+        reset.confirm(ConfirmReset("anna@example.com", CODE, NEW_PASSWORD))
+    assert delivery.removed == 0  # no file of this program to remove

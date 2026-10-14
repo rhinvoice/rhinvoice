@@ -26,6 +26,12 @@ class DesktopConfig:
     """Generated once; the database only listens on 127.0.0.1."""
     port: int = DEFAULT_PORT
     """Port of the web interface on 127.0.0.1."""
+    backup_folder: str | None = None
+    """Where the backups go (ADR 0023); None before they are set up."""
+    backup_key: str | None = None
+    """The recovery key that encrypts the backups (the restic password)."""
+    backup_key_confirmed: bool = False
+    """The person confirmed that the key is kept elsewhere."""
 
 
 def load_or_create(path: Path) -> DesktopConfig:
@@ -39,6 +45,9 @@ def load_or_create(path: Path) -> DesktopConfig:
         return DesktopConfig(
             database_password=_text(values, "database_password"),
             port=_number(values, "port"),
+            backup_folder=_optional_text(values, "backup_folder"),
+            backup_key=_optional_text(values, "backup_key"),
+            backup_key_confirmed=_flag(values, "backup_key_confirmed"),
         )
     except (ValueError, TypeError) as error:
         msg = f"{path} is damaged: {error}"
@@ -71,5 +80,19 @@ def _text(values: dict[str, object], key: str) -> str:
 def _number(values: dict[str, object], key: str) -> int:
     if not isinstance(value := values.get(key, DEFAULT_PORT), int):
         msg = f"'{key}' is not a number"
+        raise TypeError(msg)
+    return value
+
+
+def _optional_text(values: dict[str, object], key: str) -> str | None:
+    if not isinstance(value := values.get(key), str | None):
+        msg = f"'{key}' is not text"
+        raise TypeError(msg)
+    return value
+
+
+def _flag(values: dict[str, object], key: str) -> bool:
+    if not isinstance(value := values.get(key, False), bool):
+        msg = f"'{key}' is not true or false"
         raise TypeError(msg)
     return value

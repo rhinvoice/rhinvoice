@@ -8,11 +8,13 @@ import pytest
 import uvicorn
 from alembic.script import ScriptDirectory
 from fastapi import FastAPI
-from sqlalchemy import Engine, text
+from sqlalchemy import Engine, insert, text
 
 from rhinvoice.api import cli
-from rhinvoice.api.container import Container
+from rhinvoice.api.container import Container, OwnServices
 from rhinvoice.api.settings import Settings
+from rhinvoice.application.backup.ports import BackupTarget, Snapshot
+from rhinvoice.application.backup.worker import BackupWorker
 from rhinvoice.application.document.handlers import LineInput
 from rhinvoice.domain.document.lines import LineKind, PriceMode
 from rhinvoice.domain.recurring.plan import Interval, InvoiceTemplate, PlanAction, RecurringPlan
@@ -20,6 +22,7 @@ from rhinvoice.domain.shared.country import Country
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.infrastructure.db.migrate import NotADemoDatabaseError, alembic_config
+from rhinvoice.infrastructure.db.tables import backup_runs
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork
 from rhinvoice.infrastructure.scheduling import PeriodicJob
 from tests.unit.domain import factories
@@ -335,3 +338,83 @@ def test_a_server_in_a_thread_ends_when_asked_to(
     assert cli.serve(Settings(), "127.0.0.1", 9001, stop=stop) == 0
     assert ended.is_set()
     assert env is not None
+
+
+class OwnBackups:
+    """The backup setup and archive of the installation without Docker, standing in."""
+
+    def __init__(self) -> None:
+        self.folder: str | None = None
+
+    def target(self) -> BackupTarget:
+        return BackupTarget(folder=self.folder, suggestions=[], key_confirmed=False)
+
+    def set_up(self, folder: str) -> str:
+        self.folder = folder
+        return "K7QM"
+
+    def recovery_key(self) -> str | None:
+        return None
+
+    def confirm_key(self) -> None:
+        """Nothing to keep here."""
+
+    def back_up(self) -> Snapshot:
+        return Snapshot("4f3a9c1e", 1)
+
+    def maintain(self, *, verify: bool) -> None:
+        del verify
+
+
+def test_the_installation_without_docker_makes_its_own_backups(
+    env: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """ADR 0023: a background job, once a folder is set up; runs left running fail."""
+    monkeypatch.setenv("RHINVOICE_RECURRING", "false")
+    monkeypatch.setenv("RHINVOICE_UPDATE_CHECK", "false")
+    with env.begin() as connection:
+        connection.execute(text("DELETE FROM backup_runs"))
+        connection.execute(
+            insert(backup_runs).values(
+                started_at=datetime.now(UTC), reason="manual", status="running"
+            )
+        )
+    jobs: list[tuple[str, PeriodicJob]] = []
+
+    class RecordingJob(PeriodicJob):
+        def __init__(
+            self, job: Callable[[], object], *, interval: float, first_delay: float, name: str
+        ) -> None:
+            super().__init__(job, interval=interval, first_delay=first_delay, name=name)
+            self.name = name
+
+        def start(self) -> None:
+            jobs.append((self.name, self))
+
+        def stop(self, timeout: float = 30) -> None:
+            del timeout
+
+    monkeypatch.setattr(cli, "PeriodicJob", RecordingJob)
+
+    def run_server(app: FastAPI, **_options: object) -> None:
+        app.state.container.engine.dispose()
+
+    ticks: list[BackupWorker] = []
+
+    def tick(worker: BackupWorker) -> None:
+        ticks.append(worker)
+
+    monkeypatch.setattr(uvicorn, "run", run_server)
+    monkeypatch.setattr(BackupWorker, "tick", tick)
+    backups = OwnBackups()
+    own = OwnServices(backup_setup=backups, backup_archive=backups)
+    assert cli.serve(Settings(), "127.0.0.1", 9002, own=own) == 0
+    [(name, job)] = jobs
+    assert name == "backups"
+    with env.begin() as connection:
+        assert connection.execute(text("SELECT status FROM backup_runs")).scalar_one() == "failed"
+    job.run_once()  # no folder yet: nothing to do
+    assert ticks == []
+    backups.folder = "/Users/anna/OneDrive/Rhinvoice-Backup"
+    job.run_once()
+    assert len(ticks) == 1

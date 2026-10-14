@@ -8,8 +8,9 @@ import sys
 import threading
 from typing import TYPE_CHECKING
 
-from rhinvoice.api.container import build_container
+from rhinvoice.api.container import NO_OWN_SERVICES, OwnServices, build_container
 from rhinvoice.api.settings import Settings
+from rhinvoice.application.backup.worker import BackupWorker
 from rhinvoice.application.demo.handlers import DEMO_EMAIL
 from rhinvoice.application.identity.handlers import CreateUser
 from rhinvoice.domain.shared.errors import DomainError
@@ -20,6 +21,7 @@ from rhinvoice.infrastructure.db.migrate import (
     reset_demo_database,
     upgrade,
 )
+from rhinvoice.infrastructure.db.uow import SqlUnitOfWork
 from rhinvoice.infrastructure.scheduling import PeriodicJob
 
 if TYPE_CHECKING:
@@ -28,7 +30,6 @@ if TYPE_CHECKING:
     from fastapi import FastAPI
 
     from rhinvoice.api.container import Container
-    from rhinvoice.application.updates.ports import UpdateInstaller
 
 
 def _read_password(args: argparse.Namespace) -> str:
@@ -57,6 +58,8 @@ def _user_create(args: argparse.Namespace, settings: Settings) -> int:
 
 
 FIRST_RECURRING_RUN = 60
+BACKUP_POLL_SECONDS = 30
+"""How often the program looks for a due backup (as the backup container)."""
 FIRST_UPDATE_CHECK = 30
 """Seconds after the start: the program is up before it asks GitHub."""
 UPDATE_CHECK_INTERVAL = 24 * 60 * 60
@@ -123,12 +126,13 @@ def serve(  # noqa: PLR0913 - the server's options; the last two only for the de
     port: int,
     forwarded_allow_ips: str = "127.0.0.1",
     *,
-    installer: UpdateInstaller | None = None,
+    own: OwnServices = NO_OWN_SERVICES,
     stop: threading.Event | None = None,
 ) -> int:
     """Run the web server until it is stopped (also used by the installation without Docker).
 
-    ``installer``: the installation without Docker installs updates itself (ADR 0022).
+    ``own``: what the installation without Docker brings itself: it installs updates
+    (ADR 0022) and makes its backups (ADR 0023).
     ``stop``: ends the server when set; for a server in a thread, which signals cannot
     reach (the program window of the installation without Docker).
     """
@@ -138,9 +142,9 @@ def serve(  # noqa: PLR0913 - the server's options; the last two only for the de
         return 1
     if settings.run_migrations:
         upgrade(settings.database_url)
-    container = build_container(settings, installer=installer)
+    container = build_container(settings, own=own)
     try:
-        jobs = _background_jobs(settings, container)
+        jobs = _background_jobs(settings, container) + _backup_jobs(settings, container, own)
     except NotADemoDatabaseError as error:
         sys.stderr.write(f"error: {error}\n")
         return 1
@@ -187,6 +191,34 @@ def _background_jobs(settings: Settings, container: Container) -> list[PeriodicJ
             )
         )
     return jobs
+
+
+def _backup_jobs(settings: Settings, container: Container, own: OwnServices) -> list[PeriodicJob]:
+    """Make the program's own backups, once a folder is set up (installation without Docker)."""
+    setup, archive = own.backup_setup, own.backup_archive
+    if setup is None or archive is None:
+        return []
+    worker = BackupWorker(
+        uow=lambda: SqlUnitOfWork(container.engine),
+        clock=container.clock,
+        archive=archive,
+        zone=settings.zone,
+    )
+    # A run the program was stopped in cannot finish any more.
+    worker.recover()
+
+    def back_up_when_set_up() -> None:
+        if setup.target().folder is not None:
+            worker.tick()
+
+    return [
+        PeriodicJob(
+            back_up_when_set_up,
+            interval=BACKUP_POLL_SECONDS,
+            first_delay=BACKUP_POLL_SECONDS,
+            name="backups",
+        )
+    ]
 
 
 def _run_server(

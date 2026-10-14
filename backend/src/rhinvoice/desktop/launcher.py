@@ -25,13 +25,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
 from rhinvoice.api.cli import serve
+from rhinvoice.api.container import NO_OWN_SERVICES, OwnServices
 from rhinvoice.api.settings import Settings
 from rhinvoice.desktop import window
+from rhinvoice.desktop.backup import CurrentArchive, DesktopBackupSetup, cloud_folders
 from rhinvoice.desktop.browser import find_chromium
 from rhinvoice.desktop.config import ConfigError, DesktopConfig, load_or_create, save
 from rhinvoice.desktop.ports import free_port, listening
 from rhinvoice.desktop.postgres import BundledPostgres, PostgresError
 from rhinvoice.desktop.updates import PackageInstaller, Restarter, platform_name
+from rhinvoice.infrastructure.backup.restic import ResticArchive
 from rhinvoice_boot import (
     RESTART,
     BootError,
@@ -44,7 +47,8 @@ from rhinvoice_boot import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from rhinvoice.application.updates.ports import UpdateInstaller
+    from rhinvoice.application.backup.ports import FolderSuggestion
+
 
 HOST = "127.0.0.1"
 ATTACH_SECONDS = 600.0
@@ -60,7 +64,7 @@ class Server(Protocol):
         host: str,
         port: int,
         *,
-        installer: UpdateInstaller | None = None,
+        own: OwnServices = NO_OWN_SERVICES,
         stop: threading.Event | None = None,
     ) -> int:
         """Run the web server until it is stopped, or until ``stop`` is set (api.cli.serve)."""
@@ -170,10 +174,8 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
             cookie_secure=False,
         )
         restarter = Restarter()
-        installer = _installer(desktop, install, folder, restarter)
-        code = _serve(
-            args, desktop, settings, config.port, folder, installer=installer, restarter=restarter
-        )
+        own = _own_services(desktop, install, folder, database.url, restarter)
+        code = _serve(args, desktop, settings, config.port, folder, own=own, restarter=restarter)
         # After an update the boot starts the program again, with the new version.
         return RESTART if restarter.requested.is_set() else code
     # ValueError: settings from RHINVOICE_* variables that are not valid.
@@ -196,6 +198,37 @@ def _own_port(config: DesktopConfig, folder: Path) -> DesktopConfig:
     return moved
 
 
+def _own_services(
+    desktop: Desktop, install: Path, folder: Path, database_url: str, restarter: Restarter
+) -> OwnServices:
+    """Bring updates and backups, when the installed program has what they need."""
+    setup, archive = _backups(desktop, install, folder, database_url)
+    return OwnServices(
+        installer=_installer(desktop, install, folder, restarter),
+        backup_setup=setup,
+        backup_archive=archive,
+    )
+
+
+def _backups(
+    desktop: Desktop, install: Path, folder: Path, database_url: str
+) -> tuple[DesktopBackupSetup, CurrentArchive] | tuple[None, None]:
+    """Back up with the bundled restic (ADR 0023); without it (a source tree) there is none."""
+    restic = install / "restic" / "restic"
+    if not (restic.is_file() or restic.with_suffix(".exe").is_file()):
+        return None, None
+    pg_dump = install / "postgresql" / "bin" / "pg_dump"
+    config = folder / "rhinvoice.json"
+
+    def archive_for(target: Path, key: str) -> ResticArchive:
+        return ResticArchive(restic, pg_dump, target, key, database_url)
+
+    def suggestions() -> list[FolderSuggestion]:
+        return cloud_folders(desktop.system, desktop.environ, desktop.home)
+
+    return DesktopBackupSetup(config, archive_for, suggestions), CurrentArchive(config, archive_for)
+
+
 def _installer(
     desktop: Desktop, install: Path, folder: Path, restarter: Restarter
 ) -> PackageInstaller | None:
@@ -216,7 +249,7 @@ def _serve(  # noqa: PLR0913 - the parts of one start (keywords for the update's
     port: int,
     folder: Path,
     *,
-    installer: PackageInstaller | None,
+    own: OwnServices,
     restarter: Restarter,
 ) -> int:
     address = _address(port)
@@ -224,7 +257,7 @@ def _serve(  # noqa: PLR0913 - the parts of one start (keywords for the update's
     if args.no_browser or args.browser or desktop.show_window is None:
         open_page = None if args.no_browser else desktop.open_page
         threading.Thread(target=when_ready, args=(address, folder, open_page), daemon=True).start()
-        return desktop.serve(settings, HOST, port, installer=installer)
+        return desktop.serve(settings, HOST, port, own=own)
     # The window needs the main thread (macOS); the server runs beside it. Closing the
     # window stops the server and its background jobs before the database stops.
     if desktop.close_window is not None:
@@ -233,7 +266,7 @@ def _serve(  # noqa: PLR0913 - the parts of one start (keywords for the update's
     server = threading.Thread(
         target=desktop.serve,
         args=(settings, HOST, port),
-        kwargs={"installer": installer, "stop": stop},
+        kwargs={"own": own, "stop": stop},
         daemon=True,
     )
     server.start()

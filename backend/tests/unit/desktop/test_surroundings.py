@@ -50,6 +50,23 @@ def test_a_configured_port_is_kept(tmp_path: Path) -> None:
     assert load_or_create(path) == DesktopConfig(database_password="x", port=8123)
 
 
+def test_the_backup_settings_are_kept(tmp_path: Path) -> None:
+    path = tmp_path / "rhinvoice.json"
+    values = {
+        "database_password": "x",
+        "backup_folder": "/Users/anna/Dropbox/Rhinvoice-Backup",
+        "backup_key": "K7QM-2XWP",
+        "backup_key_confirmed": True,
+    }
+    path.write_text(json.dumps(values))
+    assert load_or_create(path) == DesktopConfig(
+        database_password="x",
+        backup_folder="/Users/anna/Dropbox/Rhinvoice-Backup",
+        backup_key="K7QM-2XWP",
+        backup_key_confirmed=True,
+    )
+
+
 @pytest.mark.parametrize(
     ("content", "reason"),
     [
@@ -57,6 +74,11 @@ def test_a_configured_port_is_kept(tmp_path: Path) -> None:
         ("[]", "not a JSON object"),
         ('{"port": 1}', "'database_password' is missing"),
         ('{"database_password": "x", "port": "8000"}', "'port' is not a number"),
+        ('{"database_password": "x", "backup_folder": 1}', "'backup_folder' is not text"),
+        (
+            '{"database_password": "x", "backup_key_confirmed": "yes"}',
+            "'backup_key_confirmed' is not true or false",
+        ),
     ],
 )
 def test_a_damaged_configuration_is_reported(tmp_path: Path, content: str, reason: str) -> None:

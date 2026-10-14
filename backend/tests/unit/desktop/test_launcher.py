@@ -14,14 +14,18 @@ from pathlib import Path
 
 import pytest
 
+from rhinvoice.api.container import NO_OWN_SERVICES, OwnServices
 from rhinvoice.api.settings import Settings
-from rhinvoice.application.updates.ports import Release, UpdateInstaller
+from rhinvoice.application.backup.ports import BackupFailed, FolderSuggestion
+from rhinvoice.application.updates.ports import Release
 from rhinvoice.desktop import launcher
+from rhinvoice.desktop.backup import FOLDER_NAME, CurrentArchive, DesktopBackupSetup
 from rhinvoice.desktop.launcher import Desktop, build_parser, run, wait_until_answers, when_ready
 from rhinvoice.desktop.ports import free_port
 from rhinvoice.desktop.postgres import BundledPostgres
 from rhinvoice.desktop.updates import PackageInstaller
 from rhinvoice_boot import RESTART, State, load_state, save_state
+from tests.helpers import raises_exactly
 from tests.unit.desktop.tools import commands
 
 
@@ -29,7 +33,7 @@ class Recorder:
     def __init__(self, result: int = 0) -> None:
         self.result = result
         self.calls: list[tuple[Settings, str, int]] = []
-        self.installers: list[UpdateInstaller | None] = []
+        self.owns: list[OwnServices] = []
         self.stops: list[threading.Event | None] = []
 
     def serve(
@@ -38,11 +42,11 @@ class Recorder:
         host: str,
         port: int,
         *,
-        installer: UpdateInstaller | None = None,
+        own: OwnServices = NO_OWN_SERVICES,
         stop: threading.Event | None = None,
     ) -> int:
         self.calls.append((settings, host, port))
-        self.installers.append(installer)
+        self.owns.append(own)
         self.stops.append(stop)
         return self.result
 
@@ -152,11 +156,10 @@ def test_a_second_start_shows_the_running_one(
         host: str,
         port: int,
         *,
-        installer: UpdateInstaller | None = None,
+        own: OwnServices = NO_OWN_SERVICES,
         stop: threading.Event | None = None,
     ) -> int:
-        del stop
-        del installer
+        del stop, own
         recorder.calls.append((settings, host, port))
 
         # While the first one runs, the user starts the program again.
@@ -422,7 +425,8 @@ def test_started_by_the_boot_it_can_install_updates(install: Path, tmp_path: Pat
     (install / "runtime.json").write_text('{"generation": 1}')
     recorder = Recorder()
     run(build_parser().parse_args(["--no-browser"]), desktop(install, tmp_path, recorder))
-    [installer] = recorder.installers
+    [own] = recorder.owns
+    installer = own.installer
     assert isinstance(installer, PackageInstaller)
     assert (installer.platform, installer.runtime) == ("linux-x64", 1)
 
@@ -431,7 +435,7 @@ def test_started_by_the_boot_it_can_install_updates(install: Path, tmp_path: Pat
 def test_without_a_runtime_there_is_nothing_to_install_into(install: Path, tmp_path: Path) -> None:
     recorder = Recorder()
     run(build_parser().parse_args(["--no-browser"]), desktop(install, tmp_path, recorder))
-    assert recorder.installers == [None]
+    assert recorder.owns == [NO_OWN_SERVICES]
 
 
 @pytest.mark.usefixtures("data")
@@ -451,11 +455,12 @@ def test_after_an_update_the_boot_is_asked_to_start_again(
         host: str,
         port: int,
         *,
-        installer: UpdateInstaller | None = None,
+        own: OwnServices = NO_OWN_SERVICES,
         stop: threading.Event | None = None,
     ) -> int:
         del stop
         del settings, host, port
+        installer = own.installer
         assert installer is not None
         # An update that is already in place: the program only restarts.
         (tmp_path / "home" / "rhinvoice" / "app" / "versions" / "0.7.0").mkdir(parents=True)
@@ -480,8 +485,8 @@ def test_in_a_window_an_update_closes_the_window(
         close_window=lambda: closed.append("closed"),
     )
     run(build_parser().parse_args([]), surroundings)
-    [installer] = recorder.installers
-    assert installer is None  # no runtime: the window still gets the restart wiring
+    [own] = recorder.owns
+    assert own.installer is None  # no runtime: the window still gets the restart wiring
     assert window.shown == [(f"http://127.0.0.1:{port_of(data)}", data / "window")]
 
 
@@ -532,3 +537,40 @@ def test_asked_to_end_the_program_ends_without_an_error(monkeypatch: pytest.Monk
     monkeypatch.setattr(launcher, "run", interrupted)
     monkeypatch.setattr(launcher, "end_on_break", lambda: None)
     assert launcher.main(["--no-browser"]) == 0
+
+
+def bundled_backups(install: Path, tmp_path: Path, restic: str, content: str) -> OwnServices:
+    (install / "restic").mkdir()
+    (install / "restic" / restic).write_text(content)
+    (install / "restic" / restic).chmod(0o755)
+    recorder = Recorder()
+    run(build_parser().parse_args(["--no-browser"]), desktop(install, tmp_path, recorder))
+    [own] = recorder.owns
+    return own
+
+
+@pytest.mark.usefixtures("data")
+def test_with_a_bundled_restic_the_program_backs_up_itself(install: Path, tmp_path: Path) -> None:
+    """ADR 0023: the folder and key are set up on the settings page; Dropbox is suggested."""
+    (tmp_path / "Dropbox").mkdir()
+    refusing = '#!/bin/sh\necho "Fatal: stand-in" >&2\nexit 1\n'
+    own = bundled_backups(install, tmp_path, "restic", refusing)
+    setup, archive = own.backup_setup, own.backup_archive
+    assert isinstance(setup, DesktopBackupSetup)
+    assert isinstance(archive, CurrentArchive)
+    target = setup.target()
+    assert target.folder is None
+    assert target.suggestions == [
+        FolderSuggestion("Dropbox", str(tmp_path / "Dropbox" / FOLDER_NAME))
+    ]
+    with raises_exactly(BackupFailed, "backups are not set up"):
+        archive.back_up()
+    # The bundled restic opens the folder.
+    with raises_exactly(BackupFailed, "Fatal: stand-in"):
+        setup.set_up(str(tmp_path / "Dropbox" / FOLDER_NAME))
+
+
+@pytest.mark.usefixtures("data")
+def test_on_windows_restic_is_found_by_its_full_name(install: Path, tmp_path: Path) -> None:
+    own = bundled_backups(install, tmp_path, "restic.exe", "")
+    assert isinstance(own.backup_setup, DesktopBackupSetup)

@@ -10,14 +10,13 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-from typing import TYPE_CHECKING, cast
+import tempfile
+from pathlib import Path
+from typing import cast
 
 from sqlalchemy.engine import make_url
 
 from rhinvoice.application.backup.ports import BackupFailed, Snapshot
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 TAG = "rhinvoice"
 HOST = "rhinvoice"
@@ -27,6 +26,12 @@ LOCK_WAIT = "10m"
 NO_REPOSITORY = 10
 """restic's exit code for "repository does not exist" (restic 0.17+)."""
 MESSAGE_LENGTH = 500
+DUMP_END_BYTES = 200
+"""The end of a dump in which pg_dump's closing line must be."""
+REQUEST_BACKUP = (
+    "INSERT INTO public.backup_requests (requested_at, reason) VALUES (now(), 'manual')"
+)
+"""After a restore: the restored state gets a backup of its own once backups run."""
 RETENTION = ("--keep-daily", "7", "--keep-weekly", "4", "--keep-monthly", "12")
 """And every yearly backup: invoices are kept for ten years and more (OR 958f, GoBD, BAO)."""
 NO_WINDOW: int = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -105,6 +110,57 @@ class ResticArchive:
             if result.returncode != 0:
                 raise BackupFailed(summary(result.stderr))
 
+    def snapshots(self) -> str:
+        """List the backups as restic shows them (ID and time, to choose one to restore)."""
+        result = self._run("snapshots", "--tag", TAG)
+        if result.returncode != 0:
+            raise BackupFailed(summary(result.stderr))
+        return result.stdout
+
+    def restore(self, snapshot: str, psql: Path) -> None:
+        """Replace the database with a backup ("latest" or an ID), as the backup container does.
+
+        One transaction: on any error nothing changes. The restored state is backed up
+        again as soon as backups run.
+        """
+        with tempfile.TemporaryDirectory() as folder:
+            # In a file, not in memory: the dump holds every archived PDF.
+            dump = Path(folder) / DUMP_NAME
+            with dump.open("wb") as file:
+                fetched = subprocess.run(  # noqa: S603 - the bundled restic, arguments built here
+                    [str(self._restic), "dump", "--tag", TAG, snapshot, f"/{DUMP_NAME}"],
+                    stdout=file,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                    env={**os.environ, **self._environment},
+                    creationflags=NO_WINDOW,
+                )
+            if fetched.returncode != 0:
+                raise BackupFailed(summary(fetched.stderr.decode(errors="replace")))
+            if not _complete(dump):
+                msg = "the backup is incomplete, nothing was changed"
+                raise BackupFailed(msg)
+            # (The dump empties the search_path, hence the schema name.)
+            replaced = subprocess.run(  # noqa: S603 - the bundled psql, arguments built here
+                [
+                    str(psql), "-X", "-q", "-v", "ON_ERROR_STOP=1", "--single-transaction",
+                    "-c", "DROP SCHEMA public CASCADE", "-c", "CREATE SCHEMA public",
+                    "-f", str(dump),
+                    "-c", REQUEST_BACKUP,
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+                env={
+                    **os.environ,
+                    **self._environment,
+                    "PGOPTIONS": "-c client_min_messages=warning",
+                },
+                creationflags=NO_WINDOW,
+            )  # fmt: skip
+            if replaced.returncode != 0:
+                raise BackupFailed(summary(replaced.stderr))
+
     def _run(self, *arguments: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(  # noqa: S603 - the bundled restic, arguments built here
             [str(self._restic), *arguments],
@@ -127,6 +183,13 @@ def summary(errors: str) -> str:
         message = _json(lines[-1]).get("message")
         line = message if isinstance(message, str) else lines[-1]
     return (line or "unknown error")[:MESSAGE_LENGTH]
+
+
+def _complete(dump: Path) -> bool:
+    """Tell whether pg_dump finished the dump: it ends every complete one with this line."""
+    with dump.open("rb") as file:
+        file.seek(max(dump.stat().st_size - DUMP_END_BYTES, 0))
+        return b"PostgreSQL database dump complete" in file.read()
 
 
 def _json(line: str) -> dict[str, object]:

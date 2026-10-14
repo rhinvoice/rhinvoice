@@ -12,6 +12,7 @@ The installer lays out its folder as ``python/`` (this interpreter), ``postgresq
 from __future__ import annotations
 
 import argparse
+import getpass
 import os
 import platform
 import signal
@@ -27,6 +28,7 @@ from typing import TYPE_CHECKING, Protocol
 from rhinvoice.api.cli import serve
 from rhinvoice.api.container import NO_OWN_SERVICES, OwnServices
 from rhinvoice.api.settings import Settings
+from rhinvoice.application.backup.ports import BackupFailed
 from rhinvoice.desktop import window
 from rhinvoice.desktop.backup import CurrentArchive, DesktopBackupSetup, cloud_folders
 from rhinvoice.desktop.browser import find_chromium
@@ -55,6 +57,7 @@ ATTACH_SECONDS = 600.0
 """How long a second start waits for the first one (which may migrate a large database)."""
 SERVER_STOP_SECONDS = 30.0
 READY_POLL_SECONDS = 0.25
+RESTIC = ("restic.exe", "restic")
 
 
 class Server(Protocol):
@@ -87,6 +90,8 @@ class Desktop:
     install: Path
     close_window: Callable[[], None] | None = None
     """Closes the window that show_window shows (for a restart after an update)."""
+    ask_secret: Callable[[str], str] = getpass.getpass
+    """Asks for the recovery key of a restore, without showing it."""
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -104,6 +109,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--attach", action="store_true", help="only show the program that already runs (the boot)"
+    )
+    parser.add_argument(
+        "--restore",
+        metavar="BACKUP",
+        help='replace the data with a backup ("latest" or its ID), then end; quit Rhinvoice first',
+    )
+    parser.add_argument("--list-backups", action="store_true", help="list the backups, then end")
+    parser.add_argument(
+        "--backup-folder",
+        type=Path,
+        help="the folder of the backups (to restore on a new computer)",
     )
     return parser
 
@@ -144,6 +160,8 @@ def end_on_break() -> None:
 def run(args: argparse.Namespace, desktop: Desktop) -> int:
     install: Path = args.install_dir or desktop.install
     folder: Path = args.data_dir or data_folder(desktop.system, desktop.environ, desktop.home)
+    if args.restore is not None or args.list_backups:
+        return _restore(args, desktop, install, folder)
     if args.attach:
         return _attach(args, desktop, folder)
     try:
@@ -214,8 +232,8 @@ def _backups(
     desktop: Desktop, install: Path, folder: Path, database_url: str
 ) -> tuple[DesktopBackupSetup, CurrentArchive] | tuple[None, None]:
     """Back up with the bundled restic (ADR 0023); without it (a source tree) there is none."""
-    restic = install / "restic" / "restic"
-    if not (restic.is_file() or restic.with_suffix(".exe").is_file()):
+    restic = _restic(install)
+    if restic is None:
         return None, None
     pg_dump = install / "postgresql" / "bin" / "pg_dump"
     config = folder / "rhinvoice.json"
@@ -227,6 +245,60 @@ def _backups(
         return cloud_folders(desktop.system, desktop.environ, desktop.home)
 
     return DesktopBackupSetup(config, archive_for, suggestions), CurrentArchive(config, archive_for)
+
+
+def _restic(install: Path) -> Path | None:
+    """Find the bundled restic (restic.exe on Windows)."""
+    return next(
+        (path for path in (install / "restic" / name for name in RESTIC) if path.is_file()), None
+    )
+
+
+def _restore(args: argparse.Namespace, desktop: Desktop, install: Path, folder: Path) -> int:
+    """Replace the data with a backup, or list the backups (ADR 0023); then end."""
+    try:
+        _restore_or_list(args, desktop, install, folder)
+    except (BackupFailed, ConfigError, PostgresError, OSError) as error:
+        return _failed(error)
+    return 0
+
+
+def _restore_or_list(
+    args: argparse.Namespace, desktop: Desktop, install: Path, folder: Path
+) -> None:
+    restic = _restic(install)
+    if restic is None:
+        msg = "this installation has no restic to restore with"
+        raise BackupFailed(msg)
+    config = load_or_create(folder / "rhinvoice.json")
+    binaries = install / "postgresql" / "bin"
+    database = BundledPostgres(binaries, folder / "database", config.database_password, free_port())
+    # The boot adds --attach when the program runs already.
+    if args.attach or _already_running(database, config.port):
+        msg = "Rhinvoice runs: quit it first"
+        raise BackupFailed(msg)
+    backups = args.backup_folder or config.backup_folder
+    if backups is None:
+        msg = "name the folder of the backups: --backup-folder <folder>"
+        raise BackupFailed(msg)
+    # The key of the folder set up here, else the one the person kept.
+    known = config.backup_key if str(backups) == config.backup_folder else None
+    key = known or desktop.ask_secret("Recovery key: ").strip()
+    archive = ResticArchive(restic, binaries / "pg_dump", Path(backups), key, database.url)
+    if args.restore is None:
+        sys.stdout.write(archive.snapshots())
+        return
+    database.start()
+    try:
+        archive.restore(args.restore, binaries / "psql")
+    finally:
+        database.stop()
+    # Backups go on into the same folder, with the key that opened it.
+    restored = replace(
+        config, backup_folder=str(backups), backup_key=key, backup_key_confirmed=True
+    )
+    save(folder / "rhinvoice.json", restored)
+    sys.stdout.write(f"Restored {args.restore} from {backups}; start Rhinvoice again.\n")
 
 
 def _installer(

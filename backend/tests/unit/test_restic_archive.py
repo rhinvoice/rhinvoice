@@ -155,6 +155,89 @@ def test_summaries_are_short_and_never_empty() -> None:
     assert len(summary("x" * 2000)) == 500
 
 
+PSQL = """#!/bin/sh
+# Records its arguments and the dump it was given; fails on request.
+printf '%s\\n' "$@" > "$FAKE_PSQL_LOG"
+while [ "$#" -gt 0 ]; do
+    if [ "$1" = "-f" ]; then cp "$2" "$FAKE_PSQL_LOG.sql"; fi
+    shift
+done
+if [ -n "${FAKE_PSQL_FAIL:-}" ]; then
+    echo 'psql:/tmp/rhinvoice.sql:12: ERROR:  relation "x" does not exist' >&2
+    exit 3
+fi
+"""
+
+
+@pytest.fixture(scope="module")
+def psql(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    script = tmp_path_factory.mktemp("postgresql") / "psql"
+    script.write_text(PSQL)
+    script.chmod(0o755)
+    return script
+
+
+@pytest.fixture
+def psql_log(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    path = tmp_path / "psql.log"
+    monkeypatch.setenv("FAKE_PSQL_LOG", str(path))
+    monkeypatch.delenv("FAKE_PSQL_FAIL", raising=False)
+    monkeypatch.delenv("FAKE_RESTIC_DUMP", raising=False)
+    return path
+
+
+def test_a_restore_replaces_the_database_in_one_transaction(
+    archive: ResticArchive, log: Path, psql: Path, psql_log: Path
+) -> None:
+    """As the backup container does: on any error nothing changes."""
+    archive.restore("latest", psql)
+    assert calls(log)[-1]["arguments"] == ["dump", "--tag", "rhinvoice", "latest", "/rhinvoice.sql"]
+    assert psql_log.read_text().splitlines() == [
+        "-X", "-q", "-v", "ON_ERROR_STOP=1", "--single-transaction",
+        "-c", "DROP SCHEMA public CASCADE", "-c", "CREATE SCHEMA public",
+        "-f", psql_log.read_text().splitlines()[10],
+        "-c", "INSERT INTO public.backup_requests (requested_at, reason) VALUES (now(), 'manual')",
+    ]  # fmt: skip
+    assert psql_log.read_text().splitlines()[10].endswith("rhinvoice.sql")
+    assert "PostgreSQL database dump complete" in Path(f"{psql_log}.sql").read_text()
+
+
+def test_an_incomplete_backup_changes_nothing(
+    archive: ResticArchive, psql: Path, psql_log: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("FAKE_RESTIC_DUMP", "CREATE TABLE public.documents (\n")
+    with raises_exactly(BackupFailed, "the backup is incomplete, nothing was changed"):
+        archive.restore("latest", psql)
+    assert not psql_log.exists()
+
+
+def test_restore_failures_name_their_reason(
+    archive: ResticArchive, psql: Path, psql_log: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("FAKE_RESTIC_FAIL", "dump")
+    monkeypatch.setenv("FAKE_RESTIC_ERROR", 'Fatal: no matching ID found for prefix "0000"')
+    with raises_exactly(BackupFailed, 'Fatal: no matching ID found for prefix "0000"'):
+        archive.restore("0000", psql)
+    assert not psql_log.exists()
+    monkeypatch.delenv("FAKE_RESTIC_FAIL")
+    monkeypatch.setenv("FAKE_PSQL_FAIL", "1")
+    with raises_exactly(
+        BackupFailed, 'psql:/tmp/rhinvoice.sql:12: ERROR:  relation "x" does not exist'
+    ):
+        archive.restore("latest", psql)
+
+
+def test_the_backups_are_listed(
+    archive: ResticArchive, log: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assert "4f3a9c1e  2026-03-09 09:00:00" in archive.snapshots()
+    assert calls(log)[-1]["arguments"] == ["snapshots", "--tag", "rhinvoice"]
+    monkeypatch.setenv("FAKE_RESTIC_FAIL", "snapshots")
+    monkeypatch.setenv("FAKE_RESTIC_ERROR", "Fatal: wrong password or no key found")
+    with raises_exactly(BackupFailed, "Fatal: wrong password or no key found"):
+        archive.snapshots()
+
+
 def test_a_database_url_without_details_uses_the_defaults(
     restic: Path, tmp_path: Path, log: Path
 ) -> None:

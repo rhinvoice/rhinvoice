@@ -6,7 +6,8 @@ Starts the installed program on the user's empty data folder (without window), c
 user and the company, fills in the demo data, prints an invoice as PDF, sets up a backup
 folder and waits for the first backup (ADR 0023), kills the program
 and starts it again (the database left running must be taken over), installs an update and
-a broken update (taken back, ADR 0022), and ends it the way Windows asks a program to close.
+a broken update (taken back, ADR 0022), ends it the way Windows asks a program to close, and
+restores the backup with ``--restore latest``.
 Only the standard library: it runs beside the installation, not inside it.
 """
 
@@ -224,7 +225,28 @@ def check(install: Path, data: Path) -> None:
     if program.database_running():
         msg = "the database still runs after the program was closed"
         raise SystemExit(msg)
+    check_restore(program, api)
     step("all good")
+
+
+def check_restore(program: Program, api: Api) -> None:
+    """Restore the backup as the docs describe it, then start again on the restored data."""
+    step("the data is replaced with the latest backup (--restore latest)")
+    restored = subprocess.run(  # noqa: S603 - the installed program
+        [program.install / "python" / "python.exe", "-m", "rhinvoice_boot", "--restore", "latest"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    print(restored.stdout + restored.stderr)
+    if restored.returncode != 0:
+        msg = f"the restore failed: {restored.stderr[-1500:]}"
+        raise SystemExit(msg)
+    program.start()
+    if api.json("GET", "/documents?type=invoice")["total"] < 1:
+        msg = "the invoices are gone after the restore"
+        raise SystemExit(msg)
+    program.close()
 
 
 PRINT_A_PAGE = """

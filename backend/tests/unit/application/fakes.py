@@ -4,12 +4,19 @@ from __future__ import annotations
 
 import hashlib
 import unicodedata
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 from typing import TYPE_CHECKING, Self
 from uuid import UUID
 
-from rhinvoice.application.backup.ports import BackupReason, BackupRun, RunStatus
+from rhinvoice.application.backup.ports import (
+    REQUESTS_KEPT,
+    BackupReason,
+    BackupRun,
+    PendingRequest,
+    RunOutcome,
+    RunStatus,
+)
 from rhinvoice.application.catalog.ports import ArticleQuery, ArticleSort
 from rhinvoice.application.common import Page, SortDirection
 from rhinvoice.application.customer.ports import CustomerQuery, CustomerSort
@@ -75,6 +82,7 @@ class BackupRequest:
     reason: BackupReason
     at: datetime
     handled: bool = False
+    handled_at: datetime | None = None
 
 
 @dataclass
@@ -725,6 +733,50 @@ class InMemoryBackupRepository:
 
     def last_success(self) -> BackupRun | None:
         return next((run for run in reversed(self.data) if run.status is RunStatus.SUCCEEDED), None)
+
+    def pending(self) -> list[PendingRequest]:
+        return [PendingRequest(r.reason, r.at) for r in self.requests if not r.handled]
+
+    def runs_since(self, at: datetime) -> list[BackupRun]:
+        return [run for run in self.data if run.started_at >= at]
+
+    def start_run(self, reason: BackupReason, at: datetime) -> int:
+        run_id = max((run.id for run in self.data), default=0) + 1
+        self.data.append(BackupRun(run_id, at, None, reason, RunStatus.RUNNING, None, None, None))
+        return run_id
+
+    def finish_run(self, run_id: int, outcome: RunOutcome, at: datetime) -> None:
+        self.data = [
+            replace(
+                run,
+                finished_at=at,
+                status=outcome.status,
+                snapshot_id=outcome.snapshot_id,
+                data_added=outcome.data_added,
+                message=outcome.message,
+            )
+            if run.id == run_id
+            else run
+            for run in self.data
+        ]
+
+    def take_requests(self, run_id: int, at: datetime) -> None:
+        started = next(run.started_at for run in self.data if run.id == run_id)
+        self.requests = [
+            replace(request, handled=True, handled_at=at)
+            if not request.handled and request.at <= started
+            else request
+            for request in self.requests
+            if request.handled_at is None or request.handled_at >= at - REQUESTS_KEPT
+        ]
+
+    def recover_runs(self, at: datetime, message: str) -> None:
+        self.data = [
+            replace(run, status=RunStatus.FAILED, finished_at=at, message=message)
+            if run.status is RunStatus.RUNNING
+            else run
+            for run in self.data
+        ]
 
 
 class InMemoryImportTemplateRepository:

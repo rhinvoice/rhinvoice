@@ -17,6 +17,8 @@ import { Aside, Steps } from "@astrojs/starlight/components";
 
 Rhinvoice backs up its whole database with [restic](https://restic.net): **encrypted, deduplicated and compressed**, daily and shortly after every issued or cancelled document, to a target you choose (S3, SFTP, Dropbox, Google Drive or a folder). The database holds everything: customers, articles, documents, the archived PDFs of issued documents, the logo and the settings.
 
+This page covers the Docker installation. The program for Windows and Mac backs up itself: [backups in the program](/docs/operations/backup-desktop/).
+
 ## When and how long
 
 - **When:** daily (02:00 by default, `BACKUP_DAILY_AT`) and about two minutes after documents were issued or cancelled (several in a row give one backup). *Settings → Backup → Back up now* asks for one at once.

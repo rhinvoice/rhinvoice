@@ -1001,6 +1001,37 @@ export const en: Catalog<MessageKey> = {
   "backup.retention":
     "Kept: 7 daily, 4 weekly, 12 monthly and all yearly backups. The guide describes how to restore.",
   "error.backup_not_set_up": "Backups are not set up.",
+  "error.backup_folder_unusable": "This folder cannot be used.",
+  "error.backup_by_container": "Backups are set up in the backup container here (see the guide).",
+  "backup.folder": "Backups go to {folder}.",
+  "backup.changeFolder": "Change folder",
+  "backup.firstBackup":
+    "The first backup starts shortly, once the company details are set up (Settings → Company). After that you can back up here at any time.",
+  "backup.folderUnusable": "This folder cannot be used: {reason}",
+  "backup.setup.title": "Set up backups",
+  "backup.setup.changeTitle": "Choose another folder",
+  "backup.setup.description":
+    "Preferably a folder a cloud service keeps in sync. Then a copy lives outside this computer.",
+  "backup.setup.folders": "Folder for the backups",
+  "backup.setup.found": "found",
+  "backup.setup.other": "Another folder …",
+  "backup.setup.otherHint": "For example a network drive or a USB disk.",
+  "backup.setup.path": "Folder path",
+  "backup.setup.pathHint":
+    "The full path, e.g. E:\\Rhinvoice-Backup or /Volumes/Backup/Rhinvoice. A missing folder is created.",
+  "backup.setup.pathMissing": "Please enter the path of a folder.",
+  "backup.setup.continue": "Continue to the key",
+  "backup.setup.change": "Use this folder",
+  "backup.setup.changed": "The next backups go to the new folder.",
+  "backup.key.title": "Your recovery key",
+  "backup.key.description":
+    "It encrypts the backups. Without it no backup can be restored. Keep it apart from this computer, in a password manager or printed.",
+  "backup.key.label": "Recovery key",
+  "backup.key.kept": "I have stored the key safely.",
+  "backup.key.finish": "Set up backups",
+  "backup.key.done": "Backups set up. The first one starts shortly.",
+  "backup.key.show": "Show key",
+  "backup.key.hide": "Hide key",
   "import.title.customers": "Import customers",
   "import.title.articles": "Import articles",
   "import.description":

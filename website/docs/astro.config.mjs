@@ -55,6 +55,7 @@ export default defineConfig({
         group("Getting started", "Erste Schritte", [
           page("getting-started/what-is-rhinvoice", "What is Rhinvoice?", "Was ist Rhinvoice?"),
           page("getting-started/installation", "Installation", "Installation"),
+          page("getting-started/install-desktop", "Windows and Mac", "Windows und Mac"),
           page("getting-started/first-start", "First start", "Erster Start"),
           page("getting-started/first-invoice", "Your first invoice", "Die erste Rechnung"),
         ]),
@@ -80,6 +81,7 @@ export default defineConfig({
         ]),
         group("Running it", "Betrieb", [
           page("operations/backup", "Backup and restore", "Backup und Wiederherstellen"),
+          page("operations/backup-desktop", "Backup in the program", "Backup im Programm"),
           page("operations/backup-google-drive", "Backup to Google Drive", "Backup auf Google Drive"),
           page("operations/update", "Updating", "Update"),
           page("operations/uninstall", "Uninstalling", "Deinstallieren"),

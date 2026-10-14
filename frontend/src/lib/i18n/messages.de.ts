@@ -1036,6 +1036,38 @@ export const de = {
   "backup.retention":
     "Aufbewahrt werden 7 tägliche, 4 wöchentliche, 12 monatliche und alle jährlichen Backups. Wiederherstellen ist in der Anleitung beschrieben.",
   "error.backup_not_set_up": "Backups sind nicht eingerichtet.",
+  "error.backup_folder_unusable": "Dieser Ordner lässt sich nicht verwenden.",
+  "error.backup_by_container":
+    "Backups werden hier im Backup-Container eingerichtet (siehe Anleitung).",
+  "backup.folder": "Die Backups gehen nach {folder}.",
+  "backup.changeFolder": "Ordner ändern",
+  "backup.firstBackup":
+    "Das erste Backup startet in Kürze, sobald die Firmendaten eingerichtet sind (Einstellungen → Firma). Danach können Sie hier jederzeit sichern.",
+  "backup.folderUnusable": "Dieser Ordner lässt sich nicht verwenden: {reason}",
+  "backup.setup.title": "Backup einrichten",
+  "backup.setup.changeTitle": "Anderen Ordner wählen",
+  "backup.setup.description":
+    "Am besten in einen Ordner, den ein Cloud-Dienst abgleicht. Dann liegt eine Kopie außerhalb dieses Computers.",
+  "backup.setup.folders": "Ordner für die Backups",
+  "backup.setup.found": "gefunden",
+  "backup.setup.other": "Anderer Ordner …",
+  "backup.setup.otherHint": "Zum Beispiel ein Netzlaufwerk oder eine USB-Festplatte.",
+  "backup.setup.path": "Pfad des Ordners",
+  "backup.setup.pathHint":
+    "Der vollständige Pfad, z. B. E:\\Rhinvoice-Backup oder /Volumes/Backup/Rhinvoice. Fehlt der Ordner, wird er angelegt.",
+  "backup.setup.pathMissing": "Bitte geben Sie den Pfad eines Ordners an.",
+  "backup.setup.continue": "Weiter zum Schlüssel",
+  "backup.setup.change": "Ordner übernehmen",
+  "backup.setup.changed": "Die nächsten Backups gehen in den neuen Ordner.",
+  "backup.key.title": "Ihr Wiederherstellungs-Schlüssel",
+  "backup.key.description":
+    "Er verschlüsselt die Backups. Ohne ihn lässt sich kein Backup wiederherstellen. Bewahren Sie ihn getrennt von diesem Computer auf, im Passwort-Manager oder ausgedruckt.",
+  "backup.key.label": "Wiederherstellungs-Schlüssel",
+  "backup.key.kept": "Ich habe den Schlüssel sicher aufbewahrt.",
+  "backup.key.finish": "Backup einrichten",
+  "backup.key.done": "Backup eingerichtet. Das erste startet in Kürze.",
+  "backup.key.show": "Schlüssel anzeigen",
+  "backup.key.hide": "Schlüssel ausblenden",
   "import.title.customers": "Kunden importieren",
   "import.title.articles": "Artikel importieren",
   "import.description":

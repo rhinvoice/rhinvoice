@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     from sqlalchemy import Engine
 
     from rhinvoice.api.settings import Settings
+    from rhinvoice.application.backup.ports import BackupArchive, BackupSetup
     from rhinvoice.application.document.printing import PdfRenderer
     from rhinvoice.application.updates.ports import UpdateInstaller
 
@@ -72,6 +73,21 @@ class Container:
     """Set while a public demo is being reset: the API answers 503 meanwhile."""
 
 
+@dataclass(frozen=True, slots=True)
+class OwnServices:
+    """What the installation without Docker brings itself; nothing of it in the Docker setup."""
+
+    installer: UpdateInstaller | None = None
+    """Installs updates (ADR 0022)."""
+    backup_setup: BackupSetup | None = None
+    """Folder and recovery key of the backups (ADR 0023)."""
+    backup_archive: BackupArchive | None = None
+    """Where the program's own backups go (ADR 0023)."""
+
+
+NO_OWN_SERVICES = OwnServices()
+
+
 def pdf_renderer(settings: Settings, html: JinjaDocumentRenderer) -> PdfRenderer | None:
     """Gotenberg in the Docker setup, else a browser on this computer, else no PDFs."""
     if settings.gotenberg_url is not None:
@@ -84,9 +100,9 @@ def pdf_renderer(settings: Settings, html: JinjaDocumentRenderer) -> PdfRenderer
 def build_container(
     settings: Settings,
     clock: Clock | None = None,
-    installer: UpdateInstaller | None = None,
+    own: OwnServices = NO_OWN_SERVICES,
 ) -> Container:
-    """``installer``: given by the installation without Docker, which installs updates itself."""
+    """``own``: given by the installation without Docker (updates, backups)."""
     engine = make_engine(settings.database_url)
     effective_clock = clock or SystemClock(settings.zone)
 
@@ -126,7 +142,7 @@ def build_container(
     # A public demo is reset all the time; it has nothing to update.
     feed = SignedReleaseFeed() if settings.update_check and not settings.demo else None
     return Container(
-        updates=UpdateHandlers(feed, installed_version(), effective_clock, installer),
+        updates=UpdateHandlers(feed, installed_version(), effective_clock, own.installer),
         settings=settings,
         engine=engine,
         clock=effective_clock,
@@ -146,7 +162,7 @@ def build_container(
         dashboard=DashboardHandlers(uow=uow, clock=effective_clock),
         texts=TextHandlers(uow=uow),
         printing=printing,
-        backup=BackupHandlers(uow=uow, clock=effective_clock),
+        backup=BackupHandlers(uow=uow, clock=effective_clock, setup=own.backup_setup),
         imports=imports,
         onboarding=OnboardingHandlers(uow=uow, clock=effective_clock),
         dunning=DunningHandlers(uow=uow, clock=effective_clock, documents=documents),

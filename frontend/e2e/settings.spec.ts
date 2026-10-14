@@ -155,6 +155,98 @@ test("the backup settings list the runs and allow another try after a failure", 
   await expect(page.getByRole("button", { name: "Jetzt sichern" })).toBeDisabled();
 });
 
+test("the program without Docker sets up its backup folder and recovery key", async ({ page }) => {
+  const onedrive = "C:\\Users\\anna\\OneDrive\\Rhinvoice-Backup";
+  const key = "K7QM-2XWP-9DTA-F4NR-H8JC-3VLS-B6YE-Q5ZU";
+  let setup = {
+    folder: null as string | null,
+    suggestions: [{ name: "OneDrive", path: onedrive }],
+    key_confirmed: false,
+  };
+  let backup = {
+    state: "not_set_up",
+    last_success: null,
+    requested_at: null as string | null,
+    runs: [],
+  };
+  await page.route("**/api/backup", (route) => route.fulfill({ json: backup }));
+  await page.route("**/api/backup/setup", async (route) => {
+    if (route.request().method() !== "PUT") {
+      await route.fulfill({ json: setup });
+      return;
+    }
+    const { folder } = route.request().postDataJSON() as { folder: string };
+    if (folder !== onedrive) {
+      const reason = "the folder cannot be created: Permission denied";
+      await route.fulfill({
+        status: 422,
+        json: {
+          error: { code: "backup_folder_unusable", message: reason, details: { folder: reason } },
+        },
+      });
+      return;
+    }
+    setup = { ...setup, folder };
+    backup = { ...backup, requested_at: "2026-10-14T09:00:00Z" };
+    await route.fulfill({ json: { key } });
+  });
+  await page.route("**/api/backup/key", (route) => route.fulfill({ json: { key } }));
+  await page.route("**/api/backup/key/confirmed", async (route) => {
+    setup = { ...setup, key_confirmed: true };
+    await route.fulfill({ json: setup });
+  });
+
+  await openApp(page, "/settings?tab=backup", "Einstellungen");
+  await expect(page.getByRole("heading", { name: "Backup einrichten" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: /OneDrive/ })).toBeChecked();
+  await expect(page.getByRole("link", { name: "Anleitung öffnen" })).toHaveCount(0);
+  await page.getByRole("radio", { name: /Anderer Ordner/ }).check();
+  await page.getByRole("button", { name: "Weiter zum Schlüssel" }).click();
+  await expect(page.getByLabel("Pfad des Ordners")).toHaveAttribute("aria-invalid", "true");
+  await page.getByLabel("Pfad des Ordners").fill("Z:\\Backup");
+  await page.getByRole("button", { name: "Weiter zum Schlüssel" }).click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "Dieser Ordner lässt sich nicht verwenden: the folder cannot be created: Permission denied",
+  );
+  await expectAccessible(page);
+
+  await page.getByRole("radio", { name: /OneDrive/ }).check();
+  await page.getByRole("button", { name: "Weiter zum Schlüssel" }).click();
+  // The button is gone with the folder list: focus moves to the key.
+  await expect(
+    page.getByRole("heading", { name: "Ihr Wiederherstellungs-Schlüssel" }),
+  ).toBeFocused();
+  const shown = page.getByRole("group", { name: "Wiederherstellungs-Schlüssel" });
+  await expect(shown).toContainText("K7QM");
+  await expect(shown).toContainText("Q5ZU");
+  await expect(page.getByText(`Die Backups gehen nach ${onedrive}.`)).toBeVisible();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Angefordert, startet in Kürze." }),
+  ).toBeVisible();
+  // Before the first backup ran, the API refuses one by hand: no button, a hint instead.
+  await expect(page.getByRole("button", { name: "Jetzt sichern" })).toHaveCount(0);
+  await expect(page.getByText(/Das erste Backup startet in Kürze/)).toBeVisible();
+  const finish = page.getByRole("button", { name: "Backup einrichten" });
+  await expect(finish).toBeDisabled();
+  await expectAccessible(page);
+  await page.getByLabel("Ich habe den Schlüssel sicher aufbewahrt.").check();
+  await finish.click();
+  await expect(page.getByText("Backup eingerichtet. Das erste startet in Kürze.")).toBeVisible();
+  await expect(shown).toHaveCount(0);
+
+  // Later: the key on request, another folder.
+  await page.getByRole("button", { name: "Schlüssel anzeigen" }).click();
+  await expect(shown).toContainText("H8JC");
+  await page.getByRole("button", { name: "Schlüssel ausblenden" }).click();
+  await expect(shown).toHaveCount(0);
+  await page.getByRole("button", { name: "Ordner ändern" }).click();
+  await expect(page.getByRole("heading", { name: "Anderen Ordner wählen" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: /OneDrive/ })).toBeChecked();
+  await expectAccessible(page);
+  await page.getByRole("button", { name: "Abbrechen" }).click();
+  await expect(page.getByRole("heading", { name: "Anderen Ordner wählen" })).toHaveCount(0);
+});
+
 test("the print template is chosen with a live preview", async ({ page }) => {
   await page.goto("/settings?tab=print");
   await expect(page.getByRole("tab", { name: "Druckvorlage", selected: true })).toBeVisible();

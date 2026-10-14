@@ -237,6 +237,43 @@ def test_an_update_that_fails_is_taken_back_with_its_database(
     assert choose(runtime_folder, data, load_state(data)).version == "0.6.2"
 
 
+@pytest.mark.parametrize(
+    "maintenance",
+    [["--restore", "latest"], ["--restore=4f3a9c1e"], ["--list-backups"]],
+)
+def test_a_restore_runs_with_the_version_that_runs_and_is_never_taken_back(
+    runtime_folder: Path, data: Path, maintenance: list[str]
+) -> None:
+    """A restore never confirms a version: it must not count as the trial of an update."""
+    installed(runtime_folder, data)
+    update(data, "0.7.0")  # downloaded, not started yet
+
+    class Restoring(Program):
+        def launch(self, chosen: Package, arguments: list[str]) -> int:
+            (self.data / "database" / "invoices").write_text("restored")
+            return super().launch(chosen, arguments)
+
+    program = Restoring(data, works=False)
+    assert run(maintenance, runtime(runtime_folder, data, program)) == 0
+    assert [version for version, _ in program.started] == ["0.6.2"]
+    assert program.started[0][1][: len(maintenance)] == maintenance
+    assert program.restarts == 0
+    assert (data / "database" / "invoices").read_text() == "restored"
+    assert not (data / "backups" / "database-before-0.7.0").exists()
+    assert load_state(data) == State(active="0.6.2")
+    # The update is still tried at the next normal start.
+    assert choose(runtime_folder, data, load_state(data)).version == "0.7.0"
+
+
+def test_a_restore_on_a_fresh_installation_uses_the_installed_version(
+    runtime_folder: Path, data: Path
+) -> None:
+    program = Program(data, works=False)
+    assert run(["--restore", "latest"], runtime(runtime_folder, data, program)) == 0
+    assert [version for version, _ in program.started] == ["0.6.2"]
+    assert load_state(data) == State()
+
+
 def test_an_update_without_a_database_yet_is_taken_back_without_one(
     runtime_folder: Path, data: Path
 ) -> None:

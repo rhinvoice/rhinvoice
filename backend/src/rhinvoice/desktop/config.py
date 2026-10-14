@@ -3,16 +3,21 @@
 from __future__ import annotations
 
 import json
+import os
 import secrets
+import threading
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, cast
 
 from rhinvoice_boot import make_private
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
 
 DEFAULT_PORT = 8000
+_CHANGING = threading.Lock()
+"""The API's threads and the backup job change the file at the same time."""
 PASSWORD_BYTES = 24
 
 
@@ -26,6 +31,14 @@ class DesktopConfig:
     """Generated once; the database only listens on 127.0.0.1."""
     port: int = DEFAULT_PORT
     """Port of the web interface on 127.0.0.1."""
+    backup_folder: str | None = None
+    """Where the backups go (ADR 0023); None before they are set up."""
+    backup_key: str | None = None
+    """The recovery key that encrypts the backups (the restic password)."""
+    backup_key_confirmed: bool = False
+    """The person confirmed that the key is kept elsewhere."""
+    backup_verified_at: str | None = None
+    """When the backups were last pruned and checked (ISO 8601)."""
 
 
 def load_or_create(path: Path) -> DesktopConfig:
@@ -39,6 +52,10 @@ def load_or_create(path: Path) -> DesktopConfig:
         return DesktopConfig(
             database_password=_text(values, "database_password"),
             port=_number(values, "port"),
+            backup_folder=_optional_text(values, "backup_folder"),
+            backup_key=_optional_text(values, "backup_key"),
+            backup_key_confirmed=_flag(values, "backup_key_confirmed"),
+            backup_verified_at=_optional_text(values, "backup_verified_at"),
         )
     except (ValueError, TypeError) as error:
         msg = f"{path} is damaged: {error}"
@@ -46,11 +63,27 @@ def load_or_create(path: Path) -> DesktopConfig:
 
 
 def save(path: Path, config: DesktopConfig) -> None:
-    """Write the configuration, readable for this user only."""
+    """Write the configuration, readable for this user only, whole or not at all.
+
+    It holds the database password and the recovery key: a write cut short must not
+    leave half a file.
+    """
     # The folder holds the database: only for this user.
     make_private(path.parent)
-    path.touch(mode=0o600)
-    path.write_text(json.dumps(asdict(config), indent=2) + "\n", encoding="utf-8")
+    temporary = path.with_name(f"{path.name}.tmp")
+    temporary.unlink(missing_ok=True)
+    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as file:
+        file.write(json.dumps(asdict(config), indent=2) + "\n")
+    temporary.replace(path)
+
+
+def update(path: Path, change: Callable[[DesktopConfig], DesktopConfig]) -> DesktopConfig:
+    """Read, change and write the configuration as one step for the threads of this program."""
+    with _CHANGING:
+        changed = change(load_or_create(path))
+        save(path, changed)
+        return changed
 
 
 def _fields(values: object) -> dict[str, object]:
@@ -71,5 +104,19 @@ def _text(values: dict[str, object], key: str) -> str:
 def _number(values: dict[str, object], key: str) -> int:
     if not isinstance(value := values.get(key, DEFAULT_PORT), int):
         msg = f"'{key}' is not a number"
+        raise TypeError(msg)
+    return value
+
+
+def _optional_text(values: dict[str, object], key: str) -> str | None:
+    if not isinstance(value := values.get(key), str | None):
+        msg = f"'{key}' is not text"
+        raise TypeError(msg)
+    return value
+
+
+def _flag(values: dict[str, object], key: str) -> bool:
+    if not isinstance(value := values.get(key, False), bool):
+        msg = f"'{key}' is not true or false"
         raise TypeError(msg)
     return value

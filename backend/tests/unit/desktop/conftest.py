@@ -6,7 +6,17 @@ from pathlib import Path
 import pytest
 
 FAKE = Path(__file__).parent.parent.parent / "fake_postgres.py"
+FAKE_RESTIC = Path(__file__).parent.parent.parent / "fake_restic.py"
 TOOLS = ("initdb", "pg_ctl", "createdb", "psql")
+
+
+@pytest.fixture(scope="session")
+def restic_tool(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Write the restic stand-in once (tests/fake_restic.py)."""
+    script = tmp_path_factory.mktemp("restic") / "restic"
+    script.write_text(f'#!/bin/sh\nexec "{sys.executable}" "{FAKE_RESTIC}" "$@"\n')
+    script.chmod(0o755)
+    return script
 
 
 @pytest.fixture(scope="session")

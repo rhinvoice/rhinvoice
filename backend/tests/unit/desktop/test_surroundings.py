@@ -2,12 +2,14 @@
 
 import json
 import stat
+import threading
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
 from rhinvoice.desktop.browser import browser_candidates, find_chromium
-from rhinvoice.desktop.config import ConfigError, DesktopConfig, load_or_create
+from rhinvoice.desktop.config import ConfigError, DesktopConfig, load_or_create, update
 from rhinvoice_boot import data_folder
 from tests.helpers import raises_exactly
 
@@ -50,6 +52,23 @@ def test_a_configured_port_is_kept(tmp_path: Path) -> None:
     assert load_or_create(path) == DesktopConfig(database_password="x", port=8123)
 
 
+def test_the_backup_settings_are_kept(tmp_path: Path) -> None:
+    path = tmp_path / "rhinvoice.json"
+    values = {
+        "database_password": "x",
+        "backup_folder": "/Users/anna/Dropbox/Rhinvoice-Backup",
+        "backup_key": "K7QM-2XWP",
+        "backup_key_confirmed": True,
+    }
+    path.write_text(json.dumps(values))
+    assert load_or_create(path) == DesktopConfig(
+        database_password="x",
+        backup_folder="/Users/anna/Dropbox/Rhinvoice-Backup",
+        backup_key="K7QM-2XWP",
+        backup_key_confirmed=True,
+    )
+
+
 @pytest.mark.parametrize(
     ("content", "reason"),
     [
@@ -57,6 +76,11 @@ def test_a_configured_port_is_kept(tmp_path: Path) -> None:
         ("[]", "not a JSON object"),
         ('{"port": 1}', "'database_password' is missing"),
         ('{"database_password": "x", "port": "8000"}', "'port' is not a number"),
+        ('{"database_password": "x", "backup_folder": 1}', "'backup_folder' is not text"),
+        (
+            '{"database_password": "x", "backup_key_confirmed": "yes"}',
+            "'backup_key_confirmed' is not true or false",
+        ),
     ],
 )
 def test_a_damaged_configuration_is_reported(tmp_path: Path, content: str, reason: str) -> None:
@@ -102,3 +126,32 @@ def test_browsers_of_each_system() -> None:
     assert Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome") in mac
     linux = browser_candidates("Linux", {}, install)
     assert Path("/usr/bin/chromium") in linux
+
+
+def test_changes_from_several_threads_are_all_kept(tmp_path: Path) -> None:
+    """The API's threads and the backup job change rhinvoice.json at the same time."""
+    path = tmp_path / "data" / "rhinvoice.json"
+    load_or_create(path)
+
+    def confirm() -> None:
+        update(path, lambda config: replace(config, backup_key_confirmed=True))
+
+    def verify() -> None:
+        update(path, lambda config: replace(config, backup_verified_at="2026-03-09T10:00:00+00:00"))
+
+    def move(port: int) -> None:
+        update(path, lambda config: replace(config, port=port))
+
+    threads = [threading.Thread(target=confirm), threading.Thread(target=verify)]
+    threads += [threading.Thread(target=move, args=(9000 + n,)) for n in range(20)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    config = load_or_create(path)
+    assert config.backup_key_confirmed
+    assert config.backup_verified_at == "2026-03-09T10:00:00+00:00"
+    assert 9000 <= config.port < 9020
+    # Written whole or not at all: no half-written file, no temporary left behind.
+    assert [file.name for file in path.parent.iterdir()] == ["rhinvoice.json"]
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600

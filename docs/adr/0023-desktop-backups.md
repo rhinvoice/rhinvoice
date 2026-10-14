@@ -1,6 +1,6 @@
 # 0023 – Backups of the installation without Docker
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-14
 
 ## Context
@@ -24,7 +24,7 @@ them. The people it is meant for do not run restic commands.
   Dropbox, iCloud Drive, Google Drive): no credentials in Rhinvoice, and the copy leaves the
   computer by itself. A network drive or a USB disk work the same way.
 - **The password is generated** and kept in the configuration so that backups run unattended;
-  the person has to keep a copy elsewhere (how it is shown and confirmed is decided with the UI).
+  the person has to keep a copy elsewhere.
 - **The worker runs only in the installation without Docker** (the desktop layer starts it);
   the Docker setup keeps its container.
 
@@ -33,3 +33,16 @@ them. The people it is meant for do not run restic commands.
 - The repository methods the container uses in SQL (start, finish, take requests, recover runs
   left running) get a Python implementation; the container keeps its own.
 - A restore without Docker needs a documented way (and a test), like `make restore` for Docker.
+
+## What was built
+- Settings → Backup offers the cloud folders found on the computer (OneDrive, Dropbox, iCloud
+  Drive, Google Drive) or another path, then shows the recovery key (eight groups of four
+  characters) until the person confirms it is kept; later "Show key" and "Change folder".
+  No wizard step: the onboarding checklist item leads there (Kadir's variant C).
+- `BackupSetup` port; `DesktopBackupSetup` keeps folder, key and confirmation in
+  `rhinvoice.json` (0600). `ResticArchive` (infrastructure) runs the bundled restic 0.19.1 and
+  pg_dump like `backup/rhinvoice-backup.sh`. The server runs the `BackupWorker` every 30 seconds
+  once a folder is set up. In Docker the new endpoints answer 409 `backup_by_container`.
+- Restore: `--restore latest|ID` (and `--list-backups`, `--backup-folder` on a new computer)
+  replaces the database in one transaction, as the container's `restore` does. The Windows smoke
+  test sets up a folder, waits for the first backup and restores it.

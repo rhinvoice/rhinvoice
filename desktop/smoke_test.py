@@ -3,9 +3,11 @@
     python desktop/smoke_test.py <install folder>
 
 Starts the installed program on the user's empty data folder (without window), creates the first
-user and the company, fills in the demo data, prints an invoice as PDF, kills the program
+user and the company, fills in the demo data, prints an invoice as PDF, sets up a backup
+folder and waits for the first backup (ADR 0023), kills the program
 and starts it again (the database left running must be taken over), installs an update and
-a broken update (taken back, ADR 0022), and ends it the way Windows asks a program to close.
+a broken update (taken back, ADR 0022), ends it the way Windows asks a program to close, and
+restores the backup with ``--restore latest``.
 Only the standard library: it runs beside the installation, not inside it.
 """
 
@@ -31,6 +33,8 @@ HEADERS = {"X-Rhinvoice-Client": "smoke-test", "Content-Type": "application/json
 START_SECONDS = 180
 NOT_RUNNING = 3
 PDF_MIN_BYTES = 10_000
+BACKUP_SECONDS = 180
+"""The worker looks every 30 seconds; pg_dump and restic take a few seconds."""
 
 
 class Api:
@@ -202,6 +206,7 @@ def check(install: Path, data: Path) -> None:
     if status != 200 or not pdf.startswith(b"%PDF-") or len(pdf) < PDF_MIN_BYTES:  # noqa: PLR2004
         msg = f"no PDF: status {status}, {len(pdf)} bytes, {pdf[:40]!r}"
         raise SystemExit(msg)
+    check_backup(program, api)
     step("killed, then started again: the database left running is taken over")
     program.kill()
     if not program.database_running():
@@ -220,7 +225,28 @@ def check(install: Path, data: Path) -> None:
     if program.database_running():
         msg = "the database still runs after the program was closed"
         raise SystemExit(msg)
+    check_restore(program, api)
     step("all good")
+
+
+def check_restore(program: Program, api: Api) -> None:
+    """Restore the backup as the docs describe it, then start again on the restored data."""
+    step("the data is replaced with the latest backup (--restore latest)")
+    restored = subprocess.run(  # noqa: S603 - the installed program
+        [program.install / "python" / "python.exe", "-m", "rhinvoice_boot", "--restore", "latest"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    print(restored.stdout + restored.stderr)
+    if restored.returncode != 0:
+        msg = f"the restore failed: {restored.stderr[-1500:]}"
+        raise SystemExit(msg)
+    program.start()
+    if api.json("GET", "/documents?type=invoice")["total"] < 1:
+        msg = "the invoices are gone after the restore"
+        raise SystemExit(msg)
+    program.close()
 
 
 PRINT_A_PAGE = """
@@ -251,6 +277,41 @@ def print_directly(install: Path) -> None:
     print(result.stdout + result.stderr)
     if result.returncode != 0:
         msg = f"the browser could not print: {result.stderr[-1500:]}"
+        raise SystemExit(msg)
+
+
+def check_backup(program: Program, api: Api) -> None:
+    """Set up a backup folder as on the settings page; the first backup must succeed (ADR 0023)."""
+    step("a backup folder is set up; the first backup runs with the bundled restic")
+    folder = program.data.parent / "Rhinvoice-Backup"
+    key = api.json("PUT", "/backup/setup", {"folder": str(folder)})["key"]
+    if api.json("GET", "/backup/key")["key"] != key:
+        msg = "the recovery key shown later is not the one shown at the setup"
+        raise SystemExit(msg)
+    if not api.json("POST", "/backup/key/confirmed")["key_confirmed"]:
+        msg = "the recovery key was not confirmed"
+        raise SystemExit(msg)
+    deadline = time.monotonic() + BACKUP_SECONDS
+    runs: list[dict[str, Any]] = []
+    while time.monotonic() < deadline:
+        runs = api.json("GET", "/backup")["runs"]
+        if runs and runs[0]["status"] in {"succeeded", "failed"}:
+            break
+        time.sleep(5)
+    if not runs or runs[0]["status"] != "succeeded":
+        msg = f"the first backup did not succeed: {runs[:1]}"
+        raise SystemExit(msg)
+    # The key opens the backups: a restore would work.
+    listed = subprocess.run(  # noqa: S603 - the installed tool
+        [program.install / "restic" / "restic.exe", "snapshots", "--json", "--tag", "rhinvoice"],
+        env={**os.environ, "RESTIC_REPOSITORY": str(folder), "RESTIC_PASSWORD": key},
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    [snapshot] = json.loads(listed.stdout)
+    if snapshot["id"] != runs[0]["snapshot_id"] and snapshot["short_id"] != runs[0]["snapshot_id"]:
+        msg = f"the repository holds {snapshot['id']}, the run reported {runs[0]['snapshot_id']}"
         raise SystemExit(msg)
 
 

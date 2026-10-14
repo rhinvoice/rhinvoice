@@ -14,22 +14,26 @@ from pathlib import Path
 
 import pytest
 
+from rhinvoice.api.container import NO_OWN_SERVICES, OwnServices
 from rhinvoice.api.settings import Settings
-from rhinvoice.application.updates.ports import Release, UpdateInstaller
+from rhinvoice.application.backup.ports import BackupFailed, FolderSuggestion
+from rhinvoice.application.updates.ports import Release
 from rhinvoice.desktop import launcher
+from rhinvoice.desktop.backup import FOLDER_NAME, CurrentArchive, DesktopBackupSetup
 from rhinvoice.desktop.launcher import Desktop, build_parser, run, wait_until_answers, when_ready
 from rhinvoice.desktop.ports import free_port
 from rhinvoice.desktop.postgres import BundledPostgres
 from rhinvoice.desktop.updates import PackageInstaller
 from rhinvoice_boot import RESTART, State, load_state, save_state
-from tests.unit.desktop.tools import commands
+from tests.helpers import raises_exactly
+from tests.unit.desktop.tools import calls, commands
 
 
 class Recorder:
     def __init__(self, result: int = 0) -> None:
         self.result = result
         self.calls: list[tuple[Settings, str, int]] = []
-        self.installers: list[UpdateInstaller | None] = []
+        self.owns: list[OwnServices] = []
         self.stops: list[threading.Event | None] = []
 
     def serve(
@@ -38,11 +42,11 @@ class Recorder:
         host: str,
         port: int,
         *,
-        installer: UpdateInstaller | None = None,
+        own: OwnServices = NO_OWN_SERVICES,
         stop: threading.Event | None = None,
     ) -> int:
         self.calls.append((settings, host, port))
-        self.installers.append(installer)
+        self.owns.append(own)
         self.stops.append(stop)
         return self.result
 
@@ -153,11 +157,10 @@ def test_a_second_start_shows_the_running_one(
         host: str,
         port: int,
         *,
-        installer: UpdateInstaller | None = None,
+        own: OwnServices = NO_OWN_SERVICES,
         stop: threading.Event | None = None,
     ) -> int:
-        del stop
-        del installer
+        del stop, own
         recorder.calls.append((settings, host, port))
 
         # While the first one runs, the user starts the program again.
@@ -423,7 +426,8 @@ def test_started_by_the_boot_it_can_install_updates(install: Path, tmp_path: Pat
     (install / "runtime.json").write_text('{"generation": 1}')
     recorder = Recorder()
     run(build_parser().parse_args(["--no-browser"]), desktop(install, tmp_path, recorder))
-    [installer] = recorder.installers
+    [own] = recorder.owns
+    installer = own.installer
     assert isinstance(installer, PackageInstaller)
     assert (installer.platform, installer.runtime) == ("linux-x64", 1)
 
@@ -432,7 +436,7 @@ def test_started_by_the_boot_it_can_install_updates(install: Path, tmp_path: Pat
 def test_without_a_runtime_there_is_nothing_to_install_into(install: Path, tmp_path: Path) -> None:
     recorder = Recorder()
     run(build_parser().parse_args(["--no-browser"]), desktop(install, tmp_path, recorder))
-    assert recorder.installers == [None]
+    assert recorder.owns == [NO_OWN_SERVICES]
 
 
 @pytest.mark.usefixtures("data")
@@ -452,11 +456,12 @@ def test_after_an_update_the_boot_is_asked_to_start_again(
         host: str,
         port: int,
         *,
-        installer: UpdateInstaller | None = None,
+        own: OwnServices = NO_OWN_SERVICES,
         stop: threading.Event | None = None,
     ) -> int:
         del stop
         del settings, host, port
+        installer = own.installer
         assert installer is not None
         # An update that is already in place: the program only restarts.
         (tmp_path / "home" / "rhinvoice" / "app" / "versions" / "0.7.0").mkdir(parents=True)
@@ -481,8 +486,8 @@ def test_in_a_window_an_update_closes_the_window(
         close_window=lambda: closed.append("closed"),
     )
     run(build_parser().parse_args([]), surroundings)
-    [installer] = recorder.installers
-    assert installer is None  # no runtime: the window still gets the restart wiring
+    [own] = recorder.owns
+    assert own.installer is None  # no runtime: the window still gets the restart wiring
     assert window.shown == [(f"http://127.0.0.1:{port_of(data)}", data / "window")]
 
 
@@ -533,3 +538,207 @@ def test_asked_to_end_the_program_ends_without_an_error(monkeypatch: pytest.Monk
     monkeypatch.setattr(launcher, "run", interrupted)
     monkeypatch.setattr(launcher, "end_on_break", lambda: None)
     assert launcher.main(["--no-browser"]) == 0
+
+
+def bundled_backups(install: Path, tmp_path: Path, restic: str, content: str) -> OwnServices:
+    (install / "restic").mkdir()
+    (install / "restic" / restic).write_text(content)
+    (install / "restic" / restic).chmod(0o755)
+    recorder = Recorder()
+    run(build_parser().parse_args(["--no-browser"]), desktop(install, tmp_path, recorder))
+    [own] = recorder.owns
+    return own
+
+
+@pytest.mark.usefixtures("data")
+def test_with_a_bundled_restic_the_program_backs_up_itself(install: Path, tmp_path: Path) -> None:
+    """ADR 0023: the folder and key are set up on the settings page; Dropbox is suggested."""
+    (tmp_path / "Dropbox").mkdir()
+    refusing = '#!/bin/sh\necho "Fatal: stand-in" >&2\nexit 1\n'
+    own = bundled_backups(install, tmp_path, "restic", refusing)
+    setup, archive = own.backup_setup, own.backup_archive
+    assert isinstance(setup, DesktopBackupSetup)
+    assert isinstance(archive, CurrentArchive)
+    target = setup.target()
+    assert target.folder is None
+    assert target.suggestions == [
+        FolderSuggestion("Dropbox", str(tmp_path / "Dropbox" / FOLDER_NAME))
+    ]
+    with raises_exactly(BackupFailed, "backups are not set up"):
+        archive.back_up()
+    # The bundled restic opens the folder.
+    with raises_exactly(BackupFailed, "Fatal: stand-in"):
+        setup.set_up(str(tmp_path / "Dropbox" / FOLDER_NAME))
+
+
+@pytest.mark.usefixtures("data")
+def test_on_windows_restic_is_found_by_its_full_name(install: Path, tmp_path: Path) -> None:
+    own = bundled_backups(install, tmp_path, "restic.exe", "")
+    assert isinstance(own.backup_setup, DesktopBackupSetup)
+
+
+@pytest.fixture
+def restorable(
+    install: Path, data: Path, restic_tool: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Path:
+    """Give the installation a restic stand-in and a backup folder set up with a key."""
+    (install / "restic").mkdir()
+    (install / "restic" / "restic").symlink_to(restic_tool)
+    monkeypatch.setenv("FAKE_RESTIC_LOG", str(tmp_path / "restic.jsonl"))
+    for name in ("FAKE_RESTIC_FAIL", "FAKE_RESTIC_CAT_CODE", "FAKE_RESTIC_DUMP"):
+        monkeypatch.delenv(name, raising=False)
+    config = json.loads((data / "rhinvoice.json").read_text())
+    backups = tmp_path / "OneDrive" / "Rhinvoice-Backup"
+    config |= {"backup_folder": str(backups), "backup_key": "K7QM-2XWP"}
+    (data / "rhinvoice.json").write_text(json.dumps(config))
+    return backups
+
+
+def restic_calls(tmp_path: Path) -> list[dict[str, object]]:
+    lines = (tmp_path / "restic.jsonl").read_text(encoding="utf-8").splitlines()
+    return [json.loads(line) for line in lines]
+
+
+def no_secret(prompt: str) -> str:
+    msg = f"asked for {prompt!r}"
+    raise AssertionError(msg)
+
+
+def restore(install: Path, tmp_path: Path, *arguments: str, key: str | None = None) -> int:
+    def typed(prompt: str) -> str:
+        assert prompt == "Recovery key: "
+        assert key is not None
+        return key
+
+    asked = no_secret if key is None else typed
+    surroundings = replace(desktop(install, tmp_path, Recorder()), ask_secret=asked)
+    return run(build_parser().parse_args(list(arguments)), surroundings)
+
+
+def test_a_backup_replaces_the_data(
+    install: Path,
+    data: Path,
+    restorable: Path,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """ADR 0023: the database runs only for the restore; the server does not start."""
+    assert restore(install, tmp_path, "--restore", "latest") == 0
+    [dump] = restic_calls(tmp_path)
+    assert dump["arguments"] == ["dump", "--tag", "rhinvoice", "latest", "/rhinvoice.sql"]
+    assert (dump["password"], dump["repository"]) == ("K7QM-2XWP", str(restorable))
+    # A fresh database first (initdb, createdb), then the restore in one psql call.
+    assert commands(tmp_path)[-4:] == ["createdb", "psql", "pg_ctl status", "pg_ctl stop"]
+    assert "--single-transaction" in calls(tmp_path)[-3].arguments
+    assert capsys.readouterr().out.endswith(
+        f"Restored latest from {restorable}; start Rhinvoice again.\n"
+    )
+    assert json.loads((data / "rhinvoice.json").read_text())["backup_key_confirmed"] is True
+
+
+def test_on_a_new_computer_the_folder_is_named_and_the_key_typed(
+    install: Path, data: Path, restorable: Path, tmp_path: Path
+) -> None:
+    (data / "rhinvoice.json").write_text(json.dumps({"database_password": "secret"}))
+    arguments = ("--restore", "4f3a9c1e", "--backup-folder", str(restorable))
+    assert restore(install, tmp_path, *arguments, key=" K7QM-2XWP \n") == 0
+    assert restic_calls(tmp_path)[0]["password"] == "K7QM-2XWP"
+    # Backups go on into the same folder.
+    config = json.loads((data / "rhinvoice.json").read_text())
+    assert (config["backup_folder"], config["backup_key"]) == (str(restorable), "K7QM-2XWP")
+
+
+def test_the_backups_are_listed_without_starting_the_database(
+    install: Path, restorable: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    del restorable
+    assert restore(install, tmp_path, "--list-backups") == 0
+    assert "4f3a9c1e  2026-03-09 09:00:00" in capsys.readouterr().out
+    assert "pg_ctl start" not in commands(tmp_path)
+
+
+@pytest.mark.parametrize(
+    ("arguments", "message"),
+    [
+        (["--restore", "latest", "--attach"], "Rhinvoice runs: quit it first"),
+        (
+            ["--restore", "latest", "--backup-folder", "/elsewhere"],
+            "Fatal: wrong password or no key found",
+        ),
+    ],
+)
+def test_a_restore_is_refused(
+    install: Path,
+    restorable: Path,
+    tmp_path: Path,
+    *,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    arguments: list[str],
+    message: str,
+) -> None:
+    del restorable
+    monkeypatch.setenv("FAKE_RESTIC_FAIL", "dump")
+    monkeypatch.setenv("FAKE_RESTIC_ERROR", "Fatal: wrong password or no key found")
+    assert restore(install, tmp_path, *arguments, key="WRONG") == 1
+    assert capsys.readouterr().err == f"error: {message}\n"
+
+
+def test_a_failed_restore_stops_the_database(
+    install: Path, restorable: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    del restorable
+    monkeypatch.setenv("FAKE_RESTIC_DUMP", "CREATE TABLE public.documents (\n")
+    assert restore(install, tmp_path, "--restore", "latest") == 1
+    assert commands(tmp_path)[-1] == "pg_ctl stop"
+    # Only the check for the database ran; nothing was replaced.
+    [check] = [call for call in calls(tmp_path) if call.command == "psql"]
+    assert "--list" in check.arguments
+
+
+@pytest.mark.usefixtures("data")
+def test_without_a_backup_folder_or_restic_there_is_nothing_to_restore(
+    install: Path, tmp_path: Path, restic_tool: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert restore(install, tmp_path, "--restore", "latest") == 1
+    assert capsys.readouterr().err == "error: this installation has no restic to restore with\n"
+    (install / "restic").mkdir()
+    (install / "restic" / "restic").symlink_to(restic_tool)
+    assert restore(install, tmp_path, "--list-backups") == 1
+    assert capsys.readouterr().err == (
+        "error: name the folder of the backups: --backup-folder <folder>\n"
+    )
+
+
+def test_a_running_program_is_not_restored_under_its_feet(
+    install: Path, restorable: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    del restorable
+
+    def running(_database: BundledPostgres, _port: int) -> bool:
+        return True
+
+    monkeypatch.setattr(launcher, "_already_running", running)
+    assert restore(install, tmp_path, "--restore", "latest") == 1
+    assert not (tmp_path / "restic.jsonl").exists()
+
+
+def test_the_backup_folder_of_a_restore_is_kept_as_a_full_path(
+    install: Path,
+    data: Path,
+    restorable: Path,
+    tmp_path: Path,
+    *,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Backups go on into it: a relative path would point elsewhere at the next start."""
+    (data / "rhinvoice.json").write_text(json.dumps({"database_password": "secret"}))
+    arguments = ("--restore", "latest", "--backup-folder", "Rhinvoice-Backup")
+    assert restore(install, tmp_path, *arguments, key="K7QM-2XWP") == 1
+    assert capsys.readouterr().err == "error: give the full path of the backup folder\n"
+    monkeypatch.setenv("HOME", str(tmp_path))
+    home = f"~/{restorable.relative_to(tmp_path)}/../Rhinvoice-Backup"
+    assert restore(install, tmp_path, "--restore", "latest", "--backup-folder", home, key="K") == 0
+    saved = json.loads((data / "rhinvoice.json").read_text())["backup_folder"]
+    assert saved == str(restorable.resolve())

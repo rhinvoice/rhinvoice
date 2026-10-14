@@ -71,6 +71,53 @@ class BackupFailed(Exception):  # noqa: N818 - reads as the event it is
     """restic or pg_dump failed; the message is short enough for the settings page."""
 
 
+@dataclass(frozen=True, slots=True)
+class FolderSuggestion:
+    """A folder a cloud service keeps in sync, found on this computer."""
+
+    name: str
+    """E.g. "OneDrive"."""
+    path: str
+    """The backup folder within it, as it would be used."""
+
+
+@dataclass(frozen=True, slots=True)
+class BackupTarget:
+    folder: str | None
+    """Where the backups go; None before they are set up."""
+    suggestions: list[FolderSuggestion]
+    key_confirmed: bool
+    """The person confirmed that the recovery key is kept elsewhere."""
+
+
+class BackupSetup(Protocol):
+    """Folder and recovery key of the installation without Docker (ADR 0023)."""
+
+    def target(self) -> BackupTarget:
+        """Return the folder, the cloud folders found on this computer and the key's state."""
+        ...
+
+    def folder(self) -> str | None:
+        """Return the folder the backups go to, without looking for cloud folders."""
+        ...
+
+    def set_up(self, folder: str) -> str:
+        """Back up into ``folder`` (created when missing); return the recovery key.
+
+        Raise BackupFailed when the folder cannot be used. The key stays the same for
+        another folder: one key for every backup of this installation.
+        """
+        ...
+
+    def recovery_key(self) -> str | None:
+        """Return the key that encrypts the backups; None before they are set up."""
+        ...
+
+    def confirm_key(self) -> None:
+        """Record that the key is kept elsewhere."""
+        ...
+
+
 class BackupArchive(Protocol):
     """The restic repository of the installation without Docker."""
 

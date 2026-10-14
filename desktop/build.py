@@ -8,7 +8,8 @@ writes the two parts of ADR 0022 into ``build/<target>``. On Windows:
     install/                  what the setup installs (Inno Setup packs it)
       python/                 the runtime: a standalone CPython with rhinvoice_boot only
       postgresql/             the PostgreSQL distribution (with ICU)
-      runtime.json            {"generation": N}: what app packages may expect of it
+      restic/                 restic for the backups (ADR 0023)
+      runtime.json           {"generation": N}: what app packages may expect of it
       app/                    the app package of this release (see below)
       Rhinvoice.ico
     rhinvoice-app-<version>-windows-x64.zip   the same app package, for updates
@@ -31,6 +32,7 @@ Only the standard library: it runs before anything else is installed.
 from __future__ import annotations
 
 import argparse
+import bz2
 import hashlib
 import json
 import shutil
@@ -153,6 +155,23 @@ def install_postgres(sources: dict[str, dict[str, str]], install: Path) -> None:
         shutil.rmtree(install / "postgresql" / unused, ignore_errors=True)
 
 
+def install_restic(sources: dict[str, dict[str, str]], install: Path) -> None:
+    """Unpack the restic that makes the backups (ADR 0023), named as the launcher expects."""
+    archive = fetch(sources["restic"])
+    folder = install / "restic"
+    folder.mkdir()
+    if archive.suffix == ".zip":
+        # Windows: a zip with the single restic_<version>_windows_amd64.exe.
+        with zipfile.ZipFile(archive) as zipped:
+            [name] = zipped.namelist()
+            (folder / "restic.exe").write_bytes(zipped.read(name))
+        return
+    # macOS: the program itself, compressed with bzip2.
+    program = folder / "restic"
+    program.write_bytes(bz2.decompress(archive.read_bytes()))
+    program.chmod(0o755)
+
+
 def install_static(package: Path) -> None:
     dist = ROOT / "frontend" / "dist"
     if not (dist / "index.html").exists():
@@ -184,6 +203,7 @@ def build_windows(out: Path) -> None:
     shutil.copy2(ROOT / "desktop" / "icons" / "Rhinvoice.ico", install / "Rhinvoice.ico")
     python = install_runtime_python(sources, install)
     install_postgres(sources, install)
+    install_restic(sources, install)
     brand_windows_program(sources, install)
     build_app_package(python, install / "app")
     zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-windows-x64.zip")
@@ -214,6 +234,8 @@ MACOS_START = """#!/bin/sh
 # lies in Contents/MacOS, so that macOS shows the app's name and icon.
 contents="$(cd "$(dirname "$0")/.." && pwd)"
 export PYTHONHOME="$contents/Resources/python"
+# The bundle is signed: a __pycache__ written into it would break the seal.
+export PYTHONDONTWRITEBYTECODE=1
 # Started from the Finder, the output would be lost: keep it where Console.app finds it.
 if [ ! -t 1 ]; then
     mkdir -p "$HOME/Library/Logs/Rhinvoice"
@@ -343,9 +365,33 @@ def build_macos(out: Path) -> None:
     start.chmod(0o755)
     install_postgres_from_app(sources, install)
     install_chromium(sources, install)
+    install_restic(sources, install)
     build_app_package(python, install / "app")
     zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-macos-arm64.zip")
+    precompile(python, install)
+    sign_ad_hoc(bundle)
     print(f"Rhinvoice {version()} (runtime {RUNTIME_GENERATION}) assembled in {bundle}")
+
+
+def precompile(python: Path, install: Path) -> None:
+    """Compile the Python files now: the signed bundle must never change afterwards."""
+    # Not checked: a few test files of the standard library do not compile on purpose;
+    # they are never imported, and the program writes no bytecode (MACOS_START).
+    subprocess.run(  # noqa: S603 - the bundled interpreter
+        [str(python), "-m", "compileall", "-q", "-j", "0", str(install / "python" / "lib"),
+         str(install / "app")],
+        check=False,
+    )  # fmt: skip
+
+
+def sign_ad_hoc(bundle: Path) -> None:
+    """Sign without an Apple certificate, so that macOS offers "Open Anyway".
+
+    Apple silicon runs no unsigned code, and a bundle whose parts were signed one by one
+    (Python, PostgreSQL, Chromium) but not as a whole is reported as damaged.
+    """
+    run("codesign", "--force", "--deep", "--sign", "-", bundle)
+    run("codesign", "--verify", "--deep", "--strict", "--verbose=2", bundle)
 
 
 def main() -> None:

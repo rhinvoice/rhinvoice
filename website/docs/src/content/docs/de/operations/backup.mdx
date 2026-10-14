@@ -17,6 +17,8 @@ import { Aside, Steps } from "@astrojs/starlight/components";
 
 Rhinvoice sichert seine ganze Datenbank mit [restic](https://restic.net): **verschlüsselt, dedupliziert und komprimiert**, täglich und kurz nach jedem ausgestellten oder stornierten Dokument, auf ein Ziel Ihrer Wahl (S3, SFTP, Dropbox, Google Drive oder einen Ordner). In der Datenbank steckt alles: Kunden, Artikel, Dokumente, die archivierten PDFs ausgestellter Dokumente, das Logo und die Einstellungen.
 
+Diese Seite beschreibt die Docker-Installation. Das Programm für Windows und Mac sichert selbst: [Backup im Programm](/docs/de/operations/backup-desktop/).
+
 ## Wann und wie lange
 
 - **Wann:** täglich (standardmässig um 02:00 Uhr, `BACKUP_DAILY_AT`) und etwa zwei Minuten nachdem Dokumente ausgestellt oder storniert wurden (mehrere hintereinander ergeben ein Backup). *Einstellungen → Backup → Jetzt sichern* fordert sofort eines an.

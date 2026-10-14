@@ -5,6 +5,12 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Added
+- A way back from a forgotten password: *Forgot password?* on the login page. On a server it
+  names the new commands `rhinvoice user list` and `rhinvoice user reset-password`; in the
+  installation without Docker it puts a one-time code into the data folder and opens the file.
+  A new password also ends the account's other sessions and a lock after failed logins (ADR 0024).
+
 ## [0.6.2] – 2026-10-13
 
 ### Changed

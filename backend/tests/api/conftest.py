@@ -1,5 +1,6 @@
 from collections.abc import Callable, Iterator
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 from fastapi import FastAPI
@@ -17,6 +18,14 @@ NOW = datetime(2026, 1, 15, 9, 0, tzinfo=UTC)
 CLIENT_HEADERS = {"X-Rhinvoice-Client": "test"}
 EMAIL = "anna@example.com"
 PASSWORD = "correct horse battery"
+
+
+@pytest.fixture(autouse=True)
+def no_windows(monkeypatch: pytest.MonkeyPatch) -> list[Path]:
+    """Never open the code file of a forgotten password on the machine running the tests."""
+    opened: list[Path] = []
+    monkeypatch.setattr("rhinvoice.api.container.open_with_system", opened.append)
+    return opened
 
 
 @pytest.fixture

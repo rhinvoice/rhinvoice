@@ -78,6 +78,10 @@ class User:
     def with_password_hash(self, password_hash: str) -> User:
         return replace(self, password_hash=password_hash)
 
+    def reset_password(self, password_hash: str) -> User:
+        """Set a new password after it was forgotten; a lock from failed logins ends with it."""
+        return replace(self, password_hash=password_hash, failed_logins=0, locked_until=None)
+
     def start_totp_setup(self, secret: str) -> User:
         if self.totp_enabled:
             raise InvalidStateError("two-factor authentication is already enabled")

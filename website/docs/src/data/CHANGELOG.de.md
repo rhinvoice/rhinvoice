@@ -5,6 +5,13 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Neu
+- Ein Weg zurück bei vergessenem Passwort: *Passwort vergessen?* auf der Anmeldeseite. Auf einem
+  Server nennt sie die neuen Befehle `rhinvoice user list` und `rhinvoice user reset-password`; in
+  der Installation ohne Docker legt sie einen einmaligen Code in den Datenordner und öffnet die
+  Datei. Ein neues Passwort beendet auch die übrigen Anmeldungen des Kontos und eine Sperre nach
+  Fehlversuchen (ADR 0024).
+
 ## [0.6.2] – 2026-10-13
 
 ### Geändert

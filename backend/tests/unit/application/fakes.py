@@ -146,6 +146,9 @@ class InMemoryUserRepository:
     def update(self, user: User) -> None:
         self.data[user.id] = user
 
+    def list(self) -> list[User]:
+        return sorted(self.data.values(), key=lambda user: user.email.value)
+
     def count(self) -> int:
         return len(self.data)
 

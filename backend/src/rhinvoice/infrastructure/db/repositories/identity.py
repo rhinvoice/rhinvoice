@@ -69,6 +69,10 @@ class SqlUserRepository:
             update(users).where(users.c.id == user.id).values(_user_values(user)),
         )
 
+    def list(self) -> list[User]:
+        statement = select(users).order_by(users.c.email)
+        return [_user_from_row(row) for row in self._connection.execute(statement).mappings()]
+
     def count(self) -> int:
         return self._connection.execute(select(func.count()).select_from(users)).scalar_one()
 

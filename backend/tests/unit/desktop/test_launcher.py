@@ -103,6 +103,7 @@ def test_the_server_runs_on_the_bundled_database(install: Path, tmp_path: Path, 
     assert settings.static_dir == install / "static"
     assert settings.chromium_path == install / "chromium" / "chrome-headless-shell"
     assert not settings.cookie_secure
+    assert settings.reset_code_dir == data
     assert (data / "database" / "PG_VERSION").exists()
     # The database is stopped with the server.
     assert commands(tmp_path)[-1] == "pg_ctl stop"

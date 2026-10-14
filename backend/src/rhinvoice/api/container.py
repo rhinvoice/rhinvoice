@@ -16,6 +16,7 @@ from rhinvoice.application.document.handlers import DocumentHandlers
 from rhinvoice.application.document.printing import PrintHandlers
 from rhinvoice.application.dunning.handlers import DunningHandlers
 from rhinvoice.application.identity.handlers import IdentityHandlers
+from rhinvoice.application.identity.reset import PasswordReset
 from rhinvoice.application.importing.handlers import ImportHandlers
 from rhinvoice.application.mail.handlers import MailHandlers
 from rhinvoice.application.numbering.handlers import NumberingHandlers
@@ -26,6 +27,7 @@ from rhinvoice.application.updates.handlers import UpdateHandlers
 from rhinvoice.domain.shared.clock import Clock, SystemClock
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork, make_engine
 from rhinvoice.infrastructure.einvoice.cii import CiiWriter
+from rhinvoice.infrastructure.identity.reset_file import FileResetDelivery, open_with_system
 from rhinvoice.infrastructure.importing.reader import SpreadsheetReader
 from rhinvoice.infrastructure.mail.content import PrintedMailContent
 from rhinvoice.infrastructure.mail.smtp import SmtpSender
@@ -49,6 +51,7 @@ class Container:
     engine: Engine
     clock: Clock
     identity: IdentityHandlers
+    password_reset: PasswordReset
     company: CompanyHandlers
     customers: CustomerHandlers
     articles: ArticleHandlers
@@ -128,6 +131,13 @@ def build_container(
         engine=engine,
         clock=effective_clock,
         identity=identity,
+        password_reset=PasswordReset(
+            identity,
+            None
+            if settings.reset_code_dir is None
+            else FileResetDelivery(settings.reset_code_dir, open_with_system),
+            effective_clock,
+        ),
         company=company,
         customers=customers,
         articles=articles,

@@ -79,6 +79,17 @@ docker compose exec app rhinvoice user create --email you@example.com --name "Yo
 
 Danach fragt der [Einrichtungsassistent](/docs/de/getting-started/first-start/) nach Land und Firma.
 
+## Passwort vergessen
+
+Ein neues Passwort setzt, wer den Server betreut, auf der Kommandozeile. Der erste Befehl zeigt die E-Mail-Adressen der Konten, der zweite fragt zweimal nach dem neuen Passwort:
+
+```bash
+docker compose exec app rhinvoice user list
+docker compose exec app rhinvoice user reset-password --email you@example.com
+```
+
+Das neue Passwort beendet alle Anmeldungen des Kontos und eine Sperre nach fünf Fehlversuchen; die Zwei-Faktor-Anmeldung bleibt eingeschaltet. *Passwort vergessen?* auf der Anmeldeseite zeigt dieselben Befehle. Links zum Zurücksetzen per E-Mail verschickt Rhinvoice nicht.
+
 ## Mit Beispieldaten ausprobieren
 
 Schliessen Sie auf einer Testinstallation den Einrichtungsassistenten ab (Land und Firma) und füllen Sie sie dann mit erfundenen Kunden, Artikeln und rund 21 Monaten an Rechnungen, Zahlungen, überfälligen Rechnungen und Angeboten:

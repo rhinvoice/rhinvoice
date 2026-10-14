@@ -79,6 +79,17 @@ docker compose exec app rhinvoice user create --email you@example.com --name "Yo
 
 Then the [setup wizard](/docs/getting-started/first-start/) asks for your country and company.
 
+## Forgotten password
+
+Whoever looks after the server sets a new password on the command line. The first command lists the accounts' e-mail addresses, the second asks twice for the new password:
+
+```bash
+docker compose exec app rhinvoice user list
+docker compose exec app rhinvoice user reset-password --email you@example.com
+```
+
+The new password ends every sign-in of the account and a lock after five failed logins; two-factor authentication stays switched on. *Forgot password?* on the login page shows the same commands. Rhinvoice sends no reset links by e-mail.
+
 ## Trying it out with demo data
 
 On a test installation, finish the first-start wizard (country and company), then fill it with invented customers, articles and about 21 months of invoices, payments, overdue invoices and quotes:

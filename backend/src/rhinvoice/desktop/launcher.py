@@ -165,6 +165,8 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
             database_url=database.url,
             chromium_path=find_chromium(desktop.system, desktop.environ, install),
             static_dir=args.static_dir or install / "static",
+            # A forgotten password: the code goes where only this computer's user looks.
+            reset_code_dir=folder,
             # Only this computer reaches the server, over http; Safari refuses secure
             # cookies there.
             cookie_secure=False,

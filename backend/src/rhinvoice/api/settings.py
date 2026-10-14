@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     chromium_path: Path | None = None
     """Chrome, Edge or Chromium on this computer that prints the PDFs when there is no
     Gotenberg (installations without Docker, ADR 0021). Without either there are no PDFs."""
+    reset_code_dir: Path | None = None
+    """Private folder for the code of a forgotten password (installations without Docker,
+    ADR 0024). Without it, an administrator resets passwords with ``rhinvoice user``."""
     update_check: bool = True
     """Ask GitHub once a day whether a newer release exists, to show it in the program
     (ADR 0022). Off: nothing leaves this installation for it."""

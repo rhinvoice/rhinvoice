@@ -1,4 +1,4 @@
-"""Command line interface: ``rhinvoice serve | migrate | user create | demo``."""
+"""Command line interface: ``rhinvoice serve | migrate | user … | demo``."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 from rhinvoice.api.container import build_container
 from rhinvoice.api.settings import Settings
 from rhinvoice.application.demo.handlers import DEMO_EMAIL
-from rhinvoice.application.identity.handlers import CreateUser
+from rhinvoice.application.identity.handlers import CreateUser, ResetPassword
 from rhinvoice.domain.shared.errors import DomainError
 from rhinvoice.infrastructure.db.migrate import (
     NewerDatabaseError,
@@ -53,6 +53,32 @@ def _user_create(args: argparse.Namespace, settings: Settings) -> int:
     finally:
         container.engine.dispose()
     sys.stdout.write(f"created user {user.email}\n")
+    return 0
+
+
+def _user_list(_args: argparse.Namespace, settings: Settings) -> int:
+    container = build_container(settings)
+    try:
+        accounts = container.identity.accounts()
+    finally:
+        container.engine.dispose()
+    for account in accounts:
+        sys.stdout.write(f"{account.email}\t{account.display_name}\n")
+    return 0
+
+
+def _user_reset_password(args: argparse.Namespace, settings: Settings) -> int:
+    container = build_container(settings)
+    try:
+        container.identity.reset_password(
+            ResetPassword(email=args.email, new_password=_read_password(args)),
+        )
+    except DomainError as error:
+        sys.stderr.write(f"error: {error.message}\n")
+        return 1
+    finally:
+        container.engine.dispose()
+    sys.stdout.write(f"new password set for {args.email.strip().lower()}; its sessions ended\n")
     return 0
 
 
@@ -260,6 +286,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="read the password from stdin instead of prompting",
     )
     create.set_defaults(handler=_user_create)
+    user.add_parser("list", help="show the users' e-mail addresses").set_defaults(
+        handler=_user_list,
+    )
+    reset = user.add_parser(
+        "reset-password",
+        help="set a forgotten password; also ends a lock after failed logins",
+    )
+    reset.add_argument("--email", required=True)
+    reset.add_argument(
+        "--password-stdin",
+        action="store_true",
+        help="read the new password from stdin instead of prompting",
+    )
+    reset.set_defaults(handler=_user_reset_password)
 
     demo = commands.add_parser(
         "demo", help="fill a new installation with demo customers, articles and documents"

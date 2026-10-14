@@ -11,9 +11,10 @@ from fastapi import FastAPI
 from sqlalchemy import Engine, text
 
 from rhinvoice.api import cli
-from rhinvoice.api.container import Container
+from rhinvoice.api.container import Container, build_container
 from rhinvoice.api.settings import Settings
 from rhinvoice.application.document.handlers import LineInput
+from rhinvoice.application.identity.handlers import Login
 from rhinvoice.domain.document.lines import LineKind, PriceMode
 from rhinvoice.domain.recurring.plan import Interval, InvoiceTemplate, PlanAction, RecurringPlan
 from rhinvoice.domain.shared.country import Country
@@ -25,6 +26,8 @@ from rhinvoice.infrastructure.scheduling import PeriodicJob
 from tests.unit.domain import factories
 
 PASSWORD = "correct horse battery"
+
+
 HEAD = str(ScriptDirectory.from_config(alembic_config("postgresql://")).get_current_head())
 
 
@@ -99,6 +102,42 @@ def test_user_create_reports_domain_errors(
     )
     assert code == 1
     assert capsys.readouterr().err == "error: password must be at least 12 characters long\n"
+    assert env is not None
+
+
+@pytest.mark.usefixtures("env")
+def test_user_list_and_reset_password(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    for email, name in (("zora@example.com", "Zora"), ("anna@example.com", "Anna Muster")):
+        monkeypatch.setattr("sys.stdin", io.StringIO(f"{PASSWORD}\n"))
+        cli.main(["user", "create", "--email", email, "--name", name, "--password-stdin"])
+    capsys.readouterr()
+    assert cli.main(["user", "list"]) == 0
+    assert capsys.readouterr().out == "anna@example.com\tAnna Muster\nzora@example.com\tZora\n"
+
+    monkeypatch.setattr(
+        "getpass.getpass", scripted_getpass("a new long passphrase", "a new long passphrase")
+    )
+    assert cli.main(["user", "reset-password", "--email", " Anna@Example.com "]) == 0
+    assert capsys.readouterr().out == "new password set for anna@example.com; its sessions ended\n"
+    container = build_container(Settings())
+    try:
+        container.identity.login(Login(email="anna@example.com", password="a new long passphrase"))
+    finally:
+        container.engine.dispose()
+
+
+def test_user_reset_password_reports_errors(
+    env: Engine,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr("sys.stdin", io.StringIO(f"{PASSWORD}\n"))
+    code = cli.main(["user", "reset-password", "--email", "nobody@example.com", "--password-stdin"])
+    assert code == 1
+    assert capsys.readouterr().err == "error: no user with e-mail nobody@example.com\n"
     assert env is not None
 
 

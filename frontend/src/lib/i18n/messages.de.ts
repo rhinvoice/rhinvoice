@@ -107,6 +107,24 @@ export const de = {
   "auth.totpHint": "Sechsstelliger Code aus Ihrer Authenticator-App.",
   "auth.submit": "Anmelden",
   "auth.submitting": "Wird angemeldet …",
+  "auth.forgotPassword": "Passwort vergessen?",
+  "auth.reset.title": "Passwort vergessen",
+  "auth.reset.description":
+    "Sie vergeben ein neues Passwort. Danach sind alle Anmeldungen mit dem alten beendet.",
+  "auth.reset.administrator":
+    "Ein neues Passwort setzt, wer den Server betreut. Bei einer Installation mit Docker im Ordner von Rhinvoice:",
+  "auth.reset.whichAddress": "Welche E-Mail-Adresse? Dieser Befehl zeigt alle Konten:",
+  "auth.reset.file":
+    "Rhinvoice legt einen einmaligen Code in seinen Datenordner auf diesem Computer und öffnet die Datei. Darin stehen auch die E-Mail-Adressen der Konten.",
+  "auth.reset.request": "Code anfordern",
+  "auth.reset.again": "Neuen Code anfordern",
+  "auth.reset.opened": "Die Datei mit dem Code ist geöffnet. Sie liegt hier:",
+  "auth.reset.code": "Code",
+  "auth.reset.newPassword": "Neues Passwort",
+  "auth.reset.save": "Passwort speichern",
+  "auth.reset.done": "Das Passwort ist geändert. Melden Sie sich mit dem neuen Passwort an.",
+  "auth.reset.toLogin": "Zur Anmeldung",
+  "auth.reset.back": "Zurück zur Anmeldung",
   "auth.setupTitle": "Rhinvoice einrichten",
   "auth.setupDescription":
     "Legen Sie das erste Benutzerkonto an. Es erhält Zugriff auf alle Daten dieser Installation.",
@@ -137,6 +155,10 @@ export const de = {
   "error.authentication_failed": "E-Mail-Adresse oder Passwort ist falsch.",
   "error.session_expired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
   "error.not_logged_in": "Sie sind nicht angemeldet.",
+  "error.reset_code_invalid":
+    "Die E-Mail-Adresse oder der Code stimmt nicht, oder der Code ist abgelaufen. Nach fünf Fehlversuchen braucht es einen neuen Code.",
+  "error.reset_by_administrator":
+    "Hier setzt ein Administrator das Passwort auf dem Server zurück.",
   "error.account_locked": "Zu viele Fehlversuche. Das Konto ist für 15 Minuten gesperrt.",
   "error.totp_required": "Bitte geben Sie den Bestätigungscode ein.",
   "error.retry": "Erneut versuchen",

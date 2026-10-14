@@ -86,3 +86,22 @@ export function useTotpDisable() {
     },
   });
 }
+
+export const passwordResetQuery = queryOptions({
+  queryKey: ["auth", "password-reset"] as const,
+  queryFn: () => unwrap(api.GET("/api/auth/password-reset")),
+  staleTime: Infinity,
+});
+
+export function useRequestResetCode() {
+  return useMutation({
+    mutationFn: () => unwrap(api.POST("/api/auth/password-reset")),
+  });
+}
+
+export function useConfirmReset() {
+  return useMutation({
+    mutationFn: (body: components["schemas"]["ConfirmResetRequest"]) =>
+      unwrap(api.POST("/api/auth/password-reset/confirm", { body })),
+  });
+}

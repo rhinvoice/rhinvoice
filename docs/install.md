@@ -60,6 +60,10 @@ The first visit asks you to create the first user account. Alternatively:
 docker compose exec app rhinvoice user create --email you@example.com --name "Your Name"
 ```
 
+Forgot the password? `docker compose exec app rhinvoice user list` shows the accounts,
+`docker compose exec app rhinvoice user reset-password --email you@example.com` sets a new one
+(it also ends the account's sessions and a lock after failed logins).
+
 Then enter your company details and a bank account under **Settings** and create your first invoice
 (key `N`).
 

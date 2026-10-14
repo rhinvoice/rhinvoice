@@ -65,6 +65,20 @@ class ChangePassword:
 
 
 @dataclass(frozen=True, slots=True)
+class ResetPassword:
+    """Set a forgotten password; only for whom the installation trusts (server, own computer)."""
+
+    email: str
+    new_password: str
+
+
+@dataclass(frozen=True, slots=True)
+class Account:
+    email: str
+    display_name: str
+
+
+@dataclass(frozen=True, slots=True)
 class DisableTotp:
     user_id: UUID
     password: str
@@ -116,6 +130,21 @@ class IdentityHandlers:
         )
         uow.users.add(user)
         return user
+
+    def accounts(self) -> list[Account]:
+        with self.uow() as uow:
+            return [Account(user.email.value, user.display_name) for user in uow.users.list()]
+
+    def reset_password(self, command: ResetPassword) -> None:
+        """Set a new password without the old one; every session of the account ends."""
+        validate_password(command.new_password)
+        with self.uow() as uow:
+            user = self._find_by_email(uow, command.email)
+            if user is None:
+                raise NotFoundError(f"no user with e-mail {command.email.strip()}")
+            uow.users.update(user.reset_password(self.hasher.hash(command.new_password)))
+            uow.sessions.delete_for_user(user.id)
+            uow.commit()
 
     def has_users(self) -> bool:
         with self.uow() as uow:

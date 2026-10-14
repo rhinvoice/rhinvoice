@@ -111,6 +111,16 @@ def test_password_hash_can_be_replaced() -> None:
     assert make_user().with_password_hash("new").password_hash == "new"
 
 
+def test_a_reset_password_also_lifts_a_lock() -> None:
+    """Who forgot the password has often tried it a few times too often."""
+    locked = make_user(failed_logins=3, locked_until=NOW + LOCKOUT_DURATION, totp_secret="SECRET")
+    reset = locked.reset_password("new")
+    assert reset.password_hash == "new"
+    assert reset.failed_logins == 0
+    assert reset.locked_until is None
+    assert reset.totp_secret == "SECRET"  # the second factor stays
+
+
 def test_totp_lifecycle() -> None:
     user = make_user()
     assert not user.totp_enabled

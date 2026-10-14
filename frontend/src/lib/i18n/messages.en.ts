@@ -104,6 +104,23 @@ export const en: Catalog<MessageKey> = {
   "auth.totpHint": "Six-digit code from your authenticator app.",
   "auth.submit": "Log in",
   "auth.submitting": "Logging in …",
+  "auth.forgotPassword": "Forgot password?",
+  "auth.reset.title": "Forgotten password",
+  "auth.reset.description": "You set a new password. Every sign-in with the old one ends.",
+  "auth.reset.administrator":
+    "Whoever looks after the server sets a new password. In an installation with Docker, in the Rhinvoice folder:",
+  "auth.reset.whichAddress": "Which e-mail address? This command shows all accounts:",
+  "auth.reset.file":
+    "Rhinvoice puts a one-time code into its data folder on this computer and opens the file. It also lists the accounts' e-mail addresses.",
+  "auth.reset.request": "Get a code",
+  "auth.reset.again": "Get a new code",
+  "auth.reset.opened": "The file with the code is open. It lies here:",
+  "auth.reset.code": "Code",
+  "auth.reset.newPassword": "New password",
+  "auth.reset.save": "Save password",
+  "auth.reset.done": "The password is changed. Sign in with the new password.",
+  "auth.reset.toLogin": "Go to sign-in",
+  "auth.reset.back": "Back to sign-in",
   "auth.setupTitle": "Set up Rhinvoice",
   "auth.setupDescription":
     "Create the first user account. It has access to all data of this installation.",
@@ -134,6 +151,9 @@ export const en: Catalog<MessageKey> = {
   "error.authentication_failed": "E-mail address or password is incorrect.",
   "error.session_expired": "Your session has expired. Please log in again.",
   "error.not_logged_in": "You are not logged in.",
+  "error.reset_code_invalid":
+    "The e-mail address or the code is wrong, or the code has expired. After five wrong tries a new code is needed.",
+  "error.reset_by_administrator": "Here an administrator resets the password on the server.",
   "error.account_locked": "Too many failed attempts. The account is locked for 15 minutes.",
   "error.totp_required": "Please enter the verification code.",
   "error.retry": "Try again",

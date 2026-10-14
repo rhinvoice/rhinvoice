@@ -78,9 +78,11 @@ def test_a_folder_is_set_up_with_a_new_key(config: Path, log: list[str], tmp_pat
     assert backups.target().folder is None
     assert backups.target().suggestions == [SUGGESTION]
     assert backups.recovery_key() is None
+    assert backups.folder() is None
     folder = tmp_path / "OneDrive" / FOLDER_NAME
     key = backups.set_up(f"  {folder}  ")
     assert folder.is_dir()
+    assert backups.folder() == str(folder)
     assert log == [f"prepare {folder} {key}"]
     assert (stored(config)["backup_folder"], stored(config)["backup_key"]) == (str(folder), key)
     assert backups.recovery_key() == key

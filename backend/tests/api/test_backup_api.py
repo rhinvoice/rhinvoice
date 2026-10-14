@@ -20,23 +20,26 @@ class Setup:
     """The folder and key of the installation without Docker, standing in."""
 
     def __init__(self) -> None:
-        self.folder: str | None = None
+        self.chosen: str | None = None
         self.confirmed = False
+
+    def folder(self) -> str | None:
+        return self.chosen
 
     def target(self) -> BackupTarget:
         return BackupTarget(
-            folder=self.folder, suggestions=[ONEDRIVE], key_confirmed=self.confirmed
+            folder=self.chosen, suggestions=[ONEDRIVE], key_confirmed=self.confirmed
         )
 
     def set_up(self, folder: str) -> str:
         if not folder.startswith("/"):
             msg = "choose the full path of a folder"
             raise BackupFailed(msg)
-        self.folder = folder
+        self.chosen = folder
         return "K7QM-2XWP"
 
     def recovery_key(self) -> str | None:
-        return None if self.folder is None else "K7QM-2XWP"
+        return None if self.chosen is None else "K7QM-2XWP"
 
     def confirm_key(self) -> None:
         self.confirmed = True

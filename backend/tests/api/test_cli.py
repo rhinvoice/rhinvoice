@@ -344,13 +344,18 @@ class OwnBackups:
     """The backup setup and archive of the installation without Docker, standing in."""
 
     def __init__(self) -> None:
-        self.folder: str | None = None
+        self.folder_set: str | None = None
 
     def target(self) -> BackupTarget:
-        return BackupTarget(folder=self.folder, suggestions=[], key_confirmed=False)
+        # Looks through the cloud folders: never every half minute (macOS may ask each time).
+        msg = "the backup job asked for the folder suggestions"
+        raise AssertionError(msg)
+
+    def folder(self) -> str | None:
+        return self.folder_set
 
     def set_up(self, folder: str) -> str:
-        self.folder = folder
+        self.folder_set = folder
         return "K7QM"
 
     def recovery_key(self) -> str | None:
@@ -415,6 +420,6 @@ def test_the_installation_without_docker_makes_its_own_backups(
         assert connection.execute(text("SELECT status FROM backup_runs")).scalar_one() == "failed"
     job.run_once()  # no folder yet: nothing to do
     assert ticks == []
-    backups.folder = "/Users/anna/OneDrive/Rhinvoice-Backup"
+    backups.folder_set = "/Users/anna/OneDrive/Rhinvoice-Backup"
     job.run_once()
     assert len(ticks) == 1

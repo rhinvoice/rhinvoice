@@ -208,7 +208,7 @@ def _backup_jobs(settings: Settings, container: Container, own: OwnServices) -> 
     worker.recover()
 
     def back_up_when_set_up() -> None:
-        if setup.target().folder is not None:
+        if setup.folder() is not None:
             worker.tick()
 
     return [

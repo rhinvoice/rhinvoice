@@ -93,7 +93,13 @@ class BackupTarget:
 class BackupSetup(Protocol):
     """Folder and recovery key of the installation without Docker (ADR 0023)."""
 
-    def target(self) -> BackupTarget: ...
+    def target(self) -> BackupTarget:
+        """Return the folder, the cloud folders found on this computer and the key's state."""
+        ...
+
+    def folder(self) -> str | None:
+        """Return the folder the backups go to, without looking for cloud folders."""
+        ...
 
     def set_up(self, folder: str) -> str:
         """Back up into ``folder`` (created when missing); return the recovery key.

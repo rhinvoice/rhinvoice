@@ -108,6 +108,9 @@ class DesktopBackupSetup:
         self._archive_for = archive_for
         self._suggestions = suggestions
 
+    def folder(self) -> str | None:
+        return load_or_create(self._config).backup_folder
+
     def target(self) -> BackupTarget:
         config = load_or_create(self._config)
         return BackupTarget(

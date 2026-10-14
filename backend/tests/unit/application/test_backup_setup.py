@@ -25,20 +25,23 @@ class Setup:
     """Stands in for the program's folder and key handling."""
 
     def __init__(self) -> None:
-        self.folder: str | None = None
+        self.chosen: str | None = None
         self.key: str | None = None
         self.confirmed = False
         self.refuse: str | None = None
 
+    def folder(self) -> str | None:
+        return self.chosen
+
     def target(self) -> BackupTarget:
         return BackupTarget(
-            folder=self.folder, suggestions=[ONEDRIVE], key_confirmed=self.confirmed
+            folder=self.chosen, suggestions=[ONEDRIVE], key_confirmed=self.confirmed
         )
 
     def set_up(self, folder: str) -> str:
         if self.refuse is not None:
             raise BackupFailed(self.refuse)
-        self.folder = folder
+        self.chosen = folder
         self.key = self.key or "K7QM-2XWP-9DTA-F4NR"
         return self.key
 

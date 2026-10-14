@@ -29,6 +29,7 @@ dependencies = [
 
 [project.scripts]
 rhinvoice = "rhinvoice.api.cli:main"
+rhinvoice-desktop = "rhinvoice.desktop.launcher:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -152,9 +153,10 @@ root_package = "rhinvoice"
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
-name = "Layers: api -> infrastructure -> application -> domain"
+name = "Layers: desktop -> api -> infrastructure -> application -> domain"
 type = "layers"
 layers = [
+    "rhinvoice.desktop",
     "rhinvoice.api",
     "rhinvoice.infrastructure",
     "rhinvoice.application",

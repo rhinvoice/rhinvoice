@@ -107,6 +107,11 @@ def _migrate(_args: argparse.Namespace, settings: Settings) -> int:
 
 
 def _serve(args: argparse.Namespace, settings: Settings) -> int:
+    return serve(settings, args.host, args.port, args.forwarded_allow_ips)
+
+
+def serve(settings: Settings, host: str, port: int, forwarded_allow_ips: str = "127.0.0.1") -> int:
+    """Run the web server until it is stopped (also used by the installation without Docker)."""
     import uvicorn  # noqa: PLC0415 - only needed for this command
 
     from rhinvoice.api.app import create_app  # noqa: PLC0415
@@ -146,10 +151,10 @@ def _serve(args: argparse.Namespace, settings: Settings) -> int:
     try:
         uvicorn.run(
             create_app(container),
-            host=args.host,
-            port=args.port,
+            host=host,
+            port=port,
             proxy_headers=True,
-            forwarded_allow_ips=args.forwarded_allow_ips,
+            forwarded_allow_ips=forwarded_allow_ips,
         )
     finally:
         for job in jobs:

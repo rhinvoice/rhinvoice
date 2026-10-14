@@ -221,16 +221,6 @@
     font-feature-settings: "cv11";
   }
 
-  /* With a mouse or trackpad the page stays put at its edges, as in an app: no rubber band
-     on macOS (the program window of the installation without Docker). Touch screens keep
-     their usual pull to refresh. */
-  @media (hover: hover) and (pointer: fine) {
-    html,
-    body {
-      overscroll-behavior: none;
-    }
-  }
-
   * {
     @apply border-border;
   }

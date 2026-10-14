@@ -510,3 +510,25 @@ def test_a_first_start_that_never_answers_is_reported(
         "Rhinvoice runs already, but does not answer on http://127.0.0.1:"
         in capsys.readouterr().err
     )
+
+
+def test_windows_request_to_end_is_handled_like_ctrl_c(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Without it Windows ends the process before the program stops its database."""
+    monkeypatch.setattr(signal, "SIGBREAK", signal.SIGUSR1, raising=False)
+    before = signal.getsignal(signal.SIGUSR1)
+    try:
+        launcher.end_on_break()
+        assert signal.getsignal(signal.SIGUSR1) is signal.default_int_handler
+    finally:
+        signal.signal(signal.SIGUSR1, before)
+    monkeypatch.delattr(signal, "SIGBREAK")
+    launcher.end_on_break()  # elsewhere there is nothing to do
+
+
+def test_asked_to_end_the_program_ends_without_an_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    def interrupted(_args: object, _desktop: object) -> int:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(launcher, "run", interrupted)
+    monkeypatch.setattr(launcher, "end_on_break", lambda: None)
+    assert launcher.main(["--no-browser"]) == 0

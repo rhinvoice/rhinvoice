@@ -4,6 +4,7 @@ import importlib
 import json
 import os
 import shutil
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -288,17 +289,32 @@ def test_the_launcher_of_the_package_runs_in_this_process(
     assert sys.path[0] == str(folder / "site-packages")
 
 
-def test_a_restart_runs_the_boot_anew_and_waits_for_it(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("windows", [False, True])
+def test_a_restart_runs_the_boot_anew_and_waits_for_it(
+    monkeypatch: pytest.MonkeyPatch,
+    windows: bool,
+) -> None:
+    if windows:  # Windows' CTRL_BREAK, here stood in for by SIGUSR1
+        monkeypatch.setattr(signal, "SIGBREAK", signal.SIGUSR1, raising=False)
+    else:
+        monkeypatch.delattr(signal, "SIGBREAK", raising=False)
     calls: list[list[str]] = []
+    ignored: list[bool] = []
 
     def call(arguments: list[str]) -> int:
         calls.append(arguments)
+        # While the child runs, a request to end is the child's to handle.
+        ignored.append(signal.getsignal(signal.SIGINT) is signal.SIG_IGN)
+        if windows:
+            ignored.append(signal.getsignal(signal.SIGUSR1) is signal.SIG_IGN)
         return 7
 
     monkeypatch.setattr(subprocess, "call", call)
     monkeypatch.setattr(sys, "argv", ["rhinvoice_boot", "--browser"])
     assert boot.restart() == 7
     assert calls == [[sys.executable, "-m", "rhinvoice_boot", "--browser"]]
+    assert ignored == ([True, True] if windows else [True])
+    assert signal.getsignal(signal.SIGINT) is signal.default_int_handler
 
 
 def test_options_are_read_in_both_spellings() -> None:

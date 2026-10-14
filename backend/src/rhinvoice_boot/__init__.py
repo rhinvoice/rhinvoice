@@ -21,6 +21,7 @@ import json
 import os
 import platform
 import shutil
+import signal
 import site
 import subprocess
 import sys
@@ -414,9 +415,17 @@ def restart() -> int:
     """Start the boot anew and wait for it: it reads the state and imports a package afresh.
 
     A child, not a replacement: on Windows a replaced process would lose the setup's
-    shortcut, the console and the request to close.
+    shortcut, the console and the request to close. A request to end (Ctrl+C, Windows'
+    CTRL_BREAK) reaches the child, which stops its server and database; meanwhile this
+    process ignores it, as stopping here would kill the child in the middle of that.
     """
-    return subprocess.call([sys.executable, "-m", "rhinvoice_boot", *sys.argv[1:]])  # noqa: S603 - this program
+    ignored = [s for s in (signal.SIGINT, getattr(signal, "SIGBREAK", None)) if s is not None]
+    previous = {number: signal.signal(number, signal.SIG_IGN) for number in ignored}
+    try:
+        return subprocess.call([sys.executable, "-m", "rhinvoice_boot", *sys.argv[1:]])  # noqa: S603 - this program
+    finally:
+        for number, handler in previous.items():
+            signal.signal(number, handler)
 
 
 def option(argv: Sequence[str], name: str) -> str | None:

@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import os
 import platform
+import signal
 import sys
 import threading
 import time
@@ -116,7 +117,24 @@ def main(argv: Sequence[str] | None = None) -> int:
         # The bundled interpreter lives in <install>/python.
         install=Path(sys.prefix).parent,
     )
-    return run(build_parser().parse_args(argv), desktop)
+    end_on_break()
+    try:
+        return run(build_parser().parse_args(argv), desktop)
+    except KeyboardInterrupt:
+        # Asked to end (Ctrl+C, or Windows): the server and the database are stopped by now.
+        return 0
+
+
+def end_on_break() -> None:
+    """Treat Windows' request to end (CTRL_BREAK: logging off, a task manager) as Ctrl+C.
+
+    uvicorn stops the server on it and then raises the signal again; without a handler
+    Windows ends the process at once, before the program stops its database. As
+    KeyboardInterrupt it passes through every cleanup on its way out.
+    """
+    sigbreak = getattr(signal, "SIGBREAK", None)
+    if sigbreak is not None:
+        signal.signal(sigbreak, signal.default_int_handler)
 
 
 def run(args: argparse.Namespace, desktop: Desktop) -> int:

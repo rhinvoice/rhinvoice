@@ -1,5 +1,12 @@
 # Rhinvoice
 
+[![CI](https://github.com/rhinvoice/rhinvoice/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rhinvoice/rhinvoice/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/github/v/tag/rhinvoice/rhinvoice?sort=semver&label=version&color=2a6db0)](https://github.com/rhinvoice/rhinvoice/tags)
+[![License: AGPL-3.0](https://img.shields.io/github/license/rhinvoice/rhinvoice?color=8250df)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-rhinvoice.com-0e8a7e)](https://rhinvoice.com/docs/)
+[![Demo](https://img.shields.io/badge/demo-ch.rhinvoice.com-e36209)](https://ch.rhinvoice.com)
+![Countries: CH, LI, DE, AT](https://img.shields.io/badge/countries-CH%20%C2%B7%20LI%20%C2%B7%20DE%20%C2%B7%20AT-d52b1e)
+
 **Open-source invoicing for small businesses in Switzerland, Liechtenstein, Germany and Austria.**
 Quotes, invoices, reminders and e-invoices with a calm, keyboard-first interface. Self-hosted with
 Docker: your data stays on your server.

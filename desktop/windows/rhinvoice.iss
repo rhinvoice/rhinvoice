@@ -19,6 +19,9 @@ AppPublisher=Webberz
 AppPublisherURL=https://rhinvoice.com
 AppSupportURL=https://rhinvoice.com/docs
 DefaultDirName={localappdata}\Programs\Rhinvoice
+; Always there: not into the data folder or a folder holding other things. An update keeps
+; the folder an earlier version was installed to.
+DisableDirPage=yes
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
@@ -54,9 +57,15 @@ Type: filesandordirs; Name: "{app}\static"
 Type: filesandordirs; Name: "{app}\restic"
 
 [UninstallDelete]
-; Files the program wrote beside the installed ones (e.g. the boot's compiled Python files).
-; The data lives elsewhere (%LOCALAPPDATA%\Rhinvoice) and stays.
-Type: filesandordirs; Name: "{app}"
+; Files the program wrote into its own parts (e.g. the boot's compiled Python files).
+; Exactly the parts the setup installs, never {app} as a whole: a folder chosen by hand
+; may hold other things. The data lives elsewhere (%LOCALAPPDATA%\Rhinvoice) and stays.
+Type: filesandordirs; Name: "{app}\python"
+Type: filesandordirs; Name: "{app}\postgresql"
+Type: filesandordirs; Name: "{app}\app"
+Type: filesandordirs; Name: "{app}\static"
+Type: filesandordirs; Name: "{app}\restic"
+Type: dirifempty; Name: "{app}"
 
 [Icons]
 Name: "{autoprograms}\Rhinvoice"; Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice_boot"; WorkingDir: "{app}"; IconFilename: "{app}\Rhinvoice.ico"

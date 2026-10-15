@@ -64,6 +64,7 @@ def clients(container: Container) -> Iterator[ClientFactory]:
 def test_endpoints_require_login(client: TestClient) -> None:
     assert client.get("/api/updates").status_code == 401
     assert client.post("/api/updates/install").status_code == 401
+    assert client.post("/api/updates/check").status_code == 401
 
 
 def test_before_the_first_check_nothing_is_known(user_client: TestClient) -> None:
@@ -83,6 +84,7 @@ def test_a_server_installation_is_told_the_release(clients: ClientFactory) -> No
         "setup_url": None,
         "checked_at": "2026-01-15T09:00:00Z",
         "failed": False,
+        "can_check": True,
     }
     refused = client.post("/api/updates/install")
     assert refused.status_code == 409
@@ -96,3 +98,22 @@ def test_the_installation_without_docker_installs_it(clients: ClientFactory) -> 
     response = client.post("/api/updates/install")
     assert response.status_code == 202
     assert installer.installed == ["0.7.0"]
+
+
+def test_a_check_on_request_answers_with_the_release(clients: ClientFactory) -> None:
+    response = clients(Installer()).post("/api/updates/check")
+    assert response.status_code == 200
+    assert response.json()["action"] == "install"
+
+
+def test_a_check_is_refused_when_it_is_switched_off(container: Container) -> None:
+    updates = UpdateHandlers(None, "0.6.2", container.clock)
+    with TestClient(
+        create_app(replace(container, updates=updates)), headers=CLIENT_HEADERS
+    ) as client:
+        setup = {"email": EMAIL, "display_name": "Anna Muster", "password": PASSWORD}
+        assert client.post("/api/auth/setup", json=setup).status_code == 201
+        assert client.get("/api/updates").json()["can_check"] is False
+        refused = client.post("/api/updates/check")
+    assert refused.status_code == 503
+    assert refused.json()["error"]["code"] == "update_check_off"

@@ -4,7 +4,7 @@ from dataclasses import replace
 
 import pytest
 
-from rhinvoice.application.errors import ConflictError
+from rhinvoice.application.errors import ConflictError, UnavailableError
 from rhinvoice.application.updates.handlers import (
     UpdateAction,
     UpdateHandlers,
@@ -84,6 +84,7 @@ def test_before_the_first_check_nothing_is_known() -> None:
         setup_url=None,
         checked_at=None,
         failed=False,
+        can_check=True,
     )
 
 
@@ -98,6 +99,7 @@ def test_a_server_installation_is_told_the_command() -> None:
         setup_url=None,
         checked_at=NOW,
         failed=False,
+        can_check=True,
     )
 
 
@@ -147,6 +149,29 @@ def test_without_a_feed_nothing_is_ever_checked() -> None:
     updates.refresh()
     assert updates.status().action is UpdateAction.NONE
     assert updates.status().checked_at is None
+    assert updates.status().can_check is False
+    with raises_exactly(UnavailableError, "the update check is switched off") as refused:
+        updates.check()
+    assert refused.value.code == "update_check_off"
+
+
+def test_a_check_on_request_asks_the_feed_at_once() -> None:
+    feed = Feed(RELEASE)
+    updates = UpdateHandlers(feed, "0.6.2", FixedClock(NOW), Installer())
+    updates.check()
+    assert feed.asked == 1
+    assert updates.status().latest == "0.7.0"
+    assert updates.status().checked_at == NOW
+
+
+def test_a_check_on_request_tells_when_the_feed_did_not_answer() -> None:
+    updates = handlers(RELEASE, None)
+    updates.refresh()
+    message = "the information about new releases could not be fetched"
+    with raises_exactly(UnavailableError, message) as refused:
+        updates.check()
+    assert refused.value.code == "update_check_failed"
+    assert updates.status().latest == "0.7.0"
 
 
 @pytest.mark.parametrize(

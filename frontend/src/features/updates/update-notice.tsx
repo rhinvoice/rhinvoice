@@ -7,7 +7,7 @@ import { useI18n } from "@/components/i18n/use-i18n";
 import { ExternalLink } from "@/components/external-link";
 import { Button } from "@/components/ui/button";
 import { useErrorMessage } from "@/features/shared/use-error-message";
-import { updatesQuery, useInstallUpdate } from "@/features/updates/api";
+import { updatesQuery, useCheckUpdates, useInstallUpdate } from "@/features/updates/api";
 import {
   RESTART_POLL_MS,
   restartedInto,
@@ -157,6 +157,34 @@ export function UpdateCard() {
   );
 }
 
+/** Asks for the newest release now; the section above shows the answer. */
+function CheckButton() {
+  const { t } = useI18n();
+  const errorMessage = useErrorMessage();
+  const check = useCheckUpdates();
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="self-start"
+        disabled={check.isPending}
+        onClick={() => {
+          check.mutate();
+        }}
+      >
+        {check.isPending ? t("updates.checking") : t("updates.check")}
+      </Button>
+      {check.isError ? (
+        <p role="alert" className="text-xs text-destructive">
+          {errorMessage(check.error) ?? t("error.generic")}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 /** The same in "About Rhinvoice", plus whether this is the newest version. */
 export function UpdateSection() {
   const { t } = useI18n();
@@ -170,10 +198,11 @@ export function UpdateSection() {
       {notice !== null && data !== undefined ? (
         <UpdateNoticeContent notice={notice} current={data.current} />
       ) : (
-        <p>
+        <p role="status">
           {(data?.checked_at ?? null) === null ? t("updates.notChecked") : t("updates.upToDate")}
         </p>
       )}
+      {data?.can_check === true && notice?.kind !== "install" ? <CheckButton /> : null}
     </section>
   );
 }

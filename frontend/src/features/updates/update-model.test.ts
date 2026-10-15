@@ -24,6 +24,7 @@ function update(overrides: Partial<Update> = {}): Update {
     setup_url: null,
     checked_at: "2026-10-14T09:00:00Z",
     failed: false,
+    can_check: true,
     ...overrides,
   };
 }

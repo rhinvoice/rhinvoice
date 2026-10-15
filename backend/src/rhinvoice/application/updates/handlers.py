@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from rhinvoice.application.errors import ConflictError
+from rhinvoice.application.errors import ConflictError, UnavailableError
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -42,6 +42,8 @@ class UpdateStatus:
     failed: bool = False
     """The newest release was installed here, did not start and was taken back: the
     version that ran before runs again, and the release is not offered again."""
+    can_check: bool = False
+    """Someone may ask for a check now; False with the check switched off."""
 
 
 def is_newer(candidate: str, current: str) -> bool:
@@ -76,6 +78,17 @@ class UpdateHandlers:
         if release is not None:
             self._known = (release, self._clock.now())
 
+    def check(self) -> None:
+        """Ask the feed now, on request; tell when it is switched off or did not answer."""
+        if self._feed is None:
+            msg = "the update check is switched off"
+            raise UnavailableError(msg, code="update_check_off")
+        release = self._feed.latest()
+        if release is None:
+            msg = "the information about new releases could not be fetched"
+            raise UnavailableError(msg, code="update_check_failed")
+        self._known = (release, self._clock.now())
+
     def status(self) -> UpdateStatus:
         release, checked_at = self._known
         failed = (
@@ -100,6 +113,7 @@ class UpdateHandlers:
             setup_url=setup_url,
             checked_at=checked_at,
             failed=failed,
+            can_check=self._feed is not None,
         )
 
     def install(self) -> None:

@@ -5,6 +5,9 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Added
+- *About Rhinvoice* has a button **Check for updates** that asks for a new version right away.
+
 ### Fixed
 - The notice about a new version appears within a minute of starting Rhinvoice. The page
   asked before the first check had run and then waited an hour.

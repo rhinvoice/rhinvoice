@@ -67,6 +67,8 @@ export const de = {
   "updates.failedHint": "Rhinvoice {current} läuft wieder, Ihre Daten sind unverändert.",
   "updates.upToDate": "Rhinvoice ist auf dem neuesten Stand.",
   "updates.notChecked": "Ob es eine neue Version gibt, wurde noch nicht geprüft.",
+  "updates.check": "Nach Updates suchen",
+  "updates.checking": "Wird geprüft …",
   "about.madeBy": "made by {maker}",
   "about.byMaker": "by {maker}",
   "about.legalNotice": "Impressum",
@@ -149,6 +151,9 @@ export const de = {
 
   "error.demo_locked": "In der öffentlichen Demo ist das nicht möglich.",
   "error.update_running": "Das Update wird bereits installiert.",
+  "error.update_check_failed":
+    "Die Angaben zu neuen Versionen konnten nicht abgerufen werden. Ist der Computer mit dem Internet verbunden?",
+  "error.update_check_off": "Die Suche nach Updates ist in dieser Installation ausgeschaltet.",
   "error.no_update": "Es gibt hier kein Update zu installieren.",
   "error.generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
   "error.network": "Keine Verbindung zum Server. Bitte prüfen Sie Ihre Verbindung.",

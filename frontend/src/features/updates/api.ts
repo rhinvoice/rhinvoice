@@ -12,6 +12,17 @@ export const updatesQuery = queryOptions({
   staleTime: CHECK_INTERVAL_MS,
 });
 
+/** Asks for the newest release now instead of waiting for the daily check. */
+export function useCheckUpdates() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => unwrap(api.POST("/api/updates/check")),
+    onSuccess: (update) => {
+      client.setQueryData(UPDATES_KEY, update);
+    },
+  });
+}
+
 export function useInstallUpdate() {
   const client = useQueryClient();
   return useMutation({

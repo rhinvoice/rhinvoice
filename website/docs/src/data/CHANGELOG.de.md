@@ -5,6 +5,9 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Neu
+- *Über Rhinvoice* hat eine Schaltfläche **Nach Updates suchen**, die sofort nach einer neuen Version fragt.
+
 ### Behoben
 - Der Hinweis auf eine neue Version erscheint innerhalb einer Minute nach dem Start. Die Seite
   fragte vor der ersten Prüfung nach und wartete danach eine Stunde.

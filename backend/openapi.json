@@ -6041,6 +6041,10 @@
           "action": {
             "$ref": "#/components/schemas/UpdateAction"
           },
+          "can_check": {
+            "title": "Can Check",
+            "type": "boolean"
+          },
           "checked_at": {
             "anyOf": [
               {
@@ -6102,7 +6106,8 @@
           "notes_url",
           "setup_url",
           "checked_at",
-          "failed"
+          "failed",
+          "can_check"
         ],
         "title": "UpdateResponse",
         "type": "object"
@@ -17930,6 +17935,103 @@
           }
         ],
         "summary": "Get Updates",
+        "tags": [
+          "updates"
+        ]
+      }
+    },
+    "/api/updates/check": {
+      "post": {
+        "description": "Ask for the newest release now instead of waiting for the daily check.\n\n503 update_check_off with RHINVOICE_UPDATE_CHECK=false (and in the demo),\n503 update_check_failed when the release information could not be fetched.",
+        "operationId": "updates_check_updates",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Switched off, or no answer about releases"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Check Updates",
         "tags": [
           "updates"
         ]

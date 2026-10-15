@@ -65,6 +65,8 @@ export const en: Catalog<MessageKey> = {
   "updates.failedHint": "Rhinvoice {current} runs again; your data is unchanged.",
   "updates.upToDate": "Rhinvoice is up to date.",
   "updates.notChecked": "Not checked for a new version yet.",
+  "updates.check": "Check for updates",
+  "updates.checking": "Checking …",
   "about.madeBy": "made by {maker}",
   "about.byMaker": "by {maker}",
   "about.legalNotice": "Legal notice",
@@ -145,6 +147,9 @@ export const en: Catalog<MessageKey> = {
 
   "error.demo_locked": "This is not possible in the public demo.",
   "error.update_running": "The update is already being installed.",
+  "error.update_check_failed":
+    "The information about new versions could not be fetched. Is the computer connected to the internet?",
+  "error.update_check_off": "Checking for updates is switched off in this installation.",
   "error.no_update": "There is no update to install here.",
   "error.generic": "Something went wrong. Please try again.",
   "error.network": "No connection to the server. Please check your connection.",

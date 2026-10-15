@@ -12,6 +12,7 @@ function release(overrides: Record<string, unknown>) {
     setup_url: null,
     checked_at: "2026-10-14T09:00:00Z",
     failed: false,
+    can_check: true,
     ...overrides,
   };
 }
@@ -83,5 +84,44 @@ test("About Rhinvoice tells whether this is the newest version", async ({ page }
   await page.locator("[data-app-version]:visible").first().click();
   const about = page.getByRole("dialog", { name: "Über Rhinvoice" });
   await expect(about.getByText("Rhinvoice ist auf dem neuesten Stand.")).toBeVisible();
+  await expectAccessible(page);
+});
+
+test("About Rhinvoice checks for a new version on request", async ({ page }) => {
+  let checked = false;
+  await page.route("**/api/updates/check", async (route) => {
+    checked = true;
+    await route.fulfill({ json: release({}) });
+  });
+  await page.route("**/api/updates", async (route) => {
+    await route.fulfill({ json: release({ current: "0.7.0", action: "none" }) });
+  });
+  await openApp(page, "/", "Übersicht");
+  await showNavigation(page);
+  await page.locator("[data-app-version]:visible").first().click();
+  const about = page.getByRole("dialog", { name: "Über Rhinvoice" });
+  await about.getByRole("button", { name: "Nach Updates suchen" }).click();
+  await expect(about.getByText("Neue Version 0.7.0")).toBeVisible();
+  await expect(about.getByRole("button", { name: "Jetzt aktualisieren" })).toBeVisible();
+  expect(checked).toBe(true);
+  await expectAccessible(page);
+});
+
+test("a failed check says why", async ({ page }) => {
+  await page.route("**/api/updates/check", async (route) => {
+    await route.fulfill({
+      status: 503,
+      json: { error: { code: "update_check_failed", message: "offline", details: {} } },
+    });
+  });
+  await page.route("**/api/updates", async (route) => {
+    await route.fulfill({ json: release({ current: "0.7.0", action: "none" }) });
+  });
+  await openApp(page, "/", "Übersicht");
+  await showNavigation(page);
+  await page.locator("[data-app-version]:visible").first().click();
+  const about = page.getByRole("dialog", { name: "Über Rhinvoice" });
+  await about.getByRole("button", { name: "Nach Updates suchen" }).click();
+  await expect(about.getByRole("alert")).toContainText("nicht abgerufen werden");
   await expectAccessible(page);
 });

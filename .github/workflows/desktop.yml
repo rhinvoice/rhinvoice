@@ -155,6 +155,16 @@ jobs:
             exit 1
           fi
 
+      - name: The start left the signed app unchanged
+        run: |
+          # Compiled Python files go to ~/Library/Caches/Rhinvoice, never into the bundle.
+          found="$(find build/macos/Rhinvoice.app -name __pycache__)"
+          if [ -n "$found" ]; then
+            echo "::error title=Seal::compiled files inside the app: $found"
+            exit 1
+          fi
+          codesign --verify --deep --strict build/macos/Rhinvoice.app
+
       - name: Pack the disk image
         run: |
           version="$(python desktop/build.py version)"

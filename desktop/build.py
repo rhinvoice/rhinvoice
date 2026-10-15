@@ -78,7 +78,8 @@ def fetch(source: dict[str, str]) -> Path:
 
 
 def run(*command: str | Path, cwd: Path = ROOT, env: dict[str, str] | None = None) -> None:
-    print("$", " ".join(str(part) for part in command))
+    # Flushed: the child writes to the same log, and its lines must come after this one.
+    print("$", " ".join(str(part) for part in command), flush=True)
     subprocess.run([str(part) for part in command], cwd=cwd, env=env, check=True)  # noqa: S603 - build tools
 
 
@@ -124,19 +125,28 @@ UNUSED_STDLIB = (
 )  # fmt: skip
 """Parts of the standard library the program never uses: no GUI toolkit, no package
 manager, no tests. check_imports proves that the app and its libraries do without them."""
-UNUSED_RUNTIME = (
-    # Headers and libraries for building extensions; manual pages.
-    "include", "libs", "share", "lib/pkgconfig", "bin/python3*-config",
-    # Tcl/Tk for tkinter.
-    "tcl", "lib/tcl9*", "lib/tk9*", "lib/itcl*", "lib/thread*", "lib/libtcl*",
-    "DLLs/_tkinter.*", "DLLs/tcl*.dll", "DLLs/tk*.dll",
-    # CPython's own test modules.
-    "DLLs/_test*", "DLLs/_ctypes_test*", "DLLs/xxlimited*",
-    # The command line tools that come with it.
-    "bin/idle3*", "bin/pip*", "bin/pydoc3*",
-    # macOS: the interpreter is linked statically, nothing loads the shared library.
-    "lib/libpython*",
-)  # fmt: skip
+UNUSED_RUNTIME = {
+    "windows": (
+        # Headers and import libraries for building extensions.
+        "include", "libs",
+        # Tcl/Tk for tkinter.
+        "tcl", "DLLs/_tkinter.*", "DLLs/tcl*.dll", "DLLs/tk*.dll",
+        # CPython's own test modules.
+        "DLLs/_test*", "DLLs/_ctypes_test*", "DLLs/xxlimited*",
+    ),
+    "macos": (
+        # Headers and files for building extensions; manual pages.
+        "include", "share", "lib/pkgconfig", "bin/python3*-config",
+        # Tcl/Tk for tkinter.
+        "lib/tcl9*", "lib/tk9*", "lib/itcl*", "lib/thread*", "lib/libtcl*",
+        # The command line tools that come with it.
+        "bin/idle3*", "bin/pip*", "bin/pydoc3*",
+        # The interpreter is linked statically; nothing loads the shared library.
+        "lib/libpython*",
+    ),
+}  # fmt: skip
+"""Per system, never mixed, and matched case-sensitively: on Windows "lib/thread*" would
+otherwise remove Lib/threading.py."""
 
 
 def trim_runtime(python: Path) -> None:
@@ -146,15 +156,17 @@ def trim_runtime(python: Path) -> None:
     """
     windows = (python / "python.exe").exists()
     [stdlib] = [python / "Lib"] if windows else list(python.glob("lib/python3.*"))
+    runtime = UNUSED_RUNTIME["windows" if windows else "macos"]
     unused = [
-        *(path for pattern in UNUSED_RUNTIME for path in python.glob(pattern)),
-        *(path for pattern in UNUSED_STDLIB for path in stdlib.glob(pattern)),
+        *(path for pattern in runtime for path in python.glob(pattern, case_sensitive=True)),
+        *(path for pattern in UNUSED_STDLIB for path in stdlib.glob(pattern, case_sensitive=True)),
         # Debug symbols (Windows), and compiled files: Python writes those to the user's
         # cache on first use (rhinvoice_boot.use_bytecode_cache).
-        *python.rglob("*.pdb"),
-        *python.rglob("__pycache__"),
+        *python.rglob("*.pdb", case_sensitive=True),
+        *python.rglob("__pycache__", case_sensitive=True),
     ]
     for path in unused:
+        print(f"trim {path.relative_to(python)}", flush=True)
         if path.is_dir() and not path.is_symlink():
             shutil.rmtree(path)
         else:
@@ -162,20 +174,32 @@ def trim_runtime(python: Path) -> None:
 
 
 IMPORT_CHECK = """
-import importlib, pkgutil, site, sys
+import importlib, os, pkgutil, site, sys
+failed = []
+
+
+def tried(name):
+    try:
+        return importlib.import_module(name)
+    except Exception as error:
+        failed.append(f"{name}: {type(error).__name__}: {error}")
+        return None
+
+
 folder = sys.argv[1]
 site.addsitedir(folder)
 names = {module.name for module in pkgutil.iter_modules([folder])}
-import rhinvoice
-names |= {module.name for module in pkgutil.walk_packages(rhinvoice.__path__, "rhinvoice.")}
-names = {name for name in names if not name.endswith("__main__")} - set(sys.argv[2:])
-failed = []
-for name in sorted(names):
-    try:
-        importlib.import_module(name)
-    except Exception as error:
-        failed.append(f"{name}: {type(error).__name__}: {error}")
-print("\\n".join(failed) or f"imported {len(names)} modules")
+rhinvoice = tried("rhinvoice")
+if rhinvoice is not None:
+    names |= {m.name for m in pkgutil.walk_packages(rhinvoice.__path__, "rhinvoice.")}
+for name in sorted({n for n in names if not n.endswith("__main__")} - set(sys.argv[2:])):
+    tried(name)
+for line in failed:
+    print(line)
+    # Annotations can be read without the job's log (GitHub's API).
+    if os.environ.get("GITHUB_ACTIONS"):
+        print(f"::error title=Import check::{line}")
+print(f"{len(failed)} modules failed" if failed else f"imported {len(names)} modules", flush=True)
 raise SystemExit(1 if failed else 0)
 """
 NOT_IMPORTED: tuple[str, ...] = ()

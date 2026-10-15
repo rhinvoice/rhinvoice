@@ -5,6 +5,14 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Added
+- The programs for Windows and Mac show a start card with the logo and the current step right
+  after the double-click, until their window opens.
+
+### Changed
+- Starting the program for Windows and Mac a second time brings its open window to the front
+  instead of opening another one.
+
 ## [0.7.2] – 2026-10-15
 
 ### Fixed

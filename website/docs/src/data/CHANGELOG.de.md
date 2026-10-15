@@ -5,6 +5,14 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Neu
+- Die Programme für Windows und Mac zeigen gleich nach dem Doppelklick eine Startkarte mit dem
+  Logo und dem aktuellen Schritt, bis ihr Fenster offen ist.
+
+### Geändert
+- Ein zweiter Start des Programms für Windows und Mac holt das offene Fenster nach vorne, statt
+  ein weiteres zu öffnen.
+
 ## [0.7.2] – 2026-10-15
 
 ### Behoben

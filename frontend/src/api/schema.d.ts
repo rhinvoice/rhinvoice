@@ -2507,6 +2507,7 @@ export interface components {
         DashboardResponse: {
             /** Aging */
             aging: components["schemas"]["AgingResponse"][];
+            currency: components["schemas"]["Currency"] | null;
             /** Days To Pay */
             days_to_pay: components["schemas"]["DaysToPayResponse"][];
             /** Expected */

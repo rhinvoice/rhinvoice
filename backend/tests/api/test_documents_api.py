@@ -312,6 +312,7 @@ def test_dashboard(user_client: TestClient, customer_id: str) -> None:
         "top_customers": [],
         "days_to_pay": [],
         "today": "2026-01-15",
+        "currency": "CHF",
         "year_to_date": [],
     }
     invoice = create(user_client, customer_id, lines=[LINES[0]])

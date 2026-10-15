@@ -21,6 +21,7 @@ const EMPTY: Dashboard = {
   top_customers: [],
   days_to_pay: [],
   today: "2026-03-09",
+  currency: null,
   year_to_date: [],
 };
 
@@ -57,6 +58,18 @@ describe("dashboardCurrencies", () => {
         aging: [{ currency: "EUR", not_due: "1", late_30: "0", late_60: "0", late_more: "0" }],
       }),
     ).toEqual(["EUR", "CHF"]);
+  });
+
+  it("puts the company's currency first, also before its first invoice", () => {
+    // An Austrian company with a Swiss franc quote: euros first.
+    const austrian = {
+      ...EMPTY,
+      currency: "EUR" as const,
+      quotes: [{ currency: "CHF" as const, open: "1.00", open_count: 1, accepted: 0, decided: 0 }],
+    };
+    expect(dashboardCurrencies(austrian)).toEqual(["EUR", "CHF"]);
+    expect(dashboardCurrencies({ ...austrian, figures: [figure("CHF")] })).toEqual(["EUR", "CHF"]);
+    expect(dashboardCurrencies({ ...EMPTY, currency: "EUR" })).toEqual(["EUR"]);
   });
 });
 

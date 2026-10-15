@@ -26,6 +26,10 @@ before 1.0, minor versions may contain breaking changes.
   installation without Docker it puts a one-time code into the data folder and opens the file.
   A new password also ends the account's other sessions and a lock after failed logins (ADR 0024).
 
+### Fixed
+- The overview shows the company's currency first. A company in Germany or Austria saw Swiss
+  francs as soon as one document was in CHF, and before its first invoice.
+
 ## [0.6.2] – 2026-10-13
 
 ### Changed

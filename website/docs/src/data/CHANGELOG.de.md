@@ -29,6 +29,10 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   Datei. Ein neues Passwort beendet auch die übrigen Anmeldungen des Kontos und eine Sperre nach
   Fehlversuchen (ADR 0024).
 
+### Behoben
+- Die Übersicht zeigt zuerst die Währung der Firma. Eine Firma in Deutschland oder Österreich
+  sah Franken, sobald ein Dokument in CHF bestand, und vor ihrer ersten Rechnung.
+
 ## [0.6.2] – 2026-10-13
 
 ### Geändert

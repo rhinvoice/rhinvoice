@@ -2152,6 +2152,16 @@
             "title": "Aging",
             "type": "array"
           },
+          "currency": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Currency"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "days_to_pay": {
             "items": {
               "$ref": "#/components/schemas/DaysToPayResponse"
@@ -2223,6 +2233,7 @@
         },
         "required": [
           "today",
+          "currency",
           "figures",
           "revenue",
           "year_to_date",

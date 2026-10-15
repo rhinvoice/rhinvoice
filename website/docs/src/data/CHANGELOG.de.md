@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.7.0] – 2026-10-15
+
 ### Neu
 - **Rhinvoice ohne Docker (Beta):** ein Setup für Windows 10/11 und eine Mac-App (macOS 12 oder
   neuer, Apple Silicon) mit eigenem Fenster und Symbol. Sie bringen die Datenbank und alles Übrige

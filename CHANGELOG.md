@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.7.0] – 2026-10-15
+
 ### Added
 - **Rhinvoice without Docker (beta):** a setup for Windows 10/11 and a Mac app (macOS 12 or later,
   Apple silicon) with their own window and icon. They bring the database and everything else

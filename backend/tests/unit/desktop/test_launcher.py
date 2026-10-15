@@ -19,6 +19,7 @@ from rhinvoice.api.settings import Settings
 from rhinvoice.application.backup.ports import BackupFailed, FolderSuggestion
 from rhinvoice.application.updates.ports import Release
 from rhinvoice.desktop import launcher
+from rhinvoice.desktop import window as program_window
 from rhinvoice.desktop.backup import FOLDER_NAME, CurrentArchive, DesktopBackupSetup
 from rhinvoice.desktop.launcher import Desktop, build_parser, run, wait_until_answers, when_ready
 from rhinvoice.desktop.ports import free_port
@@ -338,10 +339,15 @@ def test_the_interface_opens_in_a_window_beside_the_server(
     recorder = Recorder()
     window = Window(recorder)
     monkeypatch.setattr(launcher, "wait_until_answers", window.wait)
-    surroundings = replace(desktop(install, tmp_path, recorder), show_window=window.show)
+    steps: list[str] = []
+    surroundings = replace(
+        desktop(install, tmp_path, recorder), show_window=window.show, status=steps.append
+    )
     assert run(build_parser().parse_args([]), surroundings) == 0
     assert len(recorder.calls) == 1
     assert window.shown == [(f"http://127.0.0.1:{port_of(data)}", data / "window")]
+    # The start card follows the start.
+    assert steps == ["database", "data", "ready"]
     # Closing the window stops the server, then the database.
     [stop] = recorder.stops
     assert stop is not None
@@ -385,7 +391,7 @@ def test_the_browser_can_be_chosen_over_the_window(
     assert len(opened) == 1
 
 
-def test_a_second_start_shows_the_running_one_in_a_window(
+def test_a_second_start_brings_the_running_window_forward(
     install: Path, tmp_path: Path, data: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     postgres = BundledPostgres(install / "postgresql" / "bin", data / "database", "secret", 5432)
@@ -393,13 +399,17 @@ def test_a_second_start_shows_the_running_one_in_a_window(
     monkeypatch.setattr(launcher, "answers", always)
     recorder = Recorder()
     window = Window(recorder)
-    surroundings = replace(desktop(install, tmp_path, recorder), show_window=window.show)
+    asked: list[Path] = []
+    surroundings = replace(
+        desktop(install, tmp_path, recorder), show_window=window.show, bring_forward=asked.append
+    )
     assert run(build_parser().parse_args([]), surroundings) == 0
     assert recorder.calls == []
-    assert window.shown == [(f"http://127.0.0.1:{port_of(data)}", data / "window")]
+    assert window.shown == []  # no second window
+    assert asked == [data / "window"]
     # As a server only, a second start shows nothing.
     assert run(build_parser().parse_args(["--no-browser"]), surroundings) == 0
-    assert len(window.shown) == 1
+    assert len(asked) == 1
 
 
 def test_without_a_console_messages_go_to_a_file(
@@ -503,6 +513,31 @@ def test_a_second_start_shows_the_first_once_it_answers(
     assert commands(tmp_path) == []  # the database belongs to the first one
 
 
+def test_a_second_start_asks_the_first_for_its_window_at_once(
+    install: Path, tmp_path: Path, data: Path
+) -> None:
+    """The first one may still migrate: its window comes forward once it shows."""
+    asked: list[Path] = []
+    surroundings = replace(desktop(install, tmp_path, Recorder()), bring_forward=asked.append)
+    assert run(build_parser().parse_args(["--attach"]), surroundings) == 0
+    assert asked == [data / "window"]
+
+
+def test_a_second_start_in_the_browser_opens_the_page(
+    install: Path, tmp_path: Path, data: Path, health: str
+) -> None:
+    port = int(health.rsplit(":", 1)[1])
+    (data / "rhinvoice.json").write_text(json.dumps({"database_password": "x", "port": port}))
+    opened: list[str] = []
+    asked: list[Path] = []
+    surroundings = replace(
+        desktop(install, tmp_path, Recorder()), open_page=opened.append, bring_forward=asked.append
+    )
+    assert run(build_parser().parse_args(["--attach", "--browser"]), surroundings) == 0
+    assert opened == [health]
+    assert asked == []
+
+
 @pytest.mark.usefixtures("data")
 def test_a_first_start_that_never_answers_is_reported(
     install: Path,
@@ -516,6 +551,66 @@ def test_a_first_start_that_never_answers_is_reported(
         "Rhinvoice runs already, but does not answer on http://127.0.0.1:"
         in capsys.readouterr().err
     )
+
+
+class Card:
+    """Stands in for the start card of window.run_with_splash."""
+
+    def __init__(self) -> None:
+        self.storage: list[Path] = []
+
+    def show(self, address: str, storage: Path) -> None:
+        """Show the program window (not called here)."""
+
+    def status(self, step: str) -> None:
+        """Show the step (not called here)."""
+
+    def run_with_splash(self, start: Callable[["Card"], int], storage: Path, version: str) -> int:
+        assert version
+        self.storage.append(storage)
+        return start(self)
+
+
+def test_main_shows_the_start_card_for_a_window(
+    install: Path, data: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    card = Card()
+    started: list[Desktop] = []
+
+    def run_card(_args: object, surroundings: Desktop) -> int:
+        started.append(surroundings)
+        return 7
+
+    monkeypatch.setattr(program_window, "available", lambda: True)
+    monkeypatch.setattr(program_window, "run_with_splash", card.run_with_splash)
+    monkeypatch.setattr(launcher, "run", run_card)
+    monkeypatch.setattr(launcher, "end_on_break", lambda: None)
+    assert launcher.main(["--data-dir", str(data), "--install-dir", str(install)]) == 7
+    assert card.storage == [data / "window"]
+    [surroundings] = started
+    assert surroundings.show_window == card.show
+    assert surroundings.status == card.status
+    assert surroundings.bring_forward is program_window.ask_to_bring_forward
+
+
+def ends(_args: object, _desktop: object) -> int:
+    return 0
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [["--browser"], ["--no-browser"], ["--attach"], ["--restore", "latest"], ["--list-backups"]],
+)
+def test_main_shows_no_start_card_without_a_window_of_its_own(
+    arguments: list[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    card = Card()
+    monkeypatch.setattr(program_window, "available", lambda: True)
+    monkeypatch.setattr(program_window, "run_with_splash", card.run_with_splash)
+    monkeypatch.setattr(launcher, "run", ends)
+    monkeypatch.setattr(launcher, "end_on_break", lambda: None)
+    assert launcher.main(arguments) == 0
+    assert card.storage == []
 
 
 def test_windows_request_to_end_is_handled_like_ctrl_c(monkeypatch: pytest.MonkeyPatch) -> None:

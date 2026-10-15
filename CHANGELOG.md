@@ -5,8 +5,15 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.7.1] – 2026-10-15
+
 ### Changed
-- The Mac disk image is packed with LZMA and is smaller to download.
+- The setups for Windows and Mac are smaller: the Mac disk image is packed with LZMA, and the
+  bundled Python leaves out what Rhinvoice never uses (its tests, Tk, IDLE, pip, debug symbols).
+  Compiled Python files are no longer shipped; the program writes them into its cache on the
+  first start, which therefore takes a few seconds longer once.
+- The Windows setup always installs into `%LOCALAPPDATA%\Programs\Rhinvoice`, and uninstalling
+  removes only the parts it installed there. An installation in another folder keeps it.
 
 ### Fixed
 - Articles show and ask for the price in the company's currency first: euros for a company in

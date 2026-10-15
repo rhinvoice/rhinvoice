@@ -5,8 +5,16 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.7.1] – 2026-10-15
+
 ### Geändert
-- Das Disk-Image für den Mac ist mit LZMA gepackt und kleiner zum Herunterladen.
+- Die Setups für Windows und Mac sind kleiner: Das Disk-Image für den Mac ist mit LZMA gepackt,
+  und das mitgelieferte Python lässt weg, was Rhinvoice nie braucht (seine Tests, Tk, IDLE, pip,
+  Debug-Symbole). Kompilierte Python-Dateien werden nicht mehr mitgeliefert; das Programm legt sie
+  beim ersten Start in seinem Cache ab, der deshalb einmal ein paar Sekunden länger dauert.
+- Das Windows-Setup installiert immer nach `%LOCALAPPDATA%\Programs\Rhinvoice`, und die
+  Deinstallation entfernt dort nur die Teile, die es installiert hat. Eine Installation in einem
+  anderen Ordner bleibt dort.
 
 ### Behoben
 - Artikel zeigen und erfragen den Preis in der Währung der Firma zuerst: Euro für eine Firma in

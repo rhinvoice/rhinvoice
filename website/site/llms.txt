@@ -1,6 +1,6 @@
 # Rhinvoice
 
-> Rhinvoice is a free, open-source invoicing program for small businesses in Switzerland, Liechtenstein, Germany and Austria. It writes quotes, invoices, cancellation invoices and payment reminders with the VAT rules, legal notices, payment codes and e-invoice formats of each of these four countries. It is self-hosted with Docker, licensed under the GNU AGPL v3, and made by webberz, a software company in Balgach in the Swiss Rhine Valley.
+> Rhinvoice is a free, open-source invoicing program for small businesses in Switzerland, Liechtenstein, Germany and Austria. It writes quotes, invoices, cancellation invoices and payment reminders with the VAT rules, legal notices, payment codes and e-invoice formats of each of these four countries. It runs on the user's own computer or server, as a program for Windows and Mac or with Docker, is licensed under the GNU AGPL v3, and made by webberz, a software company in Balgach in the Swiss Rhine Valley.
 
 ## Facts
 
@@ -11,7 +11,7 @@
 - Price: free; there is no paid version and no hosted service
 - Countries of the issuing company: Switzerland (CH), Liechtenstein (LI), Germany (DE), Austria (AT); customers can be anywhere; more company countries can be added as country profiles
 - Languages: interface in German (Swiss, German and Austrian variants) and English; documents in German or English
-- Runs on: Docker on Linux, macOS or Windows (servers, NAS, Raspberry Pi 4/5, laptops); images for amd64 and arm64
+- Runs on: a program for Windows 10/11 (x64) and for Macs with Apple silicon (macOS 12 or later), with the database included, updates in the program and backups into a folder such as OneDrive or iCloud Drive (beta); or Docker on Linux, macOS or Windows (servers, NAS, Raspberry Pi 4/5, laptops with Docker Desktop), images for amd64 and arm64
 - Status: beta (0.x)
 - Made by: webberz, Balgach, Switzerland (https://www.webberz.ch/)
 
@@ -25,8 +25,9 @@
 - **Recurring invoices:** monthly, quarterly, half-yearly or yearly, as draft, issued, or issued and sent.
 - **E-mail:** sending documents through the company's own mail server (SMTP).
 - **Import:** customers and articles from CSV and Excel, and old invoices of the previous program with their original PDFs.
-- **Backups:** encrypted, deduplicated backups with restic to S3, SFTP, a folder, Dropbox or Google Drive.
-- **Security:** login with optional two-factor authentication; data stays on the user's own server.
+- **Backups:** encrypted, deduplicated backups with restic to S3, SFTP, a folder, Dropbox or Google Drive; the program for Windows and Mac backs up into a folder of the user's choice (OneDrive, Dropbox, iCloud Drive, Google Drive, a network drive or a USB disk).
+- **Updates:** the program says when a newer version exists; on Windows and Mac one click installs it and takes it back if it does not start. The check fetches a signed release.json from GitHub once a day and can be switched off.
+- **Security:** login with optional two-factor authentication; a forgotten password is reset by the administrator on a server, or with a one-time code in the program's data folder on Windows and Mac; data stays with the user.
 
 ## What Rhinvoice is not
 
@@ -37,6 +38,15 @@
 - Not a web shop or point-of-sale system.
 
 ## Install
+
+On Windows or a Mac, without Docker (beta): download the setup and start it.
+
+- Windows 10/11: https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-Setup-Windows.exe
+- Mac with Apple silicon, macOS 12 or later: https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-macOS.dmg
+
+The setups are not signed yet: Windows ("More info" → "Run anyway") and macOS (System Settings → Privacy & Security → "Open Anyway") ask once.
+
+On a server, a NAS or your own computer with Docker:
 
 ```bash
 mkdir rhinvoice && cd rhinvoice
@@ -73,7 +83,8 @@ All visitors share one login per demo; it sends no e-mail and takes no uploads (
 The user documentation, in English (https://rhinvoice.com/docs/) and German (https://rhinvoice.com/docs/de/, same paths below /docs/de/). Its sitemap: https://rhinvoice.com/docs/sitemap-index.xml
 
 - [What is Rhinvoice?](https://rhinvoice.com/docs/getting-started/what-is-rhinvoice/)
-- [Installation](https://rhinvoice.com/docs/getting-started/installation/): Docker Compose, first user, HTTPS
+- [Install on Windows or Mac](https://rhinvoice.com/docs/getting-started/install-desktop/): one setup, no Docker (beta)
+- [Installation with Docker](https://rhinvoice.com/docs/getting-started/installation/): Docker Compose, first user, HTTPS
 - [Your first invoice](https://rhinvoice.com/docs/getting-started/first-invoice/)
 - [Switzerland](https://rhinvoice.com/docs/countries/switzerland/): MWST rates, QR-bill, mandatory details
 - [Liechtenstein](https://rhinvoice.com/docs/countries/liechtenstein/)
@@ -83,6 +94,8 @@ The user documentation, in English (https://rhinvoice.com/docs/) and German (htt
 - [E-invoices](https://rhinvoice.com/docs/invoices/e-invoice/): ZUGFeRD / Factur-X and XRechnung
 - [Taking over old invoices](https://rhinvoice.com/docs/moving/old-invoices/): from the previous program, with the original PDFs
 - [Backup and restore](https://rhinvoice.com/docs/operations/backup/)
+- [Backup in the program for Windows and Mac](https://rhinvoice.com/docs/operations/backup-desktop/)
+- [Updating](https://rhinvoice.com/docs/operations/update/)
 - [Frequently asked questions](https://rhinvoice.com/docs/help/faq/)
 
 ## Contact

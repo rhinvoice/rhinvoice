@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CHECK_INTERVAL_MS,
   DOCKER_COMMAND,
+  FIRST_CHECK_POLLS,
+  FIRST_CHECK_POLL_MS,
   RELEASES_URL,
+  checkInterval,
   envLine,
   restartedInto,
   updateNotice,
@@ -68,6 +72,24 @@ describe("updateNotice", () => {
 
   it("does not repeat a failure about a release it does not know", () => {
     expect(updateNotice(update({ latest: null, action: "none", failed: true }))).toBeNull();
+  });
+});
+
+describe("checkInterval", () => {
+  it("asks again soon while the server has not checked yet", () => {
+    expect(checkInterval(undefined, 0)).toBe(FIRST_CHECK_POLL_MS);
+    expect(checkInterval(update({ checked_at: null }), 1)).toBe(FIRST_CHECK_POLL_MS);
+  });
+
+  it("asks once an hour after the first check", () => {
+    expect(checkInterval(update(), 1)).toBe(CHECK_INTERVAL_MS);
+  });
+
+  it("stops asking often when the check never comes (switched off, offline)", () => {
+    expect(checkInterval(update({ checked_at: null }), FIRST_CHECK_POLLS - 1)).toBe(
+      FIRST_CHECK_POLL_MS,
+    );
+    expect(checkInterval(update({ checked_at: null }), FIRST_CHECK_POLLS)).toBe(CHECK_INTERVAL_MS);
   });
 });
 

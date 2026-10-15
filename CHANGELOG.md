@@ -5,6 +5,10 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Fixed
+- The notice about a new version appears within a minute of starting Rhinvoice. The page
+  asked before the first check had run and then waited an hour.
+
 ## [0.7.2] – 2026-10-15
 
 ### Fixed

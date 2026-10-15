@@ -5,6 +5,10 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Behoben
+- Der Hinweis auf eine neue Version erscheint innerhalb einer Minute nach dem Start. Die Seite
+  fragte vor der ersten Prüfung nach und wartete danach eine Stunde.
+
 ## [0.7.2] – 2026-10-15
 
 ### Behoben

@@ -28,6 +28,10 @@ export const RELEASES_URL = `${REPOSITORY_URL}/releases`;
 export const CHECK_INTERVAL_MS = 60 * 60 * 1000;
 /** While the program restarts after an update. */
 export const RESTART_POLL_MS = 2_000;
+/** The server's first check runs half a minute after the start; until then the page asks
+ * again this often, but only for the first answers (with the check off it never comes). */
+export const FIRST_CHECK_POLL_MS = 15_000;
+export const FIRST_CHECK_POLLS = 20;
 
 /** The line in .env that pins the version of a Docker installation. */
 export function envLine(version: string): string {
@@ -63,6 +67,12 @@ export function updateNotice(update: Update | undefined): UpdateNotice | null {
     case "none":
       return null;
   }
+}
+
+/** How long the page waits before it asks the server again. */
+export function checkInterval(update: Update | undefined, answers: number): number {
+  const unchecked = (update?.checked_at ?? null) === null;
+  return unchecked && answers < FIRST_CHECK_POLLS ? FIRST_CHECK_POLL_MS : CHECK_INTERVAL_MS;
 }
 
 /** Whether the program answers with another version than before the update. */

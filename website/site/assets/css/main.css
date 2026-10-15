@@ -400,8 +400,10 @@ footer a { color: var(--muted); }
 }
 .dl-panel strong { font-size: 15px; }
 .dl-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.dl-buttons .btn { justify-content: center; }
+.dl-buttons .btn { justify-content: center; gap: 6px; padding-inline: 10px; white-space: nowrap; }
 .dl-note { color: var(--muted); font-size: 14px; }
+/* The file size, put in by build.py from the newest release. */
+.dl-size { font-weight: 500; opacity: 0.75; }
 .btn-sm { padding: 8px 14px; font-size: 14px; }
 .btn-soft {
   background: color-mix(in oklab, var(--accent) 12%, var(--surface));
@@ -442,6 +444,6 @@ footer a { color: var(--muted); }
   .hero .copy { gap: 14px; }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 560px) {
   .dl-buttons { grid-template-columns: minmax(0, 1fr); }
 }

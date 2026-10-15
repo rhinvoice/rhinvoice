@@ -38,7 +38,10 @@ jobs:
           cache: pnpm
           cache-dependency-path: website/docs/pnpm-lock.yaml
       - run: npm install --global terser
+      # Puts version and file sizes of the newest release next to the download buttons.
       - run: python3 website/build.py
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       # The docs go into website/dist/docs, next to the landing page: types, writing rules,
       # build, links and audit in one go.
       - run: pnpm install --frozen-lockfile

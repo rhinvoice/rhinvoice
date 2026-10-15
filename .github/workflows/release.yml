@@ -79,6 +79,8 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      # Starts the website build: the download buttons show the new version and sizes.
+      actions: write
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -125,3 +127,9 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" --title "Rhinvoice ${GITHUB_REF_NAME#v}" \
             --notes-file build/notes.md build/release/*
+
+      - name: Rebuild rhinvoice.com with the new sizes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # A release made with this token starts no workflow by itself.
+        run: gh workflow run pages.yml --ref main

@@ -213,12 +213,58 @@ def fingerprint():
         print(f"    {a:28} -> {b}")
 
 
+RELEASE_API = "https://api.github.com/repos/rhinvoice/rhinvoice/releases/latest"
+SIZE = re.compile(r'<span class="dl-size" data-release-size="([^"]+)"></span>')
+VERSION = "<span data-release-version></span>"
+
+
+def latest_release():
+    """Version and file sizes of the newest GitHub release, or None (offline, none yet).
+
+    The page shows them next to the download buttons. They are put in here, at build
+    time, so that visitors' browsers never ask GitHub themselves.
+    """
+    import json
+    import os
+    import urllib.request
+
+    request = urllib.request.Request(RELEASE_API, headers={"Accept": "application/vnd.github+json"})
+    if token := os.environ.get("GITHUB_TOKEN"):
+        request.add_header("Authorization", f"Bearer {token}")
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            release = json.load(response)
+    except (OSError, ValueError) as error:
+        print(f"  no release facts ({error}): the buttons show no size")
+        return None
+    sizes = {asset["name"]: asset["size"] for asset in release.get("assets", [])}
+    return release["tag_name"].removeprefix("v"), sizes
+
+
+def fill_release(text, release):
+    """Put version and sizes into their placeholders; without a release, drop them."""
+    version, sizes = release or ("", {})
+
+    def size(match):
+        found = sizes.get(match.group(1))
+        if found is None:
+            return ""
+        return f' <span class="dl-size">{round(found / 1024 / 1024)} MB</span>'
+
+    text = SIZE.sub(size, text)
+    return text.replace(VERSION, f" {version}" if version else "")
+
+
 def main():
     if not SOURCE.is_dir():
         sys.exit(f"site/ not found at {SOURCE}")
     if DIST.exists():
         shutil.rmtree(DIST)
     DIST.mkdir()
+
+    release = latest_release()
+    if release:
+        print(f"  release {release[0]}: " + ", ".join(f"{name} {size}" for name, size in release[1].items()))
 
     size_before = size_after = 0
     for src in sorted(SOURCE.rglob("*")):
@@ -237,7 +283,8 @@ def main():
         elif src.suffix == ".js":
             dst.write_text(js_minify(src), encoding="utf-8")
         elif src.suffix == ".html":
-            dst.write_text(html_minify(src.read_text(encoding="utf-8")), encoding="utf-8")
+            text = fill_release(src.read_text(encoding="utf-8"), release)
+            dst.write_text(html_minify(text), encoding="utf-8")
         else:
             shutil.copy2(src, dst)
 

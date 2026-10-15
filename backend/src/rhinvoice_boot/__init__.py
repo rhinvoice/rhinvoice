@@ -86,7 +86,10 @@ def use_bytecode_cache(environ: MutableMapping[str, str], folder: Path) -> None:
 
     A folder set already is kept: the macOS start script sets it before the boot is imported.
     """
-    sys.pycache_prefix = environ.setdefault("PYTHONPYCACHEPREFIX", str(folder))
+    # An empty one counts as unset: it would make Python write beside the program files.
+    prefix = environ.get("PYTHONPYCACHEPREFIX") or str(folder)
+    environ["PYTHONPYCACHEPREFIX"] = prefix
+    sys.pycache_prefix = prefix
 
 
 def make_private(folder: Path) -> None:

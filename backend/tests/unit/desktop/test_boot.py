@@ -37,7 +37,6 @@ from rhinvoice_boot import (
 from tests.helpers import raises_exactly
 from tests.unit.desktop.tools import commands
 
-
 PREFIX_BEFORE = os.environ.get("PYTHONPYCACHEPREFIX")
 """As the test process started; the tests of main() must leave it so."""
 
@@ -409,6 +408,11 @@ def test_the_bytecode_cache_applies_here_and_to_the_programs_started_later(
     given = {"PYTHONPYCACHEPREFIX": "/Users/anna/Library/Caches/Rhinvoice/pycache"}
     boot.use_bytecode_cache(given, tmp_path / "other")
     assert sys.pycache_prefix == "/Users/anna/Library/Caches/Rhinvoice/pycache"
+    # Set but empty: Python would write next to the program files (a relative prefix).
+    empty = {"PYTHONPYCACHEPREFIX": ""}
+    boot.use_bytecode_cache(empty, tmp_path / "cache")
+    assert empty == {"PYTHONPYCACHEPREFIX": str(tmp_path / "cache")}
+    assert sys.pycache_prefix == str(tmp_path / "cache")
 
 
 @pytest.mark.usefixtures("bytecode")

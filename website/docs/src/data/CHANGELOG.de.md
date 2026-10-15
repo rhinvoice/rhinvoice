@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.7.2] – 2026-10-15
+
 ### Behoben
 - Mahnwesen, wiederkehrende Rechnungen und die Importe führen über dem Titel zurück zu ihrer
   Liste, wie die Dokumente.

@@ -32,7 +32,7 @@ Für ein Update setzen Sie die neue Version in `.env`, holen die Images und star
 
 <Steps>
 
-1. Setzen Sie im Ordner mit `compose.yml` und `.env` in `.env` die Einstellung `RHINVOICE_VERSION` auf die neue Version, z. B. `RHINVOICE_VERSION=0.7.1`.
+1. Setzen Sie im Ordner mit `compose.yml` und `.env` in `.env` die Einstellung `RHINVOICE_VERSION` auf die neue Version, z. B. `RHINVOICE_VERSION=0.7.2`.
 
 2. Images holen und neu starten:
 
@@ -54,7 +54,7 @@ Die Datenbank wird beim Start automatisch migriert (`RHINVOICE_RUN_MIGRATIONS=tr
 
 | `RHINVOICE_VERSION` | Verhalten |
 |---|---|
-| eine Version, z. B. `0.7.1` | fest: ändert sich nur, wenn Sie sie ändern |
+| eine Version, z. B. `0.7.2` | fest: ändert sich nur, wenn Sie sie ändern |
 | `latest` | folgt jeder neuen Version beim nächsten `docker compose pull` |
 
 Für echte Rechnungen ist eine feste Version die sicherere Wahl: Sie entscheiden, wann Sie aktualisieren, und können vorher das Änderungsprotokoll lesen.

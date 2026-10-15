@@ -25,11 +25,14 @@ import {
 import { useDebouncedValue } from "@/components/use-debounced-value";
 import { useDocumentTitle } from "@/components/use-document-title";
 import { usePageShortcut } from "@/components/use-key-shortcuts";
+import { priceCurrencies } from "@/features/articles/article-form-model";
 import { articleListQuery, type ArticleSort } from "@/features/articles/api";
+import { companyQuery } from "@/features/shared/company-api";
 import { ariaSort, PAGE_SIZE, toggleSort, type ListSearch } from "@/features/shared/list-search";
 import { Pagination } from "@/features/shared/pagination";
 import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
+import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/format";
 
 interface ArticleListPageProps {
@@ -42,6 +45,8 @@ export function ArticleListPage({ search, onSearchChange }: ArticleListPageProps
   useDocumentTitle(t("app.pageTitle", { title: t("articles.title") }));
   const navigate = useNavigate();
   const errorMessage = useErrorMessage();
+  // The company's currency first; on narrow screens only that one.
+  const currencies = priceCurrencies(useQuery(companyQuery).data?.default_currency);
   const [term, setTerm] = useState(search.q);
   const debounced = useDebouncedValue(term, 250);
   useEffect(() => {
@@ -191,8 +196,14 @@ export function ArticleListPage({ search, onSearchChange }: ArticleListPageProps
                   {t("articles.group")}
                 </SortableHead>
                 <TableHead className="hidden sm:table-cell">{t("articles.unit")}</TableHead>
-                <TableHead className="text-right">CHF</TableHead>
-                <TableHead className="hidden text-right sm:table-cell">EUR</TableHead>
+                {currencies.map((currency, index) => (
+                  <TableHead
+                    key={currency}
+                    className={index === 0 ? "text-right" : "hidden text-right sm:table-cell"}
+                  >
+                    {currency}
+                  </TableHead>
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -222,16 +233,20 @@ export function ArticleListPage({ search, onSearchChange }: ArticleListPageProps
                   <TableCell className="hidden sm:table-cell">
                     {locale === "en" ? article.unit_label_en : article.unit_label_de}
                   </TableCell>
-                  <TableCell className="text-right whitespace-nowrap tabular-nums">
-                    {article.prices["CHF"] === undefined
-                      ? ""
-                      : formatMoney(article.prices["CHF"], "CHF", locale, 4)}
-                  </TableCell>
-                  <TableCell className="hidden text-right whitespace-nowrap tabular-nums sm:table-cell">
-                    {article.prices["EUR"] === undefined
-                      ? ""
-                      : formatMoney(article.prices["EUR"], "EUR", locale, 4)}
-                  </TableCell>
+                  {currencies.map((currency, index) => {
+                    const price = article.prices[currency];
+                    return (
+                      <TableCell
+                        key={currency}
+                        className={cn(
+                          "text-right whitespace-nowrap tabular-nums",
+                          index > 0 && "hidden sm:table-cell",
+                        )}
+                      >
+                        {price === undefined ? "" : formatMoney(price, currency, locale, 4)}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))}
             </TableBody>

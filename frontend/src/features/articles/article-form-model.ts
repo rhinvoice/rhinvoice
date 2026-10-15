@@ -18,6 +18,13 @@ export const TAX_CATEGORIES = ["standard", "reduced", "special", "zero", "exempt
 export const SUPPLIES = ["service", "goods"] as const;
 export const MAX_PRICE = 99_999_999.9999;
 
+export type PriceCurrency = "CHF" | "EUR";
+
+/** The company's currency first: a company in Germany or Austria enters and sees euros first. */
+export function priceCurrencies(first: string | undefined): readonly PriceCurrency[] {
+  return first === "EUR" ? ["EUR", "CHF"] : ["CHF", "EUR"];
+}
+
 export function articleSchema(t: T, locale: Locale) {
   const f = fields(t, locale);
   return z.object({

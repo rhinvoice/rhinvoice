@@ -5,6 +5,13 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Geändert
+- Das Disk-Image für den Mac ist mit LZMA gepackt und kleiner zum Herunterladen.
+
+### Behoben
+- Artikel zeigen und erfragen den Preis in der Währung der Firma zuerst: Euro für eine Firma in
+  Deutschland oder Österreich, auch auf dem Handy, wo nur diese Spalte Platz hat.
+
 ## [0.7.0] – 2026-10-15
 
 ### Neu

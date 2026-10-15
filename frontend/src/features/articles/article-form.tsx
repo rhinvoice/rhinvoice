@@ -12,10 +12,11 @@ import { useSaveShortcut } from "@/components/use-key-shortcuts";
 import {
   ARTICLE_FIELD_ORDER,
   articleFieldFor,
+  type ArticleFormValues,
   articleSchema,
+  priceCurrencies,
   SUPPLIES,
   TAX_CATEGORIES,
-  type ArticleFormValues,
 } from "@/features/articles/article-form-model";
 import { FormAlert } from "@/features/shared/form-alert";
 import { summaryItems } from "@/features/shared/form-errors";
@@ -35,7 +36,8 @@ export function ArticleForm({ defaultValues, onSubmit }: ArticleFormProps) {
   const { t, locale } = useI18n();
   const errorMessage = useErrorMessage();
   const units = useQuery(unitsQuery);
-  const profile = useQuery(companyQuery).data?.profile;
+  const company = useQuery(companyQuery).data;
+  const profile = company?.profile;
   const form = useForm<ArticleFormValues>({
     resolver: zodResolver(articleSchema(t, locale)),
     mode: "onTouched",
@@ -150,30 +152,24 @@ export function ArticleForm({ defaultValues, onSubmit }: ArticleFormProps) {
       </Fieldset>
       <Fieldset legend={t("articles.prices")} description={t("articles.pricesHint")}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label={t("articles.priceIn", { currency: "CHF" })}
-            error={error("price_chf")}
-            optionalLabel={t("common.optional")}
-          >
-            <Input
-              id="price_chf"
-              inputMode="decimal"
-              className="text-right tabular-nums"
-              {...form.register("price_chf")}
-            />
-          </Field>
-          <Field
-            label={t("articles.priceIn", { currency: "EUR" })}
-            error={error("price_eur")}
-            optionalLabel={t("common.optional")}
-          >
-            <Input
-              id="price_eur"
-              inputMode="decimal"
-              className="text-right tabular-nums"
-              {...form.register("price_eur")}
-            />
-          </Field>
+          {priceCurrencies(company?.default_currency).map((currency) => {
+            const name = currency === "CHF" ? "price_chf" : "price_eur";
+            return (
+              <Field
+                key={currency}
+                label={t("articles.priceIn", { currency })}
+                error={error(name)}
+                optionalLabel={t("common.optional")}
+              >
+                <Input
+                  id={name}
+                  inputMode="decimal"
+                  className="text-right tabular-nums"
+                  {...form.register(name)}
+                />
+              </Field>
+            );
+          })}
         </div>
       </Fieldset>
       <FormFooter saving={isSubmitting} dirty={isDirty} />

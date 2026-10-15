@@ -6,6 +6,7 @@ import {
   articleToForm,
   emptyArticle,
   formToRequest,
+  priceCurrencies,
 } from "@/features/articles/article-form-model";
 import { translatorFor } from "@/lib/i18n";
 
@@ -60,5 +61,14 @@ describe("article form", () => {
     expect(articleFieldFor("prices.EUR")).toBe("price_eur");
     expect(articleFieldFor("name")).toBe("name");
     expect(articleFieldFor("x")).toBeNull();
+  });
+});
+
+describe("priceCurrencies", () => {
+  it("puts the company's currency first", () => {
+    expect(priceCurrencies("EUR")).toEqual(["EUR", "CHF"]);
+    expect(priceCurrencies("CHF")).toEqual(["CHF", "EUR"]);
+    // Before the company is loaded or set up.
+    expect(priceCurrencies(undefined)).toEqual(["CHF", "EUR"]);
   });
 });

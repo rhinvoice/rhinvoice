@@ -5,6 +5,13 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Changed
+- The Mac disk image is packed with LZMA and is smaller to download.
+
+### Fixed
+- Articles show and ask for the price in the company's currency first: euros for a company in
+  Germany or Austria, also on a phone, where only that column fits.
+
 ## [0.7.0] – 2026-10-15
 
 ### Added

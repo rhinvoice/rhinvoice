@@ -35,6 +35,7 @@ import argparse
 import bz2
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -76,9 +77,9 @@ def fetch(source: dict[str, str]) -> Path:
     return target
 
 
-def run(*command: str | Path, cwd: Path = ROOT) -> None:
+def run(*command: str | Path, cwd: Path = ROOT, env: dict[str, str] | None = None) -> None:
     print("$", " ".join(str(part) for part in command))
-    subprocess.run([str(part) for part in command], cwd=cwd, check=True)  # noqa: S603 - build tools
+    subprocess.run([str(part) for part in command], cwd=cwd, env=env, check=True)  # noqa: S603 - build tools
 
 
 def unpack_single_folder(archive: Path, target: Path) -> None:
@@ -114,6 +115,83 @@ def install_runtime_python(sources: dict[str, dict[str, str]], install: Path) ->
         json.dumps({"generation": RUNTIME_GENERATION}) + "\n", encoding="utf-8"
     )
     return interpreter
+
+
+UNUSED_STDLIB = (
+    "idlelib", "tkinter", "turtledemo", "turtle.py", "ensurepip", "venv", "pydoc_data",
+    "lib2to3", "test", "config-3.*", "site-packages/pip", "site-packages/pip-*",
+    "lib-dynload/_tkinter.*",
+)  # fmt: skip
+"""Parts of the standard library the program never uses: no GUI toolkit, no package
+manager, no tests. check_imports proves that the app and its libraries do without them."""
+UNUSED_RUNTIME = (
+    # Headers and libraries for building extensions; manual pages.
+    "include", "libs", "share", "lib/pkgconfig", "bin/python3*-config",
+    # Tcl/Tk for tkinter.
+    "tcl", "lib/tcl9*", "lib/tk9*", "lib/itcl*", "lib/thread*", "lib/libtcl*",
+    "DLLs/_tkinter.*", "DLLs/tcl*.dll", "DLLs/tk*.dll",
+    # CPython's own test modules.
+    "DLLs/_test*", "DLLs/_ctypes_test*", "DLLs/xxlimited*",
+    # The command line tools that come with it.
+    "bin/idle3*", "bin/pip*", "bin/pydoc3*",
+    # macOS: the interpreter is linked statically, nothing loads the shared library.
+    "lib/libpython*",
+)  # fmt: skip
+
+
+def trim_runtime(python: Path) -> None:
+    """Remove what the bundled CPython brings but the program never uses.
+
+    About 120 MB on Windows, most of it debug symbols; about 30 MB on macOS.
+    """
+    windows = (python / "python.exe").exists()
+    [stdlib] = [python / "Lib"] if windows else list(python.glob("lib/python3.*"))
+    unused = [
+        *(path for pattern in UNUSED_RUNTIME for path in python.glob(pattern)),
+        *(path for pattern in UNUSED_STDLIB for path in stdlib.glob(pattern)),
+        # Debug symbols (Windows), and compiled files: Python writes those to the user's
+        # cache on first use (rhinvoice_boot.use_bytecode_cache).
+        *python.rglob("*.pdb"),
+        *python.rglob("__pycache__"),
+    ]
+    for path in unused:
+        if path.is_dir() and not path.is_symlink():
+            shutil.rmtree(path)
+        else:
+            path.unlink(missing_ok=True)
+
+
+IMPORT_CHECK = """
+import importlib, pkgutil, site, sys
+folder = sys.argv[1]
+site.addsitedir(folder)
+names = {module.name for module in pkgutil.iter_modules([folder])}
+import rhinvoice
+names |= {module.name for module in pkgutil.walk_packages(rhinvoice.__path__, "rhinvoice.")}
+names = {name for name in names if not name.endswith("__main__")} - set(sys.argv[2:])
+failed = []
+for name in sorted(names):
+    try:
+        importlib.import_module(name)
+    except Exception as error:
+        failed.append(f"{name}: {type(error).__name__}: {error}")
+print("\\n".join(failed) or f"imported {len(names)} modules")
+raise SystemExit(1 if failed else 0)
+"""
+NOT_IMPORTED: tuple[str, ...] = ()
+"""Top-level modules of the app package that cannot be imported on their own."""
+
+
+def check_imports(python: Path, package: Path) -> None:
+    """Import every module of Rhinvoice and every library of the app package.
+
+    With the bundled interpreter: a part of the standard library trimmed too much fails the
+    build, not a user.
+    """
+    run(
+        python, "-c", IMPORT_CHECK, package / "site-packages", *NOT_IMPORTED,
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+    )  # fmt: skip
 
 
 def build_app_package(python: Path, package: Path) -> None:
@@ -206,6 +284,8 @@ def build_windows(out: Path) -> None:
     install_restic(sources, install)
     brand_windows_program(sources, install)
     build_app_package(python, install / "app")
+    trim_runtime(install / "python")
+    check_imports(python, install / "app")
     zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-windows-x64.zip")
     print(f"Rhinvoice {version()} (runtime {RUNTIME_GENERATION}) assembled in {out}")
 
@@ -368,6 +448,8 @@ def build_macos(out: Path) -> None:
     install_chromium(sources, install)
     install_restic(sources, install)
     build_app_package(python, install / "app")
+    trim_runtime(install / "python")
+    check_imports(python, install / "app")
     zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-macos-arm64.zip")
     sign_ad_hoc(bundle)
     print(f"Rhinvoice {version()} (runtime {RUNTIME_GENERATION}) assembled in {bundle}")

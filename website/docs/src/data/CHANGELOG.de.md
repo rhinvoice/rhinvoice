@@ -6,6 +6,23 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 ## [Unreleased]
 
 ### Neu
+- **Rhinvoice ohne Docker (Beta):** ein Setup für Windows 10/11 und eine Mac-App (macOS 12 oder
+  neuer, Apple Silicon) mit eigenem Fenster und Symbol. Sie bringen die Datenbank und alles Übrige
+  mit; PDFs druckt unter Windows Edge, auf dem Mac ein mitgelieferter Chromium. Die Daten liegen
+  im eigenen Benutzerordner und bleiben beim Deinstallieren erhalten (ADR 0021). Die Setups sind
+  noch nicht signiert: Windows und macOS fragen einmal nach, bevor sie sie öffnen.
+- Updates im Programm: eine ruhige Karte unten in der Seitenleiste und der Dialog *Über
+  Rhinvoice* melden eine neuere Version. Ohne Docker installiert sie ein Klick und startet das
+  Programm neu; eine neue Version, die nicht startet, wird mit der Datenbank von vorher
+  zurückgenommen (ADR 0022). Mit Docker zeigt die Karte die Befehle. Die Prüfung fragt einmal am
+  Tag bei GitHub nach einer signierten `release.json` und lässt sich mit
+  `RHINVOICE_UPDATE_CHECK=false` abschalten.
+- Backup ohne Docker: *Einstellungen → Backup* wählt einen Ordner (OneDrive, Dropbox, iCloud
+  Drive, Google Drive, ein Netzlaufwerk oder eine USB-Festplatte) und zeigt einmal den
+  Wiederherstellungsschlüssel. Danach sichert das Programm wie der Backup-Container: täglich, nach
+  dem Ausstellen oder Stornieren von Dokumenten und auf Wunsch, verschlüsselt mit restic, mit 7
+  täglichen, 4 wöchentlichen, 12 monatlichen und allen jährlichen Backups. `--restore` spielt ein
+  Backup zurück, auch auf einem neuen Computer (ADR 0023).
 - Ein Weg zurück bei vergessenem Passwort: *Passwort vergessen?* auf der Anmeldeseite. Auf einem
   Server nennt sie die neuen Befehle `rhinvoice user list` und `rhinvoice user reset-password`; in
   der Installation ohne Docker legt sie einen einmaligen Code in den Datenordner und öffnet die

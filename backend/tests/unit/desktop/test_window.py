@@ -6,6 +6,7 @@ import threading
 import time
 import types
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
 
@@ -73,6 +74,15 @@ class Created:
         self.raised.append(f"on_top={value}")
 
 
+@dataclass(frozen=True, slots=True)
+class Screen:
+    x: int
+    y: int
+
+
+MAIN = Screen(0, 0)
+
+
 class FakeWebview(types.ModuleType):
     def __init__(self) -> None:
         super().__init__("webview")
@@ -86,6 +96,8 @@ class FakeWebview(types.ModuleType):
         """What the person does with the program window (in a thread of its own)."""
         self.interrupt = False
         """Ctrl+C reaches the window loop once the program window shows."""
+        self.screens = [Screen(-1920, 0), MAIN, Screen(2560, -200)]
+        """A screen left of the main one and one to its right, as pywebview lists them."""
 
     def create_window(self, *args: object, **kwargs: object) -> Created | None:
         self.created.append((args, kwargs))
@@ -151,11 +163,19 @@ def test_the_start_card_gives_way_to_the_program_window(
     assert "Version 0.7.3 · Beta" in str(card["html"])
     assert card["frameless"] is True
     assert card["resizable"] is False
+    # Both windows open in the middle of the main screen (Windows puts them top left).
+    assert card["screen"] is MAIN
     steps = card["js_api"]
     assert isinstance(steps, StartSteps)
     assert steps.current() == "data"
     assert program_args == ("Rhinvoice", ADDRESS)
-    assert program == {"width": 1280, "height": 860, "min_size": (960, 640), "zoomable": True}
+    assert program == {
+        "width": 1280,
+        "height": 860,
+        "min_size": (960, 640),
+        "zoomable": True,
+        "screen": MAIN,
+    }
     # The login survives a restart; files are saved, other sites open in the browser.
     assert webview.started == [{"private_mode": False, "storage_path": str(tmp_path / "window")}]
     assert webview.settings == {"ALLOW_DOWNLOADS": True, "OPEN_EXTERNAL_LINKS_IN_BROWSER": True}
@@ -306,3 +326,10 @@ def test_closing_destroys_every_window(webview: FakeWebview) -> None:
     assert second is not None
     assert first.destroyed.is_set()
     assert second.destroyed.is_set()
+
+
+def test_the_main_screen_is_the_one_at_the_origin() -> None:
+    assert window.main_screen([Screen(-1920, 0), MAIN]) is MAIN
+    # None: pywebview places the window itself.
+    assert window.main_screen([Screen(0, 40)]) is None
+    assert window.main_screen([]) is None

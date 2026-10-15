@@ -5,6 +5,10 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Fixed
+- On Windows the start card and the program window open in the middle of the main screen,
+  no longer near its top left.
+
 ## [0.7.3] – 2026-10-15
 
 ### Added

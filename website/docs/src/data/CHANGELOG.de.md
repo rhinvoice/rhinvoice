@@ -5,6 +5,10 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Behoben
+- Unter Windows öffnen sich Startkarte und Programmfenster in der Mitte des Hauptbildschirms
+  und nicht mehr oben links.
+
 ## [0.7.3] – 2026-10-15
 
 ### Neu

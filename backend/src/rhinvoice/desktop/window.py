@@ -18,7 +18,7 @@ import threading
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
     from pathlib import Path
 
 TITLE = "Rhinvoice"
@@ -76,6 +76,8 @@ def run_with_splash(start: Callable[[Splash], int], storage: Path, version: str)
         resizable=False,
         frameless=True,
         background_color=SPLASH_BACKGROUND,
+        # pywebview types screens as its module_property; it reads as the list of screens.
+        screen=main_screen(webview.screens),  # pyright: ignore[reportArgumentType]
     )
     splash = Splash(card, steps)
     if card is not None:
@@ -102,6 +104,26 @@ def run_with_splash(start: Callable[[Splash], int], storage: Path, version: str)
         with contextlib.suppress(RuntimeError):
             worker.join()
     return codes[0] if codes else FAILED
+
+
+class Placed(Protocol):
+    """The part of a pywebview screen that tells where it is."""
+
+    @property
+    def x(self) -> int: ...
+
+    @property
+    def y(self) -> int: ...
+
+
+def main_screen[S: Placed](screens: Sequence[S]) -> S | None:
+    """Find the main screen, the one at the origin; None: let pywebview choose.
+
+    Given a screen, pywebview centres the window on it. Without one, Windows places it
+    at its default position near the top left: pywebview asks for the centre only once
+    the window is being made, too late for Windows.
+    """
+    return next((screen for screen in screens if screen.x == 0 and screen.y == 0), None)
 
 
 class StartSteps:
@@ -173,7 +195,14 @@ def show(
     # WebKit then ignores scrolling on a page with overscroll-behavior (no rubber band,
     # index.css). Zooming also helps reading (WCAG 1.4.4).
     window = webview.create_window(  # pyright: ignore[reportUnknownMemberType]
-        TITLE, address, width=SIZE[0], height=SIZE[1], min_size=MIN_SIZE, zoomable=True
+        TITLE,
+        address,
+        width=SIZE[0],
+        height=SIZE[1],
+        min_size=MIN_SIZE,
+        zoomable=True,
+        # pywebview types screens as its module_property; it reads as the list of screens.
+        screen=main_screen(webview.screens),  # pyright: ignore[reportArgumentType]
     )
     if window is None:
         return

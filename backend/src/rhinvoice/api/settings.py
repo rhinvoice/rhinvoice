@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     reset_code_dir: Path | None = None
     """Private folder for the code of a forgotten password (installations without Docker,
     ADR 0024). Without it, an administrator resets passwords with ``rhinvoice user``."""
+    log_file: Path | None = None
+    """The program's log, whose end a problem report carries (installations without
+    Docker). Without it the log stays with the server (docker compose logs app)."""
     update_check: bool = True
     """Ask GitHub once a day whether a newer release exists, to show it in the program
     (ADR 0022). Off: nothing leaves this installation for it."""

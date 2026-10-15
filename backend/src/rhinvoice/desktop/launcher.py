@@ -220,6 +220,8 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
             static_dir=args.static_dir or install / "static",
             # A forgotten password: the code goes where only this computer's user looks.
             reset_code_dir=folder,
+            # A problem report carries the end of the log.
+            log_file=program_log(desktop.system, desktop.home, folder),
             # Only this computer reaches the server, over http; Safari refuses secure
             # cookies there.
             cookie_secure=False,
@@ -237,6 +239,17 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
             database.stop()
         except PostgresError as error:
             _failed(error)
+
+
+def program_log(system: str, home: Path, folder: Path) -> Path:
+    """Where the program writes its messages when it has no console.
+
+    On a Mac the start script writes them where Console.app finds them (desktop/build.py),
+    elsewhere the boot writes them into the data folder (rhinvoice_boot.log_without_console).
+    """
+    if system == "Darwin":
+        return home / "Library" / "Logs" / "Rhinvoice" / "rhinvoice.log"
+    return folder / "rhinvoice.log"
 
 
 def _own_port(config: DesktopConfig, folder: Path) -> DesktopConfig:

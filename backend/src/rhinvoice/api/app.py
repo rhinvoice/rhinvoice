@@ -29,6 +29,7 @@ from rhinvoice.api.routers import (
     print_layout,
     recurring,
     reference,
+    support,
     texts,
     updates,
 )
@@ -59,6 +60,7 @@ API_ROUTERS: tuple[APIRouter, ...] = (
     mail.router,
     recurring.router,
     reference.router,
+    support.router,
     texts.router,
     updates.router,
 )

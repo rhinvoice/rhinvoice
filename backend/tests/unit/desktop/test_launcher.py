@@ -21,7 +21,14 @@ from rhinvoice.application.updates.ports import Release
 from rhinvoice.desktop import launcher
 from rhinvoice.desktop import window as program_window
 from rhinvoice.desktop.backup import FOLDER_NAME, CurrentArchive, DesktopBackupSetup
-from rhinvoice.desktop.launcher import Desktop, build_parser, run, wait_until_answers, when_ready
+from rhinvoice.desktop.launcher import (
+    Desktop,
+    build_parser,
+    program_log,
+    run,
+    wait_until_answers,
+    when_ready,
+)
 from rhinvoice.desktop.ports import free_port
 from rhinvoice.desktop.postgres import BundledPostgres
 from rhinvoice.desktop.updates import PackageInstaller
@@ -109,6 +116,7 @@ def test_the_server_runs_on_the_bundled_database(install: Path, tmp_path: Path, 
     assert settings.chromium_path == install / "chromium" / "chrome-headless-shell"
     assert not settings.cookie_secure
     assert settings.reset_code_dir == data
+    assert settings.log_file == data / "rhinvoice.log"
     assert (data / "database" / "PG_VERSION").exists()
     # The database is stopped with the server.
     assert commands(tmp_path)[-1] == "pg_ctl stop"
@@ -837,3 +845,11 @@ def test_the_backup_folder_of_a_restore_is_kept_as_a_full_path(
     assert restore(install, tmp_path, "--restore", "latest", "--backup-folder", home, key="K") == 0
     saved = json.loads((data / "rhinvoice.json").read_text())["backup_folder"]
     assert saved == str(restorable.resolve())
+
+
+def test_a_mac_keeps_its_log_where_console_app_finds_it(tmp_path: Path) -> None:
+    folder = tmp_path / "data"
+    assert program_log("Darwin", tmp_path, folder) == (
+        tmp_path / "Library" / "Logs" / "Rhinvoice" / "rhinvoice.log"
+    )
+    assert program_log("Windows", tmp_path, folder) == folder / "rhinvoice.log"

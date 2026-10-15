@@ -89,6 +89,9 @@ jobs:
           cache-dependency-glob: backend/uv.lock
       - uses: actions/download-artifact@v4
         with:
+          # Only the setups and app packages: the image builds leave records (*.dockerbuild)
+          # that this action cannot extract.
+          pattern: Rhinvoice-*
           path: build/release
           merge-multiple: true
 

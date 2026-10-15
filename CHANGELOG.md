@@ -5,6 +5,10 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Added
+- The programs for Windows and Mac open their window where it was closed, as large as it was
+  (or maximized).
+
 ### Fixed
 - Opening a page for the first time no longer blanks the whole window for a moment; the
   navigation stays. The programs for Windows and Mac load all pages shortly after the start.

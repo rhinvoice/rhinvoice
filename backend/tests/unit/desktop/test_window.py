@@ -1,6 +1,7 @@
 """The program window and the start card, against a stand-in for pywebview."""
 
 import importlib.util
+import json
 import sys
 import threading
 import time
@@ -37,6 +38,8 @@ class Events:
         self.closing = Handlers()
         self.closed = Handlers()
         self.loaded = Handlers()
+        self.maximized = Handlers()
+        self.restored = Handlers()
 
 
 class Created:
@@ -49,6 +52,30 @@ class Created:
         self.destroyed = threading.Event()
         self.raised: list[str] = []
         self._on_top = False
+        self.geometry: tuple[int, int, int, int] | None = (0, 0, 1280, 860)
+        """Where the window is: x, y, width, height; None: macOS lost its screen."""
+
+    def _part(self, index: int) -> int:
+        if self.geometry is None:
+            msg = "Failed to obtain screen"
+            raise RuntimeError(msg)
+        return self.geometry[index]
+
+    @property
+    def x(self) -> int:
+        return self._part(0)
+
+    @property
+    def y(self) -> int:
+        return self._part(1)
+
+    @property
+    def width(self) -> int:
+        return self._part(2)
+
+    @property
+    def height(self) -> int:
+        return self._part(3)
 
     def destroy(self) -> None:
         if False in self.events.closing.fire():
@@ -78,9 +105,11 @@ class Created:
 class Screen:
     x: int
     y: int
+    width: int = 1920
+    height: int = 1080
 
 
-MAIN = Screen(0, 0)
+MAIN = Screen(0, 0, 2560, 1440)
 
 
 class FakeWebview(types.ModuleType):
@@ -172,9 +201,12 @@ def test_the_start_card_gives_way_to_the_program_window(
     assert program == {
         "width": 1280,
         "height": 860,
+        "x": None,
+        "y": None,
+        "screen": MAIN,
+        "maximized": False,
         "min_size": (960, 640),
         "zoomable": True,
-        "screen": MAIN,
     }
     # The login survives a restart; files are saved, other sites open in the browser.
     assert webview.started == [{"private_mode": False, "storage_path": str(tmp_path / "window")}]
@@ -333,3 +365,154 @@ def test_the_main_screen_is_the_one_at_the_origin() -> None:
     # None: pywebview places the window itself.
     assert window.main_screen([Screen(0, 40)]) is None
     assert window.main_screen([]) is None
+
+
+def moves_and_closes(where: tuple[int, int, int, int], *events: str) -> Callable[[Created], None]:
+    """Move and resize the window, maximize or restore it, then close it."""
+
+    def act(shown: Created) -> None:
+        handled(shown)
+        shown.geometry = where
+        for event in events:
+            getattr(shown.events, event).fire()
+        shown.destroy()
+
+    return act
+
+
+def program_place(webview: FakeWebview) -> dict[str, object]:
+    """How the last program window was made: its size and place."""
+    _args, kwargs = webview.created[-1]
+    return {key: kwargs[key] for key in ("width", "height", "x", "y", "screen", "maximized")}
+
+
+def test_the_window_opens_where_it_was_closed(tmp_path: Path, webview: FakeWebview) -> None:
+    storage = tmp_path / "window"
+    webview.on_program_window = moves_and_closes((100, 50, 1000, 700))
+    window.show(ADDRESS, storage)
+    assert json.loads((storage / window.GEOMETRY_FILE).read_text()) == {
+        "x": 100,
+        "y": 50,
+        "width": 1000,
+        "height": 700,
+        "maximized": False,
+    }
+    window.show(ADDRESS, storage)
+    assert program_place(webview) == {
+        "width": 1000,
+        "height": 700,
+        "x": 100,
+        "y": 50,
+        "screen": None,
+        "maximized": False,
+    }
+
+
+def test_a_maximized_window_opens_maximized_and_restores_to_its_size(
+    tmp_path: Path, webview: FakeWebview
+) -> None:
+    storage = tmp_path / "window"
+    webview.on_program_window = moves_and_closes((100, 50, 1000, 700))
+    window.show(ADDRESS, storage)
+    # Maximized, the window is as large as the screen: the size before is kept.
+    webview.on_program_window = moves_and_closes((0, 0, 2560, 1440), "maximized")
+    window.show(ADDRESS, storage)
+    webview.on_program_window = moves_and_closes((0, 0, 2560, 1440))
+    window.show(ADDRESS, storage)
+    assert program_place(webview) == {
+        "width": 1000,
+        "height": 700,
+        "x": 100,
+        "y": 50,
+        "screen": None,
+        "maximized": True,
+    }
+    # Restored and closed: the window's own size again, no longer maximized.
+    webview.on_program_window = moves_and_closes((200, 80, 1100, 760), "restored")
+    window.show(ADDRESS, storage)
+    assert json.loads((storage / window.GEOMETRY_FILE).read_text()) == {
+        "x": 200,
+        "y": 80,
+        "width": 1100,
+        "height": 760,
+        "maximized": False,
+    }
+
+
+def test_a_maximized_window_without_an_earlier_size_keeps_nothing(
+    tmp_path: Path, webview: FakeWebview
+) -> None:
+    storage = tmp_path / "window"
+    webview.on_program_window = moves_and_closes((0, 0, 2560, 1440), "maximized")
+    window.show(ADDRESS, storage)
+    assert not (storage / window.GEOMETRY_FILE).exists()
+
+
+def test_a_window_that_cannot_tell_where_it_is_keeps_nothing(
+    tmp_path: Path, webview: FakeWebview
+) -> None:
+    storage = tmp_path / "window"
+
+    def lost(shown: Created) -> None:
+        handled(shown)
+        shown.geometry = None
+        shown.destroy()
+
+    webview.on_program_window = lost
+    window.show(ADDRESS, storage)
+    assert not (storage / window.GEOMETRY_FILE).exists()
+
+
+@pytest.mark.parametrize(
+    "saved",
+    [
+        '{"x": 5000, "y": 50, "width": 1000, "height": 700}',  # on a screen unplugged since
+        '{"x": -32000, "y": -32000, "width": 1000, "height": 700}',  # minimized on Windows
+        '{"x": 100, "y": 50, "width": 400, "height": 700}',  # narrower than the window may be
+        '{"x": 100, "y": 50, "width": 1000, "height": 300}',  # lower than it may be
+        '{"x": 100, "y": 900, "width": 1000, "height": 700}',  # its middle below the screen
+        '{"x": 100, "y": 50, "width": 1000}',
+        '{"x": "left", "y": 50, "width": 1000, "height": 700}',
+        "[1, 2, 3, 4]",
+        "not json",
+    ],
+)
+def test_a_place_that_does_not_show_opens_as_on_the_first_start(tmp_path: Path, saved: str) -> None:
+    (tmp_path / window.GEOMETRY_FILE).write_text(saved)
+    keeper = window.GeometryKeeper(tmp_path / window.GEOMETRY_FILE)
+    assert keeper.place([Screen(0, 0, 1920, 1080)]) == window.Place(
+        1280, 860, screen=Screen(0, 0, 1920, 1080)
+    )
+
+
+def test_a_place_on_another_screen_is_kept(tmp_path: Path) -> None:
+    saved = {"x": -1800, "y": 100, "width": 1000, "height": 700, "maximized": False}
+    (tmp_path / window.GEOMETRY_FILE).write_text(json.dumps(saved))
+    keeper = window.GeometryKeeper(tmp_path / window.GEOMETRY_FILE)
+    assert keeper.place([MAIN, Screen(-1920, 0)]) == window.Place(1000, 700, -1800, 100)
+
+
+def test_a_place_that_cannot_be_written_is_let_go(tmp_path: Path) -> None:
+    (tmp_path / "file").write_text("")
+    keeper = window.GeometryKeeper(tmp_path / "file" / window.GEOMETRY_FILE)
+    keeper.save(Created(FakeWebview(), {}))  # the folder is a file: nothing kept or raised
+    assert (tmp_path / "file").is_file()
+
+
+def test_a_close_without_anything_before_it_closes_all_the_same() -> None:
+    destroyed = threading.Event()
+    may_close = window.close_cleanly(destroyed.set)
+    assert may_close() is False
+    assert destroyed.wait(5)
+
+
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnhandledThreadExceptionWarning")
+def test_a_failure_before_the_close_still_closes() -> None:
+    destroyed = threading.Event()
+
+    def broken() -> None:
+        raise RuntimeError
+
+    may_close = window.close_cleanly(destroyed.set, before=broken)
+    assert may_close() is False
+    assert destroyed.wait(5)

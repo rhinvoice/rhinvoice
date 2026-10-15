@@ -5,6 +5,10 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Neu
+- Die Programme für Windows und Mac öffnen ihr Fenster dort, wo es geschlossen wurde, und so
+  gross, wie es war (oder maximiert).
+
 ### Behoben
 - Beim ersten Öffnen einer Seite wird nicht mehr kurz das ganze Fenster leer, die Navigation
   bleibt stehen. Die Programme für Windows und Mac laden alle Seiten kurz nach dem Start.

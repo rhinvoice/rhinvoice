@@ -35,6 +35,7 @@ import argparse
 import bz2
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -76,9 +77,10 @@ def fetch(source: dict[str, str]) -> Path:
     return target
 
 
-def run(*command: str | Path, cwd: Path = ROOT) -> None:
-    print("$", " ".join(str(part) for part in command))
-    subprocess.run([str(part) for part in command], cwd=cwd, check=True)  # noqa: S603 - build tools
+def run(*command: str | Path, cwd: Path = ROOT, env: dict[str, str] | None = None) -> None:
+    # Flushed: the child writes to the same log, and its lines must come after this one.
+    print("$", " ".join(str(part) for part in command), flush=True)
+    subprocess.run([str(part) for part in command], cwd=cwd, env=env, check=True)  # noqa: S603 - build tools
 
 
 def unpack_single_folder(archive: Path, target: Path) -> None:
@@ -114,6 +116,120 @@ def install_runtime_python(sources: dict[str, dict[str, str]], install: Path) ->
         json.dumps({"generation": RUNTIME_GENERATION}) + "\n", encoding="utf-8"
     )
     return interpreter
+
+
+UNUSED_STDLIB = (
+    "idlelib", "tkinter", "turtledemo", "turtle.py", "ensurepip", "venv", "pydoc_data",
+    "lib2to3", "test", "config-3.*", "site-packages/pip", "site-packages/pip-*",
+    "lib-dynload/_tkinter.*",
+)  # fmt: skip
+"""Parts of the standard library the program never uses: no GUI toolkit, no package
+manager, no tests. check_imports tries the modules the program imports without them."""
+UNUSED_RUNTIME = {
+    "windows": (
+        # Headers and import libraries for building extensions.
+        "include", "libs",
+        # Tcl/Tk for tkinter.
+        "tcl", "DLLs/_tkinter.*", "DLLs/tcl*.dll", "DLLs/tk*.dll",
+        # CPython's own test modules.
+        "DLLs/_test*", "DLLs/_ctypes_test*", "DLLs/xxlimited*",
+    ),
+    "macos": (
+        # Headers and files for building extensions; manual pages.
+        "include", "share", "lib/pkgconfig", "bin/python3*-config",
+        # Tcl/Tk for tkinter.
+        "lib/tcl9*", "lib/tk9*", "lib/itcl*", "lib/thread*", "lib/libtcl*",
+        # The command line tools that come with it.
+        "bin/idle3*", "bin/pip*", "bin/pydoc3*",
+        # The interpreter is linked statically; nothing loads the shared library.
+        "lib/libpython*",
+    ),
+}  # fmt: skip
+"""Per system, never mixed, and matched case-sensitively: on Windows "lib/thread*" would
+otherwise remove Lib/threading.py."""
+
+
+def trim_runtime(python: Path) -> None:
+    """Remove what the bundled CPython brings but the program never uses.
+
+    About 120 MB on Windows, most of it debug symbols; about 30 MB on macOS.
+    """
+    windows = (python / "python.exe").exists()
+    [stdlib] = [python / "Lib"] if windows else list(python.glob("lib/python3.*"))
+    runtime = UNUSED_RUNTIME["windows" if windows else "macos"]
+    unused = [
+        *(path for pattern in runtime for path in python.glob(pattern, case_sensitive=True)),
+        *(path for pattern in UNUSED_STDLIB for path in stdlib.glob(pattern, case_sensitive=True)),
+        # Debug symbols (Windows), and compiled files: Python writes those to the user's
+        # cache on first use (rhinvoice_boot.use_bytecode_cache).
+        *python.rglob("*.pdb", case_sensitive=True),
+        *python.rglob("__pycache__", case_sensitive=True),
+    ]
+    for path in unused:
+        print(f"trim {path.relative_to(python)}", flush=True)
+        if path.is_dir() and not path.is_symlink():
+            shutil.rmtree(path)
+        else:
+            path.unlink(missing_ok=True)
+
+
+IMPORT_CHECK = """
+import importlib, os, pkgutil, site, sys
+failed = []
+
+
+def tried(name):
+    try:
+        return importlib.import_module(name)
+    except Exception as error:
+        failed.append(f"{name}: {type(error).__name__}: {error}")
+        return None
+
+
+folder = sys.argv[1]
+site.addsitedir(folder)
+names = {module.name for module in pkgutil.iter_modules([folder])}
+rhinvoice = tried("rhinvoice")
+if rhinvoice is not None:
+    names |= {m.name for m in pkgutil.walk_packages(rhinvoice.__path__, "rhinvoice.")}
+names = {n for n in names if not n.endswith("__main__")} | set(sys.argv[2:])
+for name in sorted(names):
+    tried(name)
+for line in failed:
+    print(line)
+    # Annotations can be read without the job's log (GitHub's API).
+    if os.environ.get("GITHUB_ACTIONS"):
+        print(f"::error title=Import check::{line}")
+print(f"{len(failed)} modules failed" if failed else f"imported {len(names)} modules", flush=True)
+raise SystemExit(1 if failed else 0)
+"""
+USED_MODULES = (
+    # The boot, from the runtime itself.
+    "rhinvoice_boot",
+    # What uvicorn chooses when the server starts: the "auto" modules import the
+    # implementations that are installed (httptools, websockets).
+    "uvicorn.loops.auto", "uvicorn.loops.asyncio", "uvicorn.protocols.http.auto",
+    "uvicorn.protocols.websockets.auto", "uvicorn.lifespan.on",
+)  # fmt: skip
+"""Modules imported only at run time, beyond the top-level ones of the app package."""
+USED_ON = {
+    "windows": ("webview.platforms.winforms", "webview.platforms.edgechromium"),
+    "macos": ("webview.platforms.cocoa", "uvicorn.loops.uvloop"),
+}
+"""The program window's backend and, where installed, uvloop."""
+
+
+def check_imports(python: Path, package: Path, system: str) -> None:
+    """Import every module of Rhinvoice, every library of the app package and USED_MODULES.
+
+    With the bundled interpreter: a part of the standard library trimmed too much fails the
+    build, not a user. Only what these modules import when imported is checked; a part a
+    library loads later, in a function, is not.
+    """
+    run(
+        python, "-c", IMPORT_CHECK, package / "site-packages", *USED_MODULES, *USED_ON[system],
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+    )  # fmt: skip
 
 
 def build_app_package(python: Path, package: Path) -> None:
@@ -206,6 +322,8 @@ def build_windows(out: Path) -> None:
     install_restic(sources, install)
     brand_windows_program(sources, install)
     build_app_package(python, install / "app")
+    trim_runtime(install / "python")
+    check_imports(python, install / "app", "windows")
     zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-windows-x64.zip")
     print(f"Rhinvoice {version()} (runtime {RUNTIME_GENERATION}) assembled in {out}")
 
@@ -234,8 +352,9 @@ MACOS_START = """#!/bin/sh
 # lies in Contents/MacOS, so that macOS shows the app's name and icon.
 contents="$(cd "$(dirname "$0")/.." && pwd)"
 export PYTHONHOME="$contents/Resources/python"
-# The bundle is signed: a __pycache__ written into it would break the seal.
-export PYTHONDONTWRITEBYTECODE=1
+# The bundle is signed: compiled files go to the user's cache, never into it. Set here,
+# before Python imports anything; the boot passes it on (rhinvoice_boot.use_bytecode_cache).
+export PYTHONPYCACHEPREFIX="$HOME/Library/Caches/Rhinvoice/pycache"
 # Started from the Finder, the output would be lost: keep it where Console.app finds it.
 if [ ! -t 1 ]; then
     mkdir -p "$HOME/Library/Logs/Rhinvoice"
@@ -367,21 +486,11 @@ def build_macos(out: Path) -> None:
     install_chromium(sources, install)
     install_restic(sources, install)
     build_app_package(python, install / "app")
+    trim_runtime(install / "python")
+    check_imports(python, install / "app", "macos")
     zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-macos-arm64.zip")
-    precompile(python, install)
     sign_ad_hoc(bundle)
     print(f"Rhinvoice {version()} (runtime {RUNTIME_GENERATION}) assembled in {bundle}")
-
-
-def precompile(python: Path, install: Path) -> None:
-    """Compile the Python files now: the signed bundle must never change afterwards."""
-    # Not checked: a few test files of the standard library do not compile on purpose;
-    # they are never imported, and the program writes no bytecode (MACOS_START).
-    subprocess.run(  # noqa: S603 - the bundled interpreter
-        [str(python), "-m", "compileall", "-q", "-j", "0", str(install / "python" / "lib"),
-         str(install / "app")],
-        check=False,
-    )  # fmt: skip
 
 
 def sign_ad_hoc(bundle: Path) -> None:

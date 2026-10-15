@@ -37,6 +37,9 @@ from rhinvoice_boot import (
 from tests.helpers import raises_exactly
 from tests.unit.desktop.tools import commands
 
+PREFIX_BEFORE = os.environ.get("PYTHONPYCACHEPREFIX")
+"""As the test process started; the tests of main() must leave it so."""
+
 
 def package(folder: Path, version: str, runtime: int = 1) -> Path:
     folder.mkdir(parents=True)
@@ -363,6 +366,56 @@ def test_options_are_read_in_both_spellings() -> None:
     assert without_option(["--browser", "--data-dir=/d"], "--data-dir") == ["--browser"]
 
 
+@pytest.fixture
+def bytecode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep the bytecode settings of this test process as they are."""
+    monkeypatch.setattr(sys, "pycache_prefix", sys.pycache_prefix)
+    # Set first, so that monkeypatch records the variable and removes what main() sets.
+    monkeypatch.setenv("PYTHONPYCACHEPREFIX", "")
+    monkeypatch.delenv("PYTHONPYCACHEPREFIX")
+
+
+@pytest.mark.parametrize(
+    ("system", "environ", "folder"),
+    [
+        (
+            "Windows",
+            {"LOCALAPPDATA": "C:/Users/anna/AppData/Local"},
+            Path("C:/Users/anna/AppData/Local/Rhinvoice/cache/pycache"),
+        ),
+        ("Windows", {}, Path("/home/anna/AppData/Local/Rhinvoice/cache/pycache")),
+        ("Darwin", {}, Path("/home/anna/Library/Caches/Rhinvoice/pycache")),
+        ("Linux", {"XDG_CACHE_HOME": "/var/cache/anna"}, Path("/var/cache/anna/rhinvoice/pycache")),
+        ("Linux", {}, Path("/home/anna/.cache/rhinvoice/pycache")),
+    ],
+)
+def test_compiled_python_files_go_to_the_users_cache(
+    system: str, environ: dict[str, str], folder: Path
+) -> None:
+    """Never into the program folder: on macOS it is signed, and a write would break the seal."""
+    assert boot.bytecode_cache(system, environ, Path("/home/anna")) == folder
+
+
+@pytest.mark.usefixtures("bytecode")
+def test_the_bytecode_cache_applies_here_and_to_the_programs_started_later(
+    tmp_path: Path,
+) -> None:
+    environ: dict[str, str] = {}
+    boot.use_bytecode_cache(environ, tmp_path / "cache")
+    assert environ == {"PYTHONPYCACHEPREFIX": str(tmp_path / "cache")}
+    assert sys.pycache_prefix == str(tmp_path / "cache")
+    # Set already by the start script (macOS): kept.
+    given = {"PYTHONPYCACHEPREFIX": "/Users/anna/Library/Caches/Rhinvoice/pycache"}
+    boot.use_bytecode_cache(given, tmp_path / "other")
+    assert sys.pycache_prefix == "/Users/anna/Library/Caches/Rhinvoice/pycache"
+    # Set but empty: Python would write next to the program files (a relative prefix).
+    empty = {"PYTHONPYCACHEPREFIX": ""}
+    boot.use_bytecode_cache(empty, tmp_path / "cache")
+    assert empty == {"PYTHONPYCACHEPREFIX": str(tmp_path / "cache")}
+    assert sys.pycache_prefix == str(tmp_path / "cache")
+
+
+@pytest.mark.usefixtures("bytecode")
 def test_main_starts_from_the_interpreter_of_the_runtime(
     runtime_folder: Path, data: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -372,8 +425,10 @@ def test_main_starts_from_the_interpreter_of_the_runtime(
     assert boot.main(["--data-dir", str(data), "--no-browser"]) == 0
     [(_version, arguments)] = program.started
     assert arguments[:3] == ["--no-browser", "--install-dir", str(runtime_folder)]
+    assert os.environ["PYTHONPYCACHEPREFIX"] == sys.pycache_prefix
 
 
+@pytest.mark.usefixtures("bytecode")
 def test_main_reports_a_runtime_it_cannot_use(
     install: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -579,3 +634,8 @@ def test_the_interface_of_the_boot_for_app_packages_stays_as_it_is() -> None:
         Path("/d"),
         True,
     )
+
+
+def test_the_tests_leave_the_bytecode_settings_of_this_process_alone() -> None:
+    """Runs after the tests of main() (pytest keeps the order of a module)."""
+    assert os.environ.get("PYTHONPYCACHEPREFIX") == PREFIX_BEFORE

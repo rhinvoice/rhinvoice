@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.7.4] – 2026-10-16
+
 ### Added
 - *About Rhinvoice* has **Report a problem**: it copies the version, the system and the end of
   the log (programs for Windows and Mac) and opens a GitHub bug report. Nothing is sent by itself.

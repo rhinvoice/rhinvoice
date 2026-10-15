@@ -155,8 +155,14 @@ jobs:
           staging="$(mktemp -d)"
           cp -R build/macos/Rhinvoice.app "$staging/"
           ln -s /Applications "$staging/Applications"
-          hdiutil create -volname "Rhinvoice $version" -srcfolder "$staging" -format UDZO \
+          # ULMO (LZMA) packs far tighter than the usual UDZO (zlib); macOS opens it from
+          # 10.15 on, below the app's minimum of 12.
+          hdiutil create -volname "Rhinvoice $version" -srcfolder "$staging" -format ULMO \
             -ov "build/macos/Rhinvoice-$version.dmg"
+          hdiutil verify "build/macos/Rhinvoice-$version.dmg"
+          # What makes the app big, for the next steps (sizes in MB).
+          du -sm build/macos/Rhinvoice.app/Contents/Resources/* | sort -rn | head -8
+          ls -l "build/macos/Rhinvoice-$version.dmg"
 
       - uses: actions/upload-artifact@v4
         with:

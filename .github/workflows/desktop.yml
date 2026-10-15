@@ -173,8 +173,15 @@ jobs:
           ln -s /Applications "$staging/Applications"
           # ULMO (LZMA) packs far tighter than the usual UDZO (zlib); macOS opens it from
           # 10.15 on, below the app's minimum of 12.
-          hdiutil create -volname "Rhinvoice $version" -srcfolder "$staging" -format ULMO \
-            -ov "build/macos/Rhinvoice-$version.dmg"
+          # hdiutil on the hosted runners fails now and then with "Resource busy" (a scan of
+          # the fresh files still holds them): try again a few times before giving up.
+          for attempt in 1 2 3 4 5; do
+            hdiutil create -volname "Rhinvoice $version" -srcfolder "$staging" -format ULMO \
+              -ov "build/macos/Rhinvoice-$version.dmg" && break
+            [ "$attempt" = 5 ] && exit 1
+            echo "hdiutil failed (attempt $attempt), trying again"
+            sleep 10
+          done
           hdiutil verify "build/macos/Rhinvoice-$version.dmg"
           # What makes the app big, for the next steps (sizes in MB).
           du -sm build/macos/Rhinvoice.app/Contents/Resources/* | sort -rn | head -8

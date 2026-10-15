@@ -33,7 +33,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, BinaryIO, cast
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Mapping, Sequence
+    from collections.abc import Callable, Generator, Mapping, MutableMapping, Sequence
 
 KEEP = 3
 """App packages of updates and database copies kept for going back (ADR 0022)."""
@@ -65,6 +65,28 @@ def data_folder(system: str, environ: Mapping[str, str], home: Path) -> Path:
     if system == "Darwin":
         return home / "Library" / "Application Support" / "Rhinvoice"
     return Path(environ.get("XDG_DATA_HOME") or home / ".local" / "share") / "rhinvoice"
+
+
+def bytecode_cache(system: str, environ: Mapping[str, str], home: Path) -> Path:
+    """Return the folder for the compiled Python files of this user.
+
+    Never the program folder: on macOS it is signed, and a file written into it would break
+    the seal; the setups ship no compiled files, Python writes them on first use.
+    """
+    if system == "Windows":
+        local = Path(environ.get("LOCALAPPDATA") or home / "AppData" / "Local")
+        return local / "Rhinvoice" / "cache" / "pycache"
+    if system == "Darwin":
+        return home / "Library" / "Caches" / "Rhinvoice" / "pycache"
+    return Path(environ.get("XDG_CACHE_HOME") or home / ".cache") / "rhinvoice" / "pycache"
+
+
+def use_bytecode_cache(environ: MutableMapping[str, str], folder: Path) -> None:
+    """Write compiled files to ``folder``, here and in the programs this one starts.
+
+    A folder set already is kept: the macOS start script sets it before the boot is imported.
+    """
+    sys.pycache_prefix = environ.setdefault("PYTHONPYCACHEPREFIX", str(folder))
 
 
 def make_private(folder: Path) -> None:
@@ -489,6 +511,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     given = option(arguments, "--data-dir")
     data = Path(given) if given else data_folder(platform.system(), os.environ, Path.home())
     log_without_console(data)
+    use_bytecode_cache(os.environ, bytecode_cache(platform.system(), os.environ, Path.home()))
     # The bundled interpreter lives in <install>/python.
     runtime = Runtime(Path(sys.prefix).parent, data, launch, restart)
     try:

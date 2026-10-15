@@ -53,6 +53,11 @@ Type: filesandordirs; Name: "{app}\app"
 Type: filesandordirs; Name: "{app}\static"
 Type: filesandordirs; Name: "{app}\restic"
 
+[UninstallDelete]
+; Files the program wrote beside the installed ones (e.g. the boot's compiled Python files).
+; The data lives elsewhere (%LOCALAPPDATA%\Rhinvoice) and stays.
+Type: filesandordirs; Name: "{app}"
+
 [Icons]
 Name: "{autoprograms}\Rhinvoice"; Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice_boot"; WorkingDir: "{app}"; IconFilename: "{app}\Rhinvoice.ico"
 Name: "{autodesktop}\Rhinvoice"; Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice_boot"; WorkingDir: "{app}"; IconFilename: "{app}\Rhinvoice.ico"; Tasks: desktopicon

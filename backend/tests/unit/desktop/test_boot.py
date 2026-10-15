@@ -38,6 +38,10 @@ from tests.helpers import raises_exactly
 from tests.unit.desktop.tools import commands
 
 
+PREFIX_BEFORE = os.environ.get("PYTHONPYCACHEPREFIX")
+"""As the test process started; the tests of main() must leave it so."""
+
+
 def package(folder: Path, version: str, runtime: int = 1) -> Path:
     folder.mkdir(parents=True)
     (folder / "manifest.json").write_text(json.dumps({"version": version, "runtime": runtime}))
@@ -367,7 +371,9 @@ def test_options_are_read_in_both_spellings() -> None:
 def bytecode(monkeypatch: pytest.MonkeyPatch) -> None:
     """Keep the bytecode settings of this test process as they are."""
     monkeypatch.setattr(sys, "pycache_prefix", sys.pycache_prefix)
-    monkeypatch.delenv("PYTHONPYCACHEPREFIX", raising=False)
+    # Set first, so that monkeypatch records the variable and removes what main() sets.
+    monkeypatch.setenv("PYTHONPYCACHEPREFIX", "")
+    monkeypatch.delenv("PYTHONPYCACHEPREFIX")
 
 
 @pytest.mark.parametrize(
@@ -624,3 +630,8 @@ def test_the_interface_of_the_boot_for_app_packages_stays_as_it_is() -> None:
         Path("/d"),
         True,
     )
+
+
+def test_the_tests_leave_the_bytecode_settings_of_this_process_alone() -> None:
+    """Runs after the tests of main() (pytest keeps the order of a module)."""
+    assert os.environ.get("PYTHONPYCACHEPREFIX") == PREFIX_BEFORE

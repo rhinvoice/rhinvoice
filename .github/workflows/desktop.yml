@@ -1,0 +1,168 @@
+name: Desktop
+
+# The installation without Docker (ADR 0021, 0022): builds the Windows setup and the macOS
+# app with their app packages, checks them like a user would (on Windows the full smoke test,
+# desktop/smoke_test.py) and keeps them as downloads of the run. The Release workflow calls
+# it for every tag and attaches the files to the GitHub release.
+on:
+  workflow_call:
+  push:
+    branches: [main, feat/native-install]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "desktop/**"
+      - ".github/workflows/desktop.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows setup (build, install, smoke test)
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Build the web interface
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/cache@v4
+        with:
+          path: build/downloads
+          key: desktop-downloads-${{ hashFiles('desktop/sources.json') }}
+
+      - name: Assemble the program folder
+        run: python desktop/build.py windows
+
+      - name: Build the setup
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup --yes --no-progress }
+          $version = python desktop/build.py version
+          & $iscc "/DAppVersion=$version" desktop\windows\rhinvoice.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem build\windows\Rhinvoice-Setup-*.exe | Format-Table Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Rhinvoice-Setup-windows
+          path: |
+            build/windows/Rhinvoice-Setup-*.exe
+            build/windows/rhinvoice-app-*.zip
+          retention-days: 14
+
+      - name: Install it silently for this user
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem build\windows\Rhinvoice-Setup-*.exe | Select-Object -First 1
+          Start-Process -FilePath $setup.FullName -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
+          if (-not (Test-Path "$env:LOCALAPPDATA\Programs\Rhinvoice\python\Rhinvoice.exe")) {
+            throw "Rhinvoice was not installed"
+          }
+
+      - name: Smoke test the installed program
+        shell: pwsh
+        run: python desktop/smoke_test.py "$env:LOCALAPPDATA\Programs\Rhinvoice"
+
+  macos:
+    name: macOS app (build, start, disk image)
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Build the web interface
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/cache@v4
+        with:
+          path: build/downloads
+          key: desktop-downloads-macos-${{ hashFiles('desktop/sources.json') }}
+
+      - name: Assemble Rhinvoice.app
+        run: python desktop/build.py macos
+
+      - name: Start it once (it must answer)
+        run: |
+          app=build/macos/Rhinvoice.app/Contents/MacOS/Rhinvoice
+          # Without a terminal the app logs to ~/Library/Logs/Rhinvoice (as from the Finder).
+          "$app" --no-browser < /dev/null > /dev/null 2>&1 &
+          log="$HOME/Library/Logs/Rhinvoice/rhinvoice.log"
+          config="$HOME/Library/Application Support/Rhinvoice/rhinvoice.json"
+          for _ in $(seq 1 120); do
+            if [ -f "$config" ]; then
+              port="$(python -c "import json,sys; print(json.load(open(sys.argv[1]))['port'])" "$config")"
+              curl -fsS "http://127.0.0.1:$port/api/health" && break
+            fi
+            sleep 1
+          done
+          curl -fsS "http://127.0.0.1:$port/api/health" || { cat "$log"; exit 1; }
+          pkill -INT -f "MacOS/python3 -m rhinvoice_boot"
+          sleep 5
+          if pgrep -f "Rhinvoice/database" >/dev/null; then
+            echo "the database still runs after the program ended" >&2
+            cat "$log"
+            exit 1
+          fi
+
+      - name: Pack the disk image
+        run: |
+          version="$(python desktop/build.py version)"
+          staging="$(mktemp -d)"
+          cp -R build/macos/Rhinvoice.app "$staging/"
+          ln -s /Applications "$staging/Applications"
+          hdiutil create -volname "Rhinvoice $version" -srcfolder "$staging" -format UDZO \
+            -ov "build/macos/Rhinvoice-$version.dmg"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Rhinvoice-macos
+          path: |
+            build/macos/Rhinvoice-*.dmg
+            build/macos/rhinvoice-app-*.zip
+          retention-days: 14
+

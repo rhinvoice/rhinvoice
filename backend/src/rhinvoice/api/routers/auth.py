@@ -21,9 +21,11 @@ from rhinvoice.application.identity.handlers import (
     DisableTotp,
     Login,
 )
+from rhinvoice.application.identity.reset import ConfirmReset, ResetMethod
 from rhinvoice.domain.identity.session import ABSOLUTE_TIMEOUT
 from rhinvoice.domain.identity.user import MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH
 from rhinvoice.domain.shared.email import EMAIL_PATTERN
+from rhinvoice.infrastructure.identity.reset_file import FILE_NAME
 
 if TYPE_CHECKING:
     from rhinvoice.domain.identity.user import User
@@ -62,6 +64,20 @@ class UserResponse(ApiModel):
 
 class SetupStatus(ApiModel):
     needs_setup: bool
+
+
+class PasswordResetInfo(ApiModel):
+    method: ResetMethod
+    """``file``: a code in the data folder of this computer; ``administrator``: the
+    command ``rhinvoice user reset-password`` on the server."""
+    location: str | None
+    """Where the code's file lies (``file`` only)."""
+
+
+class ConfirmResetRequest(ApiModel):
+    email: str = Field(max_length=254)
+    code: str = Field(max_length=40)
+    new_password: str = Field(min_length=MIN_PASSWORD_LENGTH, max_length=MAX_PASSWORD_LENGTH)
 
 
 class ChangePasswordRequest(ApiModel):
@@ -137,6 +153,30 @@ def logout(container: ContainerDep, token: SessionToken, response: Response) -> 
 @router.get("/me")
 def me(user: CurrentUser) -> UserResponse:
     return UserResponse.of(user)
+
+
+@router.get("/password-reset")
+def password_reset_info(container: ContainerDep) -> PasswordResetInfo:
+    """Tell the login page how a forgotten password is reset in this installation."""
+    reset = container.password_reset
+    folder = container.settings.reset_code_dir
+    location = None if folder is None else str(folder / FILE_NAME)
+    return PasswordResetInfo(method=reset.method, location=location)
+
+
+@router.post("/password-reset", status_code=status.HTTP_204_NO_CONTENT, dependencies=[NOT_IN_DEMO])
+def request_password_reset(container: ContainerDep) -> None:
+    """Write a new one-time code where only this computer's user reads it."""
+    container.password_reset.request()
+
+
+@router.post(
+    "/password-reset/confirm", status_code=status.HTTP_204_NO_CONTENT, dependencies=[NOT_IN_DEMO]
+)
+def confirm_password_reset(body: ConfirmResetRequest, container: ContainerDep) -> None:
+    container.password_reset.confirm(
+        ConfirmReset(email=body.email, code=body.code, new_password=body.new_password)
+    )
 
 
 @router.post("/password", status_code=status.HTTP_204_NO_CONTENT, dependencies=[NOT_IN_DEMO])

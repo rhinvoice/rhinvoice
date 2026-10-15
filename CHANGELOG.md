@@ -5,6 +5,33 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.7.0] – 2026-10-15
+
+### Added
+- **Rhinvoice without Docker (beta):** a setup for Windows 10/11 and a Mac app (macOS 12 or later,
+  Apple silicon) with their own window and icon. They bring the database and everything else
+  with them; PDFs are printed with Edge on Windows and with a bundled Chromium on the Mac. The
+  data lies in the user's own folder and stays when the program is removed (ADR 0021). The
+  setups are not signed yet: Windows and macOS ask once before they open them.
+- Updates in the program: a quiet card at the foot of the sidebar and the *About* dialog say when
+  a newer version exists. Without Docker one click installs it and restarts the program; a new
+  version that does not start is taken back with the database from before it (ADR 0022). With
+  Docker the card shows the commands. The check asks GitHub once a day for a signed `release.json`
+  and can be switched off with `RHINVOICE_UPDATE_CHECK=false`.
+- Backups without Docker: *Settings → Backup* chooses a folder (OneDrive, Dropbox, iCloud Drive,
+  Google Drive, a network drive or a USB disk) and shows the recovery key once. The program then
+  backs up as the backup container does: daily, after issuing or cancelling documents and on
+  request, encrypted with restic, 7 daily, 4 weekly, 12 monthly and every yearly backup kept.
+  `--restore` brings a backup back, also on a new computer (ADR 0023).
+- A way back from a forgotten password: *Forgot password?* on the login page. On a server it
+  names the new commands `rhinvoice user list` and `rhinvoice user reset-password`; in the
+  installation without Docker it puts a one-time code into the data folder and opens the file.
+  A new password also ends the account's other sessions and a lock after failed logins (ADR 0024).
+
+### Fixed
+- The overview shows the company's currency first. A company in Germany or Austria saw Swiss
+  francs as soon as one document was in CHF, and before its first invoice.
+
 ## [0.6.2] – 2026-10-13
 
 ### Changed

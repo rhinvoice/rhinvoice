@@ -95,6 +95,14 @@ def test_empty_dashboard(dashboard: DashboardHandlers) -> None:
     assert (overview.year_to_date, overview.today) == ([], date(2026, 3, 9))
 
 
+def test_the_company_currency_comes_first(store: Store, dashboard: DashboardHandlers) -> None:
+    """An Austrian company sees euros first, even before its first invoice."""
+    store.company = None
+    assert dashboard.overview().currency is None
+    store.company = factories.company(default_currency=Currency.EUR)
+    assert dashboard.overview().currency is Currency.EUR
+
+
 def test_overview_sums_invoices_per_currency(
     documents: DocumentHandlers, dashboard: DashboardHandlers
 ) -> None:

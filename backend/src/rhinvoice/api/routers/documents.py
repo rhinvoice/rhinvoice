@@ -697,6 +697,8 @@ class DaysToPayResponse(ApiModel):
 class DashboardResponse(ApiModel):
     today: date
     """In the installation's time zone."""
+    currency: Currency | None
+    """The company's default currency, shown first; null before the company is set up."""
     figures: list[FiguresResponse]
     revenue: list[RevenueResponse]
     """Per month since January of last year."""
@@ -774,6 +776,7 @@ class DashboardResponse(ApiModel):
                 for item in dashboard.days_to_pay
             ],
             today=dashboard.today,
+            currency=dashboard.currency,
             year_to_date=[
                 YearToDateResponse(
                     currency=item.currency,

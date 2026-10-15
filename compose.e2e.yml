@@ -45,6 +45,8 @@ services:
       RHINVOICE_COOKIE_SECURE: "false"
       # Plans the tests create start today: no background run may issue them meanwhile.
       RHINVOICE_RECURRING: "false"
+      # No request to GitHub during tests; the notice is tested with simulated answers.
+      RHINVOICE_UPDATE_CHECK: "false"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2)"]
       interval: 2s

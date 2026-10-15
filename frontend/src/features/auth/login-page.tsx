@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { InfoIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -144,6 +144,14 @@ export function LoginPage({
             {...form.register("password")}
           />
         </Field>
+        {demo?.enabled === true ? null : (
+          <Link
+            to="/password-reset"
+            className="-mt-2 inline-flex min-h-6 items-center self-end text-sm"
+          >
+            {t("auth.forgotPassword")}
+          </Link>
+        )}
         {needsTotp ? (
           <Field
             label={t("auth.totpCode")}

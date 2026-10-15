@@ -98,6 +98,8 @@ class DaysToPay:
 class Dashboard:
     today: date
     """In the installation's time zone (the browser's may differ)."""
+    currency: Currency | None
+    """The company's default currency, shown first; None before the company is set up."""
     figures: list[CurrencyFigures]
     revenue: list[MonthlyRevenue]
     """Per month since January of last year: this year against last year."""
@@ -256,8 +258,10 @@ class DashboardHandlers:
                 for invoice in open_invoices
                 if invoice.display_status is DisplayStatus.OVERDUE
             ]
+            company = uow.company.get()
             return Dashboard(
                 today=today,
+                currency=None if company is None else company.default_currency,
                 figures=uow.documents.figures(today),
                 revenue=uow.documents.revenue_by_month(date(today.year - 1, 1, 1)),
                 year_to_date=year_to_date(

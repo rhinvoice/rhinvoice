@@ -1,4 +1,5 @@
 import io
+import threading
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -7,23 +8,29 @@ import pytest
 import uvicorn
 from alembic.script import ScriptDirectory
 from fastapi import FastAPI
-from sqlalchemy import Engine, text
+from sqlalchemy import Engine, insert, text
 
 from rhinvoice.api import cli
-from rhinvoice.api.container import Container
+from rhinvoice.api.container import Container, OwnServices, build_container
 from rhinvoice.api.settings import Settings
+from rhinvoice.application.backup.ports import BackupTarget, Snapshot
+from rhinvoice.application.backup.worker import BackupWorker
 from rhinvoice.application.document.handlers import LineInput
+from rhinvoice.application.identity.handlers import Login
 from rhinvoice.domain.document.lines import LineKind, PriceMode
 from rhinvoice.domain.recurring.plan import Interval, InvoiceTemplate, PlanAction, RecurringPlan
 from rhinvoice.domain.shared.country import Country
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.infrastructure.db.migrate import NotADemoDatabaseError, alembic_config
+from rhinvoice.infrastructure.db.tables import backup_runs
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork
 from rhinvoice.infrastructure.scheduling import PeriodicJob
 from tests.unit.domain import factories
 
 PASSWORD = "correct horse battery"
+
+
 HEAD = str(ScriptDirectory.from_config(alembic_config("postgresql://")).get_current_head())
 
 
@@ -101,32 +108,71 @@ def test_user_create_reports_domain_errors(
     assert env is not None
 
 
+@pytest.mark.usefixtures("env")
+def test_user_list_and_reset_password(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    for email, name in (("zora@example.com", "Zora"), ("anna@example.com", "Anna Muster")):
+        monkeypatch.setattr("sys.stdin", io.StringIO(f"{PASSWORD}\n"))
+        cli.main(["user", "create", "--email", email, "--name", name, "--password-stdin"])
+    capsys.readouterr()
+    assert cli.main(["user", "list"]) == 0
+    assert capsys.readouterr().out == "anna@example.com\tAnna Muster\nzora@example.com\tZora\n"
+
+    monkeypatch.setattr(
+        "getpass.getpass", scripted_getpass("a new long passphrase", "a new long passphrase")
+    )
+    assert cli.main(["user", "reset-password", "--email", " Anna@Example.com "]) == 0
+    assert capsys.readouterr().out == "new password set for anna@example.com; its sessions ended\n"
+    container = build_container(Settings())
+    try:
+        container.identity.login(Login(email="anna@example.com", password="a new long passphrase"))
+    finally:
+        container.engine.dispose()
+
+
+def test_user_reset_password_reports_errors(
+    env: Engine,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr("sys.stdin", io.StringIO(f"{PASSWORD}\n"))
+    code = cli.main(["user", "reset-password", "--email", "nobody@example.com", "--password-stdin"])
+    assert code == 1
+    assert capsys.readouterr().err == "error: no user with e-mail nobody@example.com\n"
+    assert env is not None
+
+
 def test_migrate(env: Engine, capsys: pytest.CaptureFixture[str]) -> None:
     assert cli.main(["migrate"]) == 0
     assert capsys.readouterr().out == "database is up to date\n"
     assert env is not None
 
 
-@pytest.mark.parametrize(("run_migrations", "recurring"), [("true", "true"), ("false", "false")])
+@pytest.mark.parametrize(
+    ("switched_on", "background"),
+    [("true", ["update check", "recurring invoices"]), ("false", [])],
+)
 def test_serve_runs_uvicorn(
-    env: Engine,
-    monkeypatch: pytest.MonkeyPatch,
-    run_migrations: str,
-    recurring: str,
+    env: Engine, monkeypatch: pytest.MonkeyPatch, switched_on: str, background: list[str]
 ) -> None:
+    """Migrations, the update check and recurring invoices, all on or all off."""
     calls: list[dict[str, Any]] = []
     migrations: list[str] = []
-    monkeypatch.setenv("RHINVOICE_RUN_MIGRATIONS", run_migrations)
-    monkeypatch.setenv("RHINVOICE_RECURRING", recurring)
-    jobs: list[str] = []
+    monkeypatch.setenv("RHINVOICE_RUN_MIGRATIONS", switched_on)
+    monkeypatch.setenv("RHINVOICE_RECURRING", switched_on)
+    monkeypatch.setenv("RHINVOICE_UPDATE_CHECK", switched_on)
+    started: list[str] = []
+    stopped: list[str] = []
 
     class RecordingJob(PeriodicJob):
         def start(self) -> None:
-            jobs.append("start")
+            started.append(self._thread.name)
             super().start()
 
         def stop(self, timeout: float = 30) -> None:
-            jobs.append("stop")
+            stopped.append(self._thread.name)
             super().stop(timeout)
 
     monkeypatch.setattr(cli, "PeriodicJob", RecordingJob)
@@ -147,9 +193,11 @@ def test_serve_runs_uvicorn(
             "forwarded_allow_ips": "127.0.0.1",
         },
     ]
-    assert len(migrations) == (1 if run_migrations == "true" else 0)
-    # The web server writes due recurring invoices in the background, unless switched off.
-    assert jobs == (["start", "stop"] if recurring == "true" else [])
+    assert len(migrations) == (1 if switched_on == "true" else 0)
+    # The web server looks for new releases and writes due recurring invoices in the
+    # background, unless switched off; the jobs end with it.
+    assert started == background
+    assert stopped == background
     assert env is not None
 
 
@@ -300,3 +348,117 @@ def test_a_newer_database_is_refused(
             connection.execute(
                 text("UPDATE alembic_version SET version_num = :head"), {"head": HEAD}
             )
+
+
+def test_a_server_in_a_thread_ends_when_asked_to(
+    env: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The program window of the installation without Docker stops its server this way."""
+    monkeypatch.setenv("RHINVOICE_RUN_MIGRATIONS", "false")
+    monkeypatch.setenv("RHINVOICE_RECURRING", "false")
+    monkeypatch.setenv("RHINVOICE_UPDATE_CHECK", "false")
+    ended = threading.Event()
+
+    class Server:
+        def __init__(self, config: uvicorn.Config) -> None:
+            assert (config.host, config.port) == ("127.0.0.1", 9001)
+            assert isinstance(config.app, FastAPI)
+            config.app.state.container.engine.dispose()
+            self.should_exit = False
+
+        def run(self) -> None:
+            while not self.should_exit:
+                ended.wait(0.01)
+            ended.set()
+
+    monkeypatch.setattr(uvicorn, "Server", Server)
+    stop = threading.Event()
+    threading.Timer(0.1, stop.set).start()
+    assert cli.serve(Settings(), "127.0.0.1", 9001, stop=stop) == 0
+    assert ended.is_set()
+    assert env is not None
+
+
+class OwnBackups:
+    """The backup setup and archive of the installation without Docker, standing in."""
+
+    def __init__(self) -> None:
+        self.folder_set: str | None = None
+
+    def target(self) -> BackupTarget:
+        # Looks through the cloud folders: never every half minute (macOS may ask each time).
+        msg = "the backup job asked for the folder suggestions"
+        raise AssertionError(msg)
+
+    def folder(self) -> str | None:
+        return self.folder_set
+
+    def set_up(self, folder: str) -> str:
+        self.folder_set = folder
+        return "K7QM"
+
+    def recovery_key(self) -> str | None:
+        return None
+
+    def confirm_key(self) -> None:
+        """Nothing to keep here."""
+
+    def back_up(self) -> Snapshot:
+        return Snapshot("4f3a9c1e", 1)
+
+    def maintain(self, *, verify: bool) -> None:
+        del verify
+
+
+def test_the_installation_without_docker_makes_its_own_backups(
+    env: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """ADR 0023: a background job, once a folder is set up; runs left running fail."""
+    monkeypatch.setenv("RHINVOICE_RECURRING", "false")
+    monkeypatch.setenv("RHINVOICE_UPDATE_CHECK", "false")
+    with env.begin() as connection:
+        connection.execute(text("DELETE FROM backup_runs"))
+        connection.execute(
+            insert(backup_runs).values(
+                started_at=datetime.now(UTC), reason="manual", status="running"
+            )
+        )
+    jobs: list[tuple[str, PeriodicJob]] = []
+
+    class RecordingJob(PeriodicJob):
+        def __init__(
+            self, job: Callable[[], object], *, interval: float, first_delay: float, name: str
+        ) -> None:
+            super().__init__(job, interval=interval, first_delay=first_delay, name=name)
+            self.name = name
+
+        def start(self) -> None:
+            jobs.append((self.name, self))
+
+        def stop(self, timeout: float = 30) -> None:
+            del timeout
+
+    monkeypatch.setattr(cli, "PeriodicJob", RecordingJob)
+
+    def run_server(app: FastAPI, **_options: object) -> None:
+        app.state.container.engine.dispose()
+
+    ticks: list[BackupWorker] = []
+
+    def tick(worker: BackupWorker) -> None:
+        ticks.append(worker)
+
+    monkeypatch.setattr(uvicorn, "run", run_server)
+    monkeypatch.setattr(BackupWorker, "tick", tick)
+    backups = OwnBackups()
+    own = OwnServices(backup_setup=backups, backup_archive=backups)
+    assert cli.serve(Settings(), "127.0.0.1", 9002, own=own) == 0
+    [(name, job)] = jobs
+    assert name == "backups"
+    with env.begin() as connection:
+        assert connection.execute(text("SELECT status FROM backup_runs")).scalar_one() == "failed"
+    job.run_once()  # no folder yet: nothing to do
+    assert ticks == []
+    backups.folder_set = "/Users/anna/OneDrive/Rhinvoice-Backup"
+    job.run_once()
+    assert len(ticks) == 1

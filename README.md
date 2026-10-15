@@ -9,7 +9,7 @@
 
 **Open-source invoicing for small businesses in Switzerland, Liechtenstein, Germany and Austria.**
 Quotes, invoices, reminders and e-invoices with a calm, keyboard-first interface. Self-hosted with
-Docker: your data stays on your server.
+Docker, or as an app on Windows and Mac: your data stays with you.
 
 > Rhein + Invoice: the Rhine connects CH, FL, AT and DE.
 
@@ -84,6 +84,15 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 | Rounding | 0.05 (optional) | 0.05 (optional) | 0.01 | 0.01 |
 | E-invoice | ZUGFeRD / Factur-X | ZUGFeRD / Factur-X | ZUGFeRD, XRechnung | ZUGFeRD / Factur-X |
 
+## Without Docker: Windows and Mac (beta)
+
+Download the setup for [Windows 10/11](https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-Setup-Windows.exe)
+or the app for the [Mac](https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-macOS.dmg)
+(macOS 12 or later, Apple silicon). They bring the database with them, update themselves from
+within the program and back up into a folder of your choice, such as OneDrive or iCloud Drive.
+The setups are not signed yet: Windows and macOS ask once before they open them. See
+[Install on Windows or Mac](https://rhinvoice.com/docs/getting-started/install-desktop/).
+
 ## Quickstart (Docker)
 
 Run the published image, no source code needed: on a server, a NAS, a Raspberry Pi or your own
@@ -91,9 +100,9 @@ laptop with Docker Desktop (macOS, Windows, Linux).
 
 ```bash
 mkdir rhinvoice && cd rhinvoice
-curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.6.2/deploy/compose.yml
-curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.6.2/.env.example -o .env
-# edit .env: POSTGRES_PASSWORD and RHINVOICE_VERSION=0.6.2
+curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.7.0/deploy/compose.yml
+curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.7.0/.env.example -o .env
+# edit .env: POSTGRES_PASSWORD and RHINVOICE_VERSION=0.7.0
 docker compose pull
 docker compose up -d
 ```

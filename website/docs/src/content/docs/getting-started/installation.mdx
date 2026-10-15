@@ -17,6 +17,10 @@ import { Aside, Steps } from "@astrojs/starlight/components";
 
 Rhinvoice is installed with **Docker Compose**: download two files, set a database password in `.env`, start the containers and open the address in your browser. You need only [Docker](https://docs.docker.com/get-docker/) with Docker Compose, no source code, no Python and no Node.js.
 
+<Aside title="Without Docker">
+For a single Windows PC or Mac, Rhinvoice also comes as a regular program: [installing on Windows and macOS](/docs/getting-started/install-desktop/).
+</Aside>
+
 <Aside type="caution" title="Beta">
 Rhinvoice is in early development (0.x). Tax rates and rules are provided without warranty and do not replace tax advice. Try it on a test installation before you write real invoices with it.
 </Aside>
@@ -35,8 +39,8 @@ Rhinvoice runs as four containers: `app` (web interface and API), `db` (PostgreS
 
    ```bash
    mkdir rhinvoice && cd rhinvoice
-   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.6.2/deploy/compose.yml
-   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.6.2/.env.example -o .env
+   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.7.0/deploy/compose.yml
+   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.7.0/.env.example -o .env
    ```
 
 2. **Configure**: edit `.env` (see the table below). At least set `POSTGRES_PASSWORD` and `RHINVOICE_VERSION`.
@@ -58,7 +62,7 @@ Rhinvoice runs as four containers: `app` (web interface and API), `db` (PostgreS
 | Setting | Value |
 |---|---|
 | `POSTGRES_PASSWORD` | a long random value, letters and digits only (e.g. `openssl rand -hex 24`) |
-| `RHINVOICE_VERSION` | the version to run, e.g. `0.6.2`; pinned versions only change when you change them, `latest` follows every release |
+| `RHINVOICE_VERSION` | the version to run, e.g. `0.7.0`; pinned versions only change when you change them, `latest` follows every release |
 | `RHINVOICE_PORT` | port on this machine, default `8000` |
 | `RHINVOICE_BIND` | `127.0.0.1` (default) = only this machine; `0.0.0.0` = the whole network |
 | `RHINVOICE_COOKIE_SECURE` | keep `true`; use `false` only for plain HTTP in a trusted network (not needed for `localhost`) |
@@ -78,6 +82,17 @@ docker compose exec app rhinvoice user create --email you@example.com --name "Yo
 ```
 
 Then the [setup wizard](/docs/getting-started/first-start/) asks for your country and company.
+
+## Forgotten password
+
+Whoever looks after the server sets a new password on the command line. The first command lists the accounts' e-mail addresses, the second asks twice for the new password:
+
+```bash
+docker compose exec app rhinvoice user list
+docker compose exec app rhinvoice user reset-password --email you@example.com
+```
+
+The new password ends every sign-in of the account and a lock after five failed logins; two-factor authentication stays switched on. *Forgot password?* on the login page shows the same commands. Rhinvoice sends no reset links by e-mail.
 
 ## Trying it out with demo data
 

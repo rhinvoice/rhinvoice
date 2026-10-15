@@ -8,6 +8,8 @@ faq:
     a: Not with a pinned version. Pinned versions only change when you change RHINVOICE_VERSION. With latest, every docker compose pull fetches the newest release.
   - q: Do issued invoices change with an update?
     a: No. Issued documents keep their content and their archived PDF. They are immutable, also in the database.
+  - q: How do I learn about a new version?
+    a: Rhinvoice checks once a day and then shows a card at the foot of the navigation with the new version and the steps for the server. RHINVOICE_UPDATE_CHECK=false in .env switches the check off.
   - q: Where do I see which version I run?
     a: At the foot of the navigation, next to by webberz. A click opens About Rhinvoice with a link to What's new.
 ---
@@ -30,7 +32,7 @@ To update Rhinvoice, set the new version in `.env`, pull the images and restart 
 
 <Steps>
 
-1. In the folder with `compose.yml` and `.env`, set `RHINVOICE_VERSION` in `.env` to the new version, e.g. `RHINVOICE_VERSION=0.6.2`.
+1. In the folder with `compose.yml` and `.env`, set `RHINVOICE_VERSION` in `.env` to the new version, e.g. `RHINVOICE_VERSION=0.7.0`.
 
 2. Pull the images and restart:
 
@@ -52,7 +54,7 @@ Database migrations run automatically on start (`RHINVOICE_RUN_MIGRATIONS=true` 
 
 | `RHINVOICE_VERSION` | Behaviour |
 |---|---|
-| a version, e.g. `0.6.2` | pinned: changes only when you change it |
+| a version, e.g. `0.7.0` | pinned: changes only when you change it |
 | `latest` | follows every release on the next `docker compose pull` |
 
 A pinned version is the safer choice for real invoices: you decide when to update and can read the changelog first.
@@ -60,6 +62,16 @@ A pinned version is the safer choice for real invoices: you decide when to updat
 <Aside type="note" title="Issued invoices stay as they are">
 An update never changes issued documents. They keep their content and their archived PDF. A changed print template only applies to new PDFs.
 </Aside>
+
+## Notice of a new version
+
+Once a day Rhinvoice checks whether a new version exists. Then a card appears at the foot of the navigation with the new version number, a link to what is new and the two steps for the server: the line for `.env` and the command, both ready to copy. *About Rhinvoice* shows the same, and whether you are up to date.
+
+For the check Rhinvoice downloads a small, signed file from the latest release on GitHub. As with any download, GitHub sees your server's address; no data of your installation is sent. A file whose signature does not match is discarded. To switch the check off, set in `.env`:
+
+```bash
+RHINVOICE_UPDATE_CHECK=false
+```
 
 ## Which version am I running?
 

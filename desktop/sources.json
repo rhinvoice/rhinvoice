@@ -1,0 +1,38 @@
+{
+  "windows": {
+    "python": {
+      "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.13.16+20261013-x86_64-pc-windows-msvc-install_only.tar.gz",
+      "sha256": "e1f9233e780fbe951e531b0eb207d794e1c3fb39d523a6f481f4fc01ef2b6ca5"
+    },
+    "postgresql": {
+      "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.0/postgresql-17.11.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "85829f743e2697c55f1a5e8b210c53b90dd1f578448fc01cb9c4dc9e0a8e3827"
+    },
+    "rcedit": {
+      "url": "https://github.com/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe",
+      "sha256": "3e7801db1a5edbec91b49a24a094aad776cb4515488ea5a4ca2289c400eade2a"
+    },
+    "restic": {
+      "url": "https://github.com/restic/restic/releases/download/v0.19.1/restic_0.19.1_windows_amd64.zip",
+      "sha256": "da948ad707ed690426473aaba2046cd61f8f90f6f0e7dab6be0d5796531de67d"
+    }
+  },
+  "macos-arm64": {
+    "python": {
+      "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.13.16+20261013-aarch64-apple-darwin-install_only.tar.gz",
+      "sha256": "ca0e6a70fb75a0984751bd75493e3de77680aef7fbd0fea9b903c299537b3423"
+    },
+    "postgresql": {
+      "url": "https://github.com/PostgresApp/PostgresApp/releases/download/v2.9.6/Postgres-2.9.6-17.dmg",
+      "sha256": "b38bb00b8c8702a568270aab85995c550f7f93d1503b818efdc5ff9a519b7168"
+    },
+    "chromium": {
+      "url": "https://storage.googleapis.com/chrome-for-testing-public/155.0.8059.79/mac-arm64/chrome-headless-shell-mac-arm64.zip",
+      "sha256": "5f51504ead3d41815111cd73e79c4979df3a4e6aedc7cf6fe2b042ae037363b5"
+    },
+    "restic": {
+      "url": "https://github.com/restic/restic/releases/download/v0.19.1/restic_0.19.1_darwin_arm64.bz2",
+      "sha256": "7be0a144ccc377880f294204aa271d76e4b79554b42a751151d425ce6ebac143"
+    }
+  }
+}

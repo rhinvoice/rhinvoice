@@ -31,7 +31,7 @@ from rhinvoice.domain.tax.supply import Supply
 from rhinvoice.domain.tax.vat_number import VatNumber
 from rhinvoice.infrastructure.einvoice.cii import CiiWriter
 from rhinvoice.infrastructure.rendering.html import JinjaDocumentRenderer
-from rhinvoice.infrastructure.rendering.pdf import GotenbergPdfRenderer
+from rhinvoice.infrastructure.rendering.pdf import ChromiumPdfRenderer, GotenbergPrinter
 from tests.unit.application.conftest import NOW
 from tests.unit.application.fakes import InMemoryUnitOfWork, Store
 from tests.unit.domain import factories
@@ -524,7 +524,7 @@ def write(folder: Path, gotenberg: str | None = None) -> None:
     folder.mkdir(parents=True, exist_ok=True)
     writer = CiiWriter()
     html = JinjaDocumentRenderer()
-    pdf = None if gotenberg is None else GotenbergPdfRenderer(gotenberg, html)
+    pdf = None if gotenberg is None else ChromiumPdfRenderer(html, GotenbergPrinter(gotenberg))
     for name, sample in samples().items():
         printed = model(sample)
         for profile in EInvoiceProfile:

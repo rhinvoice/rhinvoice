@@ -26,7 +26,12 @@ from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.infrastructure.rendering.html import JinjaDocumentRenderer
-from rhinvoice.infrastructure.rendering.pdf import GotenbergPdfRenderer, file_name, reminder_title
+from rhinvoice.infrastructure.rendering.pdf import (
+    ChromiumPdfRenderer,
+    GotenbergPrinter,
+    file_name,
+    reminder_title,
+)
 from tests.helpers import blank_pdf, raises_exactly
 from tests.unit.application.conftest import NOW
 from tests.unit.application.fakes import InMemoryUnitOfWork, Store
@@ -76,17 +81,19 @@ def setup(
     dunning.remind(invoice, level=1)
     second, _ = dunning.remind(invoice, level=2, early=True)
     html = JinjaDocumentRenderer()
-    pdf = GotenbergPdfRenderer(
-        "http://gotenberg:3000",
+    pdf = ChromiumPdfRenderer(
         html,
-        httpx.Client(
-            transport=httpx.MockTransport(
-                lambda request: httpx.Response(
-                    200,
-                    content=blank_pdf() + request.content[:0],
-                    headers={"content-type": "application/pdf"},
+        GotenbergPrinter(
+            "http://gotenberg:3000",
+            httpx.Client(
+                transport=httpx.MockTransport(
+                    lambda request: httpx.Response(
+                        200,
+                        content=blank_pdf() + request.content[:0],
+                        headers={"content-type": "application/pdf"},
+                    )
                 )
-            )
+            ),
         ),
     )
     printing = PrintHandlers(
@@ -143,8 +150,11 @@ def test_metadata_of_the_reminder_pdf(store: Store) -> None:
         return httpx.Response(200, content=blank_pdf(), headers={"content-type": "application/pdf"})
 
     html = JinjaDocumentRenderer()
-    renderer = GotenbergPdfRenderer(
-        "http://gotenberg:3000", html, httpx.Client(transport=httpx.MockTransport(handle))
+    renderer = ChromiumPdfRenderer(
+        html,
+        GotenbergPrinter(
+            "http://gotenberg:3000", httpx.Client(transport=httpx.MockTransport(handle))
+        ),
     )
     printed = printing.reminder(reminder_id)
     content = renderer.reminder_pdf(printed)

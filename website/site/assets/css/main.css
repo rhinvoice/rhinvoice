@@ -244,13 +244,18 @@ section.river { padding-block: 8px 24px; }
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  /* The copy column is wide enough for a four-line title: the downloads below it stay
+     within the first screen on a 1280 × 720 laptop. */
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   align-items: center;
   gap: 40px;
-  padding-block: 48px 32px;
+  padding-block: 28px 32px;
 }
-.hero .copy { display: grid; gap: 20px; }
-.hero h1 { font-size: clamp(36px, 5.5vw, 58px); }
+.hero .copy { display: grid; gap: 16px; }
+.hero h1 { font-size: clamp(34px, 4.3vw, 52px); }
+.hero .lead { font-size: 18px; }
+/* The German title is longer: a little smaller keeps it on four lines. */
+:lang(de) .hero h1 { font-size: clamp(34px, 3.75vw, 48px); }
 
 .proof { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); font-size: 14px; }
 .proof { padding: 0; }
@@ -381,10 +386,64 @@ footer a { color: var(--muted); }
 }
 .lost h1 { font-size: clamp(32px, 5vw, 48px); }
 
+/* ---------- Downloads ------------------------------------------------------ */
+
+/* The app without Docker, under the hero's actions: both buttons equally wide. */
+.dl-panel {
+  display: grid;
+  gap: 8px;
+  max-width: 520px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.dl-panel strong { font-size: 15px; }
+.dl-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dl-buttons .btn { justify-content: center; gap: 6px; padding-inline: 10px; white-space: nowrap; }
+.dl-note { color: var(--muted); font-size: 14px; }
+/* The file size, put in by build.py from the newest release. */
+.dl-size { font-weight: 500; opacity: 0.75; }
+.btn-sm { padding: 8px 14px; font-size: 14px; }
+.btn-soft {
+  background: color-mix(in oklab, var(--accent) 12%, var(--surface));
+  border-color: color-mix(in oklab, var(--accent) 30%, var(--line));
+  color: var(--accent);
+}
+
+/* Windows, Mac and server side by side; the buttons on one line at the foot of the cards. */
+.platforms { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.platform {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.platform h3 { display: flex; align-items: center; gap: 8px; font-size: 18px; }
+.platform p { color: var(--muted); font-size: 15px; }
+.platform .btn { justify-self: start; }
+.platforms-note { margin-block: 16px 28px; font-size: 14px; }
+.docker-title { margin-bottom: 12px; font-size: 20px; }
+
 /* ---------- Narrow screens ------------------------------------------------- */
 
 @media (max-width: 860px) {
-  .hero, .shots { grid-template-columns: minmax(0, 1fr); }
+  .hero { padding-block: 20px 24px; }
+  .hero, .shots, .platforms { grid-template-columns: minmax(0, 1fr); }
   .stations { grid-template-columns: repeat(2, 1fr); }
   .top nav:not(.lang) { display: none; }
+}
+
+@media (max-width: 560px) {
+  .hero h1 { font-size: 31px; }
+  :lang(de) .hero h1 { font-size: 28px; }
+  .hero .lead { font-size: 16px; }
+  .hero .copy { gap: 14px; }
+}
+
+@media (max-width: 560px) {
+  .dl-buttons { grid-template-columns: minmax(0, 1fr); }
 }

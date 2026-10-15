@@ -16,26 +16,34 @@ from rhinvoice.application.document.handlers import DocumentHandlers
 from rhinvoice.application.document.printing import PrintHandlers
 from rhinvoice.application.dunning.handlers import DunningHandlers
 from rhinvoice.application.identity.handlers import IdentityHandlers
+from rhinvoice.application.identity.reset import PasswordReset
 from rhinvoice.application.importing.handlers import ImportHandlers
 from rhinvoice.application.mail.handlers import MailHandlers
 from rhinvoice.application.numbering.handlers import NumberingHandlers
 from rhinvoice.application.onboarding.handlers import OnboardingHandlers
 from rhinvoice.application.recurring.handlers import RecurringHandlers
 from rhinvoice.application.text.handlers import TextHandlers
+from rhinvoice.application.updates.handlers import UpdateHandlers
 from rhinvoice.domain.shared.clock import Clock, SystemClock
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork, make_engine
 from rhinvoice.infrastructure.einvoice.cii import CiiWriter
+from rhinvoice.infrastructure.identity.reset_file import FileResetDelivery, open_with_system
 from rhinvoice.infrastructure.importing.reader import SpreadsheetReader
 from rhinvoice.infrastructure.mail.content import PrintedMailContent
 from rhinvoice.infrastructure.mail.smtp import SmtpSender
+from rhinvoice.infrastructure.rendering.chromium import LocalChromiumPrinter
 from rhinvoice.infrastructure.rendering.html import JinjaDocumentRenderer
-from rhinvoice.infrastructure.rendering.pdf import GotenbergPdfRenderer
+from rhinvoice.infrastructure.rendering.pdf import ChromiumPdfRenderer, GotenbergPrinter
 from rhinvoice.infrastructure.security import Argon2PasswordHasher, PyOtpTotpService
+from rhinvoice.infrastructure.updates.feed import SignedReleaseFeed, installed_version
 
 if TYPE_CHECKING:
     from sqlalchemy import Engine
 
     from rhinvoice.api.settings import Settings
+    from rhinvoice.application.backup.ports import BackupArchive, BackupSetup
+    from rhinvoice.application.document.printing import PdfRenderer
+    from rhinvoice.application.updates.ports import UpdateInstaller
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +52,7 @@ class Container:
     engine: Engine
     clock: Clock
     identity: IdentityHandlers
+    password_reset: PasswordReset
     company: CompanyHandlers
     customers: CustomerHandlers
     articles: ArticleHandlers
@@ -59,11 +68,41 @@ class Container:
     demo: DemoHandlers
     mail: MailHandlers
     recurring: RecurringHandlers
+    updates: UpdateHandlers
     demo_reset: threading.Event = field(default_factory=threading.Event)
     """Set while a public demo is being reset: the API answers 503 meanwhile."""
 
 
-def build_container(settings: Settings, clock: Clock | None = None) -> Container:
+@dataclass(frozen=True, slots=True)
+class OwnServices:
+    """What the installation without Docker brings itself; nothing of it in the Docker setup."""
+
+    installer: UpdateInstaller | None = None
+    """Installs updates (ADR 0022)."""
+    backup_setup: BackupSetup | None = None
+    """Folder and recovery key of the backups (ADR 0023)."""
+    backup_archive: BackupArchive | None = None
+    """Where the program's own backups go (ADR 0023)."""
+
+
+NO_OWN_SERVICES = OwnServices()
+
+
+def pdf_renderer(settings: Settings, html: JinjaDocumentRenderer) -> PdfRenderer | None:
+    """Gotenberg in the Docker setup, else a browser on this computer, else no PDFs."""
+    if settings.gotenberg_url is not None:
+        return ChromiumPdfRenderer(html, GotenbergPrinter(settings.gotenberg_url))
+    if settings.chromium_path is not None:
+        return ChromiumPdfRenderer(html, LocalChromiumPrinter(settings.chromium_path))
+    return None
+
+
+def build_container(
+    settings: Settings,
+    clock: Clock | None = None,
+    own: OwnServices = NO_OWN_SERVICES,
+) -> Container:
+    """``own``: given by the installation without Docker (updates, backups)."""
     engine = make_engine(settings.database_url)
     effective_clock = clock or SystemClock(settings.zone)
 
@@ -76,11 +115,7 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
     customers = CustomerHandlers(uow=uow, clock=effective_clock)
     articles = ArticleHandlers(uow=uow, clock=effective_clock)
     html = JinjaDocumentRenderer(settings.theme_dir)
-    pdf = (
-        None
-        if settings.gotenberg_url is None
-        else GotenbergPdfRenderer(settings.gotenberg_url, html)
-    )
+    pdf = pdf_renderer(settings, html)
     printing = PrintHandlers(
         uow=uow,
         clock=effective_clock,
@@ -104,11 +139,21 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
         content=PrintedMailContent(printing),
         sender=SmtpSender(),
     )
+    # A public demo is reset all the time; it has nothing to update.
+    feed = SignedReleaseFeed() if settings.update_check and not settings.demo else None
     return Container(
+        updates=UpdateHandlers(feed, installed_version(), effective_clock, own.installer),
         settings=settings,
         engine=engine,
         clock=effective_clock,
         identity=identity,
+        password_reset=PasswordReset(
+            identity,
+            None
+            if settings.reset_code_dir is None
+            else FileResetDelivery(settings.reset_code_dir, open_with_system),
+            effective_clock,
+        ),
         company=company,
         customers=customers,
         articles=articles,
@@ -117,7 +162,7 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
         dashboard=DashboardHandlers(uow=uow, clock=effective_clock),
         texts=TextHandlers(uow=uow),
         printing=printing,
-        backup=BackupHandlers(uow=uow, clock=effective_clock),
+        backup=BackupHandlers(uow=uow, clock=effective_clock, setup=own.backup_setup),
         imports=imports,
         onboarding=OnboardingHandlers(uow=uow, clock=effective_clock),
         dunning=DunningHandlers(uow=uow, clock=effective_clock, documents=documents),

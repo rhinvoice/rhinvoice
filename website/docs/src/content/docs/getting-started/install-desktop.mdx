@@ -1,0 +1,103 @@
+---
+title: Installing Rhinvoice on Windows and macOS (without Docker)
+description: Install the invoicing program Rhinvoice as a regular program for Windows and Mac, without Docker. Download the setup, confirm the Windows or macOS warning, start.
+faq:
+  - q: Why does Windows or macOS warn me the first time?
+    a: The Rhinvoice setups are not yet signed with a paid certificate, so Windows and macOS do not know the publisher and ask. Confirm it once; afterwards Rhinvoice starts without asking.
+  - q: Where does Rhinvoice keep my data?
+    a: On Windows in %LOCALAPPDATA%\Rhinvoice, on a Mac in ~/Library/Application Support/Rhinvoice. The database, the settings and the logs live there. Updates and uninstalling leave this folder alone.
+  - q: Do I need Docker, Python or a server?
+    a: No. The setup brings everything, including the database. Rhinvoice runs on this computer and can only be reached from it.
+  - q: How do I get updates?
+    a: Rhinvoice checks for new versions itself and then shows a notice with "Update now". It copies the database first. If something goes wrong, the previous version starts again.
+since: 0.7.0
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice also comes as a **regular program for Windows and Mac**: download, install, start. You need neither Docker, Python nor a server. The database is built in, Rhinvoice opens in a window of its own and can only be reached from this computer. For a server, a NAS or several people on different computers, use the [installation with Docker](/docs/getting-started/installation/).
+
+<Aside type="caution" title="Beta">
+The program without Docker is new and still being tested, and Rhinvoice itself is in early development (0.x). Tax rates and rules come without warranty and do not replace tax advice. Set up the [backup](/docs/operations/backup-desktop/) right after installing.
+</Aside>
+
+## What you need
+
+- **Windows** 10 or 11, 64-bit, or
+- **a Mac with Apple silicon** (M1 or newer) and macOS 12 or newer. There is no program for Intel Macs yet; there Rhinvoice runs with [Docker Desktop](/docs/getting-started/installation/).
+
+## Download
+
+Download the newest version for your system. The links always lead to the latest release on GitHub, where you also find [all versions and their changes](https://github.com/rhinvoice/rhinvoice/releases):
+
+- Windows: [`Rhinvoice-Setup-Windows.exe`](https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-Setup-Windows.exe)
+- Mac: [`Rhinvoice-macOS.dmg`](https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-macOS.dmg)
+
+## Installing on Windows
+
+<Steps>
+
+1. Double-click `Rhinvoice-Setup-Windows.exe`.
+
+2. **Confirm the Windows warning.** The first time, Windows shows "Windows protected your PC". Click **More info**, then **Run anyway**. The button only appears after clicking "More info".
+
+3. Follow the setup. It installs Rhinvoice for your user account only, into `%LOCALAPPDATA%\Programs\Rhinvoice`, and needs no administrator rights.
+
+4. Start Rhinvoice from the Start menu (or right at the end of the setup). The first start sets up the database and takes a little longer.
+
+</Steps>
+
+## Installing on a Mac
+
+<Steps>
+
+1. Open `Rhinvoice-macOS.dmg` and drag **Rhinvoice** into **Applications**.
+
+2. Open Rhinvoice from Applications. The first time, macOS says it could not verify Rhinvoice and does not open it. Click **Done**.
+
+3. **Allow Rhinvoice.** Open  > **System Settings** > **Privacy & Security** and scroll to **Security**. It says that Rhinvoice was blocked. Click **Open Anyway**, confirm with your login password and click **Open Anyway** again in the next window. The button only appears for about an hour after the attempt in step 2.
+
+4. Rhinvoice starts. From now on you open it like any other program, without being asked.
+
+</Steps>
+
+<Aside title="Why the warnings?">
+The setups are not yet signed with a paid certificate from Microsoft or Apple, so Windows and macOS do not know the publisher and ask once. Only download Rhinvoice from the [project's GitHub page](https://github.com/rhinvoice/rhinvoice/releases).
+
+The programs for Windows and Mac are an offer in its test phase, next to the installation with Docker. They are looked after for as long as they are used. Once enough people work with them, they will be signed as well, and the warnings disappear.
+</Aside>
+
+## First start
+
+Rhinvoice opens its own window and asks for the first user account and your company, as described under [First start](/docs/getting-started/first-start/). Started a second time, for example by one double-click too many, it shows the running program. When you close the window, Rhinvoice ends together with its database.
+
+## Where your data lives
+
+| | Program | Data (database, settings, logs) |
+|---|---|---|
+| Windows | `%LOCALAPPDATA%\Programs\Rhinvoice` | `%LOCALAPPDATA%\Rhinvoice` |
+| Mac | `/Applications/Rhinvoice.app` | `~/Library/Application Support/Rhinvoice` |
+
+Only your user account can open the data folder. Updates and uninstalling leave it alone: invoices must be kept for ten years. The [backup](/docs/operations/backup-desktop/) saves what it holds.
+
+## Setting up the backup
+
+The Rhinvoice overview has a checklist with the item **Set up backups**. It leads to *Settings → Backup*, where you choose a folder, preferably in OneDrive, Dropbox, iCloud Drive or Google Drive, and keep the recovery key. The details are under [Backups in the program for Windows and Mac](/docs/operations/backup-desktop/).
+
+## Updates
+
+Rhinvoice checks for new versions itself. Then a notice **New version …** appears with the button **Update now**. The update takes about half a minute: Rhinvoice copies the database first, downloads the new version, checks that it arrived unchanged and restarts. If the new version does not start, the previous one comes back automatically, with your data unchanged. *About Rhinvoice* shows the state too.
+
+Rarely a new version needs a new setup, for example for a new version of the built-in database. Then the notice shows **Download the setup**. Install it over the existing program; your data stays.
+
+## Uninstalling
+
+- **Windows:** *Settings → Apps → Installed apps → Rhinvoice → Uninstall*.
+- **Mac:** quit Rhinvoice and drag `Rhinvoice.app` from Applications to the Trash.
+
+Your data stays, also for a later installation. To remove everything, delete the data folder from the table above afterwards. Keep the PDFs of your issued invoices or a backup somewhere else first.
+
+## Frequently asked questions
+
+<Faq />

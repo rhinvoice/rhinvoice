@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLinkIcon } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/components/i18n/use-i18n";
@@ -14,20 +15,35 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { backupQuery, useRequestBackup, type BackupRun } from "@/features/backup/api";
-import { backupActivity } from "@/features/backup/backup-model";
+import {
+  backupQuery,
+  backupSetupQuery,
+  useRequestBackup,
+  type Backup,
+  type BackupRun,
+  type BackupSetup,
+} from "@/features/backup/api";
+import { backupActivity, canBackUpNow, setupStep } from "@/features/backup/backup-model";
+import { FolderChooser, RecoveryKey } from "@/features/backup/backup-setup";
 import { BackupBadge, BackupSummary } from "@/features/backup/backup-status";
 import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { docsUrl } from "@/lib/about";
 import { formatBytes, formatDateTime } from "@/lib/format";
 
+/** What the installation without Docker shows below the state, on request. */
+type Shown = "nothing" | "key" | "folder";
+
 export function BackupSettings() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const errorMessage = useErrorMessage();
   const query = useQuery(backupQuery);
-  const request = useRequestBackup();
+  // Answers 409 in the Docker setup: there the backup container is set up instead.
+  const setupQuery = useQuery(backupSetupQuery);
+  const [shown, setShown] = useState<Shown>("nothing");
   const backup = query.data;
+  const setup = setupQuery.data;
+  const step = setup === undefined ? null : setupStep(setup);
   return (
     <div className="flex max-w-3xl flex-col gap-4">
       <div>
@@ -35,63 +51,134 @@ export function BackupSettings() {
         <p className="text-sm text-muted-foreground">{t("backup.description")}</p>
       </div>
       <FormAlert message={query.isError ? errorMessage(query.error) : null} />
-      {backup === undefined ? (
-        query.isPending ? (
+      {backup === undefined || setupQuery.isPending ? (
+        query.isPending || setupQuery.isPending ? (
           <Skeleton className="h-48" />
         ) : null
+      ) : setup !== undefined && step === "choose" ? (
+        <FolderChooser setup={setup} />
       ) : (
         <>
-          <Card aria-labelledby="backup-state-title">
-            <CardHeader className="flex-row items-center justify-between gap-2">
-              <CardTitle id="backup-state-title">{t("backup.stateTitle")}</CardTitle>
-              <BackupBadge state={backup.state} />
-            </CardHeader>
-            <BackupSummary backup={backup} />
-            {backup.state === "not_set_up" ? (
-              <p className="text-sm text-muted-foreground">
-                {t("backup.setUpHint")}{" "}
-                <a
-                  href={docsUrl("operations/backup", locale)}
-                  className="inline-flex items-center gap-1 text-primary underline underline-offset-4"
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  {t("backup.guide")}
-                  <ExternalLinkIcon className="size-3.5" aria-hidden="true" />
-                  <span className="sr-only">{t("common.opensInNewTab")}</span>
-                </a>
-              </p>
-            ) : (
-              <div className="flex flex-wrap items-center gap-3">
-                <Button
-                  disabled={backupActivity(backup) !== "idle" || request.isPending}
-                  onClick={() => {
-                    request.mutate(undefined, {
-                      onSuccess: () => toast.success(t("backup.requested")),
-                      onError: (caught) => toast.error(errorMessage(caught) ?? t("error.generic")),
-                    });
-                  }}
-                >
-                  {t("backup.now")}
-                </Button>
-                {/* Always mounted: screen readers announce changes of a live region. */}
-                <p className="text-sm text-muted-foreground" role="status">
-                  {
-                    {
-                      idle: "",
-                      waiting: t("backup.pending"),
-                      running: t("backup.running"),
-                    }[backupActivity(backup)]
-                  }
-                </p>
-              </div>
-            )}
-          </Card>
+          {step === "key" ? <RecoveryKey mustConfirm /> : null}
+          <BackupState
+            backup={backup}
+            setup={setup}
+            onShowKey={() => {
+              setShown(shown === "key" ? "nothing" : "key");
+            }}
+            onChangeFolder={() => {
+              setShown("folder");
+            }}
+          />
+          {setup !== undefined && step === "ready" && shown === "key" ? (
+            <RecoveryKey
+              mustConfirm={false}
+              onHide={() => {
+                setShown("nothing");
+              }}
+            />
+          ) : null}
+          {setup !== undefined && shown === "folder" ? (
+            <FolderChooser
+              setup={setup}
+              onDone={() => {
+                setShown("nothing");
+                toast.success(t("backup.setup.changed"));
+              }}
+              onCancel={() => {
+                setShown("nothing");
+              }}
+            />
+          ) : null}
           <BackupRuns runs={backup.runs} />
           <p className="text-sm text-muted-foreground">{t("backup.retention")}</p>
         </>
       )}
     </div>
+  );
+}
+
+function BackupState({
+  backup,
+  setup,
+  onShowKey,
+  onChangeFolder,
+}: {
+  readonly backup: Backup;
+  /** Only in the installation without Docker. */
+  readonly setup: BackupSetup | undefined;
+  readonly onShowKey: () => void;
+  readonly onChangeFolder: () => void;
+}) {
+  const { t, locale } = useI18n();
+  const errorMessage = useErrorMessage();
+  const request = useRequestBackup();
+  const activity = backupActivity(backup);
+  const folder = setup?.folder ?? null;
+  return (
+    <Card aria-labelledby="backup-state-title">
+      <CardHeader className="flex-row items-center justify-between gap-2">
+        <CardTitle id="backup-state-title">{t("backup.stateTitle")}</CardTitle>
+        <BackupBadge state={backup.state} />
+      </CardHeader>
+      <BackupSummary backup={backup} />
+      {folder === null ? null : (
+        <p className="text-sm break-all text-muted-foreground">{t("backup.folder", { folder })}</p>
+      )}
+      {setup === undefined && backup.state === "not_set_up" ? (
+        <p className="text-sm text-muted-foreground">
+          {t("backup.setUpHint")}{" "}
+          <a
+            href={docsUrl("operations/backup", locale)}
+            className="inline-flex items-center gap-1 text-primary underline underline-offset-4"
+            rel="noreferrer"
+            target="_blank"
+          >
+            {t("backup.guide")}
+            <ExternalLinkIcon className="size-3.5" aria-hidden="true" />
+            <span className="sr-only">{t("common.opensInNewTab")}</span>
+          </a>
+        </p>
+      ) : (
+        <div className="flex flex-wrap items-center gap-3">
+          {canBackUpNow(backup) ? (
+            <Button
+              disabled={activity !== "idle" || request.isPending}
+              onClick={() => {
+                request.mutate(undefined, {
+                  onSuccess: () => toast.success(t("backup.requested")),
+                  onError: (caught) => toast.error(errorMessage(caught) ?? t("error.generic")),
+                });
+              }}
+            >
+              {t("backup.now")}
+            </Button>
+          ) : (
+            <p className="w-full text-sm text-muted-foreground">{t("backup.firstBackup")}</p>
+          )}
+          {setup?.key_confirmed === true ? (
+            <>
+              <Button variant="outline" onClick={onShowKey}>
+                {t("backup.key.show")}
+              </Button>
+              <Button variant="outline" onClick={onChangeFolder}>
+                {t("backup.changeFolder")}
+              </Button>
+            </>
+          ) : null}
+          {/* Always mounted: screen readers announce changes of a live region. */}
+          <p className="text-sm text-muted-foreground" role="status">
+            {
+              {
+                idle: "",
+                waiting: t("backup.pending"),
+                running: t("backup.running"),
+              }[activity]
+            }
+          </p>
+        </div>
+      )}
+    </Card>
   );
 }
 

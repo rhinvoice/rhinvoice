@@ -17,6 +17,10 @@ import { Aside, Steps } from "@astrojs/starlight/components";
 
 Rhinvoice installieren Sie mit **Docker Compose**: zwei Dateien herunterladen, in `.env` ein Datenbankpasswort setzen, die Container starten und die Adresse im Browser öffnen. Sie brauchen nur [Docker](https://docs.docker.com/get-docker/) mit Docker Compose, keinen Quellcode, kein Python und kein Node.js.
 
+<Aside title="Ohne Docker">
+Für einen einzelnen Windows-PC oder Mac gibt es Rhinvoice auch als normales Programm: [Installation unter Windows und macOS](/docs/de/getting-started/install-desktop/).
+</Aside>
+
 <Aside type="caution" title="Beta">
 Rhinvoice ist in früher Entwicklung (0.x). Steuersätze und Regeln sind ohne Gewähr und ersetzen keine Steuerberatung. Probieren Sie es zuerst auf einer Testinstallation aus, bevor Sie echte Rechnungen damit schreiben.
 </Aside>
@@ -35,8 +39,8 @@ Rhinvoice besteht aus vier Containern: `app` (Weboberfläche und API), `db` (Pos
 
    ```bash
    mkdir rhinvoice && cd rhinvoice
-   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.6.2/deploy/compose.yml
-   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.6.2/.env.example -o .env
+   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.7.0/deploy/compose.yml
+   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.7.0/.env.example -o .env
    ```
 
 2. **Einstellen**: `.env` bearbeiten (siehe Tabelle unten). Setzen Sie mindestens `POSTGRES_PASSWORD` und `RHINVOICE_VERSION`.
@@ -58,7 +62,7 @@ Rhinvoice besteht aus vier Containern: `app` (Weboberfläche und API), `db` (Pos
 | Einstellung | Wert |
 |---|---|
 | `POSTGRES_PASSWORD` | ein langer Zufallswert, nur Buchstaben und Ziffern (z. B. `openssl rand -hex 24`) |
-| `RHINVOICE_VERSION` | die Version, z. B. `0.6.2`. Eine feste Version ändert sich nur, wenn Sie sie ändern; `latest` folgt jeder neuen Version |
+| `RHINVOICE_VERSION` | die Version, z. B. `0.7.0`. Eine feste Version ändert sich nur, wenn Sie sie ändern; `latest` folgt jeder neuen Version |
 | `RHINVOICE_PORT` | Port auf diesem Rechner, Standard `8000` |
 | `RHINVOICE_BIND` | `127.0.0.1` (Standard) = nur dieser Rechner; `0.0.0.0` = das ganze Netzwerk |
 | `RHINVOICE_COOKIE_SECURE` | auf `true` lassen; `false` nur für reines HTTP in einem vertrauenswürdigen Netzwerk (für `localhost` nicht nötig) |
@@ -78,6 +82,17 @@ docker compose exec app rhinvoice user create --email you@example.com --name "Yo
 ```
 
 Danach fragt der [Einrichtungsassistent](/docs/de/getting-started/first-start/) nach Land und Firma.
+
+## Passwort vergessen
+
+Ein neues Passwort setzt, wer den Server betreut, auf der Kommandozeile. Der erste Befehl zeigt die E-Mail-Adressen der Konten, der zweite fragt zweimal nach dem neuen Passwort:
+
+```bash
+docker compose exec app rhinvoice user list
+docker compose exec app rhinvoice user reset-password --email you@example.com
+```
+
+Das neue Passwort beendet alle Anmeldungen des Kontos und eine Sperre nach fünf Fehlversuchen; die Zwei-Faktor-Anmeldung bleibt eingeschaltet. *Passwort vergessen?* auf der Anmeldeseite zeigt dieselben Befehle. Links zum Zurücksetzen per E-Mail verschickt Rhinvoice nicht.
 
 ## Mit Beispieldaten ausprobieren
 

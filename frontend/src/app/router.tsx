@@ -33,6 +33,10 @@ const ARTICLE_SORTS = ["number", "name", "group", "created_at"] as const;
 // Pages are loaded on demand to keep the initial bundle small.
 const LoginPage = lazyRouteComponent(() => import("@/features/auth/login-page"), "LoginPage");
 const SetupPage = lazyRouteComponent(() => import("@/features/auth/setup-page"), "SetupPage");
+const PasswordResetPage = lazyRouteComponent(
+  () => import("@/features/auth/password-reset-page"),
+  "PasswordResetPage",
+);
 const CompanyWizard = lazyRouteComponent(
   () => import("@/features/company/company-wizard"),
   "CompanyWizard",
@@ -138,6 +142,12 @@ const setupRoute = createRoute({
     }
   },
   component: SetupPage,
+});
+
+const passwordResetRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/password-reset",
+  component: PasswordResetPage,
 });
 
 /** The logged-in user, or a redirect to the login page. */
@@ -430,6 +440,7 @@ const settingsRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   loginRoute,
   setupRoute,
+  passwordResetRoute,
   welcomeRoute,
   appRoute.addChildren([
     dashboardRoute,

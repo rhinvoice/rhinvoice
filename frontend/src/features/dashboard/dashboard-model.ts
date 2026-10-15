@@ -8,8 +8,12 @@ type AgingRow = Dashboard["aging"][number];
  * The currencies of the overview: those with figures first (the API orders
  * them), then any that only appear in revenue, quotes or open invoices.
  */
+/** The company's currency first, then those with figures, then the others once. */
 export function dashboardCurrencies(data: Dashboard): string[] {
-  const seen = new Set<string>(data.figures.map((figure) => figure.currency));
+  const seen = new Set<string>([
+    ...(data.currency === null ? [] : [data.currency]),
+    ...data.figures.map((figure) => figure.currency),
+  ]);
   const others = [
     ...data.revenue.map((item) => item.currency),
     ...data.quotes.map((item) => item.currency),

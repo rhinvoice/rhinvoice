@@ -1,2 +1,5 @@
 .env
 website/dist/
+
+# Program folder and setups of the installation without Docker (desktop/build.py)
+/build/

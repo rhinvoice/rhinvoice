@@ -1,0 +1,65 @@
+---
+title: Backup im Programm für Windows und Mac
+description: Backups von Rhinvoice ohne Docker einrichten. Ordner in OneDrive, Dropbox, iCloud Drive oder Google Drive wählen, Schlüssel aufbewahren, wiederherstellen.
+faq:
+  - q: Wohin sichert das Programm?
+    a: In einen Ordner Ihrer Wahl, am besten in einen, den OneDrive, Dropbox, iCloud Drive oder Google Drive abgleicht. Dann liegt eine Kopie ausserhalb des Computers. Ein Netzlaufwerk oder eine USB-Festplatte geht genauso.
+  - q: Was passiert, wenn ich den Wiederherstellungs-Schlüssel verliere?
+    a: Solange der Computer läuft, zeigt Einstellungen, Backup, Schlüssel anzeigen ihn wieder. Ist der Computer verloren und der Schlüssel nirgends sonst aufbewahrt, kann niemand die Backups wiederherstellen.
+  - q: Kann die Docker-Installation diese Backups wiederherstellen?
+    a: Ja. Es sind dieselben restic-Backups wie die des Backup-Containers. Setzen Sie den Ordner als RESTIC_REPOSITORY und den Schlüssel als RESTIC_PASSWORD.
+since: 0.7.0
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Das [Programm für Windows und Mac](/docs/de/getting-started/install-desktop/) sichert seine Datenbank selbst, mit demselben [restic](https://restic.net) wie der Backup-Container der Docker-Installation: **verschlüsselt, dedupliziert und komprimiert**, täglich, etwa zwei Minuten nach dem Ausstellen oder Stornieren und auf Knopfdruck. Aufbewahrt werden 7 tägliche, 4 wöchentliche, 12 monatliche und alle jährlichen Backups. Läuft Rhinvoice um 02:00 Uhr nicht, macht es das tägliche Backup beim nächsten Start.
+
+## Einrichten
+
+<Steps>
+
+1. Öffnen Sie *Einstellungen → Backup*, zum Beispiel über den Punkt **Backup einrichten** der Checkliste auf der Übersicht.
+
+2. **Ordner wählen.** Rhinvoice schlägt die Ordner von OneDrive, Dropbox, iCloud Drive und Google Drive vor, die es auf dem Computer findet, jeweils mit einem Unterordner `Rhinvoice-Backup`. Unter **Anderer Ordner …** geben Sie einen vollständigen Pfad an, etwa ein Netzlaufwerk oder eine USB-Festplatte. Fehlt der Ordner, wird er angelegt. Klicken Sie auf **Weiter zum Schlüssel**.
+
+3. **Den Wiederherstellungs-Schlüssel aufbewahren.** Rhinvoice zeigt den Schlüssel, der die Backups verschlüsselt. Kopieren Sie ihn in Ihren Passwort-Manager oder drucken Sie ihn aus, getrennt von diesem Computer. Haken Sie **Ich habe den Schlüssel sicher aufbewahrt** an und klicken Sie auf **Backup einrichten**.
+
+</Steps>
+
+Das erste Backup startet innerhalb einer halben Minute. *Einstellungen → Backup* zeigt die letzten Backups, die Übersicht warnt, wenn das letzte erfolgreiche älter als 24 Stunden ist. Später zeigen **Schlüssel anzeigen** den Schlüssel wieder und **Ordner ändern** wählt einen anderen Ordner. Der Schlüssel bleibt dabei derselbe.
+
+<Aside type="caution" title="Ohne Schlüssel kein Wiederherstellen">
+Rhinvoice speichert den Schlüssel in seinem Datenordner, damit die Backups ohne Rückfrage laufen. Geht der Computer verloren, geht diese Kopie mit. Nur der Schlüssel, den Sie anderswo aufbewahrt haben, öffnet die Backups dann noch.
+</Aside>
+
+## Wiederherstellen
+
+Wiederherstellen **ersetzt alle Daten** durch den Stand eines Backups, in einer einzigen Transaktion: Schlägt etwas fehl, ändert sich nichts. Beenden Sie Rhinvoice zuerst.
+
+**Windows** (PowerShell):
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -m rhinvoice_boot --list-backups
+& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -m rhinvoice_boot --restore latest
+```
+
+**Mac** (Terminal):
+
+```bash
+/Applications/Rhinvoice.app/Contents/MacOS/Rhinvoice --list-backups
+/Applications/Rhinvoice.app/Contents/MacOS/Rhinvoice --restore latest
+```
+
+`--list-backups` zeigt die Backups mit ID und Zeit. Statt `latest` geben Sie eine ID an, um ein älteres Backup zurückzuholen. Danach starten Sie Rhinvoice wie gewohnt. Der wiederhergestellte Stand wird gleich wieder gesichert.
+
+**Auf einem neuen Computer:** Installieren Sie Rhinvoice, warten Sie, bis der Cloud-Dienst den Ordner `Rhinvoice-Backup` heruntergeladen hat, und nennen Sie ihn mit `--backup-folder`. Rhinvoice fragt dann nach dem Wiederherstellungs-Schlüssel und sichert danach in denselben Ordner weiter:
+
+```bash
+/Applications/Rhinvoice.app/Contents/MacOS/Rhinvoice --restore latest --backup-folder "/Users/anna/Library/CloudStorage/OneDrive-Personal/Rhinvoice-Backup"
+```
+
+## Häufige Fragen
+
+<Faq />

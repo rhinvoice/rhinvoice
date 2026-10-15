@@ -1,6 +1,6 @@
 [project]
 name = "rhinvoice"
-version = "0.6.2"
+version = "0.7.0"
 description = "Self-hosted invoicing for CH, LI, DE and AT"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -8,6 +8,7 @@ license = "AGPL-3.0-or-later"
 dependencies = [
     "alembic>=1.20.0",
     "argon2-cffi>=25.1.0",
+    "cryptography>=45",
     "defusedxml>=0.7.1",
     "fastapi>=0.143.0",
     "httpx>=0.28",
@@ -23,18 +24,25 @@ dependencies = [
     "segno>=1.6",
     "sqlalchemy>=2",
     "uvicorn[standard]>=0.54.0",
+    "websockets>=15",
     "xlrd>=2.0.2",
 ]
 
 [project.scripts]
 rhinvoice = "rhinvoice.api.cli:main"
+rhinvoice-desktop = "rhinvoice.desktop.launcher:main"
+
+[project.optional-dependencies]
+desktop = [
+    "pywebview>=5",
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/rhinvoice"]
+packages = ["src/rhinvoice", "src/rhinvoice_boot"]
 
 [dependency-groups]
 dev = [
@@ -48,6 +56,7 @@ dev = [
     "pyright>=1.1.414",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
+    "pywebview>=5",
     "ruff>=0.16.10",
     "schemathesis>=4.30.0",
     "testcontainers[postgres]>=4.15.0",
@@ -105,7 +114,7 @@ convention = "pep257"
 strict = true
 python_version = "3.13"
 mypy_path = "src"
-packages = ["rhinvoice", "tests"]
+packages = ["rhinvoice", "rhinvoice_boot", "tests"]
 explicit_package_bases = true
 warn_unreachable = true
 plugins = ["pydantic.mypy"]
@@ -132,7 +141,7 @@ filterwarnings = ["error", "ignore::DeprecationWarning:testcontainers.*"]
 
 [tool.coverage.run]
 branch = true
-source = ["rhinvoice"]
+source = ["rhinvoice", "rhinvoice_boot"]
 omit = ["src/rhinvoice/infrastructure/db/migrations/*"]
 
 [tool.coverage.report]
@@ -147,13 +156,14 @@ exclude_also = [
 ]
 
 [tool.importlinter]
-root_package = "rhinvoice"
+root_packages = ["rhinvoice", "rhinvoice_boot"]
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
-name = "Layers: api -> infrastructure -> application -> domain"
+name = "Layers: desktop -> api -> infrastructure -> application -> domain"
 type = "layers"
 layers = [
+    "rhinvoice.desktop",
     "rhinvoice.api",
     "rhinvoice.infrastructure",
     "rhinvoice.application",
@@ -177,6 +187,7 @@ forbidden_modules = [
     "pyotp",
     "qrbill",
     "segno",
+    "websockets",
     "rhinvoice.infrastructure",
     "rhinvoice.application",
     "rhinvoice.api",
@@ -201,7 +212,16 @@ forbidden_modules = [
     "pyotp",
     "qrbill",
     "segno",
+    "websockets",
 ]
+
+[[tool.importlinter.contracts]]
+# The boot is part of the runtime that the setup installs and starts any app package
+# version: it must not depend on one (ADR 0022).
+name = "The boot knows no app package"
+type = "forbidden"
+source_modules = ["rhinvoice_boot"]
+forbidden_modules = ["rhinvoice"]
 
 [[tool.importlinter.contracts]]
 # Each country profile stands alone; what countries share lives in a shared module
@@ -230,11 +250,13 @@ ignore_imports = ["rhinvoice.domain.country.registry -> rhinvoice.domain.country
 [tool.mutmut]
 # The whole package is copied so that tests can import every layer; only the
 # domain and application layers are mutated (quality gate: >= 90 %).
-source_paths = ["src/rhinvoice/"]
+source_paths = ["src/rhinvoice/", "src/rhinvoice_boot/"]
 # Ports are pure interfaces (Protocols) without behaviour to mutate.
 do_not_mutate = [
     "src/rhinvoice/api/*",
     "src/rhinvoice/infrastructure/*",
+    "src/rhinvoice/desktop/*",
+    "src/rhinvoice_boot/*",
     "src/rhinvoice/__init__.py",
     "src/rhinvoice/application/*/ports.py",
     "src/rhinvoice/application/uow.py",

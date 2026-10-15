@@ -30,6 +30,7 @@ from rhinvoice.api.routers import (
     recurring,
     reference,
     texts,
+    updates,
 )
 from rhinvoice.api.schemas import ApiModel
 from rhinvoice.infrastructure.db.uow import database_is_reachable
@@ -59,6 +60,7 @@ API_ROUTERS: tuple[APIRouter, ...] = (
     recurring.router,
     reference.router,
     texts.router,
+    updates.router,
 )
 
 
@@ -76,7 +78,7 @@ def operation_id(route: APIRoute) -> str:
 def create_app(container: Container) -> FastAPI:
     app = FastAPI(
         title="Rhinvoice",
-        version="0.6.2",
+        version="0.7.0",
         summary="Self-hosted invoicing for CH, LI, DE and AT",
         docs_url="/api/docs",
         redoc_url=None,

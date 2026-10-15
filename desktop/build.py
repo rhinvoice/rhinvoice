@@ -124,7 +124,7 @@ UNUSED_STDLIB = (
     "lib-dynload/_tkinter.*",
 )  # fmt: skip
 """Parts of the standard library the program never uses: no GUI toolkit, no package
-manager, no tests. check_imports proves that the app and its libraries do without them."""
+manager, no tests. check_imports tries the modules the program imports without them."""
 UNUSED_RUNTIME = {
     "windows": (
         # Headers and import libraries for building extensions.
@@ -192,7 +192,8 @@ names = {module.name for module in pkgutil.iter_modules([folder])}
 rhinvoice = tried("rhinvoice")
 if rhinvoice is not None:
     names |= {m.name for m in pkgutil.walk_packages(rhinvoice.__path__, "rhinvoice.")}
-for name in sorted({n for n in names if not n.endswith("__main__")} - set(sys.argv[2:])):
+names = {n for n in names if not n.endswith("__main__")} | set(sys.argv[2:])
+for name in sorted(names):
     tried(name)
 for line in failed:
     print(line)
@@ -202,18 +203,31 @@ for line in failed:
 print(f"{len(failed)} modules failed" if failed else f"imported {len(names)} modules", flush=True)
 raise SystemExit(1 if failed else 0)
 """
-NOT_IMPORTED: tuple[str, ...] = ()
-"""Top-level modules of the app package that cannot be imported on their own."""
+USED_MODULES = (
+    # The boot, from the runtime itself.
+    "rhinvoice_boot",
+    # What uvicorn chooses when the server starts: the "auto" modules import the
+    # implementations that are installed (httptools, websockets).
+    "uvicorn.loops.auto", "uvicorn.loops.asyncio", "uvicorn.protocols.http.auto",
+    "uvicorn.protocols.websockets.auto", "uvicorn.lifespan.on",
+)  # fmt: skip
+"""Modules imported only at run time, beyond the top-level ones of the app package."""
+USED_ON = {
+    "windows": ("webview.platforms.winforms", "webview.platforms.edgechromium"),
+    "macos": ("webview.platforms.cocoa", "uvicorn.loops.uvloop"),
+}
+"""The program window's backend and, where installed, uvloop."""
 
 
-def check_imports(python: Path, package: Path) -> None:
-    """Import every module of Rhinvoice and every library of the app package.
+def check_imports(python: Path, package: Path, system: str) -> None:
+    """Import every module of Rhinvoice, every library of the app package and USED_MODULES.
 
     With the bundled interpreter: a part of the standard library trimmed too much fails the
-    build, not a user.
+    build, not a user. Only what these modules import when imported is checked; a part a
+    library loads later, in a function, is not.
     """
     run(
-        python, "-c", IMPORT_CHECK, package / "site-packages", *NOT_IMPORTED,
+        python, "-c", IMPORT_CHECK, package / "site-packages", *USED_MODULES, *USED_ON[system],
         env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
     )  # fmt: skip
 
@@ -309,7 +323,7 @@ def build_windows(out: Path) -> None:
     brand_windows_program(sources, install)
     build_app_package(python, install / "app")
     trim_runtime(install / "python")
-    check_imports(python, install / "app")
+    check_imports(python, install / "app", "windows")
     zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-windows-x64.zip")
     print(f"Rhinvoice {version()} (runtime {RUNTIME_GENERATION}) assembled in {out}")
 
@@ -473,7 +487,7 @@ def build_macos(out: Path) -> None:
     install_restic(sources, install)
     build_app_package(python, install / "app")
     trim_runtime(install / "python")
-    check_imports(python, install / "app")
+    check_imports(python, install / "app", "macos")
     zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-macos-arm64.zip")
     sign_ad_hoc(bundle)
     print(f"Rhinvoice {version()} (runtime {RUNTIME_GENERATION}) assembled in {bundle}")

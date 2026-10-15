@@ -45,7 +45,18 @@ export const en: Catalog<MessageKey> = {
   "about.description": "Open-source invoicing for Switzerland, Liechtenstein, Germany and Austria.",
   "about.license": "Licence: GNU Affero General Public License v3",
   "about.source": "Source code",
-  "about.reportBug": "Report a bug",
+  "about.reportBug": "Report a problem",
+  "support.title": "Report a problem",
+  "support.description":
+    "Rhinvoice sends nothing by itself. You copy the details and decide where they go.",
+  "support.copyStep":
+    "1. Copy the log. It can contain names of customers: have a quick look before you send it.",
+  "support.copy": "Copy the log",
+  "support.copied": "Log copied",
+  "support.copyFailed": "Copying did not work. Select the text below and copy it yourself.",
+  "support.serverStep": "1. The log is on the server. Run this command there and copy its output:",
+  "support.sendStep": "2. Report it on GitHub or send it by mail to {email}.",
+  "support.github": "Report on GitHub",
   "about.changelog": "What's new",
   "about.noAdvice": "No tax advice; tax rates without warranty.",
 

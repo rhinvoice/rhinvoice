@@ -6,6 +6,8 @@ before 1.0, minor versions may contain breaking changes.
 ## [Unreleased]
 
 ### Added
+- *About Rhinvoice* has **Report a problem**: it copies the version, the system and the end of
+  the log (programs for Windows and Mac) and opens a GitHub bug report. Nothing is sent by itself.
 - The programs for Windows and Mac open their window where it was closed, as large as it was
   (or maximized).
 

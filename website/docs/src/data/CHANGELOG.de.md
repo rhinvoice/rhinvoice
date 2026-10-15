@@ -6,6 +6,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 ## [Unreleased]
 
 ### Behoben
+- Beim ersten Öffnen einer Seite wird nicht mehr kurz das ganze Fenster leer, die Navigation
+  bleibt stehen. Die Programme für Windows und Mac laden alle Seiten kurz nach dem Start.
 - Unter Windows öffnen sich Startkarte und Programmfenster in der Mitte des Hauptbildschirms
   und nicht mehr oben links.
 

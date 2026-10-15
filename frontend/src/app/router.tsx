@@ -473,6 +473,9 @@ export function createAppRouter(queryClient: QueryClient) {
     routeTree,
     context: { queryClient },
     defaultPreload: "intent",
+    // A boundary per page: a page whose code still loads leaves the navigation in place
+    // (without one the whole window goes blank for a moment).
+    defaultPendingComponent: () => null,
     defaultErrorComponent: ErrorPage,
     scrollRestoration: true,
   });

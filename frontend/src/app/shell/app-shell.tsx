@@ -20,6 +20,7 @@ import { ALL_NAV, PRIMARY_NAV, SECONDARY_NAV, type NavItem } from "@/app/shell/n
 import { ShortcutsDialog } from "@/app/shell/shortcuts-dialog";
 import { ThemeToggle } from "@/app/shell/theme-toggle";
 import { useGlobalShortcuts } from "@/app/shell/use-global-shortcuts";
+import { usePreloadedPages } from "@/app/shell/use-preloaded-pages";
 import { LanguageToggle } from "@/components/i18n/language-toggle";
 import { useI18n } from "@/components/i18n/use-i18n";
 import { useSingleKeyShortcuts } from "@/components/use-single-key-shortcuts";
@@ -145,6 +146,7 @@ export function AppShell({ user }: { readonly user: User }) {
   const mod = modifierLabel(navigator.platform);
   const [singleKeys] = useSingleKeyShortcuts();
   const company = useQuery(companyQuery);
+  usePreloadedPages();
   const accentHue = company.data?.accent_hue;
   useEffect(() => {
     if (accentHue !== undefined) applyAccentHue(document.documentElement, accentHue);

@@ -6,6 +6,8 @@ before 1.0, minor versions may contain breaking changes.
 ## [Unreleased]
 
 ### Fixed
+- Opening a page for the first time no longer blanks the whole window for a moment; the
+  navigation stays. The programs for Windows and Mac load all pages shortly after the start.
 - On Windows the start card and the program window open in the middle of the main screen,
   no longer near its top left.
 

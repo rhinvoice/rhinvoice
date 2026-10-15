@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.7.3] – 2026-10-15
+
 ### Neu
 - *Über Rhinvoice* hat eine Schaltfläche **Nach Updates suchen**, die sofort nach einer neuen Version fragt.
 - Die Programme für Windows und Mac zeigen gleich nach dem Doppelklick eine Startkarte mit dem

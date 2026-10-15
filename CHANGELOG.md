@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.7.3] – 2026-10-15
+
 ### Added
 - *About Rhinvoice* has a button **Check for updates** that asks for a new version right away.
 - The programs for Windows and Mac show a start card with the logo and the current step right

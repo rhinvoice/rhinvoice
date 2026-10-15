@@ -39,8 +39,8 @@ Rhinvoice runs as four containers: `app` (web interface and API), `db` (PostgreS
 
    ```bash
    mkdir rhinvoice && cd rhinvoice
-   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.7.2/deploy/compose.yml
-   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.7.2/.env.example -o .env
+   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.7.3/deploy/compose.yml
+   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.7.3/.env.example -o .env
    ```
 
 2. **Configure**: edit `.env` (see the table below). At least set `POSTGRES_PASSWORD` and `RHINVOICE_VERSION`.
@@ -62,7 +62,7 @@ Rhinvoice runs as four containers: `app` (web interface and API), `db` (PostgreS
 | Setting | Value |
 |---|---|
 | `POSTGRES_PASSWORD` | a long random value, letters and digits only (e.g. `openssl rand -hex 24`) |
-| `RHINVOICE_VERSION` | the version to run, e.g. `0.7.2`; pinned versions only change when you change them, `latest` follows every release |
+| `RHINVOICE_VERSION` | the version to run, e.g. `0.7.3`; pinned versions only change when you change them, `latest` follows every release |
 | `RHINVOICE_PORT` | port on this machine, default `8000` |
 | `RHINVOICE_BIND` | `127.0.0.1` (default) = only this machine; `0.0.0.0` = the whole network |
 | `RHINVOICE_COOKIE_SECURE` | keep `true`; use `false` only for plain HTTP in a trusted network (not needed for `localhost`) |

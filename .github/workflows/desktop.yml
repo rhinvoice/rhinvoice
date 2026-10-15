@@ -7,7 +7,7 @@ name: Desktop
 on:
   workflow_call:
   push:
-    branches: [main, feat/native-install, feat/smaller-desktop]
+    branches: [main]
     paths:
       - "backend/**"
       - "frontend/**"

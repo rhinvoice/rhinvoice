@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { ArchiveIcon, ArchiveRestoreIcon, ArrowLeftIcon } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { ArchiveIcon, ArchiveRestoreIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -24,23 +24,11 @@ import {
   formToRequest,
   type CountryCode,
 } from "@/features/customers/customer-form-model";
+import { BackLink } from "@/features/shared/back-link";
 import { FormAlert } from "@/features/shared/form-alert";
 import { showUndoToast } from "@/features/shared/undo";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { formatDate } from "@/lib/format";
-
-function BackLink() {
-  const { t } = useI18n();
-  return (
-    <Link
-      to="/customers"
-      className="inline-flex min-h-6 w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-    >
-      <ArrowLeftIcon className="size-4" aria-hidden="true" />
-      {t("customers.title")}
-    </Link>
-  );
-}
 
 export function NewCustomerPage({ defaultCountry }: { readonly defaultCountry: CountryCode }) {
   const { t, locale } = useI18n();
@@ -49,7 +37,7 @@ export function NewCustomerPage({ defaultCountry }: { readonly defaultCountry: C
   const create = useCreateCustomer();
   return (
     <>
-      <BackLink />
+      <BackLink to="/customers" label={t("customers.title")} />
       <PageHeader title={t("customers.new")} />
       <CustomerForm
         defaultValues={emptyCustomer(defaultCountry)}
@@ -77,7 +65,7 @@ export function CustomerPage({ customerId, documents }: CustomerPageProps) {
   if (query.isError) {
     return (
       <>
-        <BackLink />
+        <BackLink to="/customers" label={t("customers.title")} />
         <FormAlert message={errorMessage(query.error)} />
       </>
     );
@@ -126,7 +114,7 @@ function CustomerEditor({
 
   return (
     <>
-      <BackLink />
+      <BackLink to="/customers" label={t("customers.title")} />
       <PageHeader
         title={customer.display_name}
         description={t("customers.numberAndSince", {

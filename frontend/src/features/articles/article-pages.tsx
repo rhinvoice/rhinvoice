@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { ArchiveIcon, ArchiveRestoreIcon, ArrowLeftIcon } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { ArchiveIcon, ArchiveRestoreIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/components/i18n/use-i18n";
@@ -18,23 +18,11 @@ import {
 } from "@/features/articles/api";
 import { ArticleForm } from "@/features/articles/article-form";
 import { articleToForm, emptyArticle, formToRequest } from "@/features/articles/article-form-model";
+import { BackLink } from "@/features/shared/back-link";
 import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 
 import { showUndoToast } from "@/features/shared/undo";
-
-function BackLink() {
-  const { t } = useI18n();
-  return (
-    <Link
-      to="/articles"
-      className="inline-flex min-h-6 w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-    >
-      <ArrowLeftIcon className="size-4" aria-hidden="true" />
-      {t("articles.title")}
-    </Link>
-  );
-}
 
 export function NewArticlePage() {
   const { t, locale } = useI18n();
@@ -43,7 +31,7 @@ export function NewArticlePage() {
   const create = useCreateArticle();
   return (
     <>
-      <BackLink />
+      <BackLink to="/articles" label={t("articles.title")} />
       <PageHeader title={t("articles.new")} />
       <ArticleForm
         defaultValues={emptyArticle()}
@@ -65,7 +53,7 @@ export function ArticlePage({ articleId }: { readonly articleId: string }) {
   if (query.isError) {
     return (
       <>
-        <BackLink />
+        <BackLink to="/articles" label={t("articles.title")} />
         <FormAlert message={errorMessage(query.error)} />
       </>
     );
@@ -108,7 +96,7 @@ function ArticleEditor({ article }: { readonly article: Article }) {
 
   return (
     <>
-      <BackLink />
+      <BackLink to="/articles" label={t("articles.title")} />
       <PageHeader
         title={article.name}
         description={`${t("articles.numberLabel")} ${article.number}`}

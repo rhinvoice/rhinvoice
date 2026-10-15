@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  ArrowLeftIcon,
   CircleAlertIcon,
   CircleStopIcon,
   type LucideIcon,
@@ -74,6 +73,7 @@ import {
   type SettingsField,
   type SettingsProblem,
 } from "@/features/documents/recurring-model";
+import { BackLink } from "@/features/shared/back-link";
 import { companyQuery, type Company } from "@/features/shared/company-api";
 import { FormAlert } from "@/features/shared/form-alert";
 import { mailServerQuery } from "@/features/shared/mail-api";
@@ -105,19 +105,6 @@ function PlanStateBadge({ state }: { readonly state: PlanState }) {
   );
 }
 
-function BackToPlans() {
-  const { t } = useI18n();
-  return (
-    <Link
-      to="/recurring"
-      className="inline-flex min-h-6 w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-    >
-      <ArrowLeftIcon className="size-4" aria-hidden="true" />
-      {t("recurring.title")}
-    </Link>
-  );
-}
-
 function PageSkeleton() {
   const { t } = useI18n();
   return (
@@ -145,6 +132,7 @@ export function RecurringListPage() {
   );
   return (
     <>
+      <BackLink to="/invoices" label={t("nav.invoices")} />
       <PageHeader
         title={t("recurring.title")}
         description={t("recurring.description")}
@@ -357,7 +345,7 @@ function PlanEditor({ notice, company, plan, defaults, settings: initial }: Plan
   };
   return (
     <>
-      <BackToPlans />
+      <BackLink to="/recurring" label={t("recurring.title")} />
       <PageHeader
         title={plan === null ? t("recurring.new") : plan.name}
         description={plan === null ? t("recurring.newDescription") : plan.customer_name}

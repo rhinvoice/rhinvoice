@@ -2,7 +2,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArchiveIcon,
-  ArrowLeftIcon,
   BanIcon,
   Building2Icon,
   CircleOffIcon,
@@ -78,6 +77,7 @@ import { RemoveWriteOffDialog, WriteOffDialog } from "@/features/documents/write
 import { canRemoveWriteOff, canWriteOff } from "@/features/documents/write-off-model";
 import { fetchFile, saveFile } from "@/features/documents/file-download";
 import { printPage } from "@/features/documents/print-page";
+import { BackLink } from "@/features/shared/back-link";
 import { companyQuery, type Company } from "@/features/shared/company-api";
 import { DocumentStatusBadge } from "@/features/shared/document-status";
 import { FormAlert } from "@/features/shared/form-alert";
@@ -99,17 +99,9 @@ const LIST_TITLE = {
   quote: "nav.quotes",
 } as const satisfies Record<DocumentDetail["type"], MessageKey>;
 
-function BackLink({ type }: { readonly type: DocumentDetail["type"] }) {
+function BackToList({ type }: { readonly type: DocumentDetail["type"] }) {
   const { t } = useI18n();
-  return (
-    <Link
-      to={LIST_PATH[type]}
-      className="inline-flex min-h-6 w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-    >
-      <ArrowLeftIcon className="size-4" aria-hidden="true" />
-      {t(LIST_TITLE[type])}
-    </Link>
-  );
+  return <BackLink to={LIST_PATH[type]} label={t(LIST_TITLE[type])} />;
 }
 
 function PageSkeleton() {
@@ -173,7 +165,7 @@ export function NewDocumentPage({
   if (company === undefined || templates.isPending) return <PageSkeleton />;
   return (
     <>
-      <BackLink type={type} />
+      <BackToList type={type} />
       <PageHeader title={title} />
       {company === null ? (
         <CompanyMissing />
@@ -259,7 +251,7 @@ function DraftPage({ document, company }: PageProps) {
   const type = document.type === "quote" ? "quote" : "invoice";
   return (
     <>
-      <BackLink type={document.type} />
+      <BackToList type={document.type} />
       <PageHeader
         title={documentTitle(t, document)}
         {...(document.recipient === null ? {} : { description: document.recipient.name })}
@@ -357,7 +349,7 @@ function IssuedPage({ document, company }: PageProps) {
 
   return (
     <>
-      <BackLink type={document.type} />
+      <BackToList type={document.type} />
       <PageHeader
         title={documentTitle(t, document)}
         description={`${document.recipient?.name ?? ""} · ${money(document.totals.total)}`}

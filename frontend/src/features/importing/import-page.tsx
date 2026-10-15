@@ -76,12 +76,14 @@ import {
   type RowFilter,
   type RowStatus,
 } from "@/features/importing/import-model";
+import { BackLink } from "@/features/shared/back-link";
 import { demoQuery } from "@/features/shared/demo-api";
 import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { docsUrl } from "@/lib/about";
 import { cn } from "@/lib/cn";
 import { formatBytes, formatMoney, formatNumber } from "@/lib/format";
+import type { MessageKey } from "@/lib/i18n";
 import type { Locale } from "@/lib/locale";
 
 /** More rows would slow the page down; the CSV report holds all of them. */
@@ -121,11 +123,24 @@ export function ImportPage({ target }: { readonly target: ImportTarget }) {
   return demo ? <ImportInDemo target={target} /> : <ImportForm target={target} />;
 }
 
+const LIST = {
+  customers: { to: "/customers", title: "customers.title" },
+  articles: { to: "/articles", title: "articles.title" },
+  invoices: { to: "/invoices", title: "nav.invoices" },
+} as const satisfies Record<ImportTarget, { to: string; title: MessageKey }>;
+
+/** Back to the list the import fills. */
+function BackToList({ target }: { readonly target: ImportTarget }) {
+  const { t } = useI18n();
+  return <BackLink to={LIST[target].to} label={t(LIST[target].title)} />;
+}
+
 function ImportInDemo({ target }: { readonly target: ImportTarget }) {
   const { t, locale } = useI18n();
   const guide = target === "invoices" ? "moving/old-invoices" : "moving/customers-and-articles";
   return (
     <>
+      <BackToList target={target} />
       <PageHeader title={t(`import.title.${target}`)} />
       <Card className="max-w-2xl">
         <div className="flex items-start gap-4">
@@ -232,6 +247,7 @@ function ImportForm({ target }: { readonly target: ImportTarget }) {
 
   return (
     <>
+      <BackToList target={target} />
       <PageHeader
         title={t(`import.title.${target}`)}
         description={

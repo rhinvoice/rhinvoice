@@ -35,6 +35,7 @@ import {
   useWriteReminder,
   type DunningItem,
 } from "@/features/dunning/api";
+import { BackLink } from "@/features/shared/back-link";
 import { FormAlert } from "@/features/shared/form-alert";
 import { SendMailDialog } from "@/features/shared/send-mail-dialog";
 import { useErrorMessage } from "@/features/shared/use-error-message";
@@ -49,6 +50,7 @@ export function DunningPage() {
   const items = query.data;
   return (
     <>
+      <BackLink to="/invoices" label={t("nav.invoices")} />
       <PageHeader
         title={t("dunning.title")}
         description={t("dunning.description")}

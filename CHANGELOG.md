@@ -5,6 +5,10 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Fixed
+- Reminders, recurring invoices and the imports lead back to their list above the title, as
+  the documents do.
+
 ## [0.7.1] – 2026-10-15
 
 ### Changed

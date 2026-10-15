@@ -8,6 +8,7 @@ import pytest
 import uvicorn
 from alembic.script import ScriptDirectory
 from fastapi import FastAPI
+from pydantic import ValidationError
 from sqlalchemy import Engine, insert, text
 
 from rhinvoice.api import cli
@@ -56,6 +57,15 @@ def test_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.run_migrations is True
     assert settings.static_dir is None
     assert str(settings.zone) == "Europe/Zurich"
+    assert settings.update_channel == "stable"
+
+
+def test_a_server_can_follow_release_candidates(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RHINVOICE_UPDATE_CHANNEL", "test")
+    assert Settings().update_channel == "test"
+    monkeypatch.setenv("RHINVOICE_UPDATE_CHANNEL", "beta")
+    with pytest.raises(ValidationError):
+        Settings()
 
 
 def test_user_create_from_stdin(

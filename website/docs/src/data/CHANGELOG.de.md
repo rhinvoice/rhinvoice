@@ -6,6 +6,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 ## [Unreleased]
 
 ### Neu
+- Ein Testkanal für Updates: `RHINVOICE_UPDATE_CHANNEL=test` (bzw. `"update_channel": "test"` in
+  `rhinvoice.json` der Programme) bietet auch Testkandidaten an, für Testinstallationen.
 - Die Programme für Windows und Mac öffnen ihr Fenster dort, wo es geschlossen wurde, und so
   gross, wie es war (oder maximiert).
 

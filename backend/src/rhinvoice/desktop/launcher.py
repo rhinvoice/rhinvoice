@@ -222,6 +222,7 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
             reset_code_dir=folder,
             # A problem report carries the end of the log.
             log_file=program_log(desktop.system, desktop.home, folder),
+            update_channel=config.update_channel,
             # Only this computer reaches the server, over http; Safari refuses secure
             # cookies there.
             cookie_secure=False,

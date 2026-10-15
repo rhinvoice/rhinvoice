@@ -117,6 +117,7 @@ def test_the_server_runs_on_the_bundled_database(install: Path, tmp_path: Path, 
     assert not settings.cookie_secure
     assert settings.reset_code_dir == data
     assert settings.log_file == data / "rhinvoice.log"
+    assert settings.update_channel == "stable"
     assert (data / "database" / "PG_VERSION").exists()
     # The database is stopped with the server.
     assert commands(tmp_path)[-1] == "pg_ctl stop"
@@ -853,3 +854,16 @@ def test_a_mac_keeps_its_log_where_console_app_finds_it(tmp_path: Path) -> None:
         tmp_path / "Library" / "Logs" / "Rhinvoice" / "rhinvoice.log"
     )
     assert program_log("Windows", tmp_path, folder) == folder / "rhinvoice.log"
+
+
+def test_a_test_machine_is_offered_release_candidates(
+    install: Path, tmp_path: Path, data: Path
+) -> None:
+    config = json.loads((data / "rhinvoice.json").read_text())
+    (data / "rhinvoice.json").write_text(json.dumps(config | {"update_channel": "test"}))
+    recorder = Recorder()
+    assert (
+        run(build_parser().parse_args(["--no-browser"]), desktop(install, tmp_path, recorder)) == 0
+    )
+    [(settings, _host, _port)] = recorder.calls
+    assert settings.update_channel == "test"

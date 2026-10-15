@@ -6,6 +6,8 @@ before 1.0, minor versions may contain breaking changes.
 ## [Unreleased]
 
 ### Added
+- An update test channel: `RHINVOICE_UPDATE_CHANNEL=test` (or `"update_channel": "test"` in the
+  programs' `rhinvoice.json`) also offers release candidates, for test installations.
 - The programs for Windows and Mac open their window where it was closed, as large as it was
   (or maximized).
 

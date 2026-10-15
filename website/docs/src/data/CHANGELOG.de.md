@@ -7,6 +7,12 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ### Neu
 - *Über Rhinvoice* hat eine Schaltfläche **Nach Updates suchen**, die sofort nach einer neuen Version fragt.
+- Die Programme für Windows und Mac zeigen gleich nach dem Doppelklick eine Startkarte mit dem
+  Logo und dem aktuellen Schritt, bis ihr Fenster offen ist.
+
+### Geändert
+- Ein zweiter Start des Programms für Windows und Mac holt das offene Fenster nach vorne, statt
+  ein weiteres zu öffnen.
 
 ### Behoben
 - Der Hinweis auf eine neue Version erscheint innerhalb einer Minute nach dem Start. Die Seite

@@ -7,6 +7,12 @@ before 1.0, minor versions may contain breaking changes.
 
 ### Added
 - *About Rhinvoice* has a button **Check for updates** that asks for a new version right away.
+- The programs for Windows and Mac show a start card with the logo and the current step right
+  after the double-click, until their window opens.
+
+### Changed
+- Starting the program for Windows and Mac a second time brings its open window to the front
+  instead of opening another one.
 
 ### Fixed
 - The notice about a new version appears within a minute of starting Rhinvoice. The page

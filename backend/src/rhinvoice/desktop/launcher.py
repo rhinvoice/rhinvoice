@@ -3,7 +3,8 @@
 On the first start it creates its configuration and database in the data folder.
 Then it starts the database and shows the web interface in a program window once it
 answers (in the browser where windows are not available, or with ``--browser``), and
-stops the database again when the window is closed.
+stops the database again when the window is closed. A start card shows until then; a
+second start brings the running program's window forward.
 
 The installer lays out its folder as ``python/`` (this interpreter), ``postgresql/``,
 ``static/`` (the web interface) and optionally ``chromium/``.
@@ -38,6 +39,7 @@ from rhinvoice.desktop.ports import free_port, listening
 from rhinvoice.desktop.postgres import BundledPostgres, PostgresError
 from rhinvoice.desktop.updates import PackageInstaller, Restarter, platform_name
 from rhinvoice.infrastructure.backup.restic import ResticArchive
+from rhinvoice.infrastructure.updates.feed import installed_version
 from rhinvoice_boot import (
     RESTART,
     BootError,
@@ -93,6 +95,10 @@ class Desktop:
     """Closes the window that show_window shows (for a restart after an update)."""
     ask_secret: Callable[[str], str] = getpass.getpass
     """Asks for the recovery key of a restore, without showing it."""
+    status: Callable[[str], None] = lambda _step: None
+    """Tells the start card the step of the start: "database", "data", "ready"."""
+    bring_forward: Callable[[Path], None] | None = None
+    """Asks the running program to bring its window forward (given the window folder)."""
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -131,6 +137,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         open_page=webbrowser.open,
         show_window=window.show if window.available() else None,
         close_window=window.close if window.available() else None,
+        bring_forward=window.ask_to_bring_forward if window.available() else None,
         system=platform.system(),
         machine=platform.machine(),
         environ=dict(os.environ),
@@ -139,11 +146,32 @@ def main(argv: Sequence[str] | None = None) -> int:
         install=Path(sys.prefix).parent,
     )
     end_on_break()
+    args = build_parser().parse_args(argv)
     try:
-        return run(build_parser().parse_args(argv), desktop)
+        if desktop.show_window is not None and _with_start_card(args):
+            folder = args.data_dir or data_folder(desktop.system, desktop.environ, desktop.home)
+            return window.run_with_splash(
+                lambda splash: run(
+                    args, replace(desktop, show_window=splash.show, status=splash.status)
+                ),
+                folder / "window",
+                installed_version(),
+            )
+        return run(args, desktop)
     except KeyboardInterrupt:
         # Asked to end (Ctrl+C, or Windows): the server and the database are stopped by now.
         return 0
+
+
+def _with_start_card(args: argparse.Namespace) -> bool:
+    """Tell whether this start shows the start card (not a second start, nor a restore)."""
+    return not (
+        args.browser
+        or args.no_browser
+        or args.attach
+        or args.restore is not None
+        or args.list_backups
+    )
 
 
 def end_on_break() -> None:
@@ -177,13 +205,15 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
         if _already_running(database, config.port):
             # Started a second time (a double click too many): show the running one.
             sys.stdout.write(f"Rhinvoice runs already on {_address(config.port)}\n")
-            _show(args, desktop, _address(config.port), folder)
+            _show_running(args, desktop, _address(config.port), folder)
             return 0
         config = _own_port(config, folder)
     except (ConfigError, PostgresError, OSError) as error:
         return _failed(error)
     try:
+        desktop.status("database")
         database.start()
+        desktop.status("data")
         settings = Settings(
             database_url=database.url,
             chromium_path=find_chromium(desktop.system, desktop.environ, install),
@@ -343,12 +373,14 @@ def _serve(  # noqa: PLR0913 - the parts of one start (keywords for the update's
 ) -> int:
     address = _address(port)
     sys.stdout.write(f"Rhinvoice runs on {address} (data: {folder})\n")
-    if args.no_browser or args.browser or desktop.show_window is None:
+    show_window = desktop.show_window
+    if args.no_browser or args.browser or show_window is None:
         open_page = None if args.no_browser else desktop.open_page
         threading.Thread(target=when_ready, args=(address, folder, open_page), daemon=True).start()
         return desktop.serve(settings, HOST, port, own=own)
-    # The window needs the main thread (macOS); the server runs beside it. Closing the
-    # window stops the server and its background jobs before the database stops.
+    # The window shows until it is closed (beside the window loop, window.run_with_splash);
+    # the server runs beside it. Closing the window stops the server and its background
+    # jobs before the database stops.
     if desktop.close_window is not None:
         restarter.use_window(desktop.close_window)
     stop = threading.Event()
@@ -365,7 +397,8 @@ def _serve(  # noqa: PLR0913 - the parts of one start (keywords for the update's
         if not when_ready(address, folder, running=server.is_alive):
             msg = f"the web interface did not start on {address}"
             raise OSError(msg)
-        _show(args, desktop, address, folder)
+        desktop.status("ready")
+        show_window(address, folder / "window")
     finally:
         stop.set()
         server.join(SERVER_STOP_SECONDS)
@@ -374,21 +407,26 @@ def _serve(  # noqa: PLR0913 - the parts of one start (keywords for the update's
 
 def _attach(args: argparse.Namespace, desktop: Desktop, folder: Path) -> int:
     """Show the program that already runs on this data folder, once it answers."""
+    if not (args.no_browser or args.browser) and desktop.bring_forward is not None:
+        # Its window shows once it is ready; asked now, it comes forward then.
+        desktop.bring_forward(folder / "window")
+        return 0
     address = _address(load_or_create(folder / "rhinvoice.json").port)
     deadline = time.monotonic() + ATTACH_SECONDS
     if not wait_until_answers(address, running=lambda: time.monotonic() < deadline):
         return _failed(OSError(f"Rhinvoice runs already, but does not answer on {address}"))
-    _show(args, desktop, address, folder)
+    _show_running(args, desktop, address, folder)
     return 0
 
 
-def _show(args: argparse.Namespace, desktop: Desktop, address: str, folder: Path) -> None:
+def _show_running(args: argparse.Namespace, desktop: Desktop, address: str, folder: Path) -> None:
+    """Bring the running program's window forward on a second start, not open another one."""
     if args.no_browser:
         return
-    if args.browser or desktop.show_window is None:
+    if args.browser or desktop.bring_forward is None:
         desktop.open_page(address)
     else:
-        desktop.show_window(address, folder / "window")
+        desktop.bring_forward(folder / "window")
 
 
 def _already_running(database: BundledPostgres, port: int) -> bool:

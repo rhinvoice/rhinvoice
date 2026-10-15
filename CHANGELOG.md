@@ -8,6 +8,8 @@ before 1.0, minor versions may contain breaking changes.
 ### Added
 - *About Rhinvoice* has **Report a problem**: it copies the version, the system and the end of
   the log (programs for Windows and Mac) and opens a GitHub bug report. Nothing is sent by itself.
+- An update test channel: `RHINVOICE_UPDATE_CHANNEL=test` (or `"update_channel": "test"` in the
+  programs' `rhinvoice.json`) also offers release candidates, for test installations.
 - The programs for Windows and Mac open their window where it was closed, as large as it was
   (or maximized).
 

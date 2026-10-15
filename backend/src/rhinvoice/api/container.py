@@ -38,7 +38,7 @@ from rhinvoice.infrastructure.rendering.html import JinjaDocumentRenderer
 from rhinvoice.infrastructure.rendering.pdf import ChromiumPdfRenderer, GotenbergPrinter
 from rhinvoice.infrastructure.security import Argon2PasswordHasher, PyOtpTotpService
 from rhinvoice.infrastructure.support.program_log import ProgramLogFile, system_name
-from rhinvoice.infrastructure.updates.feed import SignedReleaseFeed, installed_version
+from rhinvoice.infrastructure.updates.feed import installed_version, release_feed
 
 if TYPE_CHECKING:
     from sqlalchemy import Engine
@@ -144,7 +144,11 @@ def build_container(
         sender=SmtpSender(),
     )
     # A public demo is reset all the time; it has nothing to update.
-    feed = SignedReleaseFeed() if settings.update_check and not settings.demo else None
+    feed = (
+        release_feed(settings.update_channel)
+        if settings.update_check and not settings.demo
+        else None
+    )
     return Container(
         updates=UpdateHandlers(feed, installed_version(), effective_clock, own.installer),
         support=SupportHandlers(

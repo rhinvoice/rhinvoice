@@ -8,6 +8,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 ### Neu
 - *Über Rhinvoice* hat **Problem melden**: Es kopiert Version, System und das Ende des Protokolls
   (Programme für Windows und Mac) und öffnet einen Fehlerbericht auf GitHub. Nichts wird von selbst verschickt.
+- Ein Testkanal für Updates: `RHINVOICE_UPDATE_CHANNEL=test` (bzw. `"update_channel": "test"` in
+  `rhinvoice.json` der Programme) bietet auch Testkandidaten an, für Testinstallationen.
 - Die Programme für Windows und Mac öffnen ihr Fenster dort, wo es geschlossen wurde, und so
   gross, wie es war (oder maximiert).
 

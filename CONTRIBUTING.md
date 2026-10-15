@@ -66,6 +66,18 @@ The architecture and its reasons are in [`docs/adr`](docs/adr), the design syste
 - **Decisions** that others will ask about get an ADR in `docs/adr`.
 - **UI changes** come with screenshots (light and dark, desktop and mobile) in the pull request.
 
+## How a change is released
+
+Nothing reaches users untested ([ADR 0025](docs/adr/0025-tested-releases.md)):
+
+1. **Pull request** into `main`. CI must be green; changes to the program also build the
+   Windows setup and the macOS disk image as a preview, attached to the run.
+2. **Release candidate.** The maintainer tags `vX.Y.Z-rc.N`. That builds a public
+   pre-release: setups, Docker images tagged `X.Y.Z-rc.N`, nothing users get by themselves.
+   You are welcome to test it.
+3. **Promotion.** Once tested, the maintainer starts *Promote release*; the candidate's files
+   become release `vX.Y.Z`.
+
 ## Licence
 
 Rhinvoice is licensed under the [GNU Affero General Public License v3.0 or later](LICENSE).

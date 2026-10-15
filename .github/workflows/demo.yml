@@ -1,7 +1,8 @@
 name: Demo
 
 # Puts a released version on the public demo server (ch., de. and at.rhinvoice.com):
-# automatically once a release has built its images, or by hand with a version.
+# started by "Promote release" once a candidate is released (ADR 0025), or by hand with a
+# version. Release candidates never reach the demos.
 #
 # Repository secrets (Settings → Secrets and variables → Actions):
 #   DEMO_SSH_KEY          private key of a deploy key whose public half is in root's authorized_keys
@@ -13,9 +14,6 @@ name: Demo
 #   DEMO_DOMAIN           rhinvoice.com (the demos answer at ch., de. and at.)
 
 on:
-  workflow_run:
-    workflows: [Release]
-    types: [completed]
   workflow_dispatch:
     inputs:
       version:
@@ -34,7 +32,7 @@ jobs:
     name: Deploy the demo
     if: >-
       github.repository == 'rhinvoice/rhinvoice' &&
-      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     environment:
       name: demo
@@ -46,9 +44,8 @@ jobs:
         id: version
         env:
           INPUT: ${{ inputs.version }}
-          TAG: ${{ github.event.workflow_run.head_branch }}
         run: |
-          version="${INPUT:-${TAG#v}}"
+          version="$INPUT"
           if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "not a version: '$version'" >&2
             exit 1

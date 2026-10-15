@@ -3,11 +3,18 @@ name: Desktop
 # The installation without Docker (ADR 0021, 0022): builds the Windows setup and the macOS
 # app with their app packages, checks them like a user would (on Windows the full smoke test,
 # desktop/smoke_test.py) and keeps them as downloads of the run. The Release workflow calls
-# it for every tag and attaches the files to the GitHub release.
+# it for every release candidate and attaches the files to the pre-release. On a pull
+# request the setups are a preview to try before the merge (ADR 0025).
 on:
   workflow_call:
   push:
     branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "desktop/**"
+      - ".github/workflows/desktop.yml"
+  pull_request:
     paths:
       - "backend/**"
       - "frontend/**"

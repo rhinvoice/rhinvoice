@@ -7,7 +7,7 @@ name: Desktop
 on:
   workflow_call:
   push:
-    branches: [main, feat/native-install]
+    branches: [main, feat/native-install, feat/smaller-desktop]
     paths:
       - "backend/**"
       - "frontend/**"
@@ -67,7 +67,13 @@ jobs:
           $version = python desktop/build.py version
           & $iscc "/DAppVersion=$version" desktop\windows\rhinvoice.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Get-ChildItem build\windows\Rhinvoice-Setup-*.exe | Format-Table Name, Length
+          # What makes the program big, for the next steps (sizes in MB).
+          Get-ChildItem build\windows\install -Directory | ForEach-Object {
+            $bytes = (Get-ChildItem $_.FullName -Recurse -File | Measure-Object Length -Sum).Sum
+            [pscustomobject]@{ Part = $_.Name; MB = [math]::Round($bytes / 1MB, 1) }
+          } | Sort-Object MB -Descending | Format-Table -AutoSize
+          Get-ChildItem build\windows\Rhinvoice-Setup-*.exe, build\windows\rhinvoice-app-*.zip |
+            Format-Table Name, @{ Label = "MB"; Expression = { [math]::Round($_.Length / 1MB, 1) } }
 
       - uses: actions/upload-artifact@v4
         with:

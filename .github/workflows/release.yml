@@ -12,6 +12,8 @@ jobs:
   image:
     name: Publish image to GHCR
     runs-on: ubuntu-24.04
+    # A build normally takes under ten minutes; a stuck one fails instead of running for hours.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -42,6 +44,7 @@ jobs:
   backup-image:
     name: Publish backup image to GHCR
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3

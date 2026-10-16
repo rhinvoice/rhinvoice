@@ -5,6 +5,13 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Neu
+- Die Oberfläche auf **Französisch** und **Italienisch** (Schweizer Varianten): *Français* oder
+  *Italiano* über das Globus-Symbol wählen; ein Browser auf Französisch oder Italienisch öffnet
+  Rhinvoice gleich in dieser Sprache. Beträge und Daten bleiben im Schweizer Format
+  (`CHF 1’234.50`, `05.01.2026`). Beide Sprachen sind maschinell übersetzt; das Sprachmenü und
+  *Über Rhinvoice* sagen das und bitten um Korrekturen.
+
 ## [0.7.4] – 2026-10-16
 
 ### Neu

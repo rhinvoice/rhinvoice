@@ -5,6 +5,12 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Added
+- The interface in **French** and **Italian** (Swiss variants): choose *Français* or *Italiano*
+  with the globe icon; a browser set to French or Italian opens in that language. Amounts and
+  dates keep the Swiss style (`CHF 1’234.50`, `05.01.2026`). Both are machine translated; the
+  language menu and *About Rhinvoice* say so and ask for corrections.
+
 ## [0.7.4] – 2026-10-16
 
 ### Added

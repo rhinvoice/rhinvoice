@@ -10,6 +10,7 @@ lit. i; DE: UStAE 1.3 Abs. 6; AT: see OPEN_QUESTIONS). The text is kept with the
 reminder, so its letter can be printed again as it was sent.
 """
 
+# ruff: noqa: RUF001 - French and Italian elide with the typographic apostrophe.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -49,6 +50,8 @@ class DunningLevel:
     """In the invoice's currency; 0 for none."""
     text_de: str
     text_en: str
+    text_fr: str
+    text_it: str
 
     def __post_init__(self) -> None:
         if self.level not in LEVELS:
@@ -61,10 +64,19 @@ class DunningLevel:
             raise ValidationError(
                 "fee", f"the fee must be between 0 and {MAX_FEE} in steps of {FEE_STEP}"
             )
-        for name in ("text_de", "text_en"):
+        for name in ("text_de", "text_en", "text_fr", "text_it"):
             object.__setattr__(
                 self, name, clean_multiline(getattr(self, name), name, max_length=MAX_TEXT)
             )
+
+    def text(self, language: Language) -> str:
+        """Return the level's text in ``language``."""
+        return {
+            Language.DE: self.text_de,
+            Language.EN: self.text_en,
+            Language.FR: self.text_fr,
+            Language.IT: self.text_it,
+        }[language]
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,7 +166,6 @@ class Dunning:
                 f"level {level} is due on {upcoming.due_on}", code="reminder_not_due"
             )
         settings = _level(levels, level)
-        language = self.invoice.content.language
         return Reminder(
             id=reminder_id,
             invoice_id=self.invoice.id,
@@ -164,7 +175,7 @@ class Dunning:
             open_amount=self.invoice.open_amount(),
             fee=upcoming.fee,
             created_at=now,
-            text=settings.text_en if language is Language.EN else settings.text_de,
+            text=settings.text(self.invoice.content.language),
         )
 
 
@@ -174,6 +185,42 @@ def _level(levels: Sequence[DunningLevel], level: int) -> DunningLevel:
             return candidate
     raise ValidationError("level", f"level {level} is not configured")
 
+
+FRENCH_TEXTS = {
+    1: (
+        "Sans doute cela vous a-t-il échappé : la facture suivante est encore ouverte. Nous "
+        "vous prions de verser le montant d’ici au {faellig}. Si vous avez déjà effectué le "
+        "paiement, veuillez considérer ce courrier comme nul et non avenu."
+    ),
+    2: (
+        "Malgré notre rappel de paiement, la facture suivante n’est toujours pas payée. Nous "
+        "vous prions de verser le montant ouvert d’ici au {faellig}."
+    ),
+    3: (
+        "La facture suivante est encore ouverte malgré notre rappel de paiement et notre "
+        "rappel. Nous vous prions de verser le montant d’ici au {faellig}. À défaut, nous "
+        "devrons faire valoir notre créance par voie juridique sans autre avis."
+    ),
+}
+"""The built-in French texts per level; also what the migration gives existing settings."""
+
+ITALIAN_TEXTS = {
+    1: (
+        "Forse vi è sfuggito: la seguente fattura risulta ancora aperta. Vi preghiamo di "
+        "versare l’importo entro il {faellig}. Se avete già effettuato il pagamento, vi "
+        "preghiamo di non tenere conto di questa lettera."
+    ),
+    2: (
+        "Nonostante il nostro promemoria di pagamento, la seguente fattura non è ancora stata "
+        "pagata. Vi preghiamo di versare l’importo aperto entro il {faellig}."
+    ),
+    3: (
+        "La seguente fattura risulta ancora aperta nonostante il promemoria e il sollecito. Vi "
+        "preghiamo di versare l’importo entro il {faellig}. In caso contrario dovremo far "
+        "valere il credito per via legale senza ulteriore preavviso."
+    ),
+}
+"""The built-in Italian texts per level; also what the migration gives existing settings."""
 
 DEFAULT_LEVELS = (
     DunningLevel(
@@ -191,6 +238,8 @@ DEFAULT_LEVELS = (
             "transfer the amount by {faellig}. If you have already paid, please disregard "
             "this letter."
         ),
+        text_fr=FRENCH_TEXTS[1],
+        text_it=ITALIAN_TEXTS[1],
     ),
     DunningLevel(
         level=2,
@@ -205,6 +254,8 @@ DEFAULT_LEVELS = (
             "Despite our reminder, the following invoice has not been paid yet. Please "
             "transfer the open amount by {faellig}."
         ),
+        text_fr=FRENCH_TEXTS[2],
+        text_it=ITALIAN_TEXTS[2],
     ),
     DunningLevel(
         level=3,
@@ -222,5 +273,7 @@ DEFAULT_LEVELS = (
             "amount by {faellig}. Otherwise we will have to enforce the claim without "
             "further notice."
         ),
+        text_fr=FRENCH_TEXTS[3],
+        text_it=ITALIAN_TEXTS[3],
     ),
 )

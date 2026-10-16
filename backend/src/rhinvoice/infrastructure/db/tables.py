@@ -471,6 +471,8 @@ dunning_levels = Table(
     Column("fee", Numeric(10, 2), nullable=False),
     Column("text_de", Text, nullable=False),
     Column("text_en", Text, nullable=False),
+    Column("text_fr", Text, nullable=False),
+    Column("text_it", Text, nullable=False),
     CheckConstraint("level BETWEEN 1 AND 3", name="level"),
 )
 

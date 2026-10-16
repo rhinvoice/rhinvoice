@@ -3,6 +3,8 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.shared.country import Country
@@ -27,6 +29,12 @@ CH, DE, EN = PrintLocale.DE_CH, PrintLocale.DE_DE, PrintLocale.EN
         (Language.DE, Country.DE, DE),
         (Language.DE, Country.AT, DE),
         (Language.EN, Country.CH, EN),
+        (Language.EN, Country.DE, EN),
+        (Language.FR, Country.CH, PrintLocale.FR_CH),
+        (Language.FR, Country.LI, PrintLocale.FR_CH),
+        (Language.FR, Country.DE, PrintLocale.FR),
+        (Language.IT, Country.CH, PrintLocale.IT_CH),
+        (Language.IT, Country.AT, PrintLocale.IT),
     ],
 )
 def test_locale_of(language: Language, country: Country, expected: PrintLocale) -> None:
@@ -39,6 +47,10 @@ def test_locale_of(language: Language, country: Country, expected: PrintLocale) 
         ("1234567.5", CH, "1’234’567.50"),
         ("1234567.5", DE, "1.234.567,50"),
         ("1234567.5", EN, "1,234,567.50"),
+        ("1234567.5", PrintLocale.FR_CH, "1’234’567.50"),
+        ("1234567.5", PrintLocale.IT_CH, "1’234’567.50"),
+        ("1234567.5", PrintLocale.FR, "1\u202f234\u202f567,50"),
+        ("1234567.5", PrintLocale.IT, "1.234.567,50"),
         ("0", CH, "0.00"),
         ("999.999", CH, "1’000.00"),
         ("-12.3", DE, "−12,30"),
@@ -75,6 +87,35 @@ def test_percent_and_dates() -> None:
     assert day(date(2026, 2, 4), DE) == "04.02.2026"
     assert day(date(2026, 2, 4), EN) == "4 February 2026"
     assert day(date(2026, 12, 31), EN) == "31 December 2026"
+    assert day(date(2026, 2, 4), PrintLocale.FR_CH) == "4 février 2026"
+    assert day(date(2026, 8, 1), PrintLocale.FR) == "1 août 2026"
+    assert day(date(2026, 12, 31), PrintLocale.FR) == "31 décembre 2026"
+    assert day(date(2026, 1, 9), PrintLocale.IT_CH) == "9 gennaio 2026"
+    assert day(date(2026, 12, 31), PrintLocale.IT) == "31 dicembre 2026"
+    assert percent(Decimal("2.6"), PrintLocale.FR) == "2,6\u00a0%"
+
+
+@given(st.dates(), st.sampled_from(list(PrintLocale)))
+def test_long_dates_name_the_month_of_their_language(value: date, locale: PrintLocale) -> None:
+    """Long dates read day, month name, year; German keeps the numeric date."""
+    text = day(value, locale)
+    if locale.months is None:
+        assert text == value.strftime("%d.%m.") + str(value.year)
+    else:
+        assert text == f"{value.day} {locale.months[value.month - 1]} {value.year}"
+        assert len(set(locale.months)) == 12
+
+
+@given(
+    st.decimals(min_value=-(10**9), max_value=10**9, places=2, allow_nan=False),
+    st.sampled_from(list(PrintLocale)),
+)
+def test_money_reads_back_as_the_same_amount(value: Decimal, locale: PrintLocale) -> None:
+    """Removing the thousands separator and reading the decimal mark gives the amount."""
+    thousands, decimal = locale.separators
+    text = money(value, locale)
+    plain = text.replace(thousands, "").replace(decimal, ".").replace("\u2212", "-")
+    assert Decimal(plain) == value
 
 
 @pytest.mark.parametrize(

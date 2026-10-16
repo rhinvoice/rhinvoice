@@ -32,7 +32,7 @@ from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.text.template import Placeholder, fill_placeholders
 from rhinvoice.infrastructure.payment.epc import epc_account, epc_qr
 from rhinvoice.infrastructure.payment.qr_bill import qr_bill_account, swiss_qr_bill
-from rhinvoice.infrastructure.rendering.country_names import COUNTRY_NAMES
+from rhinvoice.infrastructure.rendering.country_names import country_name
 from rhinvoice.infrastructure.rendering.formatting import (
     NO_BREAK_SPACE,
     PrintLocale,
@@ -361,7 +361,7 @@ def _lines(model: PrintModel, setting: _Setting) -> list[PrintLine]:
         if line.discount_percent:
             discount = percent(line.discount_percent, setting.locale)
             details.append(setting.labels["discount_line"].format(percent=discount))
-        unit = "" if line.unit is None else _unit(line.unit.label_de, line.unit.label_en, setting)
+        unit = "" if line.unit is None else line.unit.label(setting.language)
         quantity = number(line.quantity, setting.locale)
         lines.append(
             PrintLine(
@@ -444,10 +444,6 @@ def _placeholder_values(model: PrintModel, setting: _Setting) -> dict[Placeholde
     }
 
 
-def _unit(german: str, english: str, setting: _Setting) -> str:
-    return english if setting.language is Language.EN else german
-
-
 def _accent(model: PrintModel) -> str:
     """Return the accent: the company colour in the modern template, ink in the others."""
     if model.layout.template is PrintTemplate.MODERN:
@@ -488,8 +484,7 @@ def _recipient_lines(customer: Customer, company: Company, language: Language) -
     lines = [customer.display_name, attention]
     lines += [_street(address), address.supplement, f"{address.postal_code} {address.city}"]
     if address.country.value != company.address.country.value:
-        names = COUNTRY_NAMES[address.country.value]
-        lines.append(names[1] if language is Language.EN else names[0])
+        lines.append(country_name(address.country.value, language))
     return [line for line in lines if line]
 
 

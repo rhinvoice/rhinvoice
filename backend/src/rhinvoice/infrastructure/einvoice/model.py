@@ -73,7 +73,13 @@ EXEMPTION_CODES = {
     NOT_SUBJECT: "VATEX-EU-O",
 }
 EXEMPT_CATEGORIES = frozenset({VatCode.EXEMPT.value, *EXEMPTION_CODES})
-FALLBACK_EXEMPTION = {Language.DE: "Steuerbefreite Leistung", Language.EN: "Exempt supply"}
+FALLBACK_EXEMPTION = {
+    Language.DE: "Steuerbefreite Leistung",
+    Language.EN: "Exempt supply",
+    Language.FR: "Prestation exonérée",
+    Language.IT: "Prestazione esente",
+}
+"""The exemption reason (BT-120) when the document prints no notice."""
 
 
 @dataclass(frozen=True, slots=True)

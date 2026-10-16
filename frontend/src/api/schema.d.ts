@@ -2828,6 +2828,10 @@ export interface components {
             text_de: string;
             /** Text En */
             text_en: string;
+            /** Text Fr */
+            text_fr: string;
+            /** Text It */
+            text_it: string;
         };
         /** DunningLevelSchema */
         "DunningLevelSchema-Output": {
@@ -2843,6 +2847,10 @@ export interface components {
             text_de: string;
             /** Text En */
             text_en: string;
+            /** Text Fr */
+            text_fr: string;
+            /** Text It */
+            text_it: string;
         };
         /**
          * DuplicateStrategy
@@ -3108,9 +3116,12 @@ export interface components {
         };
         /**
          * Language
+         * @description The languages of documents, mails and legal notices.
+         *
+         *     French and Italian are written as in Switzerland (fr-CH, it-CH), see ADR 0026.
          * @enum {string}
          */
-        Language: "de" | "en";
+        Language: "de" | "en" | "fr" | "it";
         /** LegalNoticeRequest */
         LegalNoticeRequest: {
             /** Text */
@@ -3892,10 +3903,15 @@ export interface components {
             name: string;
             target: components["schemas"]["ImportTarget"];
         };
-        /** TermsResponse */
+        /**
+         * TermsResponse
+         * @description The country's words per language of documents (and of the interface).
+         */
         TermsResponse: {
             de: components["schemas"]["CountryTermsResponse"];
             en: components["schemas"]["CountryTermsResponse"];
+            fr: components["schemas"]["CountryTermsResponse"];
+            it: components["schemas"]["CountryTermsResponse"];
         };
         /** TestMailRequest */
         TestMailRequest: {

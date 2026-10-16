@@ -132,6 +132,23 @@ def test_a_payment_reminder_in_english_without_fee(store: Store) -> None:
     assert "Perhaps it escaped your attention" in html
 
 
+@pytest.mark.parametrize(
+    ("language", "title", "text"),
+    [
+        (Language.FR, "<h1>Rappel de paiement</h1>", "Sans doute cela vous a-t-il échappé"),
+        (Language.IT, "<h1>Promemoria di pagamento</h1>", "Forse vi è sfuggito"),
+    ],
+)
+def test_payment_reminders_in_french_and_italian(
+    store: Store, language: Language, title: str, text: str
+) -> None:
+    printing, _ = setup(store, language)
+    first = min(store.reminders.values(), key=lambda reminder: reminder.level)
+    html = printing.reminder_html(first.id)
+    assert title in html
+    assert text in html
+
+
 def test_the_reminder_pdf(store: Store) -> None:
     printing, reminder_id = setup(store)
     printed, content = printing.reminder_pdf(reminder_id)

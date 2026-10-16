@@ -3093,6 +3093,16 @@
             "maxLength": 2000,
             "title": "Text En",
             "type": "string"
+          },
+          "text_fr": {
+            "maxLength": 2000,
+            "title": "Text Fr",
+            "type": "string"
+          },
+          "text_it": {
+            "maxLength": 2000,
+            "title": "Text It",
+            "type": "string"
           }
         },
         "required": [
@@ -3101,7 +3111,9 @@
           "payment_days",
           "fee",
           "text_de",
-          "text_en"
+          "text_en",
+          "text_fr",
+          "text_it"
         ],
         "title": "DunningLevelSchema",
         "type": "object"
@@ -3140,6 +3152,16 @@
             "maxLength": 2000,
             "title": "Text En",
             "type": "string"
+          },
+          "text_fr": {
+            "maxLength": 2000,
+            "title": "Text Fr",
+            "type": "string"
+          },
+          "text_it": {
+            "maxLength": 2000,
+            "title": "Text It",
+            "type": "string"
           }
         },
         "required": [
@@ -3148,7 +3170,9 @@
           "payment_days",
           "fee",
           "text_de",
-          "text_en"
+          "text_en",
+          "text_fr",
+          "text_it"
         ],
         "title": "DunningLevelSchema",
         "type": "object"
@@ -3913,9 +3937,12 @@
         "type": "object"
       },
       "Language": {
+        "description": "The languages of documents, mails and legal notices.\n\nFrench and Italian are written as in Switzerland (fr-CH, it-CH), see ADR 0026.",
         "enum": [
           "de",
-          "en"
+          "en",
+          "fr",
+          "it"
         ],
         "title": "Language",
         "type": "string"
@@ -5828,17 +5855,26 @@
       },
       "TermsResponse": {
         "additionalProperties": false,
+        "description": "The country's words per language of documents (and of the interface).",
         "properties": {
           "de": {
             "$ref": "#/components/schemas/CountryTermsResponse"
           },
           "en": {
             "$ref": "#/components/schemas/CountryTermsResponse"
+          },
+          "fr": {
+            "$ref": "#/components/schemas/CountryTermsResponse"
+          },
+          "it": {
+            "$ref": "#/components/schemas/CountryTermsResponse"
           }
         },
         "required": [
           "de",
-          "en"
+          "en",
+          "fr",
+          "it"
         ],
         "title": "TermsResponse",
         "type": "object"

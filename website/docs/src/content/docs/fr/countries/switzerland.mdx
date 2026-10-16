@@ -5,7 +5,7 @@ faq:
   - q: Quels taux de TVA s’appliquent en Suisse?
     a: "Depuis le 1er janvier 2024, les taux sont de 8,1 % (taux normal), 2,6 % (taux réduit) et 3,8 % (hébergement). De 2018 à 2023, ils étaient de 7,7 %, 2,5 % et 3,7 %. Le taux à la date de la prestation s’applique."
   - q: Que doit indiquer la facture d’une entreprise assujettie à la TVA?
-    a: "Entre autres son numéro TVA, soit l’IDE avec le suffixe TVA (en allemand MWST), par exemple CHE-123.456.789 MWST (art. 26, al. 2, let. a LTVA). Rhinvoice n’émet pas de facture sans ce numéro, sauf si votre entreprise est réglée comme non assujettie à la TVA."
+    a: "Entre autres son numéro TVA, soit l’IDE avec le suffixe TVA (en allemand MWST, en italien IVA), par exemple CHE-123.456.789 TVA (art. 26, al. 2, let. a LTVA). Rhinvoice n’émet pas de facture sans ce numéro, sauf si votre entreprise est réglée comme non assujettie à la TVA."
   - q: Quand une facture QR a-t-elle besoin d’un QR-IBAN?
     a: "Seulement si vous utilisez la référence QR. Avec un QR-IBAN, Rhinvoice imprime la référence QR à 27 chiffres, avec un IBAN ordinaire la référence créancier (SCOR, commençant par RF). Les deux fonctionnent en CHF et en EUR."
   - q: Rhinvoice arrondit-il les totaux à 5 centimes?
@@ -42,7 +42,7 @@ Les anciens taux servent pour les factures dont la date de prestation est antér
 
 ## Ce que la facture doit indiquer
 
-**Le numéro TVA de votre entreprise.** Une entreprise assujettie à la TVA indique le numéro sous lequel elle est inscrite : l’IDE avec le suffixe TVA, par exemple `CHE-123.456.789 MWST` (art. 26, al. 2, let. a LTVA). Saisissez-le sous *Paramètres → Entreprise* dans le champ *IDE / numéro TVA*. Rhinvoice contrôle le chiffre de contrôle de l’IDE. Sans ce numéro, Rhinvoice n’émet pas la facture et vous indique où l’ajouter.
+**Le numéro TVA de votre entreprise.** Une entreprise assujettie à la TVA indique le numéro sous lequel elle est inscrite : l’IDE avec le suffixe TVA (en allemand MWST, en italien IVA), par exemple `CHE-123.456.789 TVA` (art. 26, al. 2, let. a LTVA). Saisissez-le sous *Paramètres → Entreprise* dans le champ *IDE / numéro TVA*. Rhinvoice contrôle le chiffre de contrôle de l’IDE. Sans ce numéro, Rhinvoice n’émet pas la facture et vous indique où l’ajouter.
 
 **La date de la prestation.** Sans période de prestation, Rhinvoice imprime la date de la facture comme date de la prestation. La LTVA ne l’exige que si elle diffère de la date de la facture (art. 26, al. 2, let. d LTVA), mais cela ne nuit pas.
 

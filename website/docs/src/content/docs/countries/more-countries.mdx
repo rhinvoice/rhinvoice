@@ -9,7 +9,7 @@ faq:
   - q: How does my country get into Rhinvoice?
     a: Open an issue on GitHub with the "Tax or legal rule" form and link the official sources. A country is built following the guide "Adding a country" and comes in by pull request.
   - q: What makes a new country more work?
-    a: A currency of its own besides CHF and EUR, invoices in a language other than German or English, a national e-invoice network such as Italy's, or VAT law outside the EU. For an EU country with the euro the tax logic is already there.
+    a: A currency of its own besides CHF and EUR, invoices in a language other than German, English, French or Italian, a national e-invoice network such as Italy's, or VAT law outside the EU. For an EU country with the euro the tax logic is already there.
 ---
 
 import Faq from "../../../components/Faq.astro";
@@ -55,7 +55,7 @@ Since EU countries share the logic of the VAT Directive, a new EU country with t
 Some things are not in a profile yet. They decide how much work a country is:
 
 - **A currency of its own.** Rhinvoice knows CHF and EUR. A country with its own currency (for example PLN or SEK) needs it added first.
-- **Another language.** Documents are written in German or English. If customers expect their own language, a new language with all its texts comes first.
+- **Another language.** Documents are written in German, English, French or Italian. If customers expect their own language, a new language with all its texts comes first.
 - **A national e-invoice network**, such as Italy's. Every invoice already contains ZUGFeRD / Factur-X following EN 16931 ([e-invoices](/docs/invoices/e-invoice/)); a mandatory network would be a module of its own.
 - **VAT law outside the EU.** A country with its own VAT law needs its own rules for the tax treatments.
 

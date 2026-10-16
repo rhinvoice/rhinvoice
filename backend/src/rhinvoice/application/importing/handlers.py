@@ -461,6 +461,7 @@ class _CustomerRows:
             email=optional("email", base.email),
             phone=text("phone", base.phone),
             vat_number=optional("vat_number", base.vat_number),
+            buyer_reference=text("buyer_reference", base.buyer_reference),
             group=text("group", base.group),
             note=text("note", base.note),
             address=AddressInput(
@@ -528,6 +529,7 @@ def _customer_command(customer: Customer) -> SaveCustomer:
         email=None if customer.email is None else str(customer.email),
         phone=customer.phone,
         vat_number=None if customer.vat_number is None else str(customer.vat_number),
+        buyer_reference=customer.buyer_reference,
         group=customer.group,
         default_currency=customer.default_currency,
         default_language=customer.default_language,

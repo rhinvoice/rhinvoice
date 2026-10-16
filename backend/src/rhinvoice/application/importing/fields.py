@@ -141,6 +141,18 @@ CUSTOMER_FIELDS: tuple[ImportField, ...] = (
             "VAT ID",
         ),
     ),
+    ImportField(
+        "buyer_reference",
+        (
+            "Leitweg-ID",
+            "LeitwegID",
+            "Leitweg",
+            "Käuferreferenz",
+            "Kaeuferreferenz",
+            "Buyer reference",
+            "BuyerReference",
+        ),
+    ),
     ImportField("group", ("Gruppe", "Kundengruppe", "Kategorie", "Group", "Category")),
     ImportField("default_currency", ("Währung", "Waehrung", "Currency")),
     ImportField("default_language", ("Sprache", "Korrespondenzsprache", "Language")),

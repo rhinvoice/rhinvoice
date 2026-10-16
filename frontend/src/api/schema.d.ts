@@ -2412,6 +2412,12 @@ export interface components {
         CustomerRequest: {
             address: components["schemas"]["AddressSchema"];
             /**
+             * Buyer Reference
+             * @description Leitweg-ID or fixed buyer reference for e-invoices (German customers)
+             * @default
+             */
+            buyer_reference: string;
+            /**
              * Company Name
              * @default
              */
@@ -2483,6 +2489,8 @@ export interface components {
             address: components["schemas"]["AddressSchema"];
             /** Archived */
             archived: boolean;
+            /** Buyer Reference */
+            buyer_reference: string;
             /** Company Name */
             company_name: string;
             /** Contact Person */
@@ -2652,6 +2660,8 @@ export interface components {
             };
             totals: components["schemas"]["TotalsResponse"];
             treatment: components["schemas"]["TaxTreatment"];
+            /** Xrechnung Problems */
+            xrechnung_problems: components["schemas"]["EInvoiceProblem"][];
         };
         /** DocumentResponse */
         DocumentResponse: {

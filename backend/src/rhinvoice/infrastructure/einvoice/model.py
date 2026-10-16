@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING
 from rhinvoice.application.document.einvoice import (
     NOT_SUBJECT,
     EInvoiceProfile,
+    buyer_reference,
     customer_of,
     not_subject,
     payment_account,
@@ -176,7 +177,7 @@ class EInvoice:
     notes: tuple[str, ...]
     """BT-22."""
     buyer_reference: str | None
-    """BT-10, the reference field (Leitweg-ID for German authorities)."""
+    """BT-10: the Leitweg-ID of a German authority or another buyer reference."""
     preceding: tuple[str, date] | None
     """BG-3, the cancelled invoice."""
     seller: Party
@@ -439,7 +440,7 @@ def build(model: PrintModel, profile: EInvoiceProfile) -> EInvoice:
         issue_date=model.issue_date,
         currency=totals.currency,
         notes=tuple(note for note in (content.subject.strip(),) if note),
-        buyer_reference=content.reference.strip() or None,
+        buyer_reference=buyer_reference(model),
         preceding=preceding,
         seller=_seller(model, profile),
         buyer=_buyer(model),

@@ -479,16 +479,22 @@ class DocumentPreviewResponse(ApiModel):
     """The customer is an EU business without a VAT number: with one, reverse charge."""
     e_invoice_problems: list[EInvoiceProblem]
     """What keeps the invoice, issued now, from carrying its e-invoice (ZUGFeRD)."""
+    xrechnung_problems: list[EInvoiceProblem]
+    """What the invoice, issued now, would lack as XRechnung; German customers only."""
 
     @classmethod
     def of(
-        cls, preview: DocumentPreview, e_invoice_problems: tuple[EInvoiceProblem, ...] = ()
+        cls,
+        preview: DocumentPreview,
+        e_invoice_problems: tuple[EInvoiceProblem, ...],
+        xrechnung_problems: tuple[EInvoiceProblem, ...],
     ) -> Self:
         view = preview.view
         amounts = {line.line_id: line.amount for line in view.totals.lines}
         return cls(
             customer_vat_missing=preview.customer_vat_missing,
             e_invoice_problems=list(e_invoice_problems),
+            xrechnung_problems=list(xrechnung_problems),
             rates={category: plain_number(rate) for category, rate in preview.rates.items()},
             treatment=view.document.content.treatment,
             goods_treatment=view.document.content.goods_treatment,
@@ -830,8 +836,12 @@ def preview_document(
 ) -> DocumentPreviewResponse:
     """Calculate the totals of a draft without saving it."""
     preview = container.documents.preview(body.type, body.to_input())
-    problems = container.printing.draft_e_invoice_problems(preview.view)
-    return DocumentPreviewResponse.of(preview, problems)
+    printing = container.printing
+    return DocumentPreviewResponse.of(
+        preview,
+        printing.draft_e_invoice_problems(preview.view),
+        printing.draft_xrechnung_problems(preview.view),
+    )
 
 
 HTML_PAGE: dict[int | str, dict[str, Any]] = {

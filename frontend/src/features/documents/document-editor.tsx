@@ -73,6 +73,7 @@ import { cn } from "@/lib/cn";
 import { addDays, todayIso } from "@/lib/dates";
 import { formatMoney, formatRelative } from "@/lib/format";
 import { modifierLabel } from "@/lib/shortcuts";
+import { referenceHint, xrechnungOnly } from "@/lib/xrechnung";
 import { termsFor } from "@/features/shared/country-profile-model";
 
 export type EditableType = "invoice" | "quote";
@@ -183,6 +184,8 @@ export function DocumentEditor<Saved = DocumentDetail>({
         )
       : null;
   const eInvoiceProblems = preview.data?.e_invoice_problems ?? [];
+  // German customers only: what the XRechnung lacks beyond the e-invoice in the PDF.
+  const xrechnungProblems = xrechnungOnly(preview.data?.xrechnung_problems ?? [], eInvoiceProblems);
   const page = useQuery(renderQuery(body));
   const amounts = preview.data?.line_amounts ?? [];
 
@@ -675,6 +678,14 @@ export function DocumentEditor<Saved = DocumentDetail>({
               <EInvoiceProblems label={t("eInvoice.issueWarning")} problems={eInvoiceProblems} />
             </div>
           ) : null}
+          {xrechnungProblems.length > 0 ? (
+            <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">
+              <EInvoiceProblems
+                label={t("eInvoice.issueXRechnungWarning")}
+                problems={xrechnungProblems}
+              />
+            </div>
+          ) : null}
           <AlertDialogFooter>
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
@@ -784,6 +795,9 @@ function MoreFields({ tax, autoTreatment, plan }: MoreFieldsProps) {
   const treatment = useWatch({ control, name: "treatment" });
   const discountKind = useWatch({ control, name: "discount_kind" });
   const currency = useWatch({ control, name: "currency" });
+  const customerId = useWatch({ control, name: "customer_id" });
+  const customer = useQuery({ ...customerOptionQuery(customerId), enabled: customerId !== "" });
+  const hint = referenceHint(customerId === "" ? undefined : customer.data);
   return (
     <div className="grid gap-4 @md:grid-cols-2">
       <Field
@@ -797,7 +811,7 @@ function MoreFields({ tax, autoTreatment, plan }: MoreFieldsProps) {
       </Field>
       <Field
         label={t("documents.reference")}
-        description={t("documents.referenceHint")}
+        description={t(hint.key, { value: hint.value })}
         error={errors.reference?.message}
         optionalLabel={t("common.optional")}
       >

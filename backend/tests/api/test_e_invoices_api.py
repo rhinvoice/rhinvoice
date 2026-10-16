@@ -92,6 +92,8 @@ def test_the_preview_warns_before_issuing(user_client: TestClient, customer_id: 
     body = {"type": "invoice", "customer_id": customer_id, "lines": LINES}
     preview = user_client.post("/api/documents/preview", json=body)
     assert preview.json()["e_invoice_problems"] == []
+    # Swiss customers need no XRechnung.
+    assert preview.json()["xrechnung_problems"] == []
     # Reverse charge to a German business whose VAT number lacks the country code.
     customer = {
         "kind": "company",
@@ -102,3 +104,27 @@ def test_the_preview_warns_before_issuing(user_client: TestClient, customer_id: 
     german = user_client.post("/api/customers", json=customer).json()["id"]
     lacking = user_client.post("/api/documents/preview", json={**body, "customer_id": german})
     assert lacking.json()["e_invoice_problems"] == ["buyer_vat_id_missing"]
+    # German customers are warned about their XRechnung, too.
+    assert lacking.json()["xrechnung_problems"] == [
+        "buyer_vat_id_missing",
+        "buyer_reference_missing",
+        "seller_email_missing",
+        "seller_phone_missing",
+        "buyer_email_missing",
+    ]
+    # The customer's Leitweg-ID is the buyer reference.
+    authority = user_client.post(
+        "/api/customers",
+        json={
+            **customer,
+            "company_name": "Bezirksamt Beispiel",
+            "vat_number": None,
+            "email": "rechnung@bezirksamt.example",
+            "buyer_reference": "04011000-1234512345-06",
+        },
+    ).json()
+    assert authority["buyer_reference"] == "04011000-1234512345-06"
+    fixed = user_client.post(
+        "/api/documents/preview", json={**body, "customer_id": authority["id"]}
+    )
+    assert fixed.json()["xrechnung_problems"] == ["seller_email_missing", "seller_phone_missing"]

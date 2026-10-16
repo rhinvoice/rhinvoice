@@ -72,6 +72,7 @@ const CUSTOMER: CustomerOption = {
   email: null,
   phone: "",
   vat_number: null,
+  buyer_reference: "",
   group: "",
   default_currency: null,
   default_language: null,

@@ -163,6 +163,17 @@ CUSTOMERS: tuple[SaveCustomer, ...] = (
         company_name="Northwind Inc.",
         address=AddressInput("10001", "New York", "US", "Main Street", "100"),
     ),
+    # A German authority: its XRechnung carries the Leitweg-ID (an example of the
+    # XRechnung test suite, with valid check digits).
+    SaveCustomer(
+        kind=CustomerKind.COMPANY,
+        company_name="Stadtverwaltung Musterstadt",
+        contact_person="Bauamt",
+        email="rechnung@musterstadt.example",
+        buyer_reference="04011000-1234512345-06",
+        default_currency=Currency.EUR,
+        address=AddressInput("88999", "Musterstadt", "DE", "Rathausplatz", "1"),
+    ),
 )
 
 HOME_PLACES: dict[Country, tuple[AddressInput, ...]] = {

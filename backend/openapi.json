@@ -1795,6 +1795,13 @@
           "address": {
             "$ref": "#/components/schemas/AddressSchema"
           },
+          "buyer_reference": {
+            "default": "",
+            "description": "Leitweg-ID or fixed buyer reference for e-invoices (German customers)",
+            "maxLength": 100,
+            "title": "Buyer Reference",
+            "type": "string"
+          },
           "company_name": {
             "default": "",
             "maxLength": 70,
@@ -1950,6 +1957,10 @@
             "title": "Archived",
             "type": "boolean"
           },
+          "buyer_reference": {
+            "title": "Buyer Reference",
+            "type": "string"
+          },
           "company_name": {
             "title": "Company Name",
             "type": "string"
@@ -2090,6 +2101,7 @@
           "email",
           "phone",
           "vat_number",
+          "buyer_reference",
           "group",
           "default_currency",
           "default_language",
@@ -2504,6 +2516,13 @@
           },
           "treatment": {
             "$ref": "#/components/schemas/TaxTreatment"
+          },
+          "xrechnung_problems": {
+            "items": {
+              "$ref": "#/components/schemas/EInvoiceProblem"
+            },
+            "title": "Xrechnung Problems",
+            "type": "array"
           }
         },
         "required": [
@@ -2514,7 +2533,8 @@
           "rates",
           "notice",
           "customer_vat_missing",
-          "e_invoice_problems"
+          "e_invoice_problems",
+          "xrechnung_problems"
         ],
         "title": "DocumentPreviewResponse",
         "type": "object"

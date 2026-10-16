@@ -8,6 +8,13 @@ before 1.0, minor versions may contain breaking changes.
 ### Added
 - The programs for Windows and Mac can switch the update check off: `"update_check": false` in
   `rhinvoice.json` (Docker: `RHINVOICE_UPDATE_CHECK=false`).
+- Customers in Germany have the field **Leitweg-ID or fixed buyer reference**. Entered once, it
+  is the buyer reference of every XRechnung to that customer; otherwise the invoice's
+  *Reference* is used, as before. Issued invoices keep the value of the day they were issued.
+  The customer import recognises a "Leitweg-ID" column.
+- For customers in Germany, the dialog before issuing also names what the XRechnung lacks,
+  while the invoice can still be completed. The editor says below *Reference* whether the
+  customer's Leitweg-ID applies or a reference is needed for the XRechnung.
 
 ## [0.7.4] – 2026-10-16
 

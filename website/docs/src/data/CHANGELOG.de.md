@@ -8,6 +8,13 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 ### Neu
 - Die Programme für Windows und Mac können die Update-Prüfung abschalten: `"update_check": false`
   in `rhinvoice.json` (Docker: `RHINVOICE_UPDATE_CHECK=false`).
+- Kunden in Deutschland haben das Feld **Leitweg-ID oder feste Käuferreferenz**. Einmal
+  eingetragen, ist es die Käuferreferenz jeder XRechnung an diesen Kunden; sonst gilt wie bisher
+  die *Referenz* der Rechnung. Ausgestellte Rechnungen behalten den Wert vom Tag des Ausstellens.
+  Der Kundenimport erkennt eine Spalte «Leitweg-ID».
+- Bei Kunden in Deutschland nennt der Dialog vor dem Ausstellen auch, was der XRechnung fehlt,
+  solange sich die Rechnung noch ergänzen lässt. Der Editor zeigt unter *Referenz*, ob die
+  Leitweg-ID des Kunden gilt oder für die XRechnung eine Referenz nötig ist.
 
 ## [0.7.4] – 2026-10-16
 

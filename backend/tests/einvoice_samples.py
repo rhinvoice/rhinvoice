@@ -295,7 +295,8 @@ def samples() -> dict[str, Sample]:
             (berlin_account,),
             _draft((CONSULTING,)),
         ),
-        # A German authority: XRechnung with the Leitweg-ID as buyer reference.
+        # A German authority: XRechnung with the customer's Leitweg-ID as buyer reference,
+        # which wins over the reference of the invoice.
         "de-authority": Sample(
             german,
             replace(
@@ -303,9 +304,10 @@ def samples() -> dict[str, Sample]:
                 kind=CustomerKind.COMPANY,
                 company_name="Bezirksamt Beispiel",
                 contact_person="Frau Beispiel",
+                buyer_reference="04011000-12345-34",
             ),
             (berlin_account,),
-            _draft((CONSULTING, DISCOUNTED), reference="04011000-12345-34"),
+            _draft((CONSULTING, DISCOUNTED), reference="Bestellung 17"),
         ),
         # Gross prices in francs: net prices with four places, the 5-centime rounding.
         "ch-domestic-gross": Sample(

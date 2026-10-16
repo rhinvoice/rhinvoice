@@ -15,16 +15,16 @@ faq:
 import Faq from "../../../../components/Faq.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
-Pour l’hébergement, la maintenance, les abonnements ou les forfaits, vous configurez un **plan** dans Rhinvoice. Il établit lui-même la même facture *Mensuellement*, *Trimestriellement*, *Semestriellement* ou *Annuellement* : en brouillon, émise, ou émise et envoyée au client par e-mail.
+Pour l’hébergement, la maintenance, les abonnements ou les forfaits, vous configurez un **plan** dans Rhinvoice. Il établit lui-même la même facture *Mensuel*, *Trimestriel*, *Semestriel* ou *Annuel* : en brouillon, émise, ou émise et envoyée au client par e-mail.
 
 ## Configurer un plan
 
 <Steps>
 
-1. Ouvrez *Factures → Récurrentes* et cliquez sur **Nouveau plan**. Ou, sur une facture existante, choisissez *Plus d’actions → Rendre récurrente*.
+1. Ouvrez *Factures → Récurrente* et cliquez sur **Nouveau plan**. Ou, sur une facture existante, choisissez *Autres actions → Rendre récurrente*.
 2. Donnez un *Nom* au plan. Il ne sert qu’à vous, par exemple «Hosting Holzwerk».
-3. Choisissez le *Client*, l’*Intervalle* et le jour sous *Première facture le* (aujourd’hui ou plus tard). Sous *Dernière facture au plus tard le*, vous pouvez fixer une fin.
-4. Sous *À la date*, choisissez ce qui doit se passer.
+3. Choisissez le *Client*, l’*Intervalle* et le jour sous *Première facture le* (aujourd’hui ou plus tard). Sous *Dernière facture jusqu’au*, vous pouvez fixer une fin.
+4. Sous *À l’échéance*, choisissez ce qui doit se passer.
 5. En dessous, saisissez la facture comme dans l’éditeur habituel. L’aperçu montre la prochaine facture.
 6. Cliquez sur **Créer le plan**.
 
@@ -34,19 +34,19 @@ Chaque facture fixe elle-même sa date, son échéance et son traitement fiscal 
 
 ## Ce qui se passe à la date
 
-| *À la date* | Résultat |
+| *À l’échéance* | Résultat |
 |---|---|
 | *Créer un brouillon* | Le brouillon attend sous *Factures* que vous le vérifiiez et l’émettiez |
 | *Émettre* | La facture est émise avec un numéro; vous l’envoyez vous-même |
 | *Émettre et envoyer par e-mail* | La facture est émise et envoyée à l’adresse e-mail du client |
 
-L’envoi par e-mail nécessite un serveur de messagerie sous *Réglages → E-mail*. L’e-mail contient le PDF de la facture. Une XRechnung séparée pour les autorités allemandes s’envoie à la main depuis la facture ([factures électroniques](/docs/fr/invoices/e-invoice/)).
+L’envoi par e-mail nécessite un serveur de messagerie sous *Paramètres → E-mail*. L’e-mail contient le PDF de la facture. Une XRechnung séparée pour les autorités allemandes s’envoie à la main depuis la facture ([factures électroniques](/docs/fr/invoices/e-invoice/)).
 
 ## Dates et période de prestation
 
 Toutes les dates sont comptées à partir du premier jour. Un plan mensuel qui commence le 31 facture le dernier jour des mois plus courts, puis de nouveau le 31.
 
-Avec *Remplir la période de prestation*, chaque facture indique la période qu’elle couvre : de son propre jour à la veille de la suivante. Les périodes se suivent sans lacune ni chevauchement; la dernière se termine avec le plan.
+Avec *Indiquer la période de prestation*, chaque facture indique la période qu’elle couvre : de son propre jour à la veille de la suivante. Les périodes se suivent sans lacune ni chevauchement; la dernière se termine avec le plan.
 
 Si vous modifiez le premier jour ou l’intervalle lors d’une modification, le décompte recommence, et le nouveau premier jour doit être aujourd’hui ou plus tard.
 

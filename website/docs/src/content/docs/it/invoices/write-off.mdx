@@ -8,7 +8,7 @@ faq:
   - q: Che cosa succede se il cliente paga comunque una fattura stralciata?
     a: Registri il pagamento come di consueto con «Registra pagamento». Lo stralcio resta nell’anno della sua data e il pagamento conta come «Pagato in seguito» nell’anno in cui è arrivato.
   - q: Posso annullare uno stralcio?
-    a: Sì, con «Altre azioni → Revoca stralcio». L’importo stralciato è poi di nuovo aperto e si può sollecitare. La cronologia della fattura annota entrambi.
+    a: Sì, con «Altre azioni → Revoca la perdita». L’importo stralciato è poi di nuovo aperto e si può sollecitare. La cronologia della fattura annota entrambi.
   - q: Devo correggere l’IVA a causa dello stralcio?
     a: Dipende da come conteggia l’IVA. Se deve l’imposta già alla fatturazione, la corregge. Se la deve solo all’arrivo del pagamento, non c’è nulla da correggere. Rhinvoice mostra solo l’imposta contenuta nell’importo.
   - q: Posso stralciare fatture riprese da un programma usato in precedenza?
@@ -36,26 +36,26 @@ Uno sconto concordato in seguito, per esempio come gesto di cortesia, è uno [st
 <Steps>
 
 1. Apra la fattura emessa o pagata parzialmente.
-2. Scelga *Altre azioni → Stralcia …*.
-3. Imposti la data in *Stralciata al*. Viene proposta la data di oggi, *Fine dell’anno della fattura* imposta il 31 dicembre dell’anno della fattura. La data è compresa tra la data della fattura e oggi.
-4. Scelga il *Motivo*: *Società sciolta o fallita*, *Prescritta*, *Importo esiguo*, *Irreperibile* o *Altro motivo*. Una *Nota* è facoltativa.
-5. Confermi con **Stralcia**.
+2. Scelga *Altre azioni → Registra come perdita …*.
+3. Imposti la data in *Registrata come perdita al*. Viene proposta la data di oggi, *Fine dell’anno della fattura* imposta il 31 dicembre dell’anno della fattura. La data è compresa tra la data della fattura e oggi.
+4. Scelga il *Motivo*: *Ditta cancellata o fallita*, *Prescritta*, *Importo esiguo*, *Irreperibile* o *Altro motivo*. Una *Nota* è facoltativa.
+5. Confermi con **Registra come perdita**.
 
 </Steps>
 
-Viene sempre stralciato l’intero importo aperto. Dopo un pagamento parziale, è il resto. La fattura mostra allora *Stralciata* e il suo importo aperto è 0. In *Dettagli*, la scheda *Stralcio* mostra data, importo, motivo e l’imposta contenuta nell’importo. La *Cronologia* annota lo stralcio.
+Viene sempre stralciato l’intero importo aperto. Dopo un pagamento parziale, è il resto. La fattura mostra allora *Registrata come perdita* e il suo importo aperto è 0. In *Dettagli*, la scheda *Perdita su debitori* mostra data, importo, motivo e l’imposta contenuta nell’importo. La *Cronologia* annota lo stralcio.
 
 Una fattura stralciata non si può stornare né sollecitare.
 
 ## Pagamento successivo e revoca
 
-Se il cliente paga comunque, registri il pagamento sulla fattura con *Registra pagamento*, fino all’importo stralciato e con una data non anteriore allo stralcio. Una volta pagato l’intero importo la fattura mostra *Pagata*, altrimenti per il resto rimane *Stralciata*.
+Se il cliente paga comunque, registri il pagamento sulla fattura con *Registra pagamento*, fino all’importo stralciato e con una data non anteriore allo stralcio. Una volta pagato l’intero importo la fattura mostra *Pagata*, altrimenti per il resto rimane *Registrata come perdita*.
 
-Se lo stralcio era un errore, lo revochi con *Altre azioni → Revoca stralcio*. L’importo è poi di nuovo aperto. I pagamenti arrivati prima dello stralcio si possono rimuovere solo dopo la revoca. La revoca funziona anche dopo che la fattura è stata comunque pagata per intero, ed è necessaria prima di stornare una fattura di questo tipo.
+Se lo stralcio era un errore, lo revochi con *Altre azioni → Revoca la perdita*. L’importo è poi di nuovo aperto. I pagamenti arrivati prima dello stralcio si possono rimuovere solo dopo la revoca. La revoca funziona anche dopo che la fattura è stata comunque pagata per intero, ed è necessaria prima di stornare una fattura di questo tipo.
 
 ## Perdite per anno
 
-L’elenco delle fatture ha la vista *Stralciate*. Sotto di essa, una tabella per anno e valuta mostra *Stralciato*, *Pagato in seguito*, *Perdita*, *Netto* e l’imposta contenuta. Uno stralcio conta nell’anno della sua data, un pagamento successivo nell’anno in cui è arrivato. Con l’interfaccia in tedesco la tabella si chiama *Debitorenverluste* in Svizzera e nel Liechtenstein e *Forderungsausfälle* in Germania e in Austria; in inglese si chiama *Bad debts*.
+L’elenco delle fatture ha la vista *Registrati come perdita*. Sotto di essa, una tabella per anno e valuta mostra *Registrato come perdita*, *Pagato in seguito*, *Perdita*, *Netto* e l’imposta contenuta. Uno stralcio conta nell’anno della sua data, un pagamento successivo nell’anno in cui è arrivato. Con l’interfaccia in tedesco la tabella si chiama *Debitorenverluste* in Svizzera e nel Liechtenstein e *Forderungsausfälle* in Germania e in Austria; in inglese si chiama *Bad debts*. In italiano si chiama *Perdite su debitori* in Svizzera e nel Liechtenstein e *Crediti inesigibili* in Germania e in Austria.
 
 Il fatturato nella panoramica resta quello fatturato. *Pagato* conta solo ciò che è davvero arrivato.
 

@@ -75,7 +75,7 @@ Le impostazioni del backup nello stesso file sono descritte in [Backup e riprist
 
 Apra [http://rhinvoice.localhost:8000](http://rhinvoice.localhost:8000) (oppure [http://127.0.0.1:8000](http://127.0.0.1:8000)). Ogni nome che finisce con `.localhost` punta al proprio computer, quindi non serve una voce in `/etc/hosts`; i browser lo considerano sicuro, così l’accesso funziona anche senza HTTPS. Con `RHINVOICE_PORT=80` in `.env` l’indirizzo è semplicemente `http://rhinvoice.localhost` (se nient’altro usa la porta 80).
 
-La prima visita mostra *Configurare Rhinvoice*: inserisca il Suo nome, l’indirizzo e-mail e una password di almeno 12 caratteri, poi *Crea account*. Questo account ha accesso a tutti i dati dell’installazione. In alternativa lo crei dalla riga di comando:
+La prima visita mostra *Configura Rhinvoice*: inserisca il Suo nome, l’indirizzo e-mail e una password di almeno 12 caratteri, poi *Crea account*. Questo account ha accesso a tutti i dati dell’installazione. In alternativa lo crei dalla riga di comando:
 
 ```bash
 docker compose exec app rhinvoice user create --email you@example.com --name "Your Name"

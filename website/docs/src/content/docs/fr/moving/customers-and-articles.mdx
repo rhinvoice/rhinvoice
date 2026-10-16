@@ -28,9 +28,9 @@ Les anciennes factures cherchent leur client lors de l’import. Importez donc d
 
 1. Exportez les clients ou les articles de l’ancien programme sous forme de fichier CSV ou Excel.
 2. Ouvrez *Clients → Importer* ou *Articles → Importer* et cliquez sur **Choisir un fichier**.
-3. Vérifiez l’attribution des colonnes sous *Attribuer les colonnes*.
+3. Vérifiez l’attribution des colonnes sous *Correspondance des colonnes*.
 4. Sous *Si l’entrée existe déjà*, choisissez ce qui arrive aux entrées existantes.
-5. Vérifiez le *Résultat de l’essai à blanc*. Chaque ligne indique si elle est *Nouvelle*, *Mise à jour*, *Sautée* ou une *Erreur*.
+5. Vérifiez le *Résultat du test*. Chaque ligne indique si elle est *Nouveau*, *Mise à jour*, *Ignoré* ou une *Erreur*.
 6. Cliquez sur **Importer … clients** ou **Importer … articles**. Seule cette étape enregistre.
 
 </Steps>
@@ -47,7 +47,7 @@ L’essai à blanc fait le même import que l’import réel, simplement sans en
 
 Rhinvoice reconnaît les colonnes à leurs noms usuels, sans tenir compte des majuscules, des trémas et de la ponctuation. «Kunden-Nr.», «KdNr» et «Customer number» deviennent toutes le numéro de client; «MwSt-Satz» et «VAT rate» deviennent le taux de TVA.
 
-Ce qui n’est pas reconnu, vous l’attribuez à la main sous *Attribuer les colonnes* : pour chaque colonne du fichier, choisissez le champ Rhinvoice sous *Devient*, ou *Ne pas importer*. Une valeur d’exemple tirée du fichier vous aide.
+Ce qui n’est pas reconnu, vous l’attribuez à la main sous *Correspondance des colonnes* : pour chaque colonne du fichier, choisissez le champ Rhinvoice sous *Devient*, ou *Ne pas importer*. Une valeur d’exemple tirée du fichier vous aide.
 
 **Enregistrer comme modèle** conserve l’attribution sous un nom. Il convient à chaque fichier avec les mêmes noms de colonnes et est proposé sous *Modèle* lors du prochain import; *Détecté automatiquement* utilise de nouveau la reconnaissance. Supprimer un modèle conserve les données importées.
 
@@ -63,10 +63,11 @@ Ce qui n’est pas reconnu, vous l’attribuez à la main sous *Attribuer les co
 | Adresse | *Rue (avec numéro)*, ou séparément avec *Numéro*, plus *Complément d’adresse*, *NPA* et *Localité*, ou les deux dans une colonne (*NPA et localité*, aussi «CH-9470 Buchs») |
 | *Pays* | Sous forme de nom ou de code; sans pays, celui de votre entreprise s’applique |
 | *E-mail*, *Téléphone* | |
-| *Numéro TVA* | |
+| *IDE / n° TVA* | |
+| *Leitweg-ID / référence d’acheteur* | Par exemple depuis «Leitweg-ID» ou «Buyer reference». Pour la XRechnung aux clients en Allemagne |
 | *Groupe*, *Remarque* | |
-| *Monnaie*, *Langue* | CHF ou EUR; allemand, anglais, français ou italien |
-| *Rabais en %*, *Délai de paiement en jours*, *Exonéré d’impôt* | |
+| *Monnaie*, *Langue* | CHF ou EUR, allemand, anglais, français ou italien (aussi «fr», «Français», «it», «Italiano») |
+| *Rabais en %*, *Délai de paiement en jours*, *Exonéré de la TVA* | |
 | *Client depuis* <Since version="0.4.3" /> | Par exemple depuis «Kunde seit», «Angelegt am» ou «Created», au format 14.03.2019 ou 2019-03-14, aussi avec une heure |
 
 Il faut une colonne pour le numéro de client ou le nom (raison sociale ou nom de famille). Les nouveaux clients ont aussi besoin du NPA et de la localité.
@@ -81,7 +82,7 @@ Il faut une colonne pour le numéro de client ou le nom (raison sociale ou nom d
 | *Prix (monnaie de l’entreprise)*, *Prix CHF*, *Prix EUR* | Un prix par monnaie |
 | *Taux de TVA* | En pourcentage ou par son nom («Normal», «reduziert», «befreit») |
 | *Groupe* | |
-| *Bien/prestation* | Vide compte comme prestation de services |
+| *Marchandise/prestation de services* | Vide compte comme prestation de services |
 
 Rhinvoice lit les montants en notation suisse, allemande et anglaise. Le fait que «1.500» signifie mille cinq cents ou un et demi dépend du pays de votre entreprise.
 
@@ -95,9 +96,9 @@ Un client est le même s’il a le même numéro de client ou, sans numéro, le 
 
 | Choix | Ce qui se passe |
 |---|---|
-| *Sauter* | L’entrée existante reste telle quelle |
+| *Ignorer* | L’entrée existante reste telle quelle |
 | *Mettre à jour* | Les cellules remplies écrasent l’entrée, les cellules vides ne changent rien; la rue et le numéro changent ensemble |
-| *Créer à nouveau* | Une deuxième entrée est créée; si le numéro est pris, elle reçoit le prochain numéro libre |
+| *Créer une nouvelle entrée* | Une deuxième entrée est créée; si le numéro est pris, elle reçoit le prochain numéro libre |
 
 Vous pouvez donc importer un fichier deux fois, par exemple une deuxième fois avec *Mettre à jour* lorsqu’il manquait une colonne.
 

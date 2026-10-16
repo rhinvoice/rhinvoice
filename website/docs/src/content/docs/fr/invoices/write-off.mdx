@@ -6,9 +6,9 @@ faq:
   - q: Quand passer une facture en perte et quand l’annuler?
     a: "Annulez une facture qui était fausse ou dont la prestation n’a jamais été fournie. Le client reçoit alors une facture d’annulation. Le passage en perte concerne une facture correcte que le client ne paie plus. Le client ne reçoit rien et doit toujours le montant."
   - q: Que se passe-t-il si le client paie finalement une facture passée en perte?
-    a: "Enregistrez le paiement comme d’habitude avec « Enregistrer un paiement ». Le passage en perte reste dans l’année de sa date, et le paiement compte comme « Payé après coup » dans l’année où il est arrivé."
+    a: "Enregistrez le paiement comme d’habitude avec « Saisir un paiement ». Le passage en perte reste dans l’année de sa date, et le paiement compte comme « Payé ultérieurement » dans l’année où il est arrivé."
   - q: Puis-je annuler un passage en perte?
-    a: "Oui, avec « Plus d’actions → Reprendre le passage en perte ». Le montant passé en perte est ensuite de nouveau ouvert et peut faire l’objet d’un rappel. L’historique de la facture note les deux."
+    a: "Oui, avec « Autres actions → Annuler la perte ». Le montant passé en perte est ensuite de nouveau ouvert et peut faire l’objet d’un rappel. L’historique de la facture note les deux."
   - q: Dois-je corriger la TVA à cause du passage en perte?
     a: "Cela dépend de votre méthode de décompte de la TVA. Si vous devez l’impôt dès la facturation, vous le corrigez. Si vous ne le devez qu’à l’encaissement, il n’y a rien à corriger. Rhinvoice indique seulement l’impôt compris dans le montant."
   - q: Puis-je passer en perte des factures reprises de mon ancien programme?
@@ -36,26 +36,26 @@ Un rabais convenu après coup, par exemple par geste commercial, est une [annula
 <Steps>
 
 1. Ouvrez la facture émise ou partiellement payée.
-2. Choisissez *Plus d’actions → Passer en perte …*.
+2. Choisissez *Autres actions → Passer en perte …*.
 3. Fixez la date sous *Passée en perte au*. La date du jour est proposée, *Fin de l’année de facturation* fixe le 31 décembre de l’année de la facture. La date se situe entre la date de la facture et aujourd’hui.
-4. Choisissez le *Motif* : *Entreprise dissoute ou en faillite*, *Prescrit*, *Petit montant*, *Introuvable* ou *Autre motif*. Une *Remarque* est facultative.
+4. Choisissez le *Motif* : *Entreprise radiée ou faillite*, *Prescrite*, *Petit montant*, *Introuvable* ou *Autre motif*. Une *Remarque* est facultative.
 5. Confirmez avec **Passer en perte**.
 
 </Steps>
 
-C’est toujours tout le montant ouvert qui est passé en perte. Après un paiement partiel, c’est le solde. La facture affiche alors *Passée en perte* et son montant ouvert est de 0. Sous *Détails*, la carte *Passage en perte* indique la date, le montant, le motif et l’impôt compris dans le montant. L’*Historique* note le passage en perte.
+C’est toujours tout le montant ouvert qui est passé en perte. Après un paiement partiel, c’est le solde. La facture affiche alors *Passée en perte* et son montant ouvert est de 0. Sous *Détails*, la carte *Perte sur débiteur* indique la date, le montant, le motif et l’impôt compris dans le montant. L’*Historique* note le passage en perte.
 
 Une facture passée en perte ne peut être ni annulée ni faire l’objet d’un rappel.
 
 ## Paiement ultérieur et reprise
 
-Si le client paie finalement, enregistrez le paiement sur la facture avec *Enregistrer un paiement*, jusqu’au montant passé en perte et pas daté avant le passage en perte. Une fois tout le montant payé, la facture affiche *Payée*; sinon elle reste *Passée en perte* pour le solde.
+Si le client paie finalement, enregistrez le paiement sur la facture avec *Saisir un paiement*, jusqu’au montant passé en perte et pas daté avant le passage en perte. Une fois tout le montant payé, la facture affiche *Payée*; sinon elle reste *Passée en perte* pour le solde.
 
-Si le passage en perte était une erreur, reprenez-le avec *Plus d’actions → Reprendre le passage en perte*. Le montant est alors de nouveau ouvert. Les paiements arrivés avant le passage en perte ne peuvent être supprimés qu’après la reprise. La reprise fonctionne aussi lorsque la facture a finalement été payée entièrement, et elle est nécessaire avant d’annuler une telle facture.
+Si le passage en perte était une erreur, reprenez-le avec *Autres actions → Annuler la perte*. Le montant est alors de nouveau ouvert. Les paiements arrivés avant le passage en perte ne peuvent être supprimés qu’après la reprise. La reprise fonctionne aussi lorsque la facture a finalement été payée entièrement, et elle est nécessaire avant d’annuler une telle facture.
 
 ## Pertes par année
 
-La liste des factures a la vue *Passées en perte*. En dessous, un tableau par année et par monnaie indique *Passé en perte*, *Payé après coup*, *Perte*, *Net* et l’impôt compris. Un passage en perte compte dans l’année de sa date, un paiement ultérieur dans l’année où il est arrivé. Avec l’interface en allemand, le tableau s’appelle *Debitorenverluste* en Suisse et au Liechtenstein et *Forderungsausfälle* en Allemagne et en Autriche; en anglais, *Bad debts*.
+La liste des factures a la vue *Passées en perte*. En dessous, un tableau par année et par monnaie indique *Passé en perte*, *Payé ultérieurement*, *Perte*, *Net* et l’impôt compris. Un passage en perte compte dans l’année de sa date, un paiement ultérieur dans l’année où il est arrivé. Avec l’interface en allemand, le tableau s’appelle *Debitorenverluste* en Suisse et au Liechtenstein et *Forderungsausfälle* en Allemagne et en Autriche; en anglais, *Bad debts*. En français, il s’appelle *Pertes sur débiteurs* en Suisse et au Liechtenstein et *Créances irrécouvrables* en Allemagne et en Autriche.
 
 Le chiffre d’affaires dans l’aperçu reste ce qui a été facturé. *Payé* ne compte que ce qui est réellement arrivé.
 

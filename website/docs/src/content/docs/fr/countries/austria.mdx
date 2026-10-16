@@ -9,7 +9,7 @@ faq:
   - q: Quand la facture a-t-elle besoin de l’UID du client?
     a: "Sur les factures de plus de EUR 10’000 brut à une entreprise (§ 11 Abs. 1 Z 3 lit. b UStG), et toujours pour l’autoliquidation et les livraisons intracommunautaires. Rhinvoice vérifie la limite de montant pour les clients entreprises en Autriche, et toujours l’autoliquidation et les livraisons intracommunautaires."
   - q: Quelle mention Rhinvoice imprime-t-il pour les petites entreprises?
-    a: "Les documents en allemand portent la mention « Umsatzsteuerfrei aufgrund der Kleinunternehmerregelung (§ 6 Abs. 1 Z 27 UStG). » Vous pouvez modifier le texte sous Réglages → Textes → Mentions légales."
+    a: "Les documents en allemand portent la mention « Umsatzsteuerfrei aufgrund der Kleinunternehmerregelung (§ 6 Abs. 1 Z 27 UStG). » Vous pouvez modifier le texte sous Paramètres → Textes → Mentions légales."
   - q: Combien de temps faut-il conserver les factures en Autriche?
     a: "Dix ans (§ 132 BAO). Rhinvoice verrouille les factures émises avec leur PDF; les corrections se font uniquement par une facture d’annulation."
 ---
@@ -43,17 +43,17 @@ Avant l’émission, Rhinvoice vérifie les montants à partir desquels un UID e
 | plus de EUR 400 | votre **UID** (§ 11 Abs. 1 Z 3 lit. i UStG) |
 | plus de EUR 10’000 à une entreprise | aussi l’**UID du client** (§ 11 Abs. 1 Z 3 lit. b UStG) |
 
-Saisissez votre UID sous *Réglages → Entreprise* dans le champ *Numéro TVA (UID)*, sous la forme `ATU12345678`. L’UID du client fait partie de la fiche du client; Rhinvoice le demande au-delà de EUR 10’000 pour les clients entreprises en Autriche. Les montants dans d’autres monnaies que l’EUR ne comptent jamais comme petits montants.
+Saisissez votre UID sous *Paramètres → Entreprise* dans le champ *Numéro TVA (UID)*, sous la forme `ATU12345678`. L’UID du client fait partie de la fiche du client; Rhinvoice le demande au-delà de EUR 10’000 pour les clients entreprises en Autriche. Les montants dans d’autres monnaies que l’EUR ne comptent jamais comme petits montants.
 
 Sans période de prestation, Rhinvoice imprime la date de la facture comme date de la prestation (§ 11 Abs. 1 Z 3 lit. d UStG). Il n’attribue le numéro de facture qu’à l’émission, sans trou. Les noms et adresses des deux parties, les lignes, le montant net et la TVA par taux complètent la facture.
 
 ## Petite entreprise
 
-Activez *Petite entreprise (§ 6 Abs. 1 Z 27 UStG)* sous *Réglages → Entreprise*. Vos factures ne contiennent alors pas de TVA et portent cette mention :
+Activez *Petite entreprise (§ 6 Abs. 1 Z 27 UStG)* sous *Paramètres → Entreprise*. Vos factures ne contiennent alors pas de TVA et portent cette mention :
 
 > Umsatzsteuerfrei aufgrund der Kleinunternehmerregelung (§ 6 Abs. 1 Z 27 UStG).
 
-(Documents en anglais : « No VAT is charged (small business scheme). ») Rhinvoice ne demande pas d’UID aux petites entreprises. Modifiez le texte sous *Réglages → Textes → Mentions légales*.
+(Documents en anglais : « No VAT is charged (small business scheme). » Les documents en français et en italien désignent la franchise dans les termes de la directive TVA de l’UE, par exemple « Exonéré de la TVA en vertu de la franchise pour les petites entreprises (§ 6 Abs. 1 Z 27 UStG). ») Rhinvoice ne demande pas d’UID aux petites entreprises. Modifiez le texte sous *Paramètres → Textes → Mentions légales*.
 
 ## Autoliquidation et livraisons à l’étranger
 
@@ -74,11 +74,11 @@ Les ventes à distance à des clients privés dans l’UE gardent la TVA autrich
 
 ## GiroCode (code QR EPC)
 
-Chaque facture en **EUR** reçoit un **GiroCode** à côté des conditions de paiement, selon les directives de l’European Payments Council (EPC069-12), avec votre IBAN, le titulaire du compte, le montant et le numéro de facture comme motif de paiement. Votre client le scanne avec une application bancaire. Il vous faut un compte en EUR sous *Réglages → Comptes bancaires*.
+Chaque facture en **EUR** reçoit un **GiroCode** à côté des conditions de paiement, selon les directives de l’European Payments Council (EPC069-12), avec votre IBAN, le titulaire du compte, le montant et le numéro de facture comme motif de paiement. Votre client le scanne avec une application bancaire. Il vous faut un compte en EUR sous *Paramètres → Comptes bancaires*.
 
 ## Facture électronique
 
-Rhinvoice intègre par défaut une **facture ZUGFeRD / Factur-X** (EN 16931) dans le PDF de chaque facture émise (réglage : *Réglages → Modèle d’impression*), pour autant que les données nécessaires soient complètes; les logiciels comptables la lisent directement. Le format autrichien ebInterface pour le secteur public n’est pas pris en charge. Plus d’informations sous [facture électronique](/docs/fr/invoices/e-invoice/).
+Rhinvoice intègre par défaut une **facture ZUGFeRD / Factur-X** (EN 16931) dans le PDF de chaque facture émise (réglage : *Paramètres → Mise en page d’impression*), pour autant que les données nécessaires soient complètes; les logiciels comptables la lisent directement. Le format autrichien ebInterface pour le secteur public n’est pas pris en charge. Plus d’informations sous [facture électronique](/docs/fr/invoices/e-invoice/).
 
 ## Conservation
 

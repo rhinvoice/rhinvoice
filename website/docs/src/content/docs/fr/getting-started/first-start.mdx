@@ -5,9 +5,9 @@ faq:
   - q: Que demande Rhinvoice au premier démarrage?
     a: "Deux choses, dans un court assistant. D’abord le pays de votre entreprise (Suisse, Liechtenstein, Allemagne ou Autriche) et si vous êtes une petite entreprise, puis le nom, l’adresse et le numéro de TVA de l’entreprise. Tout le reste suit sous forme de liste de contrôle dans la vue d’ensemble."
   - q: Puis-je modifier plus tard le pays ou les données de l’entreprise?
-    a: "Oui. Tout ce que demande l’assistant peut être modifié plus tard sous Réglages, Entreprise."
+    a: "Oui. Tout ce que demande l’assistant peut être modifié plus tard sous Paramètres, Entreprise."
   - q: Comment continuer les numéros de facture de mon programme précédent?
-    a: "Sous Réglages, Séries de numéros, définissez le prochain compteur de la série des factures. L’aperçu montre le prochain numéro avant que vous enregistriez."
+    a: "Sous Paramètres, Numérotations, définissez le prochain compteur de la série des factures. L’aperçu montre le prochain numéro avant que vous enregistriez."
   - q: Puis-je sauter la configuration?
     a: "Oui. Configurer plus tard ferme l’assistant; l’étape reste ouverte dans la liste de contrôle de la vue d’ensemble. Vous pouvez aussi masquer la liste de contrôle."
 ---
@@ -15,7 +15,7 @@ faq:
 import Faq from "../../../../components/Faq.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
-Au premier démarrage, Rhinvoice demande dans un assistant en deux étapes le **pays** et l’**entreprise**. Ensuite, une liste de contrôle dans la vue d’ensemble vous guide pour le reste : compte bancaire, séries de numéros, clients, première facture et sauvegardes. Tout peut être modifié plus tard sous *Réglages*.
+Au premier démarrage, Rhinvoice demande dans un assistant en deux étapes le **pays** et l’**entreprise**. Ensuite, une liste de contrôle dans la vue d’ensemble vous guide pour le reste : compte bancaire, séries de numéros, clients, première facture et sauvegardes. Tout peut être modifié plus tard sous *Paramètres*.
 
 Avant l’assistant, la première visite vous demande de créer le premier compte utilisateur; voir [Installation](/docs/fr/getting-started/installation/).
 
@@ -23,7 +23,7 @@ Avant l’assistant, la première visite vous demande de créer le premier compt
 
 <Steps>
 
-1. **Pays.** *Où se trouve votre entreprise?* Choisissez Suisse, Liechtenstein, Allemagne ou Autriche. Le pays détermine les taux de TVA, les mentions obligatoires, l’arrondi et le code QR de paiement des factures. Si vous êtes une petite entreprise, cochez la case en dessous (par exemple *Non assujetti à la TVA (chiffre d’affaires inférieur à CHF 100’000)* en Suisse, *Petite entreprise (§ 19 UStG)* en Allemagne, *Petite entreprise (§ 6 Abs. 1 Z 27 UStG)* en Autriche) : les factures sont alors établies sans TVA, avec la mention requise. Puis *Suivant*.
+1. **Pays.** *Où se trouve votre entreprise ?* Choisissez Suisse, Liechtenstein, Allemagne ou Autriche. Le pays détermine les taux de TVA, les mentions obligatoires, l’arrondi et le code QR de paiement des factures. Si vous êtes une petite entreprise, cochez la case en dessous (par exemple *Non assujetti à la TVA (chiffre d’affaires inférieur à 100 000 francs)* en Suisse, *Petite entreprise (§ 19 UStG)* en Allemagne, *Petite entreprise (§ 6 Abs. 1 Z 27 UStG)* en Autriche) : les factures sont alors établies sans TVA, avec la mention requise. Puis *Suivant*.
 
 2. **Entreprise.** *Votre entreprise* : le nom et l’adresse sont l’expéditeur de chaque facture. L’e-mail, le téléphone et le numéro de TVA (IDE / numéro TVA en Suisse, numéro TVA au Liechtenstein, USt-IdNr. en Allemagne, numéro TVA (UID) en Autriche) sont facultatifs à cette étape. En Allemagne, vous pouvez aussi saisir le numéro fiscal (Steuernummer) du bureau des impôts si vous n’avez pas d’USt-IdNr. Puis *Enregistrer et continuer*.
 
@@ -38,17 +38,17 @@ Après l’assistant, la vue d’ensemble affiche *Bienvenue dans Rhinvoice* ave
 | Étape | À quoi elle sert | Où |
 |---|---|---|
 | *Pays et entreprise* | Expéditeur, taux de TVA et mentions obligatoires des factures | l’assistant |
-| *Ajouter un compte bancaire* | Pour le code QR de paiement : facture QR ou code QR EPC | *Réglages → Comptes bancaires* |
-| *Vérifier les séries de numéros* | Le prochain numéro de facture peut continuer ceux de votre programme précédent | *Réglages → Séries de numéros* |
-| *Ajouter ou importer des clients* | Un par un ou depuis un fichier CSV ou Excel | *Clients* |
+| *Saisir un compte bancaire* | Pour le code QR de paiement : facture QR ou code QR EPC | *Paramètres → Comptes bancaires* |
+| *Vérifier les numérotations* | Le prochain numéro de facture peut continuer ceux de votre programme précédent | *Paramètres → Numérotations* |
+| *Saisir ou importer des clients* | Un par un ou depuis un fichier CSV ou Excel | *Clients* |
 | *Établir la première facture* | Avec aperçu en direct; elle n’est émise que lorsque vous le décidez | *Nouvelle facture* |
-| *Configurer les sauvegardes* | Pour qu’aucune facture ne se perde | *Réglages → Sauvegarde* |
+| *Configurer la sauvegarde* | Pour qu’aucune facture ne se perde | *Paramètres → Sauvegarde* |
 
-Une étape est faite lorsque ses données existent : un compte bancaire, un client, une facture émise, une sauvegarde réussie. *Vérifier les séries de numéros* compte comme faite dès que vous cliquez sur *Vérifier*. *Masquer la liste de contrôle* retire la liste de la vue d’ensemble; le message qui suit a un bouton *Annuler*.
+Une étape est faite lorsque ses données existent : un compte bancaire, un client, une facture émise, une sauvegarde réussie. *Vérifier les numérotations* compte comme faite dès que vous cliquez sur *Vérifier*. *Masquer la liste de contrôle* retire la liste de la vue d’ensemble; le message qui suit a un bouton *Annuler*.
 
 ## Ajouter un compte bancaire
 
-Sous *Réglages → Comptes bancaires → Ajouter un compte*, saisissez la banque, le titulaire, l’IBAN, le BIC et la monnaie. Ajoutez au moins un compte par monnaie de facturation; un compte par monnaie est le compte par défaut (*Compte par défaut pour cette monnaie*). Le compte figure dans les informations de paiement et dans le code QR de vos factures.
+Sous *Paramètres → Comptes bancaires → Ajouter un compte*, saisissez la banque, le titulaire, l’IBAN, le BIC et la monnaie. Ajoutez au moins un compte par monnaie de facturation; un compte par monnaie est le compte par défaut (*Compte par défaut pour cette monnaie*). Le compte figure dans les informations de paiement et dans le code QR de vos factures.
 
 - **Suisse et Liechtenstein :** la facture QR suisse. Un **QR-IBAN** n’est nécessaire que pour les factures QR avec référence QR. Voir [Suisse](/docs/fr/countries/switzerland/).
 - **Allemagne et Autriche :** le code QR EPC (GiroCode) pour les factures en euros. Voir [Allemagne](/docs/fr/countries/germany/) et [Autriche](/docs/fr/countries/austria/).
@@ -59,11 +59,11 @@ Les documents émis gardent les coordonnées bancaires avec lesquelles ils ont �
 
 ## Vérifier les séries de numéros
 
-Sous *Réglages → Séries de numéros*, vous voyez les modèles des factures, des offres, des factures d’annulation, des clients et des articles. Les numéros de facture ne sont attribués qu’à l’émission, sans trou et sans doublon. Les modèles par défaut sont `R{YYYY}{NNNN}` pour les factures (par exemple R20260001), `A{YYYY}{NNNN}` pour les offres et `S{YYYY}{NNNN}` pour les factures d’annulation, chacun recommençant chaque année.
+Sous *Paramètres → Numérotations*, vous voyez les modèles des factures, des offres, des factures d’annulation, des clients et des articles. Les numéros de facture ne sont attribués qu’à l’émission, sans trou et sans doublon. Les modèles par défaut sont `R{YYYY}{NNNN}` pour les factures (par exemple R20260001), `A{YYYY}{NNNN}` pour les offres et `S{YYYY}{NNNN}` pour les factures d’annulation, chacun recommençant chaque année.
 
 - *Modèle* : `{YYYY}` année, `{YY}` année à deux chiffres, `{MM}` mois, `{NNNN}` compteur (le nombre de N est le nombre minimal de chiffres).
 - *Prochain compteur* : pour continuer sans trou les numéros de votre programme précédent.
-- *Remise à zéro chaque année* : demande `{YYYY}` ou `{YY}` dans le modèle, sinon les numéros se répètent.
+- *Remettre à zéro chaque année* : demande `{YYYY}` ou `{YY}` dans le modèle, sinon les numéros se répètent.
 - *Prochain numéro* : montre le numéro que recevra le prochain document.
 
 Si vous venez d’un autre programme, voir aussi [Clients et articles](/docs/fr/moving/customers-and-articles/) et [Reprendre les anciennes factures](/docs/fr/moving/old-invoices/).

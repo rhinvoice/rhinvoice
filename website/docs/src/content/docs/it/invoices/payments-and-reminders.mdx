@@ -5,7 +5,7 @@ faq:
   - q: Come segno una fattura come pagata?
     a: Nella fattura clicchi su «Segna come pagata». Rhinvoice registra un pagamento dell’intero importo aperto con la data di oggi. Per un’altra data o un pagamento parziale usi «Registra pagamento».
   - q: Posso segnare più fatture come pagate in una volta?
-    a: Sì. Selezioni le fatture nell’elenco e clicchi su «Segna come pagata». Ognuna riceve un pagamento del suo importo aperto con la data di oggi, e «Annulla» li toglie tutti.
+    a: Sì. Selezioni le fatture nell’elenco e clicchi su «Contrassegna come pagate». Ognuna riceve un pagamento del suo importo aperto con la data di oggi, e «Annulla» li toglie tutti.
   - q: Quando una fattura è scaduta?
     a: Appena la sua scadenza è passata e non è interamente pagata. Rhinvoice lo deduce ogni giorno dalla scadenza; non viene salvato.
   - q: Quanti livelli di sollecito ci sono?
@@ -22,9 +22,9 @@ In Rhinvoice registra i pagamenti su ogni fattura emessa con **data e importo**,
 Una fattura emessa o pagata parzialmente ha due pulsanti:
 
 - **Segna come pagata** registra un pagamento dell’intero importo aperto, con la data di oggi.
-- **Registra pagamento** apre un modulo con *Data del pagamento*, importo e *Nota*. L’importo aperto è proposto; lo modifichi per un **pagamento parziale**. *Salva pagamento* lo salva.
+- **Registra pagamento** apre un modulo con *Data di pagamento*, importo e *Nota*. L’importo aperto è proposto; lo modifichi per un **pagamento parziale**. *Salva pagamento* lo salva.
 
-Dopo un pagamento parziale la fattura è *Pagata parzialmente*; una volta saldato l’importo aperto, è *Pagata*. Ogni pagamento:
+Dopo un pagamento parziale la fattura è *Parzialmente pagata*; una volta saldato l’importo aperto, è *Pagata*. Ogni pagamento:
 
 - è positivo e ha al massimo due decimali,
 - non è datato nel futuro,
@@ -36,9 +36,9 @@ Ogni pagamento appare nella *Cronologia* della fattura. In *Pagamenti* può rimu
 
 <Steps>
 
-1. Apra *Fatture*, per esempio con la vista *Aperte*.
+1. Apra *Fatture*, per esempio con la vista *Aperti*.
 2. Spunti le fatture pagate. La casella nell’intestazione della tabella seleziona tutte le fatture aperte della pagina.
-3. Clicchi su **Segna come pagata**.
+3. Clicchi su **Contrassegna come pagate**.
 
 </Steps>
 
@@ -48,29 +48,29 @@ Ogni fattura selezionata riceve un pagamento del suo importo aperto, con la data
 
 Una fattura è *Scaduta* quando è emessa o pagata parzialmente e la sua scadenza è passata. Rhinvoice deduce questo stato dalla data; non viene salvato, quindi una fattura diventa scaduta da sola il giorno dopo la scadenza. Le fatture di storno non sono mai scadute.
 
-Trova le fatture scadute nell’elenco delle fatture in *Vista → Scadute*, nella panoramica e tutte insieme in *Fatture → Solleciti*.
+Trova le fatture scadute nell’elenco delle fatture in *Vista → Scaduti*, nella panoramica e tutte insieme in *Fatture → Solleciti*.
 
 ## Solleciti in tre livelli
 
-*Fatture → Solleciti* elenca tutte le fatture scadute con il loro importo aperto, i solleciti già scritti e il passo successivo (colonna *Prossimo passo*). I tre livelli sono:
+*Fatture → Solleciti* elenca tutte le fatture scadute con il loro importo aperto, i solleciti già scritti e il passo successivo (colonna *Passo successivo*). I tre livelli sono:
 
 | Livello | Diventa dovuto (predefinito) | Nuovo termine (predefinito) |
 |---|---|---|
 | *Promemoria di pagamento* | 7 giorni dopo la scadenza della fattura | 10 giorni |
-| *Secondo sollecito* | 7 giorni dopo l’ultimo termine | 10 giorni |
-| *Ultimo sollecito* | 7 giorni dopo l’ultimo termine | 7 giorni |
+| *1° sollecito* | 7 giorni dopo l’ultimo termine | 10 giorni |
+| *2° sollecito* | 7 giorni dopo l’ultimo termine | 7 giorni |
 
-Quando un livello è dovuto, lo scriva con *Scrivi Promemoria di pagamento* (oppure *Scrivi Secondo sollecito* …). Rhinvoice chiede prima conferma e indica il cliente, il nuovo termine e le spese di sollecito. Scrivere un livello prima della sua data richiede una conferma esplicita, e un secondo clic non scrive mai per sbaglio il livello successivo. Ogni sollecito resta nella cronologia della fattura; ogni livello viene scritto una sola volta per fattura.
+Quando un livello è dovuto, lo scriva con *Scrivi Promemoria di pagamento* (oppure *Scrivi 1° sollecito* …). Rhinvoice chiede prima conferma e indica il cliente, il nuovo termine e le spese di sollecito. Scrivere un livello prima della sua data richiede una conferma esplicita, e un secondo clic non scrive mai per sbaglio il livello successivo. Ogni sollecito resta nella cronologia della fattura; ogni livello viene scritto una sola volta per fattura.
 
 Dopo l’ultimo sollecito Rhinvoice si ferma. Ulteriori passi, come l’esecuzione o l’incasso, avvengono al di fuori di Rhinvoice. Se rinuncia a un credito, [stralci la fattura](/docs/it/invoices/write-off/).
 
 ### Configurare i livelli
 
-In *Impostazioni → Solleciti* (oppure *Configura i livelli di sollecito* nella pagina dei solleciti) imposta per ogni livello:
+In *Impostazioni → Solleciti* (oppure *Imposta i livelli di sollecito* nella pagina dei solleciti) imposta per ogni livello:
 
-- dopo quanti giorni diventa dovuto (da 0 a 365) e il *Nuovo termine in giorni* (da 1 a 365),
+- dopo quanti giorni diventa dovuto (da 0 a 365) e il *Nuovo termine di pagamento in giorni* (da 1 a 365),
 - le *Spese di sollecito*,
-- il testo in tedesco e in inglese. I segnaposto sono `{faellig}` (nuovo termine), `{betrag}`, `{waehrung}`, `{nummer}` e `{kunde}`.
+- il testo in tedesco, inglese, francese e italiano. I segnaposto sono `{faellig}` (nuovo termine), `{betrag}`, `{waehrung}`, `{nummer}` e `{kunde}`.
 
 ### Spese di sollecito
 

@@ -23,7 +23,7 @@ Lorsque vous **émettez** une facture dans Rhinvoice, elle reçoit son numéro d
 
 1. Établissez la facture comme brouillon (*Factures → Nouvelle facture*). Un brouillon n’a pas encore de numéro et s’enregistre lui-même.
 2. Laissez *Date* vide pour utiliser la date d’émission. Laissez *Échéance* vide pour utiliser les conditions de paiement du client ou de l’entreprise.
-3. Cliquez sur **Émettre** et confirmez *Émettre la facture?*.
+3. Cliquez sur **Émettre** et confirmez *Émettre la facture ?*.
 
 </Steps>
 
@@ -31,17 +31,17 @@ S’il manque quelque chose, Rhinvoice n’émet pas la facture et indique quoi 
 
 - les **mentions obligatoires de votre pays** : en Suisse et au Liechtenstein votre numéro TVA (sauf si vous n’êtes pas assujetti à la TVA), en Allemagne votre numéro fiscal ou votre numéro de TVA (pas sur les factures de petit montant jusqu’à EUR 250), en Autriche votre numéro de TVA (pas jusqu’à EUR 400) et, sur les factures de plus de EUR 10’000 à des entreprises en Autriche, aussi le numéro de TVA du client; les petites entreprises en Autriche n’ont besoin ni de l’un ni de l’autre,
 - au moins **une ligne avec un montant** et un **total supérieur à zéro**; les avoirs ne naissent que d’une annulation,
-- un **compte bancaire** dans la monnaie de la facture (*Réglages → Comptes bancaires*),
+- un **compte bancaire** dans la monnaie de la facture (*Paramètres → Comptes bancaires*),
 - pour l’autoliquidation, le **numéro TVA du client**,
 - la **date** : ni dans le futur ni antérieure à la dernière facture émise, pour que numéros et dates croissent ensemble.
 
-Le numéro suit la série sous *Réglages → Séries de numéros*. Le modèle prédéfini est `R{YYYY}{NNNN}` (par exemple R20260001), remis à zéro chaque année; l’année suit la date de la facture.
+Le numéro suit la série sous *Paramètres → Numérotations*. Le modèle prédéfini est `R{YYYY}{NNNN}` (par exemple R20260001), remis à zéro chaque année; l’année suit la date de la facture.
 
 ## Ce que l’émission verrouille
 
 - **Le numéro.** Il est attribué dans la même transaction de base de données que l’émission. Si quelque chose échoue, aucun numéro n’est consommé, et la base de données elle-même empêche les numéros en double.
 - **Le contenu et les taux de TVA.** Les lignes, les montants et le taux de TVA de chaque ligne sont figés. Le taux à la date de la prestation s’applique; les changements de taux ultérieurs ne s’appliquent pas rétroactivement.
-- **L’expéditeur, le destinataire et le compte bancaire.** Rhinvoice enregistre l’entreprise, le client et le compte bancaire tels qu’ils étaient à l’émission. Si vous modifiez plus tard l’adresse d’un client, la facture reste telle quelle. Le modèle d’impression du jour est conservé lui aussi.
+- **L’expéditeur, le destinataire et le compte bancaire.** Rhinvoice enregistre l’entreprise, le client et le compte bancaire tels qu’ils étaient à l’émission. Si vous modifiez plus tard l’adresse d’un client, la facture reste telle quelle. La mise en page d’impression du jour est conservée lui aussi.
 - **Le PDF.** La facture garde son premier PDF, enregistré avec sa somme de contrôle SHA-256.
 
 Le verrouillage ne se limite pas à l’interface : la base de données elle-même refuse les modifications du contenu et la suppression des documents émis. Les changements de statut comme les paiements et l’annulation restent permis. L’*Historique* de chaque facture indique quand elle a été créée, émise, payée ou annulée.
@@ -60,9 +60,9 @@ Supprimez un brouillon avec *Supprimer le brouillon* dans le menu *Autres action
 
 ## Annuler une facture
 
-Une facture émise, partiellement payée ou payée est extournée avec *Autres actions → Annuler la facture*. Après votre confirmation, Rhinvoice émet aussitôt une **facture d’annulation** :
+Une facture émise, partiellement payée ou payée est extournée avec *Autres actions → Annuler*. Après votre confirmation, Rhinvoice émet aussitôt une **facture d’annulation** :
 
-- avec **son propre numéro** de la série *Annulations* (modèle prédéfini `S{YYYY}{NNNN}`),
+- avec **son propre numéro** de la série *Factures d’annulation* (modèle prédéfini `S{YYYY}{NNNN}`),
 - avec les mêmes lignes en quantité négative et avec les taux de TVA figés, l’expéditeur, le destinataire et l’arrondi de la facture; son total est exactement le total négatif de la facture,
 - sans introduction ni conditions de paiement, puisqu’elle ne demande aucun paiement. Elle est échue le jour de son émission et n’est jamais en retard.
 

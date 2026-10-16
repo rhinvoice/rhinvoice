@@ -7,7 +7,7 @@ faq:
   - q: Le numéro fiscal ou le numéro de TVA doit-il figurer sur la facture?
     a: "L’un des deux (§ 14 Abs. 4 Nr. 2 UStG). Rhinvoice n’émet pas de facture sans l’un ou l’autre. Les factures de petit montant jusqu’à EUR 250 brut font exception (§ 33 UStDV)."
   - q: Quelle mention Rhinvoice imprime-t-il pour les petites entreprises?
-    a: "Les documents en allemand portent la mention « Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung). » Vous pouvez modifier le texte sous Réglages → Textes → Mentions légales."
+    a: "Les documents en allemand portent la mention « Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung). » Vous pouvez modifier le texte sous Paramètres → Textes → Mentions légales."
   - q: À partir de quand les entreprises allemandes doivent-elles émettre des factures électroniques?
     a: "Les entreprises doivent pouvoir les recevoir depuis 2025. Elles doivent les émettre pour les factures B2B nationales dès 2027 si leur chiffre d’affaires de l’année précédente dépassait EUR 800’000, et dès 2028 toutes (§ 27 Abs. 38 UStG). Les petites entreprises en sont dispensées. Rhinvoice intègre la facture électronique (ZUGFeRD) dans le PDF de chaque facture émise, pour autant que les données nécessaires soient complètes."
   - q: Rhinvoice respecte-t-il les GoBD?
@@ -39,7 +39,7 @@ Le taux à la **date de la prestation** s’applique : la fin de la période de 
 
 Avant l’émission, Rhinvoice vérifie ce qu’il peut vérifier et imprime le reste à partir de vos données :
 
-- **Numéro fiscal ou numéro de TVA** de votre entreprise (§ 14 Abs. 4 Nr. 2 UStG). Saisissez-les sous *Réglages → Entreprise*. Sans l’un ou l’autre, Rhinvoice n’émet pas la facture. L’exception : les **factures de petit montant jusqu’à EUR 250 brut** (§ 33 UStDV). Le numéro de TVA a la forme `DE123456789`.
+- **Numéro fiscal ou numéro de TVA** de votre entreprise (§ 14 Abs. 4 Nr. 2 UStG). Saisissez-les sous *Paramètres → Entreprise*. Sans l’un ou l’autre, Rhinvoice n’émet pas la facture. L’exception : les **factures de petit montant jusqu’à EUR 250 brut** (§ 33 UStDV). Le numéro de TVA a la forme `DE123456789`.
 - **Date de la prestation** (§ 14 Abs. 4 Nr. 6 UStG). Sans période de prestation, Rhinvoice imprime la date de la facture comme date de la prestation.
 - **Numéro de facture séquentiel.** Rhinvoice ne l’attribue qu’à l’émission, sans trou ni doublon.
 - **Montant net et TVA par taux**, votre nom et adresse et ceux du client, date et lignes.
@@ -48,11 +48,11 @@ Les petites entreprises indiquent elles aussi leur numéro fiscal ou leur numér
 
 ## Petite entreprise selon le § 19 UStG
 
-Activez *Petite entreprise (§ 19 UStG)* sous *Réglages → Entreprise*. Vos factures ne contiennent alors pas de TVA et portent cette mention :
+Activez *Petite entreprise (§ 19 UStG)* sous *Paramètres → Entreprise*. Vos factures ne contiennent alors pas de TVA et portent cette mention :
 
 > Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).
 
-(Documents en anglais : « No VAT is charged (small business scheme). ») Depuis 2025, la facture indique que le § 19 UStG s’applique; ce texte le fait. Vous pouvez le modifier sous *Réglages → Textes → Mentions légales*.
+(Documents en anglais : « No VAT is charged (small business scheme). » Les documents en français et en italien désignent la franchise dans les termes de la directive TVA de l’UE : « Aucune TVA n’est facturée en vertu du § 19 UStG (franchise pour les petites entreprises). » et « Nessuna IVA addebitata ai sensi del § 19 UStG (franchigia per le piccole imprese). ») Depuis 2025, la facture indique que le § 19 UStG s’applique; ce texte le fait. Vous pouvez le modifier sous *Paramètres → Textes → Mentions légales*.
 
 ## Autoliquidation et livraisons à l’étranger
 
@@ -76,7 +76,7 @@ Bon à savoir :
 
 ## GiroCode (code QR EPC)
 
-Chaque facture en **EUR** reçoit un **GiroCode** à côté des conditions de paiement, selon les directives de l’European Payments Council (EPC069-12). Il contient votre IBAN, le titulaire du compte, le montant et « Rechnung » avec le numéro de facture comme motif de paiement; votre client le scanne avec une application bancaire. Il vous faut un compte en EUR sous *Réglages → Comptes bancaires*. Les factures dans d’autres monnaies n’ont pas de GiroCode, les brouillons un emplacement réservé.
+Chaque facture en **EUR** reçoit un **GiroCode** à côté des conditions de paiement, selon les directives de l’European Payments Council (EPC069-12). Il contient votre IBAN, le titulaire du compte, le montant et « Rechnung » avec le numéro de facture comme motif de paiement; votre client le scanne avec une application bancaire. Il vous faut un compte en EUR sous *Paramètres → Comptes bancaires*. Les factures dans d’autres monnaies n’ont pas de GiroCode, les brouillons un emplacement réservé.
 
 ## Facture électronique : ZUGFeRD et XRechnung
 
@@ -89,7 +89,7 @@ Depuis 2025, les entreprises en Allemagne doivent pouvoir **recevoir** des factu
 
 Les petites entreprises en sont dispensées (§ 34a UStDV).
 
-Rhinvoice intègre par défaut une **facture ZUGFeRD / Factur-X** (profil EN 16931) dans le PDF de chaque facture émise (réglage : *Réglages → Modèle d’impression*). S’il manque une donnée nécessaire, le PDF est créé sans elle. Le PDF a le même aspect pour vos clients; leur logiciel comptable lit les données directement. Rhinvoice indique sur la facture si la facture électronique est intégrée. Pour les administrations publiques, vous téléchargez en plus la **XRechnung** (XML), avec le Leitweg-ID dans le champ *Référence*. Détails et prérequis : [facture électronique](/docs/fr/invoices/e-invoice/).
+Rhinvoice intègre par défaut une **facture ZUGFeRD / Factur-X** (profil EN 16931) dans le PDF de chaque facture émise (réglage : *Paramètres → Mise en page d’impression*). S’il manque une donnée nécessaire, le PDF est créé sans elle. Le PDF a le même aspect pour vos clients; leur logiciel comptable lit les données directement. Rhinvoice indique sur la facture si la facture électronique est intégrée. Pour les administrations publiques, vous téléchargez en plus la **XRechnung** (XML), avec la Leitweg-ID que vous saisissez une fois sur le client (*Leitweg-ID ou référence d’acheteur fixe*), ou sinon la *Référence* de la facture. Détails et prérequis : [facture électronique](/docs/fr/invoices/e-invoice/).
 
 ## GoBD et conservation
 

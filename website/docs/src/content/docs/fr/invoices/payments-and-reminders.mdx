@@ -3,9 +3,9 @@ title: Enregistrer des paiements et envoyer des rappels
 description: "Enregistrer des paiements et paiements partiels dans Rhinvoice, marquer plusieurs factures comme payées d’un coup et envoyer des rappels en trois niveaux, avec frais."
 faq:
   - q: Comment marquer une facture comme payée?
-    a: "Sur la facture, cliquez sur « Marquer comme payée ». Rhinvoice enregistre un paiement de tout le montant ouvert à la date du jour. Pour une autre date ou un paiement partiel, utilisez « Enregistrer un paiement »."
+    a: "Sur la facture, cliquez sur « Marquer comme payée ». Rhinvoice enregistre un paiement de tout le montant ouvert à la date du jour. Pour une autre date ou un paiement partiel, utilisez « Saisir un paiement »."
   - q: Puis-je marquer plusieurs factures comme payées en une fois?
-    a: "Oui. Sélectionnez les factures dans la liste et cliquez sur « Marquer comme payée ». Chacune reçoit un paiement de son montant ouvert à la date du jour, et « Annuler » les reprend toutes."
+    a: "Oui. Sélectionnez les factures dans la liste et cliquez sur « Marquer comme payées ». Chacune reçoit un paiement de son montant ouvert à la date du jour, et « Annuler » les reprend toutes."
   - q: Quand une facture est-elle en retard?
     a: "Dès que son échéance est passée et qu’elle n’est pas entièrement payée. Rhinvoice le déduit chaque jour de l’échéance; cet état n’est pas enregistré."
   - q: Combien y a-t-il de niveaux de rappel?
@@ -22,7 +22,7 @@ Dans Rhinvoice, vous enregistrez les paiements sur chaque facture émise avec **
 Une facture émise ou partiellement payée a deux boutons :
 
 - **Marquer comme payée** enregistre un paiement de tout le montant ouvert, à la date du jour.
-- **Enregistrer un paiement** ouvre un formulaire avec *Date de paiement*, montant et *Remarque*. Le montant ouvert est proposé; modifiez-le pour un **paiement partiel**. *Enregistrer le paiement* l’enregistre.
+- **Saisir un paiement** ouvre un formulaire avec *Date de paiement*, montant et *Remarque*. Le montant ouvert est proposé; modifiez-le pour un **paiement partiel**. *Enregistrer le paiement* l’enregistre.
 
 Après un paiement partiel, la facture est *Partiellement payée*; une fois le montant ouvert réglé, elle est *Payée*. Chaque paiement :
 
@@ -38,7 +38,7 @@ Chaque paiement apparaît dans l’*Historique* de la facture. Sous *Paiements*,
 
 1. Ouvrez *Factures*, par exemple avec la vue *Ouvertes*.
 2. Cochez les factures payées. La case dans l’en-tête du tableau sélectionne toutes les factures ouvertes de la page.
-3. Cliquez sur **Marquer comme payée**.
+3. Cliquez sur **Marquer comme payées**.
 
 </Steps>
 
@@ -52,25 +52,25 @@ Vous trouvez les factures en retard dans la liste des factures sous *Vue → En 
 
 ## Rappels en trois niveaux
 
-*Factures → Rappels* liste toutes les factures en retard avec leur montant ouvert, les rappels déjà établis et l’étape suivante (colonne *Étape suivante*). Les trois niveaux sont :
+*Factures → Rappels* liste toutes les factures en retard avec leur montant ouvert, les rappels déjà établis et l’étape suivante (colonne *Prochaine étape*). Les trois niveaux sont :
 
 | Niveau | Devient dû (préréglage) | Nouveau délai (préréglage) |
 |---|---|---|
 | *Rappel de paiement* | 7 jours après l’échéance de la facture | 10 jours |
-| *Deuxième rappel* | 7 jours après le dernier délai | 10 jours |
-| *Dernier rappel* | 7 jours après le dernier délai | 7 jours |
+| *1re sommation* | 7 jours après le dernier délai | 10 jours |
+| *2e sommation* | 7 jours après le dernier délai | 7 jours |
 
-Lorsqu’un niveau est dû, établissez-le avec *Établir Rappel de paiement* (ou *Établir Deuxième rappel* …). Rhinvoice demande d’abord confirmation et indique le client, le nouveau délai et les frais de rappel. Établir un niveau avant sa date exige une confirmation explicite, et un deuxième clic n’établit jamais le niveau suivant par mégarde. Chaque rappel reste dans l’historique de la facture; chaque niveau est établi une seule fois par facture.
+Lorsqu’un niveau est dû, établissez-le avec *Établir : Rappel de paiement* (ou *Établir : 1re sommation* …). Rhinvoice demande d’abord confirmation et indique le client, le nouveau délai et les frais de rappel. Établir un niveau avant sa date exige une confirmation explicite, et un deuxième clic n’établit jamais le niveau suivant par mégarde. Chaque rappel reste dans l’historique de la facture; chaque niveau est établi une seule fois par facture.
 
 Après le dernier rappel, Rhinvoice s’arrête. Les étapes suivantes, comme une poursuite, ont lieu en dehors de Rhinvoice. Si vous renoncez à une créance, [passez la facture en perte](/docs/fr/invoices/write-off/).
 
 ### Configurer les niveaux
 
-Sous *Réglages → Rappels* (ou *Configurer les niveaux de rappel* sur la page des rappels), vous définissez pour chaque niveau :
+Sous *Paramètres → Rappels* (ou *Configurer les niveaux de relance* sur la page des rappels), vous définissez pour chaque niveau :
 
-- après combien de jours il devient dû (0 à 365) et le *Nouveau délai en jours* (1 à 365),
+- après combien de jours il devient dû (0 à 365) et le *Nouveau délai de paiement en jours* (1 à 365),
 - les *Frais de rappel*,
-- le texte en allemand et en anglais. Les espaces réservés sont `{faellig}` (nouveau délai), `{betrag}`, `{waehrung}`, `{nummer}` et `{kunde}`.
+- le texte en allemand, en anglais, en français et en italien. Les espaces réservés sont `{faellig}` (nouveau délai), `{betrag}`, `{waehrung}`, `{nummer}` et `{kunde}`.
 
 ### Frais de rappel
 
@@ -90,7 +90,7 @@ Rhinvoice enregistre le texte avec le rappel, si bien que le PDF a toujours l’
 
 ## Envoyer factures et rappels par e-mail
 
-Lorsqu’un serveur de messagerie est configuré sous *Réglages → E-mail*, **Envoyer par e-mail** envoie les factures émises et les rappels établis directement depuis Rhinvoice, avec le PDF en pièce jointe. Vous vérifiez les destinataires, l’objet et le texte avant chaque e-mail; l’adresse du client est préremplie, et jusqu’à cinq destinataires sont possibles. Chaque e-mail est noté dans l’historique de la facture. Si le serveur de messagerie refuse, Rhinvoice affiche sa réponse. Sans serveur de messagerie, téléchargez le PDF et envoyez-le vous-même.
+Lorsqu’un serveur de messagerie est configuré sous *Paramètres → E-mail*, **Envoyer par e-mail** envoie les factures émises et les rappels établis directement depuis Rhinvoice, avec le PDF en pièce jointe. Vous vérifiez les destinataires, l’objet et le texte avant chaque e-mail; l’adresse du client est préremplie, et jusqu’à cinq destinataires sont possibles. Chaque e-mail est noté dans l’historique de la facture. Si le serveur de messagerie refuse, Rhinvoice affiche sa réponse. Sans serveur de messagerie, téléchargez le PDF et envoyez-le vous-même.
 
 ## Questions fréquentes
 

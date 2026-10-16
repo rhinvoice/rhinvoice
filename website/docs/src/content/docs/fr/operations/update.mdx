@@ -9,7 +9,7 @@ faq:
   - q: Les factures émises changent-elles lors d’une mise à jour?
     a: "Non. Les documents émis gardent leur contenu et leur PDF archivé. Ils sont non modifiables, aussi dans la base de données."
   - q: Comment est-ce que j’apprends qu’une nouvelle version existe?
-    a: "Rhinvoice vérifie une fois par jour et affiche alors une carte en bas de la navigation avec la nouvelle version et les étapes pour le serveur. RHINVOICE_UPDATE_CHECK=false dans .env désactive la vérification."
+    a: "Rhinvoice vérifie une fois par jour et affiche alors une carte en bas de la navigation avec la nouvelle version et les étapes pour le serveur. RHINVOICE_UPDATE_CHECK=false dans .env désactive la vérification; dans le programme pour Windows et Mac, c’est \"update_check\": false dans rhinvoice.json."
   - q: Où vois-je quelle version j’utilise?
     a: "En bas de la navigation, à côté de by webberz. Un clic ouvre À propos de Rhinvoice avec un lien vers Nouveautés."
 ---
@@ -60,7 +60,7 @@ Les migrations de la base de données s’exécutent automatiquement au démarra
 Une version fixée est le choix le plus sûr pour de vraies factures : vous décidez quand mettre à jour et pouvez d’abord lire le changelog.
 
 <Aside type="note" title="Les factures émises restent telles quelles">
-Une mise à jour ne modifie jamais les documents émis. Ils gardent leur contenu et leur PDF archivé. Un modèle d’impression modifié ne s’applique qu’aux nouveaux PDF.
+Une mise à jour ne modifie jamais les documents émis. Ils gardent leur contenu et leur PDF archivé. Une mise en page d’impression modifiée ne s’applique qu’aux nouveaux PDF.
 </Aside>
 
 ## Avis de nouvelle version
@@ -72,6 +72,8 @@ Pour la vérification, Rhinvoice télécharge un petit fichier signé de la dern
 ```bash
 RHINVOICE_UPDATE_CHECK=false
 ```
+
+Dans le programme pour Windows et Mac, ajoutez la ligne `"update_check": false` au fichier `rhinvoice.json` du dossier de données (voir [où se trouvent vos données](/docs/fr/getting-started/install-desktop/#où-se-trouvent-vos-données)) et redémarrez Rhinvoice.
 
 ## Tester les versions candidates
 

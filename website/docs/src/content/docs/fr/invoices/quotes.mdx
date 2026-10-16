@@ -3,7 +3,7 @@ title: Établir des offres et les transformer en factures
 description: "Établir des offres dans Rhinvoice, les marquer comme envoyées, acceptées ou refusées, et les transformer en facture en un clic. Open source pour CH, LI, DE, AT."
 faq:
   - q: Comment transformer une offre en facture?
-    a: "Ouvrez l’offre envoyée ou acceptée et choisissez « Transformer en facture ». Rhinvoice crée un brouillon de facture avec les mêmes lignes, que vous vérifiez et émettez."
+    a: "Ouvrez l’offre envoyée ou acceptée et choisissez « Convertir en facture ». Rhinvoice crée un brouillon de facture avec les mêmes lignes, que vous vérifiez et émettez."
   - q: Combien de temps une offre est-elle valable?
     a: "Aussi longtemps que vous l’indiquez sous « Valable jusqu’au ». Si le champ reste vide, l’offre est valable 30 jours à partir de sa date. Ensuite, Rhinvoice l’affiche comme expirée."
   - q: Puis-je encore modifier une offre une fois envoyée?
@@ -15,7 +15,7 @@ faq:
 import Faq from "../../../../components/Faq.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
-Dans Rhinvoice, une offre passe de *Brouillon* à *Envoyée*, puis à *Acceptée*, *Refusée* ou *Expirée*. Une offre envoyée ou acceptée devient un brouillon de facture avec **Transformer en facture**, sans rien saisir deux fois.
+Dans Rhinvoice, une offre passe de *Brouillon* à *Envoyée*, puis à *Acceptée*, *Refusée* ou *Expirée*. Une offre envoyée ou acceptée devient un brouillon de facture avec **Convertir en facture**, sans rien saisir deux fois.
 
 ## Établir une offre
 
@@ -28,7 +28,7 @@ Dans Rhinvoice, une offre passe de *Brouillon* à *Envoyée*, puis à *Acceptée
 
 </Steps>
 
-Un brouillon n’a pas encore de numéro. Vous pouvez le modifier à tout moment, ou le supprimer avec *Supprimer le brouillon* dans le menu *Autres actions* (le bouton à trois points). Le numéro suit la série des offres sous *Réglages → Séries de numéros*; le modèle prédéfini est `A{YYYY}{NNNN}`, par exemple A20260001.
+Un brouillon n’a pas encore de numéro. Vous pouvez le modifier à tout moment, ou le supprimer avec *Supprimer le brouillon* dans le menu *Autres actions* (le bouton à trois points). Le numéro suit la série des offres sous *Paramètres → Numérotations*; le modèle prédéfini est `A{YYYY}{NNNN}`, par exemple A20260001.
 
 <Aside type="note" title="Envoyée veut dire verrouillée">
 À partir de *Envoyée*, une offre ne change plus. Pour une version modifiée, choisissez *Autres actions → Dupliquer* : la copie est un nouveau brouillon avec le même contenu.
@@ -48,7 +48,7 @@ Vous définissez vous-même *Acceptée* et *Refusée* avec les boutons du même 
 
 ## Transformer une offre en facture
 
-Sur une offre envoyée ou acceptée, choisissez *Autres actions → Transformer en facture*. Rhinvoice crée un **brouillon de facture** :
+Sur une offre envoyée ou acceptée, choisissez *Autres actions → Convertir en facture*. Rhinvoice crée un **brouillon de facture** :
 
 - avec les mêmes lignes, rabais et monnaie que l’offre,
 - avec les textes que vous avez écrits vous-même; là où l’offre a encore les textes standard des offres, le brouillon reçoit les textes standard des factures,

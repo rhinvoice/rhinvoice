@@ -9,7 +9,7 @@ faq:
   - q: Le fatture emesse cambiano con un aggiornamento?
     a: No. I documenti emessi mantengono il loro contenuto e il loro PDF archiviato. Sono immodificabili, anche nel database.
   - q: Come vengo a sapere di una nuova versione?
-    a: Rhinvoice controlla una volta al giorno e mostra allora una scheda in fondo alla navigazione con la nuova versione e i passi per il server. RHINVOICE_UPDATE_CHECK=false in .env disattiva il controllo.
+    a: "Rhinvoice controlla una volta al giorno e mostra allora una scheda in fondo alla navigazione con la nuova versione e i passi per il server. RHINVOICE_UPDATE_CHECK=false in .env disattiva il controllo; nel programma per Windows e Mac è \"update_check\": false in rhinvoice.json."
   - q: Dove vedo quale versione sto usando?
     a: In fondo alla navigazione, accanto a by webberz. Un clic apre Informazioni su Rhinvoice con un link a Novità.
 ---
@@ -60,7 +60,7 @@ Le migrazioni del database vengono eseguite automaticamente all’avvio (`RHINVO
 Per le fatture vere una versione fissata è la scelta più sicura: decide Lei quando aggiornare e può leggere prima il changelog.
 
 <Aside type="note" title="Le fatture emesse restano come sono">
-Un aggiornamento non modifica mai i documenti emessi. Mantengono il loro contenuto e il loro PDF archiviato. Un modello di stampa modificato vale solo per i nuovi PDF.
+Un aggiornamento non modifica mai i documenti emessi. Mantengono il loro contenuto e il loro PDF archiviato. Un layout di stampa modificato vale solo per i nuovi PDF.
 </Aside>
 
 ## Avviso di una nuova versione
@@ -72,6 +72,8 @@ Per il controllo Rhinvoice scarica un piccolo file firmato dall’ultima release
 ```bash
 RHINVOICE_UPDATE_CHECK=false
 ```
+
+Nel programma per Windows e Mac, aggiunga la riga `"update_check": false` a `rhinvoice.json` nella cartella dei dati (vedi [dove si trovano i Suoi dati](/docs/it/getting-started/install-desktop/#dove-si-trovano-i-suoi-dati)) e riavvii Rhinvoice.
 
 ## Provare le release candidate
 

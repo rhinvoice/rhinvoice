@@ -41,10 +41,10 @@ Il numero segue la numerazione in *Impostazioni → Numerazioni*. Lo schema pred
 
 - **Il numero.** Viene assegnato nella stessa transazione della banca dati dell’emissione. Se qualcosa non riesce, nessun numero viene consumato, e la banca dati stessa impedisce i numeri doppi.
 - **Contenuto e aliquote IVA.** Posizioni, importi e l’aliquota IVA di ogni posizione sono fissati. Vale l’aliquota della data della prestazione; le modifiche di aliquota successive non si applicano retroattivamente.
-- **Mittente, destinatario e conto bancario.** Rhinvoice salva azienda, cliente e conto bancario così come erano al momento dell’emissione. Se più tardi cambia l’indirizzo di un cliente, la fattura resta com’era. Viene conservato anche il modello di stampa di quel giorno.
+- **Mittente, destinatario e conto bancario.** Rhinvoice salva azienda, cliente e conto bancario così come erano al momento dell’emissione. Se più tardi cambia l’indirizzo di un cliente, la fattura resta com’era. Viene conservato anche il layout di stampa di quel giorno.
 - **Il PDF.** La fattura conserva il suo primo PDF, salvato con la sua somma di controllo SHA-256.
 
-Il blocco non è solo nell’interfaccia: la banca dati stessa rifiuta le modifiche al contenuto e l’eliminazione dei documenti emessi. I cambiamenti di stato come pagamenti e storno restano possibili. Lo *Storico* di ogni fattura registra quando è stata creata, emessa, pagata o stornata.
+Il blocco non è solo nell’interfaccia: la banca dati stessa rifiuta le modifiche al contenuto e l’eliminazione dei documenti emessi. I cambiamenti di stato come pagamenti e storno restano possibili. Lo *Cronologia* di ogni fattura registra quando è stata creata, emessa, pagata o stornata.
 
 <Aside type="caution" title="Contesto giuridico">
 Le fatture emesse non devono essere modificate e devono essere conservate: in Germania secondo i GoBD, in Svizzera secondo l’art. 958f CO, in Austria secondo la BAO. Rhinvoice lo mette in pratica, ma non fornisce consulenza fiscale o legale.
@@ -60,9 +60,9 @@ Elimini una bozza con *Elimina bozza* nel menu *Altre azioni* (il pulsante con t
 
 ## Stornare una fattura
 
-Una fattura emessa, pagata parzialmente o pagata si annulla con *Altre azioni → Storna fattura*. Dopo la Sua conferma Rhinvoice emette subito una **fattura di storno**:
+Una fattura emessa, pagata parzialmente o pagata si annulla con *Altre azioni → Storna*. Dopo la Sua conferma Rhinvoice emette subito una **fattura di storno**:
 
-- con **un proprio numero** dalla numerazione *Storni* (schema predefinito `S{YYYY}{NNNN}`),
+- con **un proprio numero** dalla numerazione *Fatture di storno* (schema predefinito `S{YYYY}{NNNN}`),
 - con le stesse posizioni in quantità negativa e con le aliquote IVA, il mittente, il destinatario e l’arrotondamento fissati della fattura; il suo totale è esattamente il totale negativo della fattura,
 - senza introduzione né condizioni di pagamento, perché non chiede alcun pagamento. Scade il giorno dell’emissione e non risulta mai scaduta.
 

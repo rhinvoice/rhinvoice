@@ -3,7 +3,7 @@ title: Scrivere offerte e trasformarle in fatture
 description: Scrivere offerte in Rhinvoice, segnarle come inviate, accettate o rifiutate e trasformarle in fattura con un clic. Fatturazione gratuita e open source per CH, LI, DE, AT.
 faq:
   - q: Come trasformo un’offerta in fattura?
-    a: Apra l’offerta inviata o accettata e scelga «Trasforma in fattura». Rhinvoice crea una bozza di fattura con le stesse posizioni, che Lei controlla ed emette.
+    a: Apra l’offerta inviata o accettata e scelga «Converti in fattura». Rhinvoice crea una bozza di fattura con le stesse posizioni, che Lei controlla ed emette.
   - q: Per quanto tempo è valida un’offerta?
     a: Per il periodo che inserisce in «Valida fino al». Se il campo resta vuoto, l’offerta è valida 30 giorni dalla sua data. Dopo Rhinvoice la mostra come scaduta.
   - q: Posso ancora modificare un’offerta dopo averla inviata?
@@ -15,7 +15,7 @@ faq:
 import Faq from "../../../../components/Faq.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
-Un’offerta in Rhinvoice passa da *Bozza* a *Inviata* e poi ad *Accettata*, *Rifiutata* o *Scaduta*. Un’offerta inviata o accettata diventa una bozza di fattura con **Trasforma in fattura**, senza inserire nulla due volte.
+Un’offerta in Rhinvoice passa da *Bozza* a *Inviata* e poi ad *Accettata*, *Rifiutata* o *Scaduta*. Un’offerta inviata o accettata diventa una bozza di fattura con **Converti in fattura**, senza inserire nulla due volte.
 
 ## Scrivere un’offerta
 
@@ -48,7 +48,7 @@ Da *Inviata* in poi un’offerta non cambia più. Per una versione modificata sc
 
 ## Trasformare un’offerta in fattura
 
-Su un’offerta inviata o accettata scelga *Altre azioni → Trasforma in fattura*. Rhinvoice crea una **bozza di fattura**:
+Su un’offerta inviata o accettata scelga *Altre azioni → Converti in fattura*. Rhinvoice crea una **bozza di fattura**:
 
 - con le stesse posizioni, gli stessi sconti e la stessa valuta dell’offerta,
 - con i testi che ha scritto Lei; dove l’offerta ha ancora i testi standard per le offerte, la bozza riceve i testi standard per le fatture,
@@ -57,11 +57,11 @@ Su un’offerta inviata o accettata scelga *Altre azioni → Trasforma in fattur
 
 Controlli la bozza, la completi se necessario e la emetta come qualsiasi altra fattura ([emettere e stornare](/docs/it/invoices/issue-and-cancel/)). L’aliquota IVA segue allora la data della prestazione della fattura, non quella dell’offerta.
 
-Un’offerta diventa fattura una **sola volta**. Se elimina la bozza di fattura, l’offerta torna libera. *Apri fattura* o *Apri bozza di fattura* La porta dall’offerta alla fattura, *Apri documento di origine* indietro.
+Un’offerta diventa fattura una **sola volta**. Se elimina la bozza di fattura, l’offerta torna libera. *Apri fattura* o *Apri bozza di fattura* La porta dall’offerta alla fattura, *Apri documento d’origine* indietro.
 
 ## PDF e invio
 
-Sull’offerta, **PDF** apre la versione stampata in una nuova scheda, **Scarica** la salva e **Stampa** la stampa subito. Se l’invio per e-mail è configurato, **Invia per e-mail** invia al cliente un’offerta inviata con il suo PDF. L’e-mail viene poi annotata nello *Storico* dell’offerta.
+Sull’offerta, **PDF** apre la versione stampata in una nuova scheda, **Scarica** la salva e **Stampa** la stampa subito. Se l’invio per e-mail è configurato, **Invia per e-mail** invia al cliente un’offerta inviata con il suo PDF. L’e-mail viene poi annotata nello *Cronologia* dell’offerta.
 
 ## Domande frequenti
 

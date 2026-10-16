@@ -11,7 +11,7 @@ faq:
   - q: D’autres pays seront-ils ajoutés?
     a: "Rhinvoice est construit pour cela. Tout ce qui diffère d’un pays à l’autre se trouve dans un profil de pays, un par pays. Un nouveau pays comme les Pays-Bas est un nouveau profil avec taux, mentions, mentions obligatoires et sources officielles. Les demandes passent par le formulaire GitHub « Tax or legal rule »."
   - q: Dans quelles langues Rhinvoice est-il disponible?
-    a: "L’interface est en allemand, dans les variantes suisse, allemande et autrichienne, en anglais, en français et en italien. Rhinvoice établit les documents dans ces quatre langues."
+    a: "L’interface est en allemand, dans les variantes suisse, allemande et autrichienne, en français, en italien et en anglais. Le français et l’italien sont traduits automatiquement; vous choisissez la langue avec l’icône du globe. Rhinvoice établit les documents en allemand, en anglais, en français ou en italien (le français et l’italien tels qu’on les écrit en Suisse)."
   - q: Où mes données sont-elles conservées?
     a: "Sur votre propre serveur ou ordinateur, dans la base de données PostgreSQL de Rhinvoice. Elle contient les clients, les articles, les documents et les PDF archivés. Rhinvoice n’est pas un service cloud; les données restent chez vous. Le programme pour Windows et Mac les conserve dans votre dossier utilisateur."
   - q: Rhinvoice respecte-t-il les règles d’inaltérabilité de la GoBD, de l’art. 958f CO et de la BAO?
@@ -19,7 +19,7 @@ faq:
   - q: Comment Rhinvoice sauvegarde-t-il mes données?
     a: "Avec restic, de façon chiffrée et dédupliquée, chaque jour et environ deux minutes après l’émission ou l’annulation de documents. Les destinations sont un stockage compatible S3, SFTP, un dossier, Dropbox, Google Drive et d’autres; le programme pour Windows et Mac sauvegarde dans un dossier comme OneDrive ou iCloud Drive. Rhinvoice conserve 7 sauvegardes quotidiennes, 4 hebdomadaires, 12 mensuelles et toutes les annuelles."
   - q: Rhinvoice peut-il créer des factures électroniques?
-    a: "Oui. Le PDF de chaque facture émise est un PDF/A-3b et contient une facture ZUGFeRD / Factur-X (EN 16931), sauf si vous la désactivez dans le modèle d’impression ou si des données requises manquent. Pour les autorités publiques allemandes, Rhinvoice établit aussi la XRechnung 3.0. Les deux sont vérifiées avec le validateur KoSIT et Mustang."
+    a: "Oui. Le PDF de chaque facture émise est un PDF/A-3b et contient une facture ZUGFeRD / Factur-X (EN 16931), sauf si vous la désactivez dans la mise en page d’impression ou si des données requises manquent. Pour les autorités publiques allemandes, Rhinvoice établit aussi la XRechnung 3.0. Les deux sont vérifiées avec le validateur KoSIT et Mustang."
   - q: Puis-je reprendre les données du logiciel de facturation que j’utilisais avant?
     a: "Oui. Rhinvoice importe les clients, les articles et les anciennes factures depuis des fichiers CSV et Excel (XLSX, XLS), avec attribution des colonnes, essai à blanc et modèles enregistrés. Les anciennes factures arrivent avec leurs PDF d’origine et restent inchangées."
   - q: Ai-je besoin de Docker?

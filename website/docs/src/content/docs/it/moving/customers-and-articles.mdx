@@ -28,9 +28,9 @@ Le vecchie fatture cercano il loro cliente quando vengono importate. Importi qui
 
 1. Esporti clienti o articoli dal vecchio programma come file CSV o Excel.
 2. Apra *Clienti → Importa* o *Articoli → Importa* e clicchi su **Scegli file**.
-3. Controlli l’assegnazione delle colonne in *Assegna colonne*.
+3. Controlli l’assegnazione delle colonne in *Associa le colonne*.
 4. In *Se la voce esiste già*, scelga che cosa succede alle voci esistenti.
-5. Controlli il *Risultato della prova*. Ogni riga indica se è *Nuova*, *Aggiornata*, *Saltata* o un *Errore*.
+5. Controlli il *Risultato della prova*. Ogni riga indica se è *Nuovo*, *Aggiornato*, *Saltato* o un *Errore*.
 6. Clicchi su **Importa … clienti** o **Importa … articoli**. Solo questo salva.
 
 </Steps>
@@ -47,7 +47,7 @@ La prova esegue la stessa importazione di quella reale, solo senza salvare. Ciò
 
 Rhinvoice riconosce le colonne dai nomi usuali, ignorando maiuscole, dieresi e punteggiatura. «Kunden-Nr.», «KdNr» e «Customer number» diventano tutti il numero cliente; «MwSt-Satz» e «VAT rate» diventano l’aliquota IVA.
 
-Ciò che non viene riconosciuto lo assegna a mano in *Assegna colonne*: per ogni colonna del file sceglie il campo di Rhinvoice in *Diventa*, oppure *Non importare*. Un valore di esempio dal file aiuta.
+Ciò che non viene riconosciuto lo assegna a mano in *Associa le colonne*: per ogni colonna del file sceglie il campo di Rhinvoice in *Diventa*, oppure *Non importare*. Un valore di esempio dal file aiuta.
 
 **Salva come modello** conserva l’assegnazione con un nome. Va bene per ogni file con gli stessi nomi di colonna e viene proposto in *Modello* alla prossima importazione; *Riconosciuto automaticamente* usa di nuovo il riconoscimento. Eliminare un modello non tocca i dati importati.
 
@@ -60,12 +60,13 @@ Ciò che non viene riconosciuto lo assegna a mano in *Assegna colonne*: per ogni
 | *Numero* | Senza numero, il cliente riceve il prossimo numero libero |
 | *Ragione sociale*, oppure *Nome* e *Cognome* | Senza ragione sociale, il cliente viene creato come persona |
 | *Appellativo*, *Persona di contatto* | |
-| Indirizzo | *Via (con numero)*, oppure separatamente con *Numero civico*, più *Complemento d’indirizzo*, *NPA* e *Località*, oppure entrambi in una colonna (*NPA e località*, anche «CH-9470 Buchs») |
+| Indirizzo | *Via (con numero civico)*, oppure separatamente con *Numero civico*, più *Complemento d’indirizzo*, *NPA* e *Località*, oppure entrambi in una colonna (*NPA e località*, anche «CH-9470 Buchs») |
 | *Paese* | Come nome o codice; senza, vale il Paese della Sua azienda |
 | *E-mail*, *Telefono* | |
-| *Numero IVA* | |
+| *IDI / n. IVA* | |
+| *Leitweg-ID / riferimento dell’acquirente* | Per esempio da «Leitweg-ID» o «Buyer reference». Per la XRechnung ai clienti in Germania |
 | *Gruppo*, *Nota* | |
-| *Valuta*, *Lingua* | CHF o EUR; tedesco, inglese, francese o italiano |
+| *Valuta*, *Lingua* | CHF o EUR, tedesco, inglese, francese o italiano (anche «fr», «Français», «it», «Italiano») |
 | *Sconto in %*, *Termine di pagamento in giorni*, *Esente da imposta* | |
 | *Cliente dal* <Since version="0.4.3" /> | Per esempio da «Kunde seit», «Angelegt am» o «Created», come 14.03.2019 o 2019-03-14, anche con un’ora |
 
@@ -81,7 +82,7 @@ Serve una colonna per il numero cliente o il nome (azienda o cognome). I nuovi c
 | *Prezzo (valuta dell’azienda)*, *Prezzo CHF*, *Prezzo EUR* | Un prezzo per valuta |
 | *Aliquota IVA* | Come percentuale o come nome («Normal», «reduziert», «befreit») |
 | *Gruppo* | |
-| *Bene/servizio* | Vuoto conta come servizio |
+| *Merce/servizio* | Vuoto conta come servizio |
 
 Rhinvoice legge gli importi in notazione svizzera, tedesca e inglese. Se «1.500» significa millecinquecento o uno e mezzo dipende dal Paese della Sua azienda.
 
@@ -97,7 +98,7 @@ Un cliente è lo stesso se ha lo stesso numero cliente oppure, senza numero, lo 
 |---|---|
 | *Salta* | La voce esistente resta com’è |
 | *Aggiorna* | Le celle compilate sovrascrivono la voce, le celle vuote non cambiano nulla; via e numero civico cambiano insieme |
-| *Crea di nuovo* | Viene creata una seconda voce; se il numero è occupato, riceve il prossimo numero libero |
+| *Crea nuova* | Viene creata una seconda voce; se il numero è occupato, riceve il prossimo numero libero |
 
 Può quindi importare un file due volte, per esempio una seconda volta con *Aggiorna* quando mancava una colonna.
 

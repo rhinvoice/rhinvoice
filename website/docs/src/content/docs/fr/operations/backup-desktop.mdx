@@ -5,7 +5,7 @@ faq:
   - q: Où le programme fait-il ses sauvegardes?
     a: "Dans un dossier que vous choisissez, de préférence un dossier que OneDrive, Dropbox, iCloud Drive ou Google Drive synchronise. Une copie se trouve alors en dehors de l’ordinateur. Un lecteur réseau ou un disque USB fonctionnent de la même façon."
   - q: Que se passe-t-il si je perds la clé de récupération?
-    a: "Tant que l’ordinateur fonctionne, Réglages, Sauvegarde, Afficher la clé l’affiche de nouveau. Si l’ordinateur est perdu et que la clé n’a été conservée nulle part ailleurs, personne ne peut restaurer les sauvegardes."
+    a: "Tant que l’ordinateur fonctionne, Paramètres, Sauvegarde, Afficher la clé l’affiche de nouveau. Si l’ordinateur est perdu et que la clé n’a été conservée nulle part ailleurs, personne ne peut restaurer les sauvegardes."
   - q: L’installation Docker peut-elle restaurer ces sauvegardes?
     a: "Oui. Ce sont les mêmes sauvegardes restic que celles du conteneur de sauvegarde. Utilisez le dossier comme RESTIC_REPOSITORY et la clé comme RESTIC_PASSWORD."
 since: 0.7.0
@@ -20,15 +20,15 @@ Le [programme pour Windows et Mac](/docs/fr/getting-started/install-desktop/) sa
 
 <Steps>
 
-1. Ouvrez *Réglages → Sauvegarde*, par exemple via l’élément **Configurer les sauvegardes** de la liste de contrôle de l’aperçu.
+1. Ouvrez *Paramètres → Sauvegarde*, par exemple via l’élément **Configurer les sauvegardes** de la liste de contrôle de l’aperçu.
 
-2. **Choisissez un dossier.** Rhinvoice propose les dossiers OneDrive, Dropbox, iCloud Drive et Google Drive qu’il trouve sur l’ordinateur, chacun avec un sous-dossier `Rhinvoice-Backup`. Sous **Autre dossier …**, vous saisissez un chemin complet, comme un lecteur réseau ou un disque USB. Un dossier manquant est créé. Cliquez sur **Continuer vers la clé**.
+2. **Choisissez un dossier.** Rhinvoice propose les dossiers OneDrive, Dropbox, iCloud Drive et Google Drive qu’il trouve sur l’ordinateur, chacun avec un sous-dossier `Rhinvoice-Backup`. Sous **Autre dossier …**, vous saisissez un chemin complet, comme un lecteur réseau ou un disque USB. Un dossier manquant est créé. Cliquez sur **Continuer vers la clé**.
 
 3. **Conservez la clé de récupération.** Rhinvoice affiche la clé qui chiffre les sauvegardes. Copiez-la dans votre gestionnaire de mots de passe ou imprimez-la, hors de cet ordinateur. Cochez **J’ai conservé la clé en lieu sûr** et cliquez sur **Configurer les sauvegardes**.
 
 </Steps>
 
-La première sauvegarde démarre dans la demi-minute. *Réglages → Sauvegarde* liste les dernières sauvegardes, et l’aperçu avertit lorsque la dernière sauvegarde réussie date de plus de 24 heures. Plus tard, **Afficher la clé** affiche de nouveau la clé et **Changer de dossier** choisit un autre dossier; la clé reste la même.
+La première sauvegarde démarre dans la demi-minute. *Paramètres → Sauvegarde* liste les dernières sauvegardes, et l’aperçu avertit lorsque la dernière sauvegarde réussie date de plus de 24 heures. Plus tard, **Afficher la clé** affiche de nouveau la clé et **Changer de dossier** choisit un autre dossier; la clé reste la même.
 
 <Aside type="caution" title="Sans clé, pas de restauration">
 Rhinvoice conserve la clé dans son dossier de données pour que les sauvegardes fonctionnent sans rien demander. Si l’ordinateur est perdu, cette copie l’est aussi. Seule la clé que vous avez conservée ailleurs ouvre alors les sauvegardes.

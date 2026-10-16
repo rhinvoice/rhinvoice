@@ -104,7 +104,8 @@ def test_long_dates_name_the_month_of_their_language(value: date, locale: PrintL
     if locale.months is None:
         assert text == value.strftime("%d.%m.") + str(value.year)
     else:
-        assert text == f"{value.day} {locale.months[value.month - 1]} {value.year}"
+        first = "er" if locale in {PrintLocale.FR, PrintLocale.FR_CH} and value.day == 1 else ""
+        assert text == f"{value.day}{first} {locale.months[value.month - 1]} {value.year}"
         assert len(set(locale.months)) == 12
 
 

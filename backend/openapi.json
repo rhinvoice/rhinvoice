@@ -541,6 +541,14 @@
           "unit_label_en": {
             "title": "Unit Label En",
             "type": "string"
+          },
+          "unit_label_fr": {
+            "title": "Unit Label Fr",
+            "type": "string"
+          },
+          "unit_label_it": {
+            "title": "Unit Label It",
+            "type": "string"
           }
         },
         "required": [
@@ -552,6 +560,8 @@
           "unit",
           "unit_label_de",
           "unit_label_en",
+          "unit_label_fr",
+          "unit_label_it",
           "tax_category",
           "supply",
           "prices",
@@ -3957,7 +3967,7 @@
         "type": "object"
       },
       "Language": {
-        "description": "The languages of documents, mails and legal notices.\n\nFrench and Italian are written as in Switzerland (fr-CH, it-CH), see ADR 0026.",
+        "description": "The languages of documents, mails and legal notices.\n\nFrench and Italian are written as in Switzerland (fr-CH, it-CH), see ADR 0027.",
         "enum": [
           "de",
           "en",
@@ -6114,12 +6124,22 @@
           "label_en": {
             "title": "Label En",
             "type": "string"
+          },
+          "label_fr": {
+            "title": "Label Fr",
+            "type": "string"
+          },
+          "label_it": {
+            "title": "Label It",
+            "type": "string"
           }
         },
         "required": [
           "code",
           "label_de",
-          "label_en"
+          "label_en",
+          "label_fr",
+          "label_it"
         ],
         "title": "UnitResponse",
         "type": "object"

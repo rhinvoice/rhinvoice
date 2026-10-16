@@ -389,6 +389,9 @@ export const it: Catalog<MessageKey> = {
   "customers.vatNumber": "IDI / n. IVA",
   "customers.vatNumberHint":
     "Obbligatorio per l’inversione contabile (reverse charge) con clienti aziendali nell’UE.",
+  "customers.buyerReference": "Leitweg-ID o riferimento fisso dell’acquirente",
+  "customers.buyerReferenceHint":
+    "Per la XRechnung. Autorità: la loro Leitweg-ID. Aziende: da compilare solo se desiderano sempre lo stesso riferimento. Se il riferimento cambia a ogni ordine (p. es. il numero d’ordine), lasci vuoto questo campo e lo inserisca nella fattura sotto «Altri dati → Riferimento».",
   "customers.defaultCurrency": "Valuta predefinita",
   "customers.defaultLanguage": "Lingua del documento",
   "customers.taxExempt": "Esente da IVA",
@@ -535,6 +538,8 @@ export const it: Catalog<MessageKey> = {
   "company.logoTooLarge": "Il logo può essere al massimo di 1 MB.",
   "language.de": "Tedesco",
   "language.en": "Inglese",
+  "language.fr": "Francese",
+  "language.it": "Italiano",
   "bank.title": "Conti bancari",
   "bank.description":
     "Conti per i dati di pagamento e i codici QR. Per ogni valuta un conto è quello predefinito.",
@@ -847,6 +852,8 @@ export const it: Catalog<MessageKey> = {
   "documents.subjectHint": "p. es. «Rifacimento del sito web, fase 2»",
   "documents.reference": "Riferimento",
   "documents.referenceHint": "p. es. numero d’ordine del cliente",
+  "documents.referenceHintXRechnung": "Numero d’ordine o simile – necessario per la XRechnung",
+  "documents.referenceHintFixed": "La XRechnung usa la Leitweg-ID del cliente: {value}",
   "documents.currency": "Valuta",
   "documents.language": "Lingua",
   "documents.sectionDates": "Date",
@@ -1181,6 +1188,7 @@ export const it: Catalog<MessageKey> = {
   "import.field.email": "E-mail",
   "import.field.phone": "Telefono",
   "import.field.vat_number": "IDI / n. IVA",
+  "import.field.buyer_reference": "Leitweg-ID / riferimento dell’acquirente",
   "import.field.group": "Gruppo",
   "import.field.default_currency": "Valuta",
   "import.field.default_language": "Lingua",
@@ -1454,6 +1462,7 @@ export const it: Catalog<MessageKey> = {
   "eInvoice.beforeEInvoices":
     "Il PDF è stato creato prima che Rhinvoice incorporasse le fatture elettroniche.",
   "eInvoice.issueWarning": "Questa fattura viene emessa senza fattura elettronica. Manca:",
+  "eInvoice.issueXRechnungWarning": "Manca per la XRechnung (autorità tedesche):",
   "eInvoice.xrechnungSummary": "XRechnung per le autorità tedesche",
   "eInvoice.title": "Fattura elettronica",
   "eInvoice.embedded":
@@ -1466,7 +1475,7 @@ export const it: Catalog<MessageKey> = {
   "eInvoice.missing": "Per una fattura elettronica mancava al momento dell’emissione:",
   "eInvoice.xrechnung": "XRechnung (XML)",
   "eInvoice.xrechnungHint":
-    "Per le autorità tedesche; il riferimento della fattura è la Leitweg-ID.",
+    "Per le autorità tedesche; la Leitweg-ID proviene dal cliente o dal riferimento della fattura.",
   "eInvoice.xrechnungMissing": "Per una XRechnung mancava al momento dell’emissione:",
   "eInvoice.nextTime":
     "Le fatture emesse restano invariate. Completi i dati per le fatture future.",
@@ -1476,8 +1485,7 @@ export const it: Catalog<MessageKey> = {
   "eInvoice.problem.seller_tax_id_missing":
     "N. IVA o codice fiscale tedesco (Impostazioni → Azienda)",
   "eInvoice.problem.buyer_vat_id_missing": "IDI o n. IVA con sigla del paese presso il cliente",
-  "eInvoice.problem.buyer_reference_missing":
-    "Riferimento della fattura (Leitweg-ID o riferimento dell’acquirente)",
+  "eInvoice.problem.buyer_reference_missing": "Leitweg-ID del cliente o riferimento della fattura",
   "eInvoice.problem.seller_email_missing": "E-mail (Impostazioni → Azienda)",
   "eInvoice.problem.seller_phone_missing": "Telefono (Impostazioni → Azienda)",
   "eInvoice.problem.buyer_email_missing": "E-mail presso il cliente",
@@ -1501,6 +1509,8 @@ export const it: Catalog<MessageKey> = {
     "Nella valuta della fattura, IVA esclusa. Solo se pattuite o per costi comprovati; 0 per nessuna.",
   "dunning.textDe": "Testo (tedesco)",
   "dunning.textEn": "Testo (inglese)",
+  "dunning.textFr": "Testo (francese)",
+  "dunning.textIt": "Testo (italiano)",
   "dunning.textHint":
     "Segnaposto: {faellig} (nuovo termine), {betrag}, {waehrung}, {nummer}, {kunde}.",
   "error.not_remindable": "Questa fattura non è scaduta o ha già ricevuto tutti i solleciti.",

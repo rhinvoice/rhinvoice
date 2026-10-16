@@ -47,7 +47,7 @@ import { unitsQuery } from "@/features/shared/reference-api";
 import { cn } from "@/lib/cn";
 import { formatMoney, formatNumber, formatPercent } from "@/lib/format";
 import { parseDecimal } from "@/lib/format/parse-decimal";
-import { germanOrEnglish } from "@/lib/locale";
+import { unitName } from "@/lib/locale";
 
 function ErrorText({ id, error }: { readonly id: string; readonly error: FieldError | undefined }) {
   if (error?.message === undefined) return null;
@@ -299,7 +299,7 @@ function LineSummary({
   const currency = useWatch({ control, name: "currency" });
   const number = index + 1;
   const unit = units.data?.find((candidate) => candidate.code === line.unit);
-  const unitLabel = unit === undefined ? "" : germanOrEnglish(locale, unit.label_de, unit.label_en);
+  const unitLabel = unit === undefined ? "" : unitName(locale, unit);
   const isItem = line.kind === "item";
   // What the user typed, in the number format of the language; unparsable input as typed.
   const display = (input: string, format: (value: string) => string) => {
@@ -555,7 +555,7 @@ function LineEditor({
               <option value="">{t("common.none")}</option>
               {(units.data ?? []).map((unit) => (
                 <option key={unit.code} value={unit.code}>
-                  {germanOrEnglish(locale, unit.label_de, unit.label_en)}
+                  {unitName(locale, unit)}
                 </option>
               ))}
             </NativeSelect>

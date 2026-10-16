@@ -1942,6 +1942,10 @@ export interface components {
             unit_label_de: string;
             /** Unit Label En */
             unit_label_en: string;
+            /** Unit Label Fr */
+            unit_label_fr: string;
+            /** Unit Label It */
+            unit_label_it: string;
         };
         /**
          * ArticleSort
@@ -3128,7 +3132,7 @@ export interface components {
          * Language
          * @description The languages of documents, mails and legal notices.
          *
-         *     French and Italian are written as in Switzerland (fr-CH, it-CH), see ADR 0026.
+         *     French and Italian are written as in Switzerland (fr-CH, it-CH), see ADR 0027.
          * @enum {string}
          */
         Language: "de" | "en" | "fr" | "it";
@@ -4007,6 +4011,10 @@ export interface components {
             label_de: string;
             /** Label En */
             label_en: string;
+            /** Label Fr */
+            label_fr: string;
+            /** Label It */
+            label_it: string;
         };
         /**
          * UpdateAction

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_LOCALE,
-  germanOrEnglish,
   intlLocale,
   isLocale,
   isMachineTranslated,
@@ -11,6 +10,8 @@ import {
   numberLocale,
   numericMediumDates,
   SUPPORTED_LOCALES,
+  textFor,
+  unitName,
 } from "@/lib/locale";
 
 describe("locale", () => {
@@ -79,10 +80,17 @@ describe("intlLocale and numberLocale", () => {
 });
 
 describe("texts from the API", () => {
-  it("picks German for German locales and English for all others", () => {
-    expect(germanOrEnglish("de-AT", "Stk.", "pcs")).toBe("Stk.");
-    expect(germanOrEnglish("en", "Stk.", "pcs")).toBe("pcs");
-    expect(germanOrEnglish("fr-CH", "Stk.", "pcs")).toBe("pcs");
+  it("picks the text in the interface's language", () => {
+    const pieces = { de: "Stk.", en: "pcs", fr: "pce", it: "pz." };
+    expect(textFor("de-AT", pieces)).toBe("Stk.");
+    expect(textFor("en", pieces)).toBe("pcs");
+    expect(textFor("fr-CH", pieces)).toBe("pce");
+    expect(textFor("it-CH", pieces)).toBe("pz.");
+  });
+
+  it("names a unit in the interface's language", () => {
+    const hour = { label_de: "Std.", label_en: "h", label_fr: "heure", label_it: "ora" };
+    expect(unitName("it-CH", hour)).toBe("ora");
   });
 
   it("marks French and Italian as machine translated", () => {

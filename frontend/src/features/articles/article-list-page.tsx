@@ -34,7 +34,7 @@ import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/format";
-import { germanOrEnglish } from "@/lib/locale";
+import { textFor } from "@/lib/locale";
 
 interface ArticleListPageProps {
   readonly search: ListSearch<ArticleSort>;
@@ -232,7 +232,12 @@ export function ArticleListPage({ search, onSearchChange }: ArticleListPageProps
                   </TableCell>
                   <TableCell className="hidden md:table-cell">{article.group}</TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    {germanOrEnglish(locale, article.unit_label_de, article.unit_label_en)}
+                    {textFor(locale, {
+                      de: article.unit_label_de,
+                      en: article.unit_label_en,
+                      fr: article.unit_label_fr,
+                      it: article.unit_label_it,
+                    })}
                   </TableCell>
                   {currencies.map((currency, index) => {
                     const price = article.prices[currency];

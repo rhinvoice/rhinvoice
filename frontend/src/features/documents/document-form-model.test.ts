@@ -196,6 +196,8 @@ describe("customer and article defaults", () => {
       unit: "HUR",
       unit_label_de: "Std.",
       unit_label_en: "h",
+      unit_label_fr: "h",
+      unit_label_it: "h",
       tax_category: "reduced",
       supply: "goods",
       prices: { CHF: "120.00" },

@@ -394,6 +394,9 @@ export const fr: Catalog<MessageKey> = {
   "customers.vatNumber": "IDE / n° TVA",
   "customers.vatNumberHint":
     "Obligatoire pour l’autoliquidation (reverse charge) avec des entreprises clientes dans l’UE.",
+  "customers.buyerReference": "Leitweg-ID ou référence d’acheteur fixe",
+  "customers.buyerReferenceHint":
+    "Pour la XRechnung. Autorités : leur Leitweg-ID. Entreprises : à remplir seulement si elles souhaitent toujours la même référence. Si la référence change à chaque commande (p. ex. le numéro de commande), laissez ce champ vide et saisissez-la dans la facture sous « Autres informations → Référence ».",
   "customers.defaultCurrency": "Monnaie par défaut",
   "customers.defaultLanguage": "Langue des documents",
   "customers.taxExempt": "Exonéré de la TVA",
@@ -542,6 +545,8 @@ export const fr: Catalog<MessageKey> = {
   "company.logoTooLarge": "Le logo ne doit pas dépasser 1 Mo.",
   "language.de": "Allemand",
   "language.en": "Anglais",
+  "language.fr": "Français",
+  "language.it": "Italien",
   "bank.title": "Comptes bancaires",
   "bank.description":
     "Comptes pour les informations de paiement et les codes QR. Par monnaie, un compte est le compte par défaut.",
@@ -855,6 +860,9 @@ export const fr: Catalog<MessageKey> = {
   "documents.subjectHint": "p. ex. « Refonte du site web, phase 2 »",
   "documents.reference": "Référence",
   "documents.referenceHint": "p. ex. numéro de commande du client",
+  "documents.referenceHintXRechnung":
+    "Numéro de commande ou similaire – nécessaire pour la XRechnung",
+  "documents.referenceHintFixed": "La XRechnung utilise la Leitweg-ID du client : {value}",
   "documents.currency": "Monnaie",
   "documents.language": "Langue",
   "documents.sectionDates": "Dates",
@@ -1189,6 +1197,7 @@ export const fr: Catalog<MessageKey> = {
   "import.field.email": "E-mail",
   "import.field.phone": "Téléphone",
   "import.field.vat_number": "IDE / n° TVA",
+  "import.field.buyer_reference": "Leitweg-ID / référence d’acheteur",
   "import.field.group": "Groupe",
   "import.field.default_currency": "Monnaie",
   "import.field.default_language": "Langue",
@@ -1474,6 +1483,7 @@ export const fr: Catalog<MessageKey> = {
   "eInvoice.beforeEInvoices":
     "Le PDF a été créé avant que Rhinvoice n’intègre les factures électroniques.",
   "eInvoice.issueWarning": "Cette facture sera émise sans facture électronique. Il manque :",
+  "eInvoice.issueXRechnungWarning": "Il manque pour la XRechnung (autorités allemandes) :",
   "eInvoice.xrechnungSummary": "XRechnung pour les autorités allemandes",
   "eInvoice.title": "Facture électronique",
   "eInvoice.embedded":
@@ -1486,7 +1496,7 @@ export const fr: Catalog<MessageKey> = {
   "eInvoice.missing": "Il manquait lors de l’émission, pour une facture électronique :",
   "eInvoice.xrechnung": "XRechnung (XML)",
   "eInvoice.xrechnungHint":
-    "Pour les autorités allemandes ; la référence de la facture est la Leitweg-ID.",
+    "Pour les autorités allemandes ; la Leitweg-ID vient du client ou de la référence de la facture.",
   "eInvoice.xrechnungMissing": "Il manquait lors de l’émission, pour une XRechnung :",
   "eInvoice.nextTime":
     "Les factures émises restent inchangées. Complétez les indications pour les factures futures.",
@@ -1497,8 +1507,7 @@ export const fr: Catalog<MessageKey> = {
   "eInvoice.problem.seller_tax_id_missing":
     "N° TVA, n° TVA intracommunautaire ou numéro fiscal (Paramètres → Entreprise)",
   "eInvoice.problem.buyer_vat_id_missing": "IDE ou n° TVA avec code pays chez le client",
-  "eInvoice.problem.buyer_reference_missing":
-    "Référence de la facture (Leitweg-ID ou référence de l’acheteur)",
+  "eInvoice.problem.buyer_reference_missing": "Leitweg-ID du client ou référence de la facture",
   "eInvoice.problem.seller_email_missing": "E-mail (Paramètres → Entreprise)",
   "eInvoice.problem.seller_phone_missing": "Téléphone (Paramètres → Entreprise)",
   "eInvoice.problem.buyer_email_missing": "E-mail chez le client",
@@ -1522,6 +1531,8 @@ export const fr: Catalog<MessageKey> = {
     "Dans la monnaie de la facture, hors TVA. Uniquement en cas d’accord ou de frais justifiés ; 0 pour aucun.",
   "dunning.textDe": "Texte (allemand)",
   "dunning.textEn": "Texte (anglais)",
+  "dunning.textFr": "Texte (français)",
+  "dunning.textIt": "Texte (italien)",
   "dunning.textHint":
     "Variables : {faellig} (nouveau délai), {betrag}, {waehrung}, {nummer}, {kunde}.",
   "error.not_remindable": "Cette facture n’est pas en retard ou a déjà reçu tous les rappels.",

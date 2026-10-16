@@ -68,15 +68,36 @@ export function numericMediumDates(locale: Locale): boolean {
   return locale === "fr-CH" || locale === "it-CH";
 }
 
-/**
- * Pick between a German and an English text the API sends (e.g. unit names):
- * German for the German locales, English for all others.
- */
-export function germanOrEnglish(locale: Locale, german: string, english: string): string {
-  return locale.startsWith("de") ? german : english;
+/** A text the API sends in the four document languages (e.g. unit names). */
+export interface Texts {
+  readonly de: string;
+  readonly en: string;
+  readonly fr: string;
+  readonly it: string;
+}
+
+/** Pick the API text in the interface's language (German for every German locale). */
+export function textFor(locale: Locale, texts: Texts): string {
+  if (locale.startsWith("de")) return texts.de;
+  if (locale === "fr-CH") return texts.fr;
+  if (locale === "it-CH") return texts.it;
+  return texts.en;
 }
 
 /** French and Italian texts are machine translated; their users are asked for corrections. */
 export function isMachineTranslated(locale: Locale): boolean {
   return locale === "fr-CH" || locale === "it-CH";
+}
+
+/** A unit's name as the API lists it, in the interface's language. */
+export function unitName(
+  locale: Locale,
+  unit: { label_de: string; label_en: string; label_fr: string; label_it: string },
+): string {
+  return textFor(locale, {
+    de: unit.label_de,
+    en: unit.label_en,
+    fr: unit.label_fr,
+    it: unit.label_it,
+  });
 }

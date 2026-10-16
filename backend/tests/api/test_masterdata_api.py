@@ -267,7 +267,8 @@ def test_number_sequences(user_client: TestClient) -> None:
 
 def test_reference_data(user_client: TestClient) -> None:
     units = user_client.get("/api/reference/units").json()
-    assert {"code": "HUR", "label_de": "Std.", "label_en": "h"} in units
+    hours = {"code": "HUR", "label_de": "Std.", "label_en": "h", "label_fr": "h", "label_it": "h"}
+    assert hours in units
     countries = user_client.get("/api/reference/countries").json()
     assert "CH" in countries
     assert "LI" in countries

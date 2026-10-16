@@ -163,4 +163,6 @@ def day(value: date, locale: PrintLocale) -> str:
     months = locale.months
     if months is None:
         return f"{value.day:02d}.{value.month:02d}.{value.year}"
-    return f"{value.day} {months[value.month - 1]} {value.year}"
+    # French writes the first of the month as an ordinal: "1er août".
+    first = "er" if locale in {PrintLocale.FR, PrintLocale.FR_CH} and value.day == 1 else ""
+    return f"{value.day}{first} {months[value.month - 1]} {value.year}"

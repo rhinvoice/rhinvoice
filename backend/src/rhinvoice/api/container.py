@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import platform
 import threading
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
@@ -22,6 +23,7 @@ from rhinvoice.application.mail.handlers import MailHandlers
 from rhinvoice.application.numbering.handlers import NumberingHandlers
 from rhinvoice.application.onboarding.handlers import OnboardingHandlers
 from rhinvoice.application.recurring.handlers import RecurringHandlers
+from rhinvoice.application.support.handlers import SupportHandlers
 from rhinvoice.application.text.handlers import TextHandlers
 from rhinvoice.application.updates.handlers import UpdateHandlers
 from rhinvoice.domain.shared.clock import Clock, SystemClock
@@ -35,7 +37,8 @@ from rhinvoice.infrastructure.rendering.chromium import LocalChromiumPrinter
 from rhinvoice.infrastructure.rendering.html import JinjaDocumentRenderer
 from rhinvoice.infrastructure.rendering.pdf import ChromiumPdfRenderer, GotenbergPrinter
 from rhinvoice.infrastructure.security import Argon2PasswordHasher, PyOtpTotpService
-from rhinvoice.infrastructure.updates.feed import SignedReleaseFeed, installed_version
+from rhinvoice.infrastructure.support.program_log import ProgramLogFile, system_name
+from rhinvoice.infrastructure.updates.feed import installed_version, release_feed
 
 if TYPE_CHECKING:
     from sqlalchemy import Engine
@@ -69,6 +72,7 @@ class Container:
     mail: MailHandlers
     recurring: RecurringHandlers
     updates: UpdateHandlers
+    support: SupportHandlers
     demo_reset: threading.Event = field(default_factory=threading.Event)
     """Set while a public demo is being reset: the API answers 503 meanwhile."""
 
@@ -140,9 +144,20 @@ def build_container(
         sender=SmtpSender(),
     )
     # A public demo is reset all the time; it has nothing to update.
-    feed = SignedReleaseFeed() if settings.update_check and not settings.demo else None
+    feed = (
+        release_feed(settings.update_channel)
+        if settings.update_check and not settings.demo
+        else None
+    )
     return Container(
         updates=UpdateHandlers(feed, installed_version(), effective_clock, own.installer),
+        support=SupportHandlers(
+            installed_version(),
+            system_name(
+                platform.system(), platform.release(), platform.machine(), platform.mac_ver()[0]
+            ),
+            None if settings.log_file is None else ProgramLogFile(settings.log_file),
+        ),
         settings=settings,
         engine=engine,
         clock=effective_clock,

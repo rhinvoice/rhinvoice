@@ -32,7 +32,7 @@ To update Rhinvoice, set the new version in `.env`, pull the images and restart 
 
 <Steps>
 
-1. In the folder with `compose.yml` and `.env`, set `RHINVOICE_VERSION` in `.env` to the new version, e.g. `RHINVOICE_VERSION=0.7.3`.
+1. In the folder with `compose.yml` and `.env`, set `RHINVOICE_VERSION` in `.env` to the new version, e.g. `RHINVOICE_VERSION=0.7.4`.
 
 2. Pull the images and restart:
 
@@ -54,7 +54,7 @@ Database migrations run automatically on start (`RHINVOICE_RUN_MIGRATIONS=true` 
 
 | `RHINVOICE_VERSION` | Behaviour |
 |---|---|
-| a version, e.g. `0.7.3` | pinned: changes only when you change it |
+| a version, e.g. `0.7.4` | pinned: changes only when you change it |
 | `latest` | follows every release on the next `docker compose pull` |
 
 A pinned version is the safer choice for real invoices: you decide when to update and can read the changelog first.
@@ -72,6 +72,20 @@ For the check Rhinvoice downloads a small, signed file from the latest release o
 ```bash
 RHINVOICE_UPDATE_CHECK=false
 ```
+
+## Testing release candidates
+
+Before a version is released, it is published on GitHub as a release candidate (a pre-release tagged like `v0.7.4-rc.1`). Normally Rhinvoice never offers one. To try candidates on a test installation, set in `.env`:
+
+```bash
+RHINVOICE_UPDATE_CHANNEL=test
+```
+
+In the program for Windows and Mac, add the line `"update_channel": "test"` to `rhinvoice.json` in the data folder (see [where your data lives](/docs/getting-started/install-desktop/#where-your-data-lives)) and start Rhinvoice again. The signature check is the same as for releases.
+
+<Aside type="caution">
+Candidates are for testing. Use them with copies of your data, not for the invoices you send.
+</Aside>
 
 ## Which version am I running?
 

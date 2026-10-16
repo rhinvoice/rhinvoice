@@ -1669,6 +1669,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/support/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Support Report
+         * @description Give the version, the system and the end of the log for a problem report; sends nothing.
+         */
+        get: operations["support_get_support_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/text-templates": {
         parameters: {
             query?: never;
@@ -2995,6 +3015,11 @@ export interface components {
          */
         ImportTarget: "customers" | "articles" | "invoices";
         /**
+         * Installation
+         * @enum {string}
+         */
+        Installation: "desktop" | "server";
+        /**
          * Interval
          * @enum {string}
          */
@@ -3800,6 +3825,16 @@ export interface components {
          * @enum {string}
          */
         Supply: "service" | "goods";
+        /** SupportReportResponse */
+        SupportReportResponse: {
+            installation: components["schemas"]["Installation"];
+            /** Log */
+            log: string | null;
+            /** System */
+            system: string;
+            /** Version */
+            version: string;
+        };
         /**
          * TaxCategory
          * @description Which VAT rate of the country profile applies to a line.
@@ -12738,6 +12773,80 @@ export interface operations {
             };
             /** @description No PDF service configured or reachable */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    support_get_support_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupportReportResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

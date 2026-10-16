@@ -6,6 +6,7 @@ which comes with the installers only (the ``desktop`` extra), not with the Docke
 A start card shows right after the double click, while the database and the server
 start; the program window replaces it once the interface has loaded. A second start
 asks the running program to bring its window forward instead of opening another one.
+The program window opens where it was closed, as large as it was.
 """
 
 from __future__ import annotations
@@ -15,11 +16,14 @@ import html
 import importlib.util
 import json
 import threading
+from dataclasses import asdict, dataclass, replace
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
     from pathlib import Path
+
+    from webview.screen import Screen
 
 TITLE = "Rhinvoice"
 SIZE = (1280, 860)
@@ -30,6 +34,8 @@ SPLASH_BACKGROUND = "#1d4f80"
 FORWARD_REQUEST = "show-request"
 """The file a second start leaves in the window folder: bring the window forward."""
 FORWARD_POLL_SECONDS = 0.5
+GEOMETRY_FILE = "geometry.json"
+"""Where the program window was and how large, in the window folder."""
 FAILED = 1
 """The exit code when the start ended without one (it failed before it could say)."""
 
@@ -76,6 +82,8 @@ def run_with_splash(start: Callable[[Splash], int], storage: Path, version: str)
         resizable=False,
         frameless=True,
         background_color=SPLASH_BACKGROUND,
+        # pywebview types screens as its module_property; it reads as the list of screens.
+        screen=main_screen(webview.screens),  # pyright: ignore[reportArgumentType]
     )
     splash = Splash(card, steps)
     if card is not None:
@@ -102,6 +110,26 @@ def run_with_splash(start: Callable[[Splash], int], storage: Path, version: str)
         with contextlib.suppress(RuntimeError):
             worker.join()
     return codes[0] if codes else FAILED
+
+
+class Placed(Protocol):
+    """The part of a pywebview screen that tells where it is."""
+
+    @property
+    def x(self) -> int: ...
+
+    @property
+    def y(self) -> int: ...
+
+
+def main_screen[S: Placed](screens: Sequence[S]) -> S | None:
+    """Find the main screen, the one at the origin; None: let pywebview choose.
+
+    Given a screen, pywebview centres the window on it. Without one, Windows places it
+    at its default position near the top left: pywebview asks for the centre only once
+    the window is being made, too late for Windows.
+    """
+    return next((screen for screen in screens if screen.x == 0 and screen.y == 0), None)
 
 
 class StartSteps:
@@ -168,17 +196,32 @@ def show(
 
     request = storage / FORWARD_REQUEST
     request.unlink(missing_ok=True)  # left by a start while none ran
+    keeper = GeometryKeeper(storage / GEOMETRY_FILE)
+    # pywebview types screens as its module_property; it reads as the list of screens.
+    screens: Sequence[Screen] = webview.screens  # pyright: ignore[reportAssignmentType]
+    place = keeper.place(screens)
     # pywebview leaves the type of one of its parameters open (url: str | Unknown).
     # Zoomable: pywebview otherwise listens to every wheel event to block Ctrl+wheel, and
     # WebKit then ignores scrolling on a page with overscroll-behavior (no rubber band,
     # index.css). Zooming also helps reading (WCAG 1.4.4).
     window = webview.create_window(  # pyright: ignore[reportUnknownMemberType]
-        TITLE, address, width=SIZE[0], height=SIZE[1], min_size=MIN_SIZE, zoomable=True
+        TITLE,
+        address,
+        width=place.width,
+        height=place.height,
+        x=place.x,
+        y=place.y,
+        screen=place.screen,
+        maximized=place.maximized,
+        min_size=MIN_SIZE,
+        zoomable=True,
     )
     if window is None:
         return
     closed = ended or threading.Event()
-    window.events.closing += close_cleanly(window.destroy)
+    window.events.maximized += keeper.maximized
+    window.events.restored += keeper.restored
+    window.events.closing += close_cleanly(window.destroy, before=lambda: keeper.save(window))
     window.events.closed += closed.set
     if loaded is not None:
         window.events.loaded += loaded
@@ -220,22 +263,140 @@ def ask_to_bring_forward(storage: Path) -> None:
     (storage / FORWARD_REQUEST).touch()
 
 
-def close_cleanly(destroy: Callable[[], None]) -> Callable[[], bool]:
+@dataclass(frozen=True, slots=True)
+class Geometry:
+    """Where the program window was and how large, in logical pixels (pywebview's)."""
+
+    x: int
+    y: int
+    width: int
+    height: int
+    maximized: bool = False
+
+
+class Area(Placed, Protocol):
+    """A screen, or a window, as pywebview tells its place and size."""
+
+    @property
+    def width(self) -> int: ...
+
+    @property
+    def height(self) -> int: ...
+
+
+@dataclass(frozen=True, slots=True)
+class Place[S]:
+    """How the program window is made: as it was left, or centred on ``screen``."""
+
+    width: int
+    height: int
+    x: int | None = None
+    y: int | None = None
+    screen: S | None = None
+    maximized: bool = False
+
+
+def visible(geometry: Geometry, screens: Sequence[Area]) -> bool:
+    """Tell whether a window there would show: not too small, its middle on a screen.
+
+    A screen unplugged since, or a minimized window (Windows moves it far off), fails.
+    """
+    if geometry.width < MIN_SIZE[0] or geometry.height < MIN_SIZE[1]:
+        return False
+    middle_x = geometry.x + geometry.width // 2
+    middle_y = geometry.y + geometry.height // 2
+    return any(
+        screen.x <= middle_x < screen.x + screen.width
+        and screen.y <= middle_y < screen.y + screen.height
+        for screen in screens
+    )
+
+
+class GeometryKeeper:
+    """Keeps the program window's place and size for the next start (geometry.json).
+
+    Read when the window opens and written when it closes. A maximized window keeps the
+    place and size it had before, so that it comes back there once it is restored.
+    """
+
+    def __init__(self, path: Path) -> None:
+        self._path = path
+        self._saved = self._load()
+        self._maximized = self._saved is not None and self._saved.maximized
+
+    def _load(self) -> Geometry | None:
+        """Read the saved geometry; None for none, or for one that cannot be read."""
+        try:
+            data = json.loads(self._path.read_text(encoding="utf-8"))
+            return Geometry(
+                x=int(data["x"]),
+                y=int(data["y"]),
+                width=int(data["width"]),
+                height=int(data["height"]),
+                maximized=data.get("maximized") is True,
+            )
+        except (OSError, ValueError, TypeError, KeyError, AttributeError):
+            return None
+
+    def place[S: Area](self, screens: Sequence[S]) -> Place[S]:
+        """Make the window where it was left, if that still shows; else as on a first start."""
+        saved = self._saved
+        if saved is not None and visible(saved, screens):
+            return Place(saved.width, saved.height, saved.x, saved.y, maximized=saved.maximized)
+        return Place(SIZE[0], SIZE[1], screen=main_screen(screens))
+
+    def maximized(self) -> None:
+        self._maximized = True
+
+    def restored(self) -> None:
+        self._maximized = False
+
+    def save(self, window: Area) -> None:
+        """Keep where the window is now; asked from beside the window loop, before it closes."""
+        if self._maximized:
+            # Its size now is the screen's: keep the one before, to restore to.
+            if self._saved is not None:
+                self._write(replace(self._saved, maximized=True))
+            return
+        try:
+            now = Geometry(window.x, window.y, window.width, window.height)
+        except RuntimeError:  # macOS: the window has no screen any more
+            return
+        self._write(now)
+
+    def _write(self, geometry: Geometry) -> None:
+        # A place that cannot be kept is only a convenience lost.
+        with contextlib.suppress(OSError):
+            self._path.parent.mkdir(parents=True, exist_ok=True)
+            self._path.write_text(json.dumps(asdict(geometry)), encoding="utf-8")
+
+
+def close_cleanly(
+    destroy: Callable[[], None], before: Callable[[], None] | None = None
+) -> Callable[[], bool]:
     """Answer the question whether the window may close.
 
     The first time: no, but close it just after, the way the program expects. Quitting
     from the menu (Cmd+Q on macOS) would end the process right after this question,
     before the program stops its server and database; a closed window ends
     ``show`` instead, and the program cleans up as after any close. Our own
-    close asks again (on Windows): then yes.
+    close asks again (on Windows): then yes. ``before`` runs just before that close,
+    outside the window loop (it may ask the window where it is).
     """
     asked = threading.Event()
+
+    def leave() -> None:
+        try:
+            if before is not None:
+                before()
+        finally:
+            destroy()
 
     def may_close() -> bool:
         if asked.is_set():
             return True
         asked.set()
-        timer = threading.Timer(CLOSE_DELAY_SECONDS, destroy)
+        timer = threading.Timer(CLOSE_DELAY_SECONDS, leave)
         timer.daemon = True
         timer.start()
         return False

@@ -5,6 +5,22 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.7.4] – 2026-10-16
+
+### Added
+- *About Rhinvoice* has **Report a problem**: it copies the version, the system and the end of
+  the log (programs for Windows and Mac) and opens a GitHub bug report. Nothing is sent by itself.
+- An update test channel: `RHINVOICE_UPDATE_CHANNEL=test` (or `"update_channel": "test"` in the
+  programs' `rhinvoice.json`) also offers release candidates, for test installations.
+- The programs for Windows and Mac open their window where it was closed, as large as it was
+  (or maximized).
+
+### Fixed
+- Opening a page for the first time no longer blanks the whole window for a moment; the
+  navigation stays. The programs for Windows and Mac load all pages shortly after the start.
+- On Windows the start card and the program window open in the middle of the main screen,
+  no longer near its top left.
+
 ## [0.7.3] – 2026-10-15
 
 ### Added

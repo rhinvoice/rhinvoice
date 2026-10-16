@@ -11,10 +11,14 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from rhinvoice.application.updates.ports import PackageFile, Release
 from rhinvoice.infrastructure.updates.feed import (
+    DOWNLOAD_URL,
     MAX_BYTES,
     PUBLIC_KEY,
     RELEASE_URL,
+    RELEASES_URL,
+    NewestRelease,
     SignedReleaseFeed,
+    release_feed,
 )
 
 URL = "https://github.com/rhinvoice/rhinvoice/releases/latest/download/release.json"
@@ -133,3 +137,50 @@ def test_by_default_the_release_of_the_project_is_read() -> None:
     # The project's key decodes; the feed can be built without arguments.
     assert len(base64.b64decode(PUBLIC_KEY)) == 32
     assert SignedReleaseFeed() is not None
+
+
+CANDIDATE_URL = "https://github.com/rhinvoice/rhinvoice/releases/download/v0.7.4-rc.2/release.json"
+
+
+def candidates(listing: object) -> Callable[[httpx.Request], httpx.Response]:
+    """GitHub with a release candidate as its newest release."""
+    content = json.dumps({**MANIFEST, "version": "0.7.4"}).encode()
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        if str(request.url) == RELEASES_URL:
+            return httpx.Response(200, json=listing)
+        if str(request.url) == CANDIDATE_URL:
+            return httpx.Response(200, content=content)
+        if str(request.url) == CANDIDATE_URL + ".sig":
+            return httpx.Response(200, content=signed(content))
+        return httpx.Response(404)
+
+    return handle
+
+
+def test_the_test_channel_reads_the_newest_release_candidate() -> None:
+    client = httpx.Client(transport=httpx.MockTransport(candidates([{"tag_name": "v0.7.4-rc.2"}])))
+    release = SignedReleaseFeed(NewestRelease(), PUBLIC, client).latest()
+    assert release is not None
+    assert release.version == "0.7.4"
+
+
+@pytest.mark.parametrize(
+    "listing",
+    [
+        [],  # no release yet
+        {"message": "API rate limit exceeded"},
+        [{"name": "v0.7.4"}],
+        [{"tag_name": "v0.7.4/../../evil"}],  # only a release tag goes into the address
+        [{"tag_name": "latest"}],
+    ],
+)
+def test_a_listing_without_a_release_tag_counts_as_unknown(listing: object) -> None:
+    client = httpx.Client(transport=httpx.MockTransport(candidates(listing)))
+    assert SignedReleaseFeed(NewestRelease(), PUBLIC, client).latest() is None
+
+
+def test_each_channel_has_its_feed() -> None:
+    assert DOWNLOAD_URL.format(tag="v0.7.4-rc.2") == CANDIDATE_URL
+    assert isinstance(release_feed("stable"), SignedReleaseFeed)
+    assert isinstance(release_feed("test"), SignedReleaseFeed)

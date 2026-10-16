@@ -5,6 +5,22 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.7.4] – 2026-10-16
+
+### Neu
+- *Über Rhinvoice* hat **Problem melden**: Es kopiert Version, System und das Ende des Protokolls
+  (Programme für Windows und Mac) und öffnet einen Fehlerbericht auf GitHub. Nichts wird von selbst verschickt.
+- Ein Testkanal für Updates: `RHINVOICE_UPDATE_CHANNEL=test` (bzw. `"update_channel": "test"` in
+  `rhinvoice.json` der Programme) bietet auch Testkandidaten an, für Testinstallationen.
+- Die Programme für Windows und Mac öffnen ihr Fenster dort, wo es geschlossen wurde, und so
+  gross, wie es war (oder maximiert).
+
+### Behoben
+- Beim ersten Öffnen einer Seite wird nicht mehr kurz das ganze Fenster leer, die Navigation
+  bleibt stehen. Die Programme für Windows und Mac laden alle Seiten kurz nach dem Start.
+- Unter Windows öffnen sich Startkarte und Programmfenster in der Mitte des Hauptbildschirms
+  und nicht mehr oben links.
+
 ## [0.7.3] – 2026-10-15
 
 ### Neu

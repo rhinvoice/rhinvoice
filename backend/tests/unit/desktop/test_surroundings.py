@@ -70,6 +70,21 @@ def test_the_backup_settings_are_kept(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
+    ("written", "channel"),
+    [(None, "stable"), ("test", "test"), ("stable", "stable"), ("beta", "stable"), (1, "stable")],
+)
+def test_the_update_channel_is_test_only_when_it_says_so(
+    tmp_path: Path, written: object, channel: str
+) -> None:
+    path = tmp_path / "rhinvoice.json"
+    values: dict[str, object] = {"database_password": "x"}
+    if written is not None:
+        values["update_channel"] = written
+    path.write_text(json.dumps(values))
+    assert load_or_create(path).update_channel == channel
+
+
+@pytest.mark.parametrize(
     ("content", "reason"),
     [
         ("{", "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"),

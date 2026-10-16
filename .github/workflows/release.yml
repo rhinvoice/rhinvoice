@@ -1,22 +1,69 @@
 name: Release
 
+# Builds a release candidate (ADR 0025): a tag vX.Y.Z-rc.N becomes a public pre-release with
+# the setups, the app packages, a signed release.json and Docker images tagged X.Y.Z-rc.N.
+# Nobody gets it by itself: GitHub's "latest", the update check, rhinvoice.com and the demos
+# stay on the last release. Once the candidate is tested, "Promote release" releases exactly
+# these files as vX.Y.Z.
+
 on:
   push:
-    tags: ["v*.*.*"]
+    tags: ["v*.*.*-rc.*"]
 
 permissions:
   contents: read
   packages: write
 
 jobs:
-  image:
-    name: Publish image to GHCR
+  candidate:
+    name: Check the candidate's tag
     runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        name: The tag names the version the program carries
+        run: |
+          if ! printf '%s' "$GITHUB_REF_NAME" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$'; then
+            echo "::error::A candidate's tag looks like v0.7.4-rc.1, not $GITHUB_REF_NAME"
+            exit 1
+          fi
+          version="${GITHUB_REF_NAME#v}"
+          version="${version%-rc.*}"
+          program="$(sed -n 's/^version = "\(.*\)"$/\1/p' backend/pyproject.toml)"
+          if [ "$version" != "$program" ]; then
+            echo "::error::$GITHUB_REF_NAME is a candidate for $version, but the program is version $program"
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
+            echo "::error::v$version is released already; a fix needs a new version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  image-build:
+    name: Build ${{ matrix.image.name }} image (${{ matrix.platform }})
+    needs: candidate
+    # Each platform builds on a runner of its own kind. Emulating arm64 (QEMU) took long
+    # and once hung for an hour.
+    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     # A build normally takes under ten minutes; a stuck one fails instead of running for hours.
     timeout-minutes: 30
+    strategy:
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+        image:
+          - { name: app, repository: rhinvoice, file: Dockerfile }
+          - { name: backup, repository: rhinvoice-backup, file: backup/Dockerfile }
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image.repository }}
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
+      - name: Name the platform for files (linux/arm64 -> linux-arm64)
+        run: |
+          platform="${{ matrix.platform }}"
+          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -26,28 +73,48 @@ jobs:
       - id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest
-      - uses: docker/build-push-action@v6
+          images: ${{ env.IMAGE }}
+      # Pushed without a tag; the publish job below joins both platforms under the tags.
+      - id: build
+        uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          file: ${{ matrix.image.file }}
+          platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.image.name }}-${{ env.PLATFORM_PAIR }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image.name }}-${{ env.PLATFORM_PAIR }}
+      - name: Keep the digest for the publish job
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          digest="${{ steps.build.outputs.digest }}"
+          touch "$RUNNER_TEMP/digests/${digest#sha256:}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.image.name }}-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
 
-  backup-image:
-    name: Publish backup image to GHCR
+  images:
+    name: Publish ${{ matrix.image.name }} image to GHCR
+    needs: image-build
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        image:
+          - { name: app, repository: rhinvoice }
+          - { name: backup, repository: rhinvoice-backup }
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image.repository }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-${{ matrix.image.name }}-*
+          merge-multiple: true
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -57,33 +124,32 @@ jobs:
       - id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}-backup
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: backup/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          images: ${{ env.IMAGE }}
+          # The candidate's tag only (0.7.4-rc.1); 0.7.4, 0.7 and latest follow at the promotion.
+          tags: type=semver,pattern={{version}}
+      - name: Join both platforms under the candidate's tag
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf "$IMAGE@sha256:%s " *)
+      - name: Show the published image
+        run: docker buildx imagetools inspect "$IMAGE:${{ steps.meta.outputs.version }}"
 
   desktop:
     name: Desktop setups and app packages
+    needs: candidate
     uses: ./.github/workflows/desktop.yml
 
   github-release:
-    name: GitHub release (setups, app packages, signed release.json)
-    # The release appears only when everything it announces exists: the images and the setups.
-    needs: [image, backup-image, desktop]
+    name: GitHub pre-release (setups, app packages, signed release.json)
+    # The pre-release appears only when everything it announces exists: images and setups.
+    needs: [candidate, images, desktop]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
-      # Starts the website build: the download buttons show the new version and sizes.
-      actions: write
+    env:
+      VERSION: ${{ needs.candidate.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -112,12 +178,17 @@ jobs:
             echo "::error::The secret RELEASE_SIGNING_KEY is missing: without a signed release.json no installation learns of this release."
             exit 1
           fi
-          uv run --project backend python desktop/release_manifest.py "${GITHUB_REF_NAME#v}" build/release
+          uv run --project backend python desktop/release_manifest.py "$VERSION" build/release \
+            --tag "$GITHUB_REF_NAME"
           ls -l build/release
 
       - name: Release notes from the changelog
         run: |
-          python3 - "${GITHUB_REF_NAME#v}" <<'PY' > build/notes.md
+          {
+            echo "**Release candidate for testing.** Not offered as an update and not for production use; see [testing release candidates](https://rhinvoice.com/docs/operations/update/)."
+            echo
+          } > build/notes.md
+          python3 - "$VERSION" <<'PY' >> build/notes.md
           import re, sys
           version = sys.argv[1]
           text = open("CHANGELOG.md", encoding="utf-8").read()
@@ -131,11 +202,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" --title "Rhinvoice ${GITHUB_REF_NAME#v}" \
+          candidate="${GITHUB_REF_NAME##*-rc.}"
+          gh release create "$GITHUB_REF_NAME" --prerelease \
+            --title "Rhinvoice $VERSION, release candidate $candidate" \
             --notes-file build/notes.md build/release/*
-
-      - name: Rebuild rhinvoice.com with the new sizes
-        env:
-          GH_TOKEN: ${{ github.token }}
-        # A release made with this token starts no workflow by itself.
-        run: gh workflow run pages.yml --ref main

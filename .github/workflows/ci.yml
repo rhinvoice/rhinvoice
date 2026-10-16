@@ -1,13 +1,14 @@
 name: CI
 
-# Changes to the website, the docs or Markdown files alone need none of these checks:
-# the Website workflow checks and publishes them.
+# On main, changes to the website, the docs or Markdown files alone need none of these
+# checks: the Website workflow checks and publishes them.
 on:
   push:
     branches: [main]
     paths-ignore: ["website/**", "docs/**", "*.md"]
+  # Every pull request, also one that only changes docs: main requires these checks, and a
+  # check that never runs would block the merge (ADR 0025).
   pull_request:
-    paths-ignore: ["website/**", "docs/**", "*.md"]
 
 permissions:
   contents: read

@@ -3664,6 +3664,14 @@
         "title": "ImportTarget",
         "type": "string"
       },
+      "Installation": {
+        "enum": [
+          "desktop",
+          "server"
+        ],
+        "title": "Installation",
+        "type": "string"
+      },
       "Interval": {
         "enum": [
           "monthly",
@@ -5655,6 +5663,41 @@
         "title": "Supply",
         "type": "string"
       },
+      "SupportReportResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "installation": {
+            "$ref": "#/components/schemas/Installation"
+          },
+          "log": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Log"
+          },
+          "system": {
+            "title": "System",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "system",
+          "installation",
+          "log"
+        ],
+        "title": "SupportReportResponse",
+        "type": "object"
+      },
       "TaxCategory": {
         "description": "Which VAT rate of the country profile applies to a line.",
         "enum": [
@@ -6303,7 +6346,7 @@
   "info": {
     "summary": "Self-hosted invoicing for CH, LI, DE and AT",
     "title": "Rhinvoice",
-    "version": "0.7.3"
+    "version": "0.7.4"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -17356,6 +17399,93 @@
         "summary": "Reminder Pdf",
         "tags": [
           "dunning"
+        ]
+      }
+    },
+    "/api/support/report": {
+      "get": {
+        "description": "Give the version, the system and the end of the log for a problem report; sends nothing.",
+        "operationId": "support_get_support_report",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportReportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Get Support Report",
+        "tags": [
+          "support"
         ]
       }
     },

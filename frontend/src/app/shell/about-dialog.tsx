@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { useI18n } from "@/components/i18n/use-i18n";
 import { ExternalLink } from "@/components/external-link";
 import {
@@ -7,11 +9,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ReportDialog } from "@/features/support/report-dialog";
 import { UpdateSection } from "@/features/updates/update-notice";
 import {
   APP_VERSION,
   CHANGELOG_URL,
-  ISSUES_URL,
   LICENSE_URL,
   MAKER,
   MAKER_URL,
@@ -26,6 +28,7 @@ export function AboutDialog({
   readonly onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useI18n();
+  const [reportOpen, setReportOpen] = useState(false);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent closeLabel={t("common.close")}>
@@ -49,9 +52,15 @@ export function AboutDialog({
             <ExternalLink href={REPOSITORY_URL} className="text-primary">
               {t("about.source")}
             </ExternalLink>
-            <ExternalLink href={ISSUES_URL} className="text-primary">
+            <button
+              type="button"
+              className="inline-flex min-h-6 items-center text-primary underline-offset-4 hover:underline"
+              onClick={() => {
+                setReportOpen(true);
+              }}
+            >
               {t("about.reportBug")}
-            </ExternalLink>
+            </button>
             <ExternalLink href={CHANGELOG_URL} className="text-primary">
               {t("about.changelog")}
             </ExternalLink>
@@ -65,6 +74,7 @@ export function AboutDialog({
           </ExternalLink>
         </p>
       </DialogContent>
+      <ReportDialog open={reportOpen} onOpenChange={setReportOpen} />
     </Dialog>
   );
 }

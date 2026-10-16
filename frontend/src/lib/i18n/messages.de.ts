@@ -47,7 +47,20 @@ export const de = {
     "Open-Source-Rechnungsprogramm für die Schweiz, Liechtenstein, Deutschland und Österreich.",
   "about.license": "Lizenz: GNU Affero General Public License v3",
   "about.source": "Quellcode",
-  "about.reportBug": "Fehler melden",
+  "about.reportBug": "Problem melden",
+  "support.title": "Problem melden",
+  "support.description":
+    "Rhinvoice verschickt nichts von selbst. Sie kopieren die Angaben und entscheiden, wohin sie gehen.",
+  "support.copyStep":
+    "1. Protokoll kopieren. Es kann Namen von Kunden enthalten: Schauen Sie es vor dem Senden kurz an.",
+  "support.copy": "Protokoll kopieren",
+  "support.copied": "Protokoll kopiert",
+  "support.copyFailed":
+    "Kopieren hat nicht funktioniert. Markieren Sie den Text unten und kopieren Sie ihn selbst.",
+  "support.serverStep":
+    "1. Das Protokoll liegt auf dem Server. Führen Sie dort diesen Befehl aus und kopieren Sie die Ausgabe:",
+  "support.sendStep": "2. Auf GitHub melden oder per Mail an {email} schicken.",
+  "support.github": "Auf GitHub melden",
   "about.changelog": "Neuerungen",
   "about.noAdvice": "Keine Steuerberatung, Steuersätze ohne Gewähr.",
 

@@ -124,10 +124,7 @@ test.describe("app shell", () => {
     await expect(
       dialog.getByRole("link", { name: /GNU Affero General Public License/ }),
     ).toHaveAttribute("href", "https://github.com/rhinvoice/rhinvoice/blob/main/LICENSE");
-    await expect(dialog.getByRole("link", { name: /Fehler melden/ })).toHaveAttribute(
-      "href",
-      "https://github.com/rhinvoice/rhinvoice/issues/new/choose",
-    );
+    await expect(dialog.getByRole("button", { name: "Problem melden" })).toBeVisible();
     await expect(dialog.getByRole("link", { name: /made by webberz/ })).toHaveAttribute(
       "href",
       "https://www.webberz.ch",

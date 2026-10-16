@@ -1,10 +1,14 @@
 from pathlib import Path
+from typing import Literal
 from zoneinfo import ZoneInfo
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from rhinvoice.domain.shared.country import Country
+
+type UpdateChannel = Literal["stable", "test"]
+"""stable: the latest release; test: release candidates too (vX.Y.Z-rc.N pre-releases)."""
 
 
 def parse_demo_links(text: str) -> list[tuple[Country, str]]:
@@ -42,9 +46,16 @@ class Settings(BaseSettings):
     reset_code_dir: Path | None = None
     """Private folder for the code of a forgotten password (installations without Docker,
     ADR 0024). Without it, an administrator resets passwords with ``rhinvoice user``."""
+    log_file: Path | None = None
+    """The program's log, whose end a problem report carries (installations without
+    Docker). Without it the log stays with the server (docker compose logs app)."""
     update_check: bool = True
     """Ask GitHub once a day whether a newer release exists, to show it in the program
     (ADR 0022). Off: nothing leaves this installation for it."""
+    update_channel: UpdateChannel = "stable"
+    """Which releases the update check offers. stable: the latest release, never a
+    pre-release. test: also release candidates (GitHub pre-releases tagged vX.Y.Z-rc.N),
+    for the maintainer's test machines; the same signature check applies."""
     recurring: bool = True
     """Write due recurring invoices in the background of ``rhinvoice serve``."""
     recurring_interval: int = Field(default=600, ge=60)

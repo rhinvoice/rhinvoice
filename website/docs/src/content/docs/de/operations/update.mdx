@@ -32,7 +32,7 @@ Für ein Update setzen Sie die neue Version in `.env`, holen die Images und star
 
 <Steps>
 
-1. Setzen Sie im Ordner mit `compose.yml` und `.env` in `.env` die Einstellung `RHINVOICE_VERSION` auf die neue Version, z. B. `RHINVOICE_VERSION=0.7.3`.
+1. Setzen Sie im Ordner mit `compose.yml` und `.env` in `.env` die Einstellung `RHINVOICE_VERSION` auf die neue Version, z. B. `RHINVOICE_VERSION=0.7.4`.
 
 2. Images holen und neu starten:
 
@@ -54,7 +54,7 @@ Die Datenbank wird beim Start automatisch migriert (`RHINVOICE_RUN_MIGRATIONS=tr
 
 | `RHINVOICE_VERSION` | Verhalten |
 |---|---|
-| eine Version, z. B. `0.7.3` | fest: ändert sich nur, wenn Sie sie ändern |
+| eine Version, z. B. `0.7.4` | fest: ändert sich nur, wenn Sie sie ändern |
 | `latest` | folgt jeder neuen Version beim nächsten `docker compose pull` |
 
 Für echte Rechnungen ist eine feste Version die sicherere Wahl: Sie entscheiden, wann Sie aktualisieren, und können vorher das Änderungsprotokoll lesen.
@@ -72,6 +72,20 @@ Für die Prüfung lädt Rhinvoice eine kleine, signierte Datei vom neuesten Rele
 ```bash
 RHINVOICE_UPDATE_CHECK=false
 ```
+
+## Testkandidaten ausprobieren
+
+Bevor eine Version freigegeben wird, erscheint sie auf GitHub als Testkandidat (ein Pre-Release mit einem Tag wie `v0.7.4-rc.1`). Normalerweise bietet Rhinvoice Testkandidaten nie an. Um sie auf einer Testinstallation auszuprobieren, setzen Sie in `.env`:
+
+```bash
+RHINVOICE_UPDATE_CHANNEL=test
+```
+
+Im Programm für Windows und Mac ergänzen Sie in `rhinvoice.json` im Datenordner (siehe [wo Ihre Daten liegen](/docs/de/getting-started/install-desktop/#wo-ihre-daten-liegen)) die Zeile `"update_channel": "test"` und starten Rhinvoice neu. Die Signaturprüfung ist dieselbe wie bei freigegebenen Versionen.
+
+<Aside type="caution">
+Testkandidaten sind zum Testen da. Verwenden Sie sie mit einer Kopie Ihrer Daten, nicht für die Rechnungen, die Sie verschicken.
+</Aside>
 
 ## Welche Version läuft?
 

@@ -227,6 +227,9 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
             # cookies there.
             cookie_secure=False,
         )
+        if not config.update_check:
+            # Off in rhinvoice.json; RHINVOICE_UPDATE_CHECK=false switches it off as well.
+            settings = settings.model_copy(update={"update_check": False})
         restarter = Restarter()
         own = _own_services(desktop, install, folder, database.url, restarter)
         code = _serve(args, desktop, settings, config.port, folder, own=own, restarter=restarter)

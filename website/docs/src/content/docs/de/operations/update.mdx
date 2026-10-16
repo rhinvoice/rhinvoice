@@ -9,7 +9,7 @@ faq:
   - q: Ändern sich ausgestellte Rechnungen durch ein Update?
     a: Nein. Ausgestellte Dokumente behalten ihren Inhalt und ihr archiviertes PDF. Sie sind unveränderlich, auch in der Datenbank.
   - q: Woher weiss ich, dass es eine neue Version gibt?
-    a: Rhinvoice prüft einmal am Tag und zeigt dann unten in der Navigation eine Karte mit der neuen Version und den Schritten für den Server. Mit RHINVOICE_UPDATE_CHECK=false in .env schalten Sie die Prüfung ab.
+    a: Rhinvoice prüft einmal am Tag und zeigt dann unten in der Navigation eine Karte mit der neuen Version und den Schritten für den Server. Mit RHINVOICE_UPDATE_CHECK=false in .env schalten Sie die Prüfung ab, im Programm für Windows und Mac mit "update_check": false in rhinvoice.json.
   - q: Wo sehe ich, welche Version ich verwende?
     a: Unten in der Navigation, neben by webberz. Ein Klick öffnet Über Rhinvoice mit einem Link zu den Neuerungen.
 ---
@@ -72,6 +72,8 @@ Für die Prüfung lädt Rhinvoice eine kleine, signierte Datei vom neuesten Rele
 ```bash
 RHINVOICE_UPDATE_CHECK=false
 ```
+
+Im Programm für Windows und Mac ergänzen Sie dafür in `rhinvoice.json` im Datenordner (siehe [wo Ihre Daten liegen](/docs/de/getting-started/install-desktop/#wo-ihre-daten-liegen)) die Zeile `"update_check": false` und starten Rhinvoice neu.
 
 ## Testkandidaten ausprobieren
 

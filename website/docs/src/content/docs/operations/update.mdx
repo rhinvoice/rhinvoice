@@ -9,7 +9,7 @@ faq:
   - q: Do issued invoices change with an update?
     a: No. Issued documents keep their content and their archived PDF. They are immutable, also in the database.
   - q: How do I learn about a new version?
-    a: Rhinvoice checks once a day and then shows a card at the foot of the navigation with the new version and the steps for the server. RHINVOICE_UPDATE_CHECK=false in .env switches the check off.
+    a: Rhinvoice checks once a day and then shows a card at the foot of the navigation with the new version and the steps for the server. RHINVOICE_UPDATE_CHECK=false in .env switches the check off; in the program for Windows and Mac it is "update_check": false in rhinvoice.json.
   - q: Where do I see which version I run?
     a: At the foot of the navigation, next to by webberz. A click opens About Rhinvoice with a link to What's new.
 ---
@@ -72,6 +72,8 @@ For the check Rhinvoice downloads a small, signed file from the latest release o
 ```bash
 RHINVOICE_UPDATE_CHECK=false
 ```
+
+In the program for Windows and Mac, add the line `"update_check": false` to `rhinvoice.json` in the data folder (see [where your data lives](/docs/getting-started/install-desktop/#where-your-data-lives)) and start Rhinvoice again.
 
 ## Testing release candidates
 

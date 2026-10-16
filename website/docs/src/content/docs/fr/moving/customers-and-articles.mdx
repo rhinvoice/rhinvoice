@@ -1,0 +1,114 @@
+---
+title: Importer clients et articles (CSV, Excel)
+description: "Importer dans Rhinvoice les clients et articles de votre ancien logiciel de facturation depuis CSV ou Excel, avec essai à blanc, attribution des colonnes et modèles."
+faq:
+  - q: Quels fichiers puis-je importer dans Rhinvoice?
+    a: "Des fichiers CSV en UTF-8 ou Windows-1252, et des fichiers Excel aux formats .xlsx et .xls. Un fichier peut faire au plus 5 Mo et compter au plus 10’000 lignes."
+  - q: Que deviennent les clients qui existent déjà dans Rhinvoice?
+    a: "Vous le choisissez avant l’import. Rhinvoice les saute, les met à jour ou les crée à nouveau. Lors d’une mise à jour, les cellules vides ne changent rien, si bien qu’un export avec moins de colonnes n’efface jamais de données."
+  - q: Dois-je attribuer les colonnes à la main?
+    a: "La plupart du temps, non. Rhinvoice reconnaît les noms de colonnes usuels comme « Numéro de client », « NPA » ou « Numéro TVA ». Ce qu’il ne reconnaît pas, vous l’attribuez à la main et l’enregistrez comme modèle pour le prochain import."
+  - q: Les anciens taux de TVA comme 7,7 % sont-ils reconnus?
+    a: "Oui. Rhinvoice connaît les anciens taux de votre pays, comme 7,7 % et 8 % en Suisse ou 16 % et 5 % en Allemagne, et attribue à l’article le taux de TVA correspondant."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice importe les clients et les articles de votre ancien programme, depuis des **fichiers CSV ou Excel** (`.xlsx`, `.xls`). Chaque import commence par un **essai à blanc** qui ne change rien; Rhinvoice n’enregistre qu’après que vous avez vérifié le résultat.
+
+<Aside type="tip" title="D’abord clients et articles, les factures en dernier">
+Les anciennes factures cherchent leur client lors de l’import. Importez donc d’abord les clients et les articles, puis les factures ([reprendre les anciennes factures](/docs/fr/moving/old-invoices/)).
+</Aside>
+
+## Comment importer
+
+<Steps>
+
+1. Exportez les clients ou les articles de l’ancien programme sous forme de fichier CSV ou Excel.
+2. Ouvrez *Clients → Importer* ou *Articles → Importer* et cliquez sur **Choisir un fichier**.
+3. Vérifiez l’attribution des colonnes sous *Attribuer les colonnes*.
+4. Sous *Si l’entrée existe déjà*, choisissez ce qui arrive aux entrées existantes.
+5. Vérifiez le *Résultat de l’essai à blanc*. Chaque ligne indique si elle est *Nouvelle*, *Mise à jour*, *Sautée* ou une *Erreur*.
+6. Cliquez sur **Importer … clients** ou **Importer … articles**. Seule cette étape enregistre.
+
+</Steps>
+
+L’essai à blanc fait le même import que l’import réel, simplement sans enregistrer. Ce qu’il annonce, y compris les numéros qu’il attribue, est exactement ce que fait l’import.
+
+## Fichiers et encodages
+
+- **CSV** en UTF-8 (aussi UTF-16 avec BOM) ou Windows-1252. Rhinvoice détecte lui-même le séparateur, comme le point-virgule ou la virgule.
+- **Excel** au format actuel `.xlsx` et à l’ancien format `.xls`. Rhinvoice reconnaît le type de fichier à son contenu, pas à son extension.
+- **Limites** par fichier : au plus 5 Mo, 10’000 lignes et 100 colonnes. Répartissez les listes plus grandes sur plusieurs fichiers.
+
+## Reconnaître et attribuer les colonnes
+
+Rhinvoice reconnaît les colonnes à leurs noms usuels, sans tenir compte des majuscules, des trémas et de la ponctuation. «Kunden-Nr.», «KdNr» et «Customer number» deviennent toutes le numéro de client; «MwSt-Satz» et «VAT rate» deviennent le taux de TVA.
+
+Ce qui n’est pas reconnu, vous l’attribuez à la main sous *Attribuer les colonnes* : pour chaque colonne du fichier, choisissez le champ Rhinvoice sous *Devient*, ou *Ne pas importer*. Une valeur d’exemple tirée du fichier vous aide.
+
+**Enregistrer comme modèle** conserve l’attribution sous un nom. Il convient à chaque fichier avec les mêmes noms de colonnes et est proposé sous *Modèle* lors du prochain import; *Détecté automatiquement* utilise de nouveau la reconnaissance. Supprimer un modèle conserve les données importées.
+
+## Ce qui est importé
+
+### Clients
+
+| Champ | Remarque |
+|---|---|
+| *Numéro* | Sans numéro, le client reçoit le prochain numéro libre |
+| *Raison sociale*, ou *Prénom* et *Nom* | Sans raison sociale, le client est créé comme personne |
+| *Formule d’appel*, *Personne de contact* | |
+| Adresse | *Rue (avec numéro)*, ou séparément avec *Numéro*, plus *Complément d’adresse*, *NPA* et *Localité*, ou les deux dans une colonne (*NPA et localité*, aussi «CH-9470 Buchs») |
+| *Pays* | Sous forme de nom ou de code; sans pays, celui de votre entreprise s’applique |
+| *E-mail*, *Téléphone* | |
+| *Numéro TVA* | |
+| *Groupe*, *Remarque* | |
+| *Monnaie*, *Langue* | CHF ou EUR; allemand, anglais, français ou italien |
+| *Rabais en %*, *Délai de paiement en jours*, *Exonéré d’impôt* | |
+| *Client depuis* <Since version="0.4.3" /> | Par exemple depuis «Kunde seit», «Angelegt am» ou «Created», au format 14.03.2019 ou 2019-03-14, aussi avec une heure |
+
+Il faut une colonne pour le numéro de client ou le nom (raison sociale ou nom de famille). Les nouveaux clients ont aussi besoin du NPA et de la localité.
+
+### Articles
+
+| Champ | Remarque |
+|---|---|
+| *Numéro* | Sans numéro, l’article reçoit le prochain numéro libre |
+| *Nom*, *Description* | Les nouveaux articles ont besoin d’un nom |
+| *Unité* | Sous forme de code ou de libellé, comme «Std.», «Stunden», «HUR», «pro Monat», «jährlich» |
+| *Prix (monnaie de l’entreprise)*, *Prix CHF*, *Prix EUR* | Un prix par monnaie |
+| *Taux de TVA* | En pourcentage ou par son nom («Normal», «reduziert», «befreit») |
+| *Groupe* | |
+| *Bien/prestation* | Vide compte comme prestation de services |
+
+Rhinvoice lit les montants en notation suisse, allemande et anglaise. Le fait que «1.500» signifie mille cinq cents ou un et demi dépend du pays de votre entreprise.
+
+### Anciens taux de TVA
+
+Les listes d’articles des anciens programmes contiennent souvent des taux qui ne s’appliquent plus. Rhinvoice connaît les anciens taux du pays de votre entreprise et attribue à l’article le taux de TVA correspondant : en Suisse par exemple les taux normaux de 7,7 % (2018 à 2023) et de 8 % (2011 à 2017) selon l’AFC, en Allemagne les taux de 16 % et 5 % du 1er juillet au 31 décembre 2020. Sur la facture, c’est ensuite le taux de la date de la prestation qui s’applique. Un taux que votre pays n’a jamais eu, comme 19 % pour une entreprise suisse, est signalé comme erreur de la ligne.
+
+## Si l’entrée existe déjà
+
+Un client est le même s’il a le même numéro de client ou, sans numéro, le même nom et le même NPA. Un article est le même s’il a le même numéro d’article ou, sans numéro, le même nom.
+
+| Choix | Ce qui se passe |
+|---|---|
+| *Sauter* | L’entrée existante reste telle quelle |
+| *Mettre à jour* | Les cellules remplies écrasent l’entrée, les cellules vides ne changent rien; la rue et le numéro changent ensemble |
+| *Créer à nouveau* | Une deuxième entrée est créée; si le numéro est pris, elle reçoit le prochain numéro libre |
+
+Vous pouvez donc importer un fichier deux fois, par exemple une deuxième fois avec *Mettre à jour* lorsqu’il manquait une colonne.
+
+## Lignes avec erreurs
+
+Rhinvoice ne devine jamais. Une ligne avec une valeur peu claire (pas un montant, une unité inconnue, un taux de TVA inconnu, une monnaie autre que CHF et EUR …) est signalée avec le champ, le motif et la valeur et n’est pas importée; elle ne consomme aucun numéro. Les autres lignes sont importées. **Télécharger le rapport (CSV)** vous donne toutes les lignes avec leur résultat.
+
+<Aside type="note" title="Dans la démo publique">
+La démo publique n’accepte pas de fichiers : l’import y est désactivé. Essayez-le sur votre propre [installation](/docs/fr/getting-started/installation/); avec Docker, cela prend quelques minutes.
+</Aside>
+
+## Questions fréquentes
+
+<Faq />

@@ -1,0 +1,65 @@
+---
+title: Sauvegarde dans le programme pour Windows et Mac
+description: "Configurer la sauvegarde de Rhinvoice sans Docker. Choisir un dossier dans OneDrive, Dropbox, iCloud Drive ou Google Drive, conserver la clé de récupération, restaurer."
+faq:
+  - q: Où le programme fait-il ses sauvegardes?
+    a: "Dans un dossier que vous choisissez, de préférence un dossier que OneDrive, Dropbox, iCloud Drive ou Google Drive synchronise. Une copie se trouve alors en dehors de l’ordinateur. Un lecteur réseau ou un disque USB fonctionnent de la même façon."
+  - q: Que se passe-t-il si je perds la clé de récupération?
+    a: "Tant que l’ordinateur fonctionne, Réglages, Sauvegarde, Afficher la clé l’affiche de nouveau. Si l’ordinateur est perdu et que la clé n’a été conservée nulle part ailleurs, personne ne peut restaurer les sauvegardes."
+  - q: L’installation Docker peut-elle restaurer ces sauvegardes?
+    a: "Oui. Ce sont les mêmes sauvegardes restic que celles du conteneur de sauvegarde. Utilisez le dossier comme RESTIC_REPOSITORY et la clé comme RESTIC_PASSWORD."
+since: 0.7.0
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Le [programme pour Windows et Mac](/docs/fr/getting-started/install-desktop/) sauvegarde lui-même sa base de données, avec le même [restic](https://restic.net) que le conteneur de sauvegarde de l’installation Docker : **chiffrée, dédupliquée et compressée**, chaque jour, environ deux minutes après une émission ou une annulation, et sur simple pression d’un bouton. Il conserve 7 sauvegardes quotidiennes, 4 hebdomadaires, 12 mensuelles et toutes les annuelles. Si Rhinvoice ne fonctionne pas à 02:00, il fait la sauvegarde quotidienne au démarrage suivant.
+
+## Configuration
+
+<Steps>
+
+1. Ouvrez *Réglages → Sauvegarde*, par exemple via l’élément **Configurer les sauvegardes** de la liste de contrôle de l’aperçu.
+
+2. **Choisissez un dossier.** Rhinvoice propose les dossiers OneDrive, Dropbox, iCloud Drive et Google Drive qu’il trouve sur l’ordinateur, chacun avec un sous-dossier `Rhinvoice-Backup`. Sous **Autre dossier …**, vous saisissez un chemin complet, comme un lecteur réseau ou un disque USB. Un dossier manquant est créé. Cliquez sur **Continuer vers la clé**.
+
+3. **Conservez la clé de récupération.** Rhinvoice affiche la clé qui chiffre les sauvegardes. Copiez-la dans votre gestionnaire de mots de passe ou imprimez-la, hors de cet ordinateur. Cochez **J’ai conservé la clé en lieu sûr** et cliquez sur **Configurer les sauvegardes**.
+
+</Steps>
+
+La première sauvegarde démarre dans la demi-minute. *Réglages → Sauvegarde* liste les dernières sauvegardes, et l’aperçu avertit lorsque la dernière sauvegarde réussie date de plus de 24 heures. Plus tard, **Afficher la clé** affiche de nouveau la clé et **Changer de dossier** choisit un autre dossier; la clé reste la même.
+
+<Aside type="caution" title="Sans clé, pas de restauration">
+Rhinvoice conserve la clé dans son dossier de données pour que les sauvegardes fonctionnent sans rien demander. Si l’ordinateur est perdu, cette copie l’est aussi. Seule la clé que vous avez conservée ailleurs ouvre alors les sauvegardes.
+</Aside>
+
+## Restaurer
+
+La restauration **remplace toutes les données** par l’état d’une sauvegarde, en une seule transaction : si quelque chose échoue, rien ne change. Quittez d’abord Rhinvoice.
+
+**Windows** (PowerShell) :
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -m rhinvoice_boot --list-backups
+& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -m rhinvoice_boot --restore latest
+```
+
+**Mac** (Terminal) :
+
+```bash
+/Applications/Rhinvoice.app/Contents/MacOS/Rhinvoice --list-backups
+/Applications/Rhinvoice.app/Contents/MacOS/Rhinvoice --restore latest
+```
+
+`--list-backups` affiche les sauvegardes avec leur ID et leur heure. Au lieu de `latest`, indiquez un ID pour récupérer une sauvegarde plus ancienne. Démarrez ensuite Rhinvoice comme d’habitude; l’état restauré est aussitôt sauvegardé de nouveau.
+
+**Sur un nouvel ordinateur :** installez Rhinvoice, attendez que le service cloud ait téléchargé le dossier `Rhinvoice-Backup` et indiquez-le avec `--backup-folder`. Rhinvoice demande alors la clé de récupération et sauvegarde ensuite dans le même dossier :
+
+```bash
+/Applications/Rhinvoice.app/Contents/MacOS/Rhinvoice --restore latest --backup-folder "/Users/anna/Library/CloudStorage/OneDrive-Personal/Rhinvoice-Backup"
+```
+
+## Questions fréquentes
+
+<Faq />

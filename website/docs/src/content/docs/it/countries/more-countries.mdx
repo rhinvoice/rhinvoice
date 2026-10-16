@@ -1,0 +1,74 @@
+---
+title: Aggiungere altri paesi
+description: Rhinvoice si può estendere ad altri paesi. Ogni paese ha un profilo con aliquote IVA, indicazioni e indicazioni obbligatorie, per esempio i Paesi Bassi.
+faq:
+  - q: Rhinvoice si può estendere ad altri paesi?
+    a: Sì. Tutto ciò che cambia da un paese all’altro si trova in un profilo per paese. Un nuovo paese, come i Paesi Bassi, è un nuovo profilo con aliquote IVA, indicazioni, indicazioni obbligatorie e le fonti ufficiali. I test mostrano che cosa manca ancora.
+  - q: Posso già oggi fatturare a clienti all’estero?
+    a: Sì. Il paese della Sua azienda deve essere la Svizzera, il Liechtenstein, la Germania o l’Austria, ma i Suoi clienti possono essere ovunque. Rhinvoice sceglie il trattamento fiscale in base ai due paesi, come l’inversione contabile nell’UE o un’esportazione esente, e stampa l’indicazione corrispondente.
+  - q: Come entra il mio paese in Rhinvoice?
+    a: Apra una segnalazione su GitHub con il modulo «Tax or legal rule» e indichi le fonti ufficiali. Un paese si realizza seguendo la guida «Adding a country» ed entra tramite pull request.
+  - q: Che cosa rende un nuovo paese più impegnativo?
+    a: Una valuta propria oltre a CHF ed EUR, fatture in una lingua diversa da tedesco, inglese, francese o italiano, una rete statale di fatturazione elettronica come quella italiana, o un diritto IVA al di fuori dell’UE. Per un paese UE con l’euro la logica fiscale c’è già.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice è pensato fin dall’inizio per **altri paesi**. Tutto ciò che cambia da un paese all’altro si trova in **un profilo per paese**: aliquote IVA datate, indicazioni legali, indicazioni obbligatorie, codice QR di pagamento, formato dei numeri e le fonti ufficiali. Il resto di Rhinvoice interroga solo il profilo e non nomina alcun paese. Un nuovo paese, per esempio i **Paesi Bassi**, è quindi un nuovo profilo, non una modifica in tutto il programma.
+
+<Aside type="tip" title="I clienti all’estero funzionano già oggi">
+Il paese della Sua **azienda** deve essere la Svizzera, il Liechtenstein, la Germania o l’Austria. I Suoi **clienti** possono essere ovunque: Rhinvoice sceglie il trattamento fiscale in base al paese dell’azienda e a quello del cliente (nazionale, inversione contabile, cessione intracomunitaria, esportazione) e stampa l’indicazione corrispondente.
+</Aside>
+
+## Che cosa contiene un profilo di paese
+
+- il diritto IVA: la direttiva IVA dell’UE o la LIVA svizzera
+- il territorio IVA (la Svizzera, per esempio, insieme al Liechtenstein)
+- le **aliquote IVA con la data da cui valgono**, in modo che anche le fatture più vecchie siano corrette
+- le parole sui documenti in ogni lingua dei documenti: il nome dell’imposta, la denominazione del numero IVA, l’**indicazione legale** per ogni trattamento fiscale e il saluto nelle e-mail
+- le **indicazioni obbligatorie** che Rhinvoice controlla prima dell’emissione
+- formato dei numeri, **codice QR di pagamento** (fattura QR svizzera o codice QR EPC), valuta predefinita e se viene offerto l’arrotondamento a 0.05
+- le **fonti ufficiali** di tutto ciò
+
+L’interfaccia mostra nomi delle imposte, aliquote e campi dal profilo, quindi per un nuovo paese non ha quasi bisogno di modifiche.
+
+## Esempio: i Paesi Bassi
+
+La guida per sviluppatori illustra il lavoro con i Paesi Bassi (`NL`) come esempio:
+
+<Steps>
+
+1. **Aggiungere il codice del paese.**
+2. **Scrivere il profilo**, come copia di quello tedesco o austriaco, poiché entrambi sono paesi UE: aliquote datate, indicazioni in ogni lingua dei documenti, indicazioni obbligatorie, codice di pagamento e fonti.
+3. **Registrare il profilo**, affinché Rhinvoice lo conosca.
+4. **Aggiungere dati di demo**, con IBAN di esempio ufficiali, mai con conti reali.
+5. **Offrire il paese nell’interfaccia.**
+6. **Verificare**: i test dicono se il profilo è completo e che cosa manca. Infine emettere una fattura e guardare il PDF.
+
+</Steps>
+
+Poiché i paesi UE condividono la logica della direttiva IVA, un nuovo paese UE con l’euro non richiede modifiche alla logica fiscale. I Paesi Bassi pagano in euro, quindi anche lì va bene il codice QR EPC.
+
+## Che cosa rende un paese più impegnativo
+
+Alcune cose non sono ancora in un profilo. Decidono quanto lavoro richiede un paese:
+
+- **Una valuta propria.** Rhinvoice conosce CHF ed EUR. Un paese con una valuta propria (per esempio PLN o SEK) richiede prima di aggiungerla.
+- **Un’altra lingua.** I documenti vengono scritti in tedesco, inglese, francese o italiano. Se i clienti si aspettano la propria lingua, serve prima una nuova lingua con tutti i suoi testi.
+- **Una rete statale di fatturazione elettronica**, come quella italiana. Ogni fattura contiene già ZUGFeRD / Factur-X secondo la EN 16931 ([fatture elettroniche](/docs/it/invoices/e-invoice/)); una rete obbligatoria sarebbe un modulo a sé.
+- **Un diritto IVA al di fuori dell’UE.** Un paese con un proprio diritto IVA richiede regole proprie per i trattamenti fiscali.
+
+## Come entra il Suo paese
+
+1. **Lo chieda:** apra una segnalazione su [GitHub](https://github.com/rhinvoice/rhinvoice/issues/new/choose) con il modulo *Tax or legal rule*. Indichi il paese e colleghi le fonti ufficiali: la legge sull’IVA, le aliquote e che cosa deve indicare una fattura.
+2. **Lo realizzi:** gli sviluppatori seguono la guida [Adding a country](https://github.com/rhinvoice/rhinvoice/blob/main/docs/adding-a-country.md). Maggiori informazioni in [Per sviluppatori](/docs/it/help/developers/).
+3. **Lo contribuisca:** il paese entra tramite pull request, con le fonti e il PDF di una fattura di esempio.
+
+<Aside type="caution" title="Nessuna consulenza fiscale">
+Rhinvoice non fornisce consulenza fiscale. Ogni regola in Rhinvoice indica la sua fonte ufficiale, in modo che possa essere verificata.
+</Aside>
+
+## Domande frequenti
+
+<Faq />

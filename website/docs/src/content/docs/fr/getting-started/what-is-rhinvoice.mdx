@@ -1,0 +1,104 @@
+---
+title: "Qu’est-ce que Rhinvoice? Facturation gratuite et open source"
+description: "Rhinvoice est un logiciel de facturation gratuit et open source pour la Suisse, le Liechtenstein, l’Allemagne et l’Autriche, avec facture QR, code QR EPC et TVA."
+faq:
+  - q: Rhinvoice est-il vraiment gratuit?
+    a: "Oui. Rhinvoice est publié sous la GNU Affero General Public License v3.0 ou ultérieure. Vous pouvez l’utiliser, le modifier et le partager sans payer; il n’existe pas de version payante."
+  - q: Existe-t-il une version hébergée de Rhinvoice?
+    a: "Non. Vous exploitez Rhinvoice vous-même, comme programme sous Windows ou sur un Mac, ou avec Docker sur un serveur, un NAS, un Raspberry Pi 4/5 ou votre propre ordinateur. Vos données restent sur cette machine."
+  - q: Rhinvoice est-il un logiciel de comptabilité?
+    a: "Non. Rhinvoice établit des offres, des factures, des factures d’annulation et des rappels, et suit les paiements. Il n’a ni comptabilité, ni grand livre, ni décomptes TVA, ni salaires."
+  - q: Rhinvoice est-il prêt pour de vraies factures?
+    a: "Rhinvoice est en version bêta (version 0.x). Essayez-le sur une installation de test avant d’établir de vraies factures avec lui."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Rhinvoice est un **logiciel de facturation gratuit et open source** pour les petites entreprises et les indépendants en Suisse, au Liechtenstein, en Allemagne et en Autriche. Il établit des offres, des factures, des factures d’annulation et des rappels de paiement avec les taux de TVA, les mentions légales, les codes QR de paiement et les formats de facture électronique de chaque pays. Il fonctionne comme programme sous Windows ou sur un Mac, ou avec Docker sur votre propre serveur ou ordinateur.
+
+Le nom vient du Rhin et de « invoice » (facture en anglais) : le Rhin relie la Suisse, le Liechtenstein, l’Autriche et l’Allemagne.
+
+## Pour qui
+
+Rhinvoice s’adresse aux entreprises dont le siège est en Suisse, au Liechtenstein, en Allemagne ou en Autriche : entreprises individuelles, indépendants, petites sociétés et leurs fiduciaires. Les clients peuvent se trouver partout. L’interface existe en allemand (variantes suisse, allemande et autrichienne), en anglais, en français et en italien; les documents sont établis dans ces quatre langues.
+
+## Ce que fait Rhinvoice
+
+**Documents**
+
+- Offres, factures et factures d’annulation; transformer une offre en facture, dupliquer, annuler
+- Éditeur avec aperçu papier en direct, rabais par ligne et sur le document, prix nets ou bruts
+- Numéros attribués à l’émission, sans trou; les documents émis ne peuvent plus être modifiés (GoBD, art. 958f CO, BAO), et le PDF est conservé avec sa somme de contrôle SHA-256
+- Paiements partiels, montants ouverts et en retard, recherche plein texte et vues enregistrées
+- Rappels de paiement en trois niveaux avec nouveaux délais, frais et textes par langue
+- Factures récurrentes chaque mois, trimestre, semestre ou année : en brouillon, émises, ou émises et envoyées par e-mail
+- Envoi par e-mail via votre propre serveur de messagerie, avec le PDF et en option la XRechnung
+
+**Impôts et pays**
+
+- Taux de TVA datés pour CH, LI, DE et AT; le taux à la date de la prestation s’applique
+- Traitement fiscal déterminé automatiquement : national, autoliquidation (reverse charge), livraison intracommunautaire de biens, exportation, petite entreprise, exonéré; une modification manuelle est consignée
+- Biens et services séparés, aussi sur les factures mixtes, chacun avec sa mention légale
+- Mentions obligatoires vérifiées avant l’émission
+- Arrondi suisse à 5 centimes, formats de nombres et formulations par pays (MWST ou USt., « Jänner » en Autriche, « ss » en Suisse)
+
+**Paiement et factures électroniques**
+
+- Facture QR suisse avec référence QR ou référence créancier (CH, LI)
+- Code QR EPC / GiroCode (DE, AT, et pour les factures en euros vers l’EEE)
+- ZUGFeRD / Factur-X (EN 16931) intégré à chaque PDF, XRechnung 3.0 pour les administrations publiques allemandes
+- Sortie PDF/A-3b, trois modèles d’impression avec logo, police et pied de page
+
+**Travail quotidien**
+
+- Clients et articles avec archive et historique des documents
+- Import depuis CSV, XLSX et XLS; les anciennes factures sont reprises avec leurs PDF d’origine
+- Tableau de bord : chiffre d’affaires comparé à l’année précédente, montants ouverts et en retard, offres ouvertes, meilleurs clients, paiements attendus
+- Palette de commandes (⌘K / Ctrl+K), raccourcis clavier, mode clair et sombre; utilisable sur le téléphone
+
+**Exploitation**
+
+- Sauvegardes chiffrées et dédupliquées avec restic : quotidiennes et après chaque émission, vers S3, SFTP, un dossier, Dropbox, Google Drive et d’autres
+- Connexion avec authentification à deux facteurs en option
+- Assistant de premier démarrage et liste de contrôle de configuration
+- Images pour `linux/amd64` et `linux/arm64` (aussi Raspberry Pi 4/5)
+
+## Les pays en un coup d’œil
+
+| | Suisse | Liechtenstein | Allemagne | Autriche |
+|---|---|---|---|---|
+| Taux de TVA | 8,1 / 2,6 / 3,8 % | 8,1 / 2,6 / 3,8 % | 19 / 7 % | 20 / 10 / 13 % |
+| Petite entreprise | non assujetti à la TVA | non assujetti à la TVA | § 19 UStG | § 6 Abs. 1 Z 27 UStG |
+| Code de paiement | facture QR suisse | facture QR suisse | code QR EPC | code QR EPC |
+| Arrondi | 0.05 (facultatif) | 0.05 (facultatif) | 0.01 | 0.01 |
+| Facture électronique | ZUGFeRD / Factur-X | ZUGFeRD / Factur-X | ZUGFeRD, XRechnung | ZUGFeRD / Factur-X |
+
+Détails par pays : [Suisse](/docs/fr/countries/switzerland/), [Liechtenstein](/docs/fr/countries/liechtenstein/), [Allemagne](/docs/fr/countries/germany/), [Autriche](/docs/fr/countries/austria/).
+
+**Autres pays :** Rhinvoice peut être étendu. Tout ce qui est propre à un pays se trouve dans un profil de pays par pays; un nouveau pays comme les Pays-Bas est donc un nouveau profil. Comment : [Ajouter d’autres pays](/docs/fr/countries/more-countries/).
+
+## Ce que Rhinvoice n’est pas
+
+- **Pas un service hébergé.** Chacun exploite Rhinvoice sur son propre serveur ou ordinateur; voir [Installation](/docs/fr/getting-started/installation/).
+- **Pas un logiciel de comptabilité.** Ni comptabilité, ni grand livre, ni décomptes TVA, ni salaires.
+- **Pas une boutique en ligne ni un système de caisse.**
+- **Pas terminé.** Rhinvoice est en version bêta (0.x). Essayez-le sur une installation de test avant d’établir de vraies factures avec lui.
+
+<Aside type="caution" title="Pas de conseil fiscal">
+Rhinvoice vous aide à établir des factures correctes, mais ne donne aucun conseil fiscal ou juridique. Les taux et les règles sont vérifiés auprès de sources officielles (AFC, administration fiscale du Liechtenstein, ministères des finances allemand et autrichien) et fournis sans garantie. En cas de doute, demandez à votre conseiller fiscal.
+</Aside>
+
+## Licence et auteur
+
+Rhinvoice est publié sous la [GNU Affero General Public License v3.0 ou ultérieure](https://github.com/rhinvoice/rhinvoice/blob/main/LICENSE) (AGPL). Vous pouvez l’utiliser, le modifier et le partager librement; si vous proposez une version modifiée comme service à d’autres, vous partagez vos modifications sous la même licence. Le code source se trouve sur [GitHub](https://github.com/rhinvoice/rhinvoice).
+
+Rhinvoice est réalisé par [webberz](https://www.webberz.ch/), une entreprise de logiciels à Balgach, dans la vallée suisse du Rhin.
+
+## Essayer
+
+Les démos publiques se réinitialisent toutes les heures, une par pays : [Suisse](https://ch.rhinvoice.com), [Allemagne](https://de.rhinvoice.com), [Autriche](https://at.rhinvoice.com). Tous les visiteurs partagent un même identifiant par démo; elle n’envoie pas d’e-mail et n’accepte pas de fichiers.
+
+## Questions fréquentes
+
+<Faq />

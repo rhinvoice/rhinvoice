@@ -1,0 +1,91 @@
+---
+title: "Factures en Autriche : TVA, UID, mentions § 11 UStG"
+description: "Logiciel de facturation gratuit et open source pour l’Autriche. TVA de 20 %, 10 % et 13 %, mentions du § 11 UStG, UID, petite entreprise, autoliquidation, GiroCode."
+faq:
+  - q: Quels taux de TVA s’appliquent en Autriche?
+    a: "20 % (taux normal), 10 % (taux réduit) et 13 % (deuxième taux réduit) selon le § 10 UStG 1994. Rhinvoice utilise le taux à la date de la prestation."
+  - q: À partir de quel montant mon UID doit-il figurer sur la facture?
+    a: "Sur les factures de plus de EUR 400 brut (§ 11 Abs. 1 Z 3 lit. i et Abs. 6 UStG); en dessous, c’est une facture de petit montant. Les petites entreprises n’ont pas besoin d’UID sur la facture."
+  - q: Quand la facture a-t-elle besoin de l’UID du client?
+    a: "Sur les factures de plus de EUR 10’000 brut à une entreprise (§ 11 Abs. 1 Z 3 lit. b UStG), et toujours pour l’autoliquidation et les livraisons intracommunautaires. Rhinvoice vérifie la limite de montant pour les clients entreprises en Autriche, et toujours l’autoliquidation et les livraisons intracommunautaires."
+  - q: Quelle mention Rhinvoice imprime-t-il pour les petites entreprises?
+    a: "Les documents en allemand portent la mention « Umsatzsteuerfrei aufgrund der Kleinunternehmerregelung (§ 6 Abs. 1 Z 27 UStG). » Vous pouvez modifier le texte sous Réglages → Textes → Mentions légales."
+  - q: Combien de temps faut-il conserver les factures en Autriche?
+    a: "Dix ans (§ 132 BAO). Rhinvoice verrouille les factures émises avec leur PDF; les corrections se font uniquement par une facture d’annulation."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Une facture autrichienne de Rhinvoice porte **20 %, 10 % ou 13 % de TVA** (§ 10 UStG 1994) à la date de la prestation, votre **UID** au-delà de EUR 400 (§ 11 UStG), au-delà de EUR 10’000 aussi l’UID de votre client entreprise, la mention légale pour l’autoliquidation, les petites entreprises ou les livraisons exonérées, et un **GiroCode** (code QR EPC). Avec la langue d’interface *Deutsch (Österreich)*, Rhinvoice écrit les mois à l’autrichienne, avec « Jänner »; les documents impriment les dates en chiffres, par exemple 05.01.2026.
+
+<Aside type="note" title="Pas de conseil fiscal">
+État : octobre 2026. Les taux et les règles sont vérifiés selon l’UStG 1994 et la Chambre économique autrichienne (WKO), mais sans garantie. En cas de doute, demandez à votre conseiller fiscal.
+</Aside>
+
+## Quel taux de TVA s’applique?
+
+| Taux | Dans Rhinvoice |
+|---|---|
+| 20 % | taux normal |
+| 10 % | taux réduit |
+| 13 % | deuxième taux réduit |
+
+Source : § 10 UStG 1994. Rhinvoice connaît ces taux pour les prestations à partir du 1er janvier 2016. Le taux à la **date de la prestation** s’applique : la fin de la période de prestation, sinon son début, sinon la date de la facture. À l’émission, Rhinvoice fige le taux de chaque ligne.
+
+## Mentions obligatoires selon le § 11 UStG
+
+Avant l’émission, Rhinvoice vérifie les montants à partir desquels un UID est nécessaire :
+
+| Total de la facture, brut | Ce que Rhinvoice demande |
+|---|---|
+| jusqu’à EUR 400 | facture de petit montant (§ 11 Abs. 6 UStG) : pas d’UID nécessaire |
+| plus de EUR 400 | votre **UID** (§ 11 Abs. 1 Z 3 lit. i UStG) |
+| plus de EUR 10’000 à une entreprise | aussi l’**UID du client** (§ 11 Abs. 1 Z 3 lit. b UStG) |
+
+Saisissez votre UID sous *Réglages → Entreprise* dans le champ *Numéro TVA (UID)*, sous la forme `ATU12345678`. L’UID du client fait partie de la fiche du client; Rhinvoice le demande au-delà de EUR 10’000 pour les clients entreprises en Autriche. Les montants dans d’autres monnaies que l’EUR ne comptent jamais comme petits montants.
+
+Sans période de prestation, Rhinvoice imprime la date de la facture comme date de la prestation (§ 11 Abs. 1 Z 3 lit. d UStG). Il n’attribue le numéro de facture qu’à l’émission, sans trou. Les noms et adresses des deux parties, les lignes, le montant net et la TVA par taux complètent la facture.
+
+## Petite entreprise
+
+Activez *Petite entreprise (§ 6 Abs. 1 Z 27 UStG)* sous *Réglages → Entreprise*. Vos factures ne contiennent alors pas de TVA et portent cette mention :
+
+> Umsatzsteuerfrei aufgrund der Kleinunternehmerregelung (§ 6 Abs. 1 Z 27 UStG).
+
+(Documents en anglais : « No VAT is charged (small business scheme). ») Rhinvoice ne demande pas d’UID aux petites entreprises. Modifiez le texte sous *Réglages → Textes → Mentions légales*.
+
+## Autoliquidation et livraisons à l’étranger
+
+Rhinvoice détermine le traitement fiscal d’après votre pays, le pays du client, le fait que le client soit une entreprise et qu’il ait un UID. Les biens et les services sont traités séparément, aussi sur une même facture.
+
+| Cas | TVA | Mention sur les documents en allemand |
+|---|---|---|
+| Client en Autriche | oui | aucune |
+| Prestation de services à une entreprise d’un autre pays de l’UE avec UID | non | « Übergang der Steuerschuld auf den Leistungsempfänger (Reverse Charge). » (§ 11 Abs. 1a UStG) |
+| Biens à une entreprise d’un autre pays de l’UE avec UID | non | « Steuerfreie innergemeinschaftliche Lieferung (Art. 6 Abs. 1 i. V. m. Art. 7 UStG). » |
+| Biens quittant l’UE, clients privés compris | non | « Steuerfreie Ausfuhrlieferung (§ 6 Abs. 1 Z 1 i. V. m. § 7 UStG). » |
+| Prestation de services à une entreprise hors de l’UE | non | « Nicht im Inland steuerbare Leistung. » |
+| Client privé dans ou hors de l’UE (prestation de services) | oui | aucune |
+
+Sans UID du client, pas d’autoliquidation : une entreprise de l’UE sans UID se voit facturer la TVA autrichienne, et l’éditeur le signale. Pour les livraisons intracommunautaires, Rhinvoice a besoin de votre UID et de celui du client, et vous rappelle la preuve que les biens sont arrivés. Vous pouvez modifier le traitement fiscal à la main dans l’éditeur; Rhinvoice consigne la modification avec un motif dans l’historique.
+
+Les ventes à distance à des clients privés dans l’UE gardent la TVA autrichienne. Rhinvoice ne suit pas le seuil de EUR 10’000 par an valable dans toute l’UE (OSS).
+
+## GiroCode (code QR EPC)
+
+Chaque facture en **EUR** reçoit un **GiroCode** à côté des conditions de paiement, selon les directives de l’European Payments Council (EPC069-12), avec votre IBAN, le titulaire du compte, le montant et le numéro de facture comme motif de paiement. Votre client le scanne avec une application bancaire. Il vous faut un compte en EUR sous *Réglages → Comptes bancaires*.
+
+## Facture électronique
+
+Rhinvoice intègre par défaut une **facture ZUGFeRD / Factur-X** (EN 16931) dans le PDF de chaque facture émise (réglage : *Réglages → Modèle d’impression*), pour autant que les données nécessaires soient complètes; les logiciels comptables la lisent directement. Le format autrichien ebInterface pour le secteur public n’est pas pris en charge. Plus d’informations sous [facture électronique](/docs/fr/invoices/e-invoice/).
+
+## Conservation
+
+Conservez les factures **dix ans** (§ 132 BAO). Dès l’émission, le contenu et le PDF sont verrouillés dans Rhinvoice, aussi dans la base de données, et le PDF est conservé avec son SHA-256. Les corrections se font uniquement par une [facture d’annulation](/docs/fr/invoices/issue-and-cancel/) avec son propre numéro. Protégez les données avec une [sauvegarde](/docs/fr/operations/backup/). Essayez tout dans la démo sur [at.rhinvoice.com](https://at.rhinvoice.com).
+
+Le pays de votre entreprise manque? Rhinvoice peut être étendu : [Ajouter d’autres pays](/docs/fr/countries/more-countries/).
+
+## Questions fréquentes
+
+<Faq />

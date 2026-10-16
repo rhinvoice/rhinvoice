@@ -1,0 +1,76 @@
+---
+title: "Fatture nel Liechtenstein: IVA, fattura QR, indicazioni"
+description: Programma di fatturazione gratuito e open source per il Liechtenstein. IVA svizzera per trattato doganale (8.1 %, 2.6 %, 3.8 %), fattura QR, numero IVA e arrotondamento.
+faq:
+  - q: Quali aliquote IVA valgono nel Liechtenstein?
+    a: Le stesse della Svizzera, perché il Liechtenstein applica la legge svizzera sull’IVA in base al trattato doganale. Dal 1° gennaio 2024 sono 8.1 %, 2.6 % e 3.8 % (alloggio).
+  - q: Devo addebitare l’IVA a un cliente in Svizzera?
+    a: Sì. Svizzera e Liechtenstein formano un unico territorio IVA. Per un’azienda del Liechtenstein un cliente in Svizzera è nazionale, e Rhinvoice applica l’aliquota normale.
+  - q: La fattura QR funziona con un IBAN del Liechtenstein?
+    a: Sì. La fattura QR accetta IBAN e QR-IBAN svizzeri e del Liechtenstein, in CHF o EUR. Le fatture in euro a clienti nell’UE, in Islanda o in Norvegia ricevono anche il codice QR EPC.
+  - q: In quale formato inserisco il numero IVA del Liechtenstein?
+    a: Così come Le è stato assegnato. Rhinvoice non controlla il formato di un numero IVA del Liechtenstein, perché non è un IDI svizzero, e lo stampa invariato.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Il Liechtenstein applica la legge svizzera sull’IVA in base al **trattato doganale**. Una fattura del Liechtenstein di Rhinvoice riporta quindi le **stesse aliquote IVA della Svizzera** (dal 1° gennaio 2024: 8.1 %, 2.6 %, 3.8 %), il **numero IVA** della Sua azienda, la giusta indicazione e una **fattura QR** in CHF o EUR. I clienti in Svizzera sono per Lei nazionali.
+
+<Aside type="note" title="Nessuna consulenza fiscale">
+Stato: ottobre 2026. Aliquote e regole sono verificate presso l’Amministrazione fiscale del Liechtenstein (Steuerverwaltung) e l’AFC svizzera, ma senza garanzia. In caso di dubbio chieda al Suo fiduciario o consulente fiscale.
+</Aside>
+
+## Quale aliquota IVA si applica?
+
+| Validità | Aliquota normale | Aliquota ridotta | Aliquota speciale alloggio |
+|---|---|---|---|
+| dal 1° gennaio 2024 | 8.1 % | 2.6 % | 3.8 % |
+| dal 1° gennaio 2018 al 31 dicembre 2023 | 7.7 % | 2.5 % | 3.7 % |
+| dal 1° gennaio 2011 al 31 dicembre 2017 | 8 % | 2.5 % | 3.8 % |
+
+Fonte: AFC, «MWST-Sätze ab 1. Januar 2024»; l’Amministrazione fiscale del Liechtenstein applica le stesse aliquote in base al trattato doganale.
+
+Vale l’aliquota alla **data della prestazione**: la fine del periodo della prestazione, altrimenti il suo inizio, altrimenti la data della fattura. All’emissione Rhinvoice fissa l’aliquota di ogni posizione.
+
+## Che cosa cambia rispetto alla Svizzera
+
+- **Numero IVA, non IDI.** Il numero IVA del Liechtenstein (MWST-Nummer) non è un IDI svizzero, perciò il campo in *Impostazioni → Azienda* si chiama *Numero IVA*. Rhinvoice lo conserva così come lo digita e non ne controlla il formato.
+- **Registro di commercio.** Inserisca il Suo numero di registro nel campo *Registro di commercio*, per esempio `FL-0002.123.456-7`. Appare nel piè di pagina e identifica la Sua azienda nella fattura elettronica.
+- **Conti del Liechtenstein.** La fattura QR accetta IBAN e QR-IBAN del Liechtenstein come quelli svizzeri. Per il codice QR EPC verso clienti nell’UE, un conto del Liechtenstein non ha bisogno di BIC, perché il Liechtenstein fa parte dello SEE; un conto svizzero sì.
+- **«FL» nelle importazioni.** Quando riprende dei clienti, Rhinvoice riconosce come paese «FL», «LI», «Liechtenstein» e «Fürstentum Liechtenstein».
+
+Per il resto vale tutto quanto indicato per le [fatture in Svizzera](/docs/it/countries/switzerland/): arrotondamento a 0.05, importi scritti come `CHF 1'234.50` sui documenti tedeschi, e le indicazioni.
+
+## Che cosa deve indicare la fattura
+
+Un’azienda assoggettata all’IVA indica il suo **numero IVA** sulla fattura (art. 26 cpv. 2 lett. a LIVA, nel Liechtenstein in base al trattato doganale). Senza di esso Rhinvoice non emette la fattura e Le indica dove aggiungerlo. Senza un periodo della prestazione, Rhinvoice stampa la data della fattura come data della prestazione.
+
+Se non è assoggettato all’IVA, attivi *Non assoggettato all’IVA (cifra d’affari inferiore a CHF 100’000)* in *Impostazioni → Azienda*. Le fatture non riportano allora l’IVA e recano l’indicazione «Nicht mehrwertsteuerpflichtig.» (documenti in inglese: «No VAT is charged (small business scheme).»).
+
+## Fattura QR
+
+Ogni fattura riceve la sezione pagamento della fattura QR secondo le SIX Implementation Guidelines QR-bill. Con un **QR-IBAN** Rhinvoice stampa il riferimento QR (27 cifre), con un **IBAN** normale il Creditor Reference (SCOR, che inizia con `RF`). Rhinvoice li ricava entrambi dal numero della fattura. La valuta è CHF o EUR. Anche i clienti in Svizzera pagano con la fattura QR.
+
+## Clienti all’estero
+
+| Caso | IVA | Indicazione sulla fattura (documenti in tedesco) |
+|---|---|---|
+| Cliente nel Liechtenstein o in Svizzera | sì | nessuna |
+| Servizio a un’impresa dell’UE con numero IVA | no | «Übergang der Steuerschuld auf den Leistungsempfänger (Steuerschuldnerschaft des Leistungsempfängers, Reverse Charge).» |
+| Servizio a un altro cliente all’estero | no | «Ort der Leistung im Ausland, nicht der MWST unterstellt.» |
+| Beni che lasciano il territorio IVA | no | «Steuerbefreite Ausfuhrlieferung (Art. 23 Abs. 2 Ziff. 1 MWSTG).» |
+
+I beni che vanno da Vaduz a San Gallo restano nel territorio IVA e sono tassati normalmente. Può cambiare a mano il trattamento fiscale nell’editor; Rhinvoice registra la modifica nello storico.
+
+## Fattura elettronica e conservazione
+
+Le fatture elettroniche sono facoltative. Rhinvoice integra comunque per impostazione predefinita una **fattura ZUGFeRD / Factur-X** (EN 16931) nel PDF di ogni fattura emessa, purché i dati necessari siano completi; può disattivarla in *Impostazioni → Modello di stampa* ([fattura elettronica](/docs/it/invoices/e-invoice/)). Le fatture emesse sono bloccate con il loro PDF; le correzioni si fanno solo con una [fattura di storno](/docs/it/invoices/issue-and-cancel/).
+
+La demo pubblica esiste per Svizzera, Germania e Austria. Per il Liechtenstein provi [ch.rhinvoice.com](https://ch.rhinvoice.com): aliquote, fattura QR e indicazioni sono le stesse.
+
+Manca il paese della Sua azienda? Rhinvoice si può estendere: [Aggiungere altri paesi](/docs/it/countries/more-countries/).
+
+## Domande frequenti
+
+<Faq />

@@ -1,0 +1,78 @@
+---
+title: Stralciare una fattura che non verrà pagata
+description: Stralciare in Rhinvoice una fattura inesigibile invece di stornarla. Con le perdite su crediti per anno, l’IVA contenuta e le regole di ogni Paese.
+since: 0.6.0
+faq:
+  - q: Quando stralcio una fattura e quando la storno?
+    a: Storni una fattura che era sbagliata o la cui prestazione non è mai stata fornita. Il cliente riceve allora una fattura di storno. Lo stralcio è per una fattura corretta che il cliente non paga più. Il cliente non riceve nulla e continua a dovere l’importo.
+  - q: Che cosa succede se il cliente paga comunque una fattura stralciata?
+    a: Registri il pagamento come di consueto con «Registra pagamento». Lo stralcio resta nell’anno della sua data e il pagamento conta come «Pagato in seguito» nell’anno in cui è arrivato.
+  - q: Posso annullare uno stralcio?
+    a: Sì, con «Altre azioni → Revoca stralcio». L’importo stralciato è poi di nuovo aperto e si può sollecitare. La cronologia della fattura annota entrambi.
+  - q: Devo correggere l’IVA a causa dello stralcio?
+    a: Dipende da come conteggia l’IVA. Se deve l’imposta già alla fatturazione, la corregge. Se la deve solo all’arrivo del pagamento, non c’è nulla da correggere. Rhinvoice mostra solo l’imposta contenuta nell’importo.
+  - q: Posso stralciare fatture riprese da un programma usato in precedenza?
+    a: Sì. Le fatture riprese non si possono stornare, ma si possono stralciare, anche senza PDF.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Una fattura che era corretta ma non verrà più pagata viene **stralciata in Rhinvoice**. Da quel momento non conta più come aperta o scaduta e non viene sollecitata. La fattura stessa resta invariata, il cliente non riceve nulla e l’importo non conta come pagamento ricevuto.
+
+## Stralciare o stornare?
+
+| | Stornare | Stralciare |
+|---|---|---|
+| Quando | La fattura era sbagliata o la prestazione non è stata fornita così | La fattura era corretta, il cliente non paga |
+| Documento al cliente | Fattura di storno con un proprio numero | Nessuno |
+| Il debito del cliente | Annullato | Rimane |
+| Fatture riprese | Non possibile | Possibile |
+
+Uno sconto concordato in seguito, per esempio come gesto di cortesia, è uno [storno](/docs/it/invoices/issue-and-cancel/) con una nuova fattura, non uno stralcio.
+
+## Stralciare una fattura
+
+<Steps>
+
+1. Apra la fattura emessa o pagata parzialmente.
+2. Scelga *Altre azioni → Stralcia …*.
+3. Imposti la data in *Stralciata al*. Viene proposta la data di oggi, *Fine dell’anno della fattura* imposta il 31 dicembre dell’anno della fattura. La data è compresa tra la data della fattura e oggi.
+4. Scelga il *Motivo*: *Società sciolta o fallita*, *Prescritta*, *Importo esiguo*, *Irreperibile* o *Altro motivo*. Una *Nota* è facoltativa.
+5. Confermi con **Stralcia**.
+
+</Steps>
+
+Viene sempre stralciato l’intero importo aperto. Dopo un pagamento parziale, è il resto. La fattura mostra allora *Stralciata* e il suo importo aperto è 0. In *Dettagli*, la scheda *Stralcio* mostra data, importo, motivo e l’imposta contenuta nell’importo. La *Cronologia* annota lo stralcio.
+
+Una fattura stralciata non si può stornare né sollecitare.
+
+## Pagamento successivo e revoca
+
+Se il cliente paga comunque, registri il pagamento sulla fattura con *Registra pagamento*, fino all’importo stralciato e con una data non anteriore allo stralcio. Una volta pagato l’intero importo la fattura mostra *Pagata*, altrimenti per il resto rimane *Stralciata*.
+
+Se lo stralcio era un errore, lo revochi con *Altre azioni → Revoca stralcio*. L’importo è poi di nuovo aperto. I pagamenti arrivati prima dello stralcio si possono rimuovere solo dopo la revoca. La revoca funziona anche dopo che la fattura è stata comunque pagata per intero, ed è necessaria prima di stornare una fattura di questo tipo.
+
+## Perdite per anno
+
+L’elenco delle fatture ha la vista *Stralciate*. Sotto di essa, una tabella per anno e valuta mostra *Stralciato*, *Pagato in seguito*, *Perdita*, *Netto* e l’imposta contenuta. Uno stralcio conta nell’anno della sua data, un pagamento successivo nell’anno in cui è arrivato. Con l’interfaccia in tedesco la tabella si chiama *Debitorenverluste* in Svizzera e nel Liechtenstein e *Forderungsausfälle* in Germania e in Austria; in inglese si chiama *Bad debts*.
+
+Il fatturato nella panoramica resta quello fatturato. *Pagato* conta solo ciò che è davvero arrivato.
+
+## Imposta per Paese
+
+Rhinvoice non sa come la Sua azienda conteggia l’IVA e quindi non registra alcuna correzione. Mostra l’imposta contenuta, affinché Lei o il Suo contabile possiate usarla.
+
+| Paese | Regola | Data dello stralcio |
+|---|---|---|
+| Svizzera, Liechtenstein | Se conteggia secondo le controprestazioni convenute, l’importo riduce la controprestazione nel periodo in cui lo contabilizza (art. 41 LIVA). Secondo le controprestazioni ricevute non c’è nulla da correggere. | Giorno della contabilizzazione |
+| Germania | Se deve l’IVA alla fatturazione, la corregga nel periodo in cui l’importo è diventato inesigibile, e di nuovo se viene comunque pagato (§ 17 Abs. 2 Nr. 1 UStG). | Giorno in cui l’importo è diventato inesigibile |
+| Austria | Come in Germania (§ 16 Abs. 3 Z 1 UStG). | Giorno in cui l’importo è diventato inesigibile |
+
+<Aside type="caution" title="Nessuna consulenza fiscale">
+Se un importo è da considerare inesigibile e se correggere l’imposta è una domanda per il Suo fiduciario o consulente fiscale. Se tiene un bilancio, comunichi al Suo contabile quali fatture ha stralciato.
+</Aside>
+
+## Domande frequenti
+
+<Faq />

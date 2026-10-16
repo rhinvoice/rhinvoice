@@ -86,7 +86,10 @@ _FRENCH_NOTICES = {
     TaxTreatment.REVERSE_CHARGE: (
         "Autoliquidation : la TVA est due par le destinataire de la prestation."
     ),
-    TaxTreatment.EXPORT: "Lieu de la prestation de services à l’étranger, non soumis à la TVA.",
+    TaxTreatment.EXPORT: (
+        "Prestation de services non soumise à la TVA "
+        "(lieu de la prestation de services à l’étranger)."
+    ),
     TaxTreatment.SMALL_BUSINESS: "Non assujetti à la TVA.",
     TaxTreatment.EXEMPT: "Prestation exonérée de la TVA.",
     TaxTreatment.GOODS_EXPORT: (
@@ -100,7 +103,10 @@ _ITALIAN_NOTICES = {
     TaxTreatment.REVERSE_CHARGE: (
         "Inversione contabile: l’imposta è dovuta dal destinatario della prestazione."
     ),
-    TaxTreatment.EXPORT: "Luogo della prestazione di servizi all’estero, non soggetto all’IVA.",
+    TaxTreatment.EXPORT: (
+        "Prestazione di servizi non soggetta all’IVA "
+        "(luogo della prestazione di servizi all’estero)."
+    ),
     TaxTreatment.SMALL_BUSINESS: "Non assoggettato all’IVA.",
     TaxTreatment.EXEMPT: "Prestazione esente dall’IVA.",
     TaxTreatment.GOODS_EXPORT: (

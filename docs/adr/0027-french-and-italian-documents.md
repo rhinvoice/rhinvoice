@@ -21,8 +21,11 @@ official language.
   (as "Credit note" in English), "Rappel" and "Sollecito" for dunning letters, "Meilleures
   salutations" and "Cordiali saluti" in mails.
 - **Numbers and dates.** Like German, French and Italian take the number style of the
-  company's country: `1’234.50` for Swiss and Liechtenstein companies (fr-CH, it-CH),
-  `1 234,50` (CLDR fr) and `1.234,50` (CLDR it) for German and Austrian ones. Dates are CLDR
+  company's country: `1’234.50` for Swiss and Liechtenstein companies, `1 234,50` (CLDR fr)
+  and `1.234,50` (CLDR it) for German and Austrian ones. For Italian `1’234.50` is CLDR it-CH;
+  for French it is a choice: CLDR fr-CH writes `1 234,50`, but Swiss invoices, the QR-bill
+  and the other languages of the same company use `1’234.50`, and one company should not print
+  two number formats. Dates are CLDR
   long dates ("9 mars 2026", "9 marzo 2026"), as `Intl.DateTimeFormat` writes them.
 - **Swiss notices** (CH, LI) use the terms of the law in its French and Italian version:
   "assujetti / assoggettato" (Art. 10), "exonérée / esente" (Art. 23), "lieu de la prestation de

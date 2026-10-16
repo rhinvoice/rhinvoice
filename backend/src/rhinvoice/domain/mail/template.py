@@ -172,8 +172,8 @@ _TEXTS: Mapping[Language, Mapping[MailKind, str]] = {
         MailKind.REMINDER_1: (
             "Notre facture {nummer} est encore ouverte. Elle vous a peut-être échappé."
             " Nous vous prions de verser {waehrung} {betrag} d’ici au {faellig}. Le rappel de"
-            " paiement se trouve en annexe. Si vous avez déjà payé, veuillez considérer ce"
-            " message comme nul et non avenu."
+            " paiement se trouve en annexe. Si vous avez déjà payé, veuillez ne pas tenir compte"
+            " de ce message."
         ),
         MailKind.REMINDER_2: (
             "Malgré notre rappel de paiement, la facture {nummer} est encore ouverte. Nous vous"

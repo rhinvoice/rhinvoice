@@ -28,7 +28,7 @@ DUNNING_TEXTS: dict[int, tuple[str, str]] = {
         (
             "Sans doute cela vous a-t-il échappé : la facture suivante est encore ouverte. Nous "
             "vous prions de verser le montant d’ici au {faellig}. Si vous avez déjà effectué le "
-            "paiement, veuillez considérer ce courrier comme nul et non avenu."
+            "paiement, veuillez ne pas tenir compte de ce courrier."
         ),
         (
             "Forse vi è sfuggito: la seguente fattura risulta ancora aperta. Vi preghiamo di "
@@ -49,8 +49,8 @@ DUNNING_TEXTS: dict[int, tuple[str, str]] = {
     3: (
         (
             "La facture suivante est encore ouverte malgré notre rappel de paiement et notre "
-            "rappel. Nous vous prions de verser le montant d’ici au {faellig}. À défaut, nous "
-            "devrons faire valoir notre créance par voie juridique sans autre avis."
+            "premier rappel. Nous vous prions de verser le montant d’ici au {faellig}. À défaut, "
+            "nous devrons faire valoir notre créance par voie juridique sans autre avis."
         ),
         (
             "La seguente fattura risulta ancora aperta nonostante il promemoria e il sollecito. Vi "
@@ -231,6 +231,10 @@ def downgrade() -> None:
     )
     op.execute(
         "UPDATE documents SET language = 'de' WHERE status = 'draft' AND language IN ('fr', 'it')"
+    )
+    op.execute(
+        "UPDATE recurring_plans SET template = jsonb_set(template, '{language}', '\"de\"')"
+        " WHERE template->>'language' IN ('fr', 'it')"
     )
     op.drop_column("dunning_levels", "text_it")
     op.drop_column("dunning_levels", "text_fr")

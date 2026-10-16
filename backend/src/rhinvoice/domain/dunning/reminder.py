@@ -190,7 +190,7 @@ FRENCH_TEXTS = {
     1: (
         "Sans doute cela vous a-t-il échappé : la facture suivante est encore ouverte. Nous "
         "vous prions de verser le montant d’ici au {faellig}. Si vous avez déjà effectué le "
-        "paiement, veuillez considérer ce courrier comme nul et non avenu."
+        "paiement, veuillez ne pas tenir compte de ce courrier."
     ),
     2: (
         "Malgré notre rappel de paiement, la facture suivante n’est toujours pas payée. Nous "
@@ -198,8 +198,8 @@ FRENCH_TEXTS = {
     ),
     3: (
         "La facture suivante est encore ouverte malgré notre rappel de paiement et notre "
-        "rappel. Nous vous prions de verser le montant d’ici au {faellig}. À défaut, nous "
-        "devrons faire valoir notre créance par voie juridique sans autre avis."
+        "premier rappel. Nous vous prions de verser le montant d’ici au {faellig}. À défaut, "
+        "nous devrons faire valoir notre créance par voie juridique sans autre avis."
     ),
 }
 """The built-in French texts per level; also what the migration gives existing settings."""

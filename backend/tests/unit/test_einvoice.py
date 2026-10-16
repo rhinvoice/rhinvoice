@@ -415,7 +415,8 @@ def test_french_and_italian_invoices_give_their_notices_as_exemption_reasons() -
     assert texts(french, f"{taxes}/ram:CategoryCode") == ["G"]
     assert texts(french, f"{taxes}/ram:ExemptionReason") == [
         (
-            "Lieu de la prestation de services à l’étranger, non soumis à la TVA."
+            "Prestation de services non soumise à la TVA (lieu de la prestation de services"
+            " à l’étranger)."
             " Livraison à l’exportation exonérée de l’impôt (art. 23, al. 2, ch. 1, LTVA)."
         ),
     ]

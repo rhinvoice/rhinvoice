@@ -54,7 +54,7 @@ When you send the invoice by e-mail, you can choose *Also attach the XRechnung (
 
 The XRechnung needs a buyer reference (BT-10). Rhinvoice takes it like this:
 
-- If the customer has a **Leitweg-ID or fixed buyer reference**, that one always applies.
+- If the customer has a **Leitweg-ID or fixed buyer reference**, that one always applies. The invoice's reference then goes into the e-invoice as the order reference (BT-13), so an order number such as "Bestellung 4711" is not lost.
 - Otherwise the **invoice's reference** applies (*More details → Reference*), for example the order number.
 - If both are empty, the XRechnung lacks the buyer reference.
 

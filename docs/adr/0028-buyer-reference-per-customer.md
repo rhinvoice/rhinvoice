@@ -14,6 +14,11 @@ Leitweg-ID belongs there. The problem only showed after issuing, when the invoic
   If set, it is the buyer reference of every e-invoice to that customer (XRechnung and
   ZUGFeRD); otherwise the invoice's reference is, as before. Both empty: the XRechnung
   lacks `buyer_reference_missing`.
+- When the customer's value is BT-10, the invoice's own reference (e.g. "Bestellung 4711")
+  is written as the buyer's **order reference** (BT-13, CII
+  `ram:BuyerOrderReferencedDocument/ram:IssuerAssignedID`, EN 16931-3-3), unless it is the
+  same text. XRechnung 3.0 sets no extra rule for BT-13, so nothing typed into the invoice
+  gets lost.
 - The value comes from the **customer snapshot** of the issued invoice, so later changes of the
   customer do not change issued e-invoices. Snapshots written before have no such key and
   read as empty.

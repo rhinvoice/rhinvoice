@@ -54,7 +54,7 @@ Beim Versand per E-Mail können Sie *XRechnung (XML) zusätzlich anhängen* wäh
 
 Die XRechnung braucht eine Käuferreferenz (BT-10). Rhinvoice nimmt sie so:
 
-- Hat der Kunde eine **Leitweg-ID oder feste Käuferreferenz**, gilt immer diese.
+- Hat der Kunde eine **Leitweg-ID oder feste Käuferreferenz**, gilt immer diese. Die Referenz der Rechnung steht dann als Bestellreferenz (BT-13) in der E-Rechnung, eine Bestellnummer wie «Bestellung 4711» geht also nicht verloren.
 - Sonst gilt die **Referenz der Rechnung** (*Weitere Angaben → Referenz*), zum Beispiel die Bestellnummer.
 - Fehlen beide, fehlt der XRechnung die Käuferreferenz.
 

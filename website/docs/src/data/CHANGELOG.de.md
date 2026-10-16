@@ -10,7 +10,9 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   in `rhinvoice.json` (Docker: `RHINVOICE_UPDATE_CHECK=false`).
 - Kunden in Deutschland haben das Feld **Leitweg-ID oder feste Käuferreferenz**. Einmal
   eingetragen, ist es die Käuferreferenz jeder XRechnung an diesen Kunden; sonst gilt wie bisher
-  die *Referenz* der Rechnung. Ausgestellte Rechnungen behalten den Wert vom Tag des Ausstellens.
+  die *Referenz* der Rechnung, und neben einer Leitweg-ID steht die *Referenz* als
+  Bestellreferenz (BT-13) in der E-Rechnung. Ausgestellte Rechnungen behalten den Wert vom Tag
+  des Ausstellens.
   Der Kundenimport erkennt eine Spalte «Leitweg-ID».
 - Bei Kunden in Deutschland nennt der Dialog vor dem Ausstellen auch, was der XRechnung fehlt,
   solange sich die Rechnung noch ergänzen lässt. Der Editor zeigt unter *Referenz*, ob die

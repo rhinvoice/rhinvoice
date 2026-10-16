@@ -54,7 +54,7 @@ Lorsque vous envoyez la facture par e-mail, vous pouvez choisir *Joindre aussi l
 
 La XRechnung a besoin d’une référence de l’acheteur (BT-10). Rhinvoice la prend ainsi :
 
-- Si le client a une **Leitweg-ID ou référence d’acheteur fixe**, c’est toujours elle qui s’applique.
+- Si le client a une **Leitweg-ID ou référence d’acheteur fixe**, c’est toujours elle qui s’applique. La référence de la facture figure alors dans la facture électronique comme référence de commande (BT-13); un numéro de commande comme « Bestellung 4711 » n’est donc pas perdu.
 - Sinon, la **référence de la facture** s’applique (*Autres informations → Référence*), par exemple le numéro de commande.
 - Si les deux sont vides, la référence de l’acheteur manque dans la XRechnung.
 

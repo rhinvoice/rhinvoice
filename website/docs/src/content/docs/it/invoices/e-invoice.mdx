@@ -54,7 +54,7 @@ Quando invia la fattura per e-mail, può scegliere *Allega anche la XRechnung (X
 
 La XRechnung richiede un riferimento dell’acquirente (BT-10). Rhinvoice lo prende così:
 
-- Se il cliente ha una **Leitweg-ID o un riferimento fisso dell’acquirente**, vale sempre quello.
+- Se il cliente ha una **Leitweg-ID o un riferimento fisso dell’acquirente**, vale sempre quello. Il riferimento della fattura figura allora nella fattura elettronica come riferimento dell’ordine (BT-13), quindi un numero d’ordine come «Bestellung 4711» non va perso.
 - Altrimenti vale il **riferimento della fattura** (*Altri dati → Riferimento*), per esempio il numero d’ordine.
 - Se entrambi sono vuoti, alla XRechnung manca il riferimento dell’acquirente.
 

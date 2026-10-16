@@ -10,7 +10,9 @@ before 1.0, minor versions may contain breaking changes.
   `rhinvoice.json` (Docker: `RHINVOICE_UPDATE_CHECK=false`).
 - Customers in Germany have the field **Leitweg-ID or fixed buyer reference**. Entered once, it
   is the buyer reference of every XRechnung to that customer; otherwise the invoice's
-  *Reference* is used, as before. Issued invoices keep the value of the day they were issued.
+  *Reference* is used, as before, and with a Leitweg-ID the *Reference* goes into the
+  e-invoice as the order reference (BT-13). Issued invoices keep the value of the day they
+  were issued.
   The customer import recognises a "Leitweg-ID" column.
 - For customers in Germany, the dialog before issuing also names what the XRechnung lacks,
   while the invoice can still be completed. The editor says below *Reference* whether the

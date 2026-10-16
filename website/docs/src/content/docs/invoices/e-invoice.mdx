@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../components/Faq.astro";
+import Since from "../../../components/Since.astro";
 import { Aside } from "@astrojs/starlight/components";
 
 Rhinvoice creates e-invoices for free: the PDF of every issued invoice is a **PDF/A-3b with an embedded ZUGFeRD / Factur-X invoice** (profile EN 16931), and for German public authorities you also download the **XRechnung 3.0** (CII) as XML. Rhinvoice checks both with the official validators, KoSIT and Mustang.
@@ -44,7 +45,7 @@ Rhinvoice stores the embedded XML together with the PDF and never changes either
 
 Public authorities in Germany require the XRechnung. To create it:
 
-1. On the customer, enter the authority's **Leitweg-ID** in the field *Leitweg-ID or fixed buyer reference*. The field appears for customers in Germany.
+1. On the customer, enter the authority's **Leitweg-ID** in the field *Leitweg-ID or fixed buyer reference*. The field appears for customers in Germany. <Since version="0.8.0" />
 2. Issue the invoice.
 3. Open the section *E-invoice* → *XRechnung for German authorities* and click *XRechnung (XML)*.
 

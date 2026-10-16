@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Für ein Update setzen Sie die neue Version in `.env`, holen die Images und starten die Container neu. Die Datenbank wird beim Start automatisch migriert. Lesen Sie vorher das Änderungsprotokoll und machen Sie ein Backup.
@@ -32,7 +33,7 @@ Für ein Update setzen Sie die neue Version in `.env`, holen die Images und star
 
 <Steps>
 
-1. Setzen Sie im Ordner mit `compose.yml` und `.env` in `.env` die Einstellung `RHINVOICE_VERSION` auf die neue Version, z. B. `RHINVOICE_VERSION=0.7.4`.
+1. Setzen Sie im Ordner mit `compose.yml` und `.env` in `.env` die Einstellung `RHINVOICE_VERSION` auf die neue Version, z. B. `RHINVOICE_VERSION=0.8.0`.
 
 2. Images holen und neu starten:
 
@@ -54,7 +55,7 @@ Die Datenbank wird beim Start automatisch migriert (`RHINVOICE_RUN_MIGRATIONS=tr
 
 | `RHINVOICE_VERSION` | Verhalten |
 |---|---|
-| eine Version, z. B. `0.7.4` | fest: ändert sich nur, wenn Sie sie ändern |
+| eine Version, z. B. `0.8.0` | fest: ändert sich nur, wenn Sie sie ändern |
 | `latest` | folgt jeder neuen Version beim nächsten `docker compose pull` |
 
 Für echte Rechnungen ist eine feste Version die sicherere Wahl: Sie entscheiden, wann Sie aktualisieren, und können vorher das Änderungsprotokoll lesen.
@@ -73,7 +74,7 @@ Für die Prüfung lädt Rhinvoice eine kleine, signierte Datei vom neuesten Rele
 RHINVOICE_UPDATE_CHECK=false
 ```
 
-Im Programm für Windows und Mac ergänzen Sie dafür in `rhinvoice.json` im Datenordner (siehe [wo Ihre Daten liegen](/docs/de/getting-started/install-desktop/#wo-ihre-daten-liegen)) die Zeile `"update_check": false` und starten Rhinvoice neu.
+Im Programm für Windows und Mac ergänzen Sie dafür in `rhinvoice.json` im Datenordner (siehe [wo Ihre Daten liegen](/docs/de/getting-started/install-desktop/#wo-ihre-daten-liegen)) die Zeile `"update_check": false` und starten Rhinvoice neu. <Since version="0.8.0" />
 
 ## Testkandidaten ausprobieren
 

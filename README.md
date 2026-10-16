@@ -104,9 +104,9 @@ laptop with Docker Desktop (macOS, Windows, Linux).
 
 ```bash
 mkdir rhinvoice && cd rhinvoice
-curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.7.4/deploy/compose.yml
-curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.7.4/.env.example -o .env
-# edit .env: POSTGRES_PASSWORD and RHINVOICE_VERSION=0.7.4
+curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.8.0/deploy/compose.yml
+curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.8.0/.env.example -o .env
+# edit .env: POSTGRES_PASSWORD and RHINVOICE_VERSION=0.8.0
 docker compose pull
 docker compose up -d
 ```

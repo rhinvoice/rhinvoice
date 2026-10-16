@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Pour mettre à jour Rhinvoice, indiquez la nouvelle version dans `.env`, récupérez les images et redémarrez les conteneurs. Les migrations de la base de données s’exécutent automatiquement au démarrage. Avant cela, lisez le changelog et faites une sauvegarde.
@@ -32,7 +33,7 @@ Pour mettre à jour Rhinvoice, indiquez la nouvelle version dans `.env`, récup�
 
 <Steps>
 
-1. Dans le dossier contenant `compose.yml` et `.env`, réglez `RHINVOICE_VERSION` dans `.env` sur la nouvelle version, par exemple `RHINVOICE_VERSION=0.7.4`.
+1. Dans le dossier contenant `compose.yml` et `.env`, réglez `RHINVOICE_VERSION` dans `.env` sur la nouvelle version, par exemple `RHINVOICE_VERSION=0.8.0`.
 
 2. Récupérez les images et redémarrez :
 
@@ -54,7 +55,7 @@ Les migrations de la base de données s’exécutent automatiquement au démarra
 
 | `RHINVOICE_VERSION` | Comportement |
 |---|---|
-| une version, par exemple `0.7.4` | fixée : ne change que si vous la changez |
+| une version, par exemple `0.8.0` | fixée : ne change que si vous la changez |
 | `latest` | suit chaque publication au prochain `docker compose pull` |
 
 Une version fixée est le choix le plus sûr pour de vraies factures : vous décidez quand mettre à jour et pouvez d’abord lire le changelog.
@@ -73,7 +74,7 @@ Pour la vérification, Rhinvoice télécharge un petit fichier signé de la dern
 RHINVOICE_UPDATE_CHECK=false
 ```
 
-Dans le programme pour Windows et Mac, ajoutez la ligne `"update_check": false` au fichier `rhinvoice.json` du dossier de données (voir [où se trouvent vos données](/docs/fr/getting-started/install-desktop/#où-se-trouvent-vos-données)) et redémarrez Rhinvoice.
+Dans le programme pour Windows et Mac, ajoutez la ligne `"update_check": false` au fichier `rhinvoice.json` du dossier de données (voir [où se trouvent vos données](/docs/fr/getting-started/install-desktop/#où-se-trouvent-vos-données)) et redémarrez Rhinvoice. <Since version="0.8.0" />
 
 ## Tester les versions candidates
 

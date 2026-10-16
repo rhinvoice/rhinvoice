@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside } from "@astrojs/starlight/components";
 
 Rhinvoice crea fatture elettroniche gratis: il PDF di ogni fattura emessa è un **PDF/A-3b con una fattura ZUGFeRD / Factur-X incorporata** (profilo EN 16931), e per le autorità pubbliche tedesche scarica inoltre la **XRechnung 3.0** (CII) come XML. Rhinvoice controlla entrambe con i validatori ufficiali, KoSIT e Mustang.
@@ -44,7 +45,7 @@ Rhinvoice salva l’XML incorporato insieme al PDF e non modifica più né l’u
 
 Le autorità pubbliche in Germania richiedono la XRechnung. Per crearla:
 
-1. Sul cliente, inserisca la **Leitweg-ID** dell’autorità nel campo *Leitweg-ID o riferimento fisso dell’acquirente*. Il campo compare per i clienti in Germania.
+1. Sul cliente, inserisca la **Leitweg-ID** dell’autorità nel campo *Leitweg-ID o riferimento fisso dell’acquirente*. Il campo compare per i clienti in Germania. <Since version="0.8.0" />
 2. Emetta la fattura.
 3. Apra la sezione *Fattura elettronica* → *XRechnung per le autorità tedesche* e clicchi su *XRechnung (XML)*.
 

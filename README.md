@@ -69,7 +69,7 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 - Dashboard: revenue against last year, open and overdue amounts, open quotes, best customers,
   expected payments
 - Command palette (⌘K / Ctrl+K), keyboard shortcuts, light and dark mode
-- German (CH, DE, AT) and English; usable on the phone
+- Interface in German (CH, DE, AT), French, Italian and English; usable on the phone
 
 **Operations**
 - Encrypted, deduplicated backups with restic: daily and after issuing, to S3, SFTP, a folder,

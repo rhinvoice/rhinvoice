@@ -8,9 +8,13 @@ export type CountryProfile = components["schemas"]["CountryProfileResponse"];
 export type CountryTerms = components["schemas"]["CountryTermsResponse"];
 type TaxCategory = "standard" | "reduced" | "special" | "zero" | "exempt";
 
-/** The country's words in the interface language (German for every German locale). */
+/**
+ * The country's words in the interface language (German for every German locale).
+ * French and Italian use them as soon as the API names them, English until then.
+ */
 export function termsFor(profile: CountryProfile, locale: Locale): CountryTerms {
-  return locale === "en" ? profile.terms.en : profile.terms.de;
+  const byLanguage: Partial<Record<string, CountryTerms>> = profile.terms;
+  return byLanguage[locale.slice(0, 2)] ?? profile.terms.en;
 }
 
 /** "MWST 8.1 % / 2.6 % / 3.8 % · QR-Rechnung": the country at a glance (first start). */

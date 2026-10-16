@@ -31,6 +31,7 @@ export const en: Catalog<MessageKey> = {
   "theme.dark": "Dark",
   "theme.system": "System",
   "language.label": "Language",
+  "language.machineTranslated": "Machine translated – feedback welcome",
   "demo.title": "Demo",
   "demo.loginHint":
     "Try Rhinvoice with sample data. All visitors share this demo; it is reset every {minutes} minutes, and no e-mails are sent.",
@@ -59,6 +60,8 @@ export const en: Catalog<MessageKey> = {
   "support.github": "Report on GitHub",
   "about.changelog": "What's new",
   "about.noAdvice": "No tax advice; tax rates without warranty.",
+  "about.machineTranslated": "This translation was made by machine. Corrections are welcome:",
+  "about.reportTranslation": "Report a translation error",
 
   "updates.title": "Updates",
   "updates.newVersion": "New version {version}",

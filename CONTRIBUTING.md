@@ -58,7 +58,8 @@ The architecture and its reasons are in [`docs/adr`](docs/adr), the design syste
 - **Issued documents stay immutable.** Nothing may change an issued invoice; corrections are
   cancellations.
 - **Everything in code is English**: names, comments, commit messages. User-facing texts live in
-  the message catalogues (`frontend/src/lib/i18n`) in German and English.
+  the message catalogues (`frontend/src/lib/i18n`) in German, English, French and Italian;
+  new texts need all four (the type check and the tests insist).
 - **Tax rules name their source** in a comment (law, article, official page).
 - **Commit messages** follow [Conventional Commits](https://www.conventionalcommits.org/)
   (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`).

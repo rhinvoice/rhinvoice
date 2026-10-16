@@ -10,7 +10,7 @@
 - Licence: GNU Affero General Public License v3.0 or later (AGPL-3.0); contributions under a contributor licence agreement
 - Price: free; there is no paid version and no hosted service
 - Countries of the issuing company: Switzerland (CH), Liechtenstein (LI), Germany (DE), Austria (AT); customers can be anywhere; more company countries can be added as country profiles
-- Languages: interface in German (Swiss, German and Austrian variants) and English; documents in German, English, French or Italian (French and Italian as written in Switzerland)
+- Languages: interface in German (Swiss, German and Austrian variants), French, Italian (both machine translated) and English; documents in German, English, French or Italian (French and Italian as written in Switzerland)
 - Runs on: a program for Windows 10/11 (x64) and for Macs with Apple silicon (macOS 12 or later), with the database included, updates in the program and backups into a folder such as OneDrive or iCloud Drive (beta); or Docker on Linux, macOS or Windows (servers, NAS, Raspberry Pi 4/5, laptops with Docker Desktop), images for amd64 and arm64
 - Status: beta (0.x)
 - Made by: webberz, Balgach, Switzerland (https://www.webberz.ch/)

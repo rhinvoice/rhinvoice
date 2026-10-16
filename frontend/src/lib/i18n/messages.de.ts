@@ -32,6 +32,7 @@ export const de = {
   "theme.dark": "Dunkel",
   "theme.system": "System",
   "language.label": "Sprache",
+  "language.machineTranslated": "Maschinell übersetzt – Rückmeldungen sind willkommen",
   "demo.title": "Demo",
   "demo.loginHint":
     "Probieren Sie Rhinvoice mit Beispieldaten aus. Alle Besucher teilen sich diese Demo; sie wird alle {minutes} Minuten zurückgesetzt, E-Mails werden nicht versendet.",
@@ -63,6 +64,9 @@ export const de = {
   "support.github": "Auf GitHub melden",
   "about.changelog": "Neuerungen",
   "about.noAdvice": "Keine Steuerberatung, Steuersätze ohne Gewähr.",
+  "about.machineTranslated":
+    "Diese Übersetzung wurde maschinell erstellt. Hinweise auf Fehler sind willkommen:",
+  "about.reportTranslation": "Übersetzungsfehler melden",
 
   "updates.title": "Aktualisierung",
   "updates.newVersion": "Neue Version {version}",

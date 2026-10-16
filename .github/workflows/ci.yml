@@ -1,14 +1,18 @@
 name: CI
 
-# On dev and main, changes to the website, the docs or Markdown files alone need none of these
-# checks: the Website workflow checks them.
+# A pull request gets the quick run (ADR 0029): mutation testing only for the domain and
+# application modules it changes. The tag of a release candidate gets the full run, every
+# mutant; the Release workflow publishes the candidate only after it passed, and its results on
+# the released commit are the checks main asks for. The browser tests always run completely,
+# split over four runners.
 on:
-  push:
-    branches: [dev, main]
-    paths-ignore: ["website/**", "docs/**", "*.md"]
   # Every pull request, also one that only changes docs: dev and main require these checks, and a
-  # check that never runs would block the merge (ADR 0025).
+  # check that never runs would block the merge (ADR 0025). For docs alone they are skipped,
+  # which counts as passed; the Website workflow checks the docs.
   pull_request:
+  push:
+    tags: ["v*.*.*-rc.*"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,9 +22,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  backend:
-    name: Backend (lint, types, architecture, tests, mutation, audit)
+  changes:
+    name: What the change touches
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.scope.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: scope
+        # Only a pull request that provably touches nothing but docs skips the checks; any
+        # doubt (a tag, a failed diff) runs them.
+        run: |
+          code=true
+          # A pull request is checked out as its merge into the base: HEAD^1 is the base.
+          if [ "$GITHUB_EVENT_NAME" = pull_request ] && files="$(git diff --name-only HEAD^1 HEAD)"; then
+            if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -Evq '^(website/|docs/)|\.md$'; then
+              code=false
+            fi
+          fi
+          echo "code=$code" | tee -a "$GITHUB_OUTPUT"
+
+  backend-checks:
+    name: Backend checks (lint, types, architecture, tests, audit)
+    needs: changes
+    if: needs.changes.outputs.code != 'false'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -31,12 +61,43 @@ jobs:
       - run: make backend-lint backend-types backend-arch
       # testcontainers starts PostgreSQL through the runner's Docker daemon.
       - run: make backend-test
-      - run: make backend-mutation
       - run: make backend-audit
+
+  backend-mutation:
+    name: Backend mutation (${{ github.event_name == 'pull_request' && 'changed modules' || 'all' }})
+    needs: changes
+    if: needs.changes.outputs.code != 'false'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - run: cd backend && uv sync --frozen
+      - run: make backend-mutation CHANGED=${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
+
+  # The name dev and main require; it passes when both backend jobs passed.
+  backend:
+    name: Backend (lint, types, architecture, tests, mutation, audit)
+    needs: [changes, backend-checks, backend-mutation]
+    if: always() && needs.changes.outputs.code != 'false'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: |
+          test "${{ needs.backend-checks.result }}" = success
+          test "${{ needs.backend-mutation.result }}" = success
 
   frontend:
     name: Frontend (format, lint, types, layers, unit tests, audit, build)
+    needs: changes
+    if: needs.changes.outputs.code != 'false'
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -52,7 +113,10 @@ jobs:
 
   api-contract:
     name: Generated API client is up to date
+    needs: changes
+    if: needs.changes.outputs.code != 'false'
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -68,9 +132,16 @@ jobs:
       - run: cd frontend && pnpm install --frozen-lockfile
       - run: make api-check
 
-  e2e:
-    name: E2E (Playwright, axe-core, visual regression)
+  e2e-part:
+    name: E2E part ${{ matrix.part }}/4
+    needs: changes
+    if: needs.changes.outputs.code != 'false'
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -82,28 +153,44 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: cd frontend && pnpm install --frozen-lockfile
-      - run: make e2e
+      - run: make e2e SHARD=${{ matrix.part }}/4
         env:
           CI: "true"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.part }}
           path: |
             frontend/playwright-report
             frontend/test-results
           retention-days: 14
 
+  # The name dev and main require; it passes when every part passed.
+  e2e:
+    name: E2E (Playwright, axe-core, visual regression)
+    needs: [changes, e2e-part]
+    if: always() && needs.changes.outputs.code != 'false'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: test "${{ needs.e2e-part.result }}" = success
+
   backup:
     name: Backup and restore (shellcheck, restic, pg_dump)
+    needs: changes
+    if: needs.changes.outputs.code != 'false'
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - run: make backup-qa
 
   einvoice:
     name: E-invoices (KoSIT, Mustang, PDF/A-3)
+    needs: changes
+    if: needs.changes.outputs.code != 'false'
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -115,7 +202,10 @@ jobs:
 
   docker:
     name: Docker image builds
+    needs: changes
+    if: needs.changes.outputs.code != 'false'
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3

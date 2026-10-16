@@ -3,22 +3,24 @@ name: Desktop
 # The installation without Docker (ADR 0021, 0022): builds the Windows setup and the macOS
 # app with their app packages, checks them like a user would (on Windows the full smoke test,
 # desktop/smoke_test.py) and keeps them as downloads of the run. The Release workflow calls
-# it for every release candidate and attaches the files to the pre-release. On a pull
-# request the setups are a preview to try before the merge (ADR 0025).
+# it for every release candidate, with the candidate's version, and attaches the files to the
+# pre-release. A pull request builds them only when it changes what the programs consist of
+# beyond the web application, which CI checks anyway (ADR 0029); "Run workflow" builds them
+# for any branch.
 on:
   workflow_call:
-  push:
-    branches: [dev]
-    paths:
-      - "backend/**"
-      - "frontend/**"
-      - "desktop/**"
-      - ".github/workflows/desktop.yml"
+    inputs:
+      version:
+        description: "The version the programs carry (from the candidate's tag)"
+        type: string
+        default: ""
   pull_request:
     paths:
-      - "backend/**"
-      - "frontend/**"
       - "desktop/**"
+      - "backend/src/rhinvoice/desktop/**"
+      - "backend/src/rhinvoice_boot/**"
+      - "backend/pyproject.toml"
+      - "backend/uv.lock"
       - ".github/workflows/desktop.yml"
   workflow_dispatch:
 
@@ -36,6 +38,9 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Give the program the candidate's version
+        if: inputs.version != ''
+        run: python desktop/set_version.py "${{ inputs.version }}"
 
       - uses: pnpm/action-setup@v4
         with:
@@ -109,6 +114,9 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Give the program the candidate's version
+        if: inputs.version != ''
+        run: python3 desktop/set_version.py "${{ inputs.version }}"
 
       - uses: pnpm/action-setup@v4
         with:

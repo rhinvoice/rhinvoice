@@ -1,6 +1,6 @@
 # 0026 – Work on dev, main holds what was released
 
-- Status: accepted
+- Status: accepted, merge into main amended by [0029](0029-version-from-the-tag-and-quick-pull-requests.md)
 - Date: 2026-10-16
 
 ## Context

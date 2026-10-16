@@ -69,18 +69,21 @@ The architecture and its reasons are in [`docs/adr`](docs/adr), the design syste
 
 ## How a change is released
 
-Nothing reaches users untested ([ADR 0025](docs/adr/0025-tested-releases.md), [ADR 0026](docs/adr/0026-dev-and-main.md)).
-Work happens on `dev`; `main` only holds what was released.
+Nothing reaches users untested ([ADR 0025](docs/adr/0025-tested-releases.md), [ADR 0026](docs/adr/0026-dev-and-main.md),
+[ADR 0029](docs/adr/0029-version-from-the-tag-and-quick-pull-requests.md)). Work happens on
+`dev`; `main` only holds what was released.
 
-1. **Pull request** into `dev`. CI must be green; changes to the program also build the
-   Windows setup and the macOS disk image as a preview, attached to the run.
-2. **Release candidate.** The maintainer tags `vX.Y.Z-rc.N` on `dev`. That builds a public
-   pre-release: setups, Docker images tagged `X.Y.Z-rc.N`, nothing users get by themselves.
-   You are welcome to test it.
+1. **Pull request** into `dev`. CI runs the quick checks: mutation testing for the modules you
+   changed, all browser tests split over four runners. A pull request that is the next release
+   also adds the section `## [X.Y.Z]` to `CHANGELOG.md` and its German twin; the version number
+   itself is never changed by hand.
+2. **Release candidate.** The maintainer tags `vX.Y.Z-rc.N` on `dev`. CI runs everything (every
+   mutant), the builds take the version from the tag, and once both passed a public
+   pre-release appears: setups, Docker images tagged `X.Y.Z-rc.N`, nothing users get by
+   themselves. You are welcome to test it.
 3. **Promotion.** Once tested, the maintainer starts *Promote release*; the candidate's files
-   become release `vX.Y.Z`.
-4. **Into main.** A pull request from `release/vX.Y.Z` into `main` brings the release there;
-   rhinvoice.com and the README follow.
+   become release `vX.Y.Z`, the released commit goes to `main`, and rhinvoice.com and the
+   README follow.
 
 ## Licence
 

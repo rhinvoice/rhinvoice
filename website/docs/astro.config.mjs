@@ -1,29 +1,8 @@
-// rhinvoice.com/docs: the user documentation, in English (/docs/), German (/docs/de/), and for the
-// core pages French (/docs/fr/) and Italian (/docs/it/). A page without a French or Italian text
-// is shown in English there, with Starlight's "not translated yet" notice (src/route-data.ts
-// points its canonical URL to the English page).
+// rhinvoice.com/docs: the user documentation, in English (/docs/), German (/docs/de/), French
+// (/docs/fr/) and Italian (/docs/it/). Every page exists in all four (scripts/check.py).
 // Built into ../dist/docs after website/build.py has built the landing page into ../dist.
-import { readdirSync } from "node:fs";
-
-import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
-
-// The pages written in French or Italian, as "fr/" or "fr/getting-started/installation/".
-const TRANSLATED = ["fr", "it"];
-const CONTENT = new URL("./src/content/docs/", import.meta.url);
-const written = new Set(
-  TRANSLATED.flatMap((lang) =>
-    readdirSync(new URL(`${lang}/`, CONTENT), { recursive: true, encoding: "utf8" })
-      .filter((file) => /\.mdx?$/.test(file))
-      .map((file) => `${lang}/${file.replace(/\.mdx?$/, "/").replace(/(^|\/)index\/$/, "$1")}`),
-  ),
-);
-/** A French or Italian address that only shows the English page (Starlight's fallback). */
-const isFallback = (url) => {
-  const path = new URL(url).pathname.replace(/^\/docs\//, "");
-  return TRANSLATED.includes(path.split("/")[0]) && !written.has(path);
-};
 
 // Labels as [English, German, French, Italian].
 const translations = ([, de, fr, it]) => ({ de, fr, it });
@@ -36,12 +15,6 @@ export default defineConfig({
   outDir: "../dist/docs",
   trailingSlash: "always",
   integrations: [
-    // Starlight's own sitemap, without the fallback pages: they point to the English page.
-    sitemap({
-      i18n: { defaultLocale: "root", locales: { root: "en", de: "de", fr: "fr", it: "it" } },
-      filter: (page) => !isFallback(page),
-      serialize: (item) => ({ ...item, links: item.links?.filter((link) => !isFallback(link.url)) }),
-    }),
     starlight({
       // Page titles read "Old invoices | Rhinvoice"; the header adds "Docs" itself.
       title: "Rhinvoice",

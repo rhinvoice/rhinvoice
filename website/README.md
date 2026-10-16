@@ -18,7 +18,7 @@ website/
 ## The docs
 
 `website/docs` holds the user documentation, English at `/docs/` and German at `/docs/de/` with the
-same paths; the core pages also at `/docs/fr/` and `/docs/it/`. Each page is MDX in `website/docs/src/content/docs`; the rules for writing one
+same paths, also French at `/docs/fr/` and Italian at `/docs/it/`. Each page is MDX in `website/docs/src/content/docs`; the rules for writing one
 (search-friendly titles, answer first, facts only from the repository, questions and answers) are in
 [`docs/WRITING.md`](docs/WRITING.md). `make docs-qa` checks types, the writing rules, the build and
 every link. The Website workflow runs it and builds the docs into `dist/docs` after the landing

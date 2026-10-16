@@ -1,13 +1,12 @@
 ---
-// Starlight's banner (frontmatter `banner`), then, on a machine-translated page, a notice that
-// says so and where to report a wrong translation. Pages shown in English because they have no
-// translation yet carry Starlight's own "not translated" notice instead.
+// Starlight's banner (frontmatter `banner`), then, on a machine-translated page (French,
+// Italian), a notice that says so and where to report a wrong translation.
 import Default from "@astrojs/starlight/components/Banner.astro";
 
 import { MACHINE_TRANSLATED, translationIssueHref } from "../lib/ui";
 
-const { lang, isFallback } = Astro.locals.starlightRoute;
-const notice = isFallback ? undefined : MACHINE_TRANSLATED[lang];
+const { lang } = Astro.locals.starlightRoute;
+const notice = MACHINE_TRANSLATED[lang];
 const page = new URL(Astro.url.pathname, "https://rhinvoice.com").href;
 ---
 

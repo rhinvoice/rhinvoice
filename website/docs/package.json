@@ -13,7 +13,6 @@
     "check:links": "python3 scripts/check.py links"
   },
   "dependencies": {
-    "@astrojs/sitemap": "3.7.4",
     "@astrojs/starlight": "0.42.6",
     "astro": "7.3.8",
     "marked": "^18.1.1",

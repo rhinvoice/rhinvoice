@@ -27,9 +27,8 @@ SITE = ROOT.parent / "dist"
 TITLE_MAX = 65
 DESCRIPTION_RANGE = (110, 170)
 FAQ_MIN = 3
-# Languages below /docs/<code>/: German has every page, French and Italian the core pages (the
-# others are shown in English there).
-LANGUAGES = ("de", "fr", "it")
+# Languages below /docs/<code>/: every English page exists in each of them too.
+LANGUAGES = {"de": "German", "fr": "French", "it": "Italian"}
 # Drafts are not published.
 FORBIDDEN = re.compile(r"\b(TODO|TBD|lorem)\b", re.IGNORECASE)
 
@@ -77,11 +76,11 @@ def check_content() -> list[str]:
         return {p.relative_to(CONTENT / lang) for p in pages if p.relative_to(CONTENT).parts[0] == lang}
 
     english = {p.relative_to(CONTENT) for p in pages if p.relative_to(CONTENT).parts[0] not in LANGUAGES}
-    german = in_language("de")
-    for missing in sorted(english - german):
-        problems.append(f"de/{missing}: the German page is missing")
     for lang in LANGUAGES:
-        for missing in sorted(in_language(lang) - english):
+        translated = in_language(lang)
+        for missing in sorted(english - translated):
+            problems.append(f"{lang}/{missing}: the {LANGUAGES[lang]} page is missing")
+        for missing in sorted(translated - english):
             problems.append(f"{lang}/{missing}: the English page is missing")
     for page in pages:
         name = page.relative_to(CONTENT)

@@ -2,7 +2,6 @@ from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
 from sqlalchemy import Engine, inspect, select, text
 
-from rhinvoice.domain.dunning.reminder import FRENCH_TEXTS, ITALIAN_TEXTS
 from rhinvoice.infrastructure.db.migrate import downgrade, upgrade
 from rhinvoice.infrastructure.db.tables import dunning_levels, metadata, text_templates
 
@@ -50,17 +49,31 @@ def test_migrations_round_trip(database_url: str, migrated_engine: Engine) -> No
 def test_saved_dunning_levels_get_french_and_italian_texts(
     database_url: str, migrated_engine: Engine
 ) -> None:
+    """Version 0019 fills the new columns of saved levels with its own copy of the texts.
+
+    The check does not compare with the domain's texts, which may be reworded later.
+    """
     downgrade(database_url, "0018")
     with migrated_engine.begin() as connection:
-        connection.execute(
-            text(
-                "INSERT INTO dunning_levels (level, days_after_due, payment_days, fee, text_de,"
-                " text_en) VALUES (2, 10, 10, 0, 'Bitte zahlen', 'Please pay')"
+        for level in (1, 2, 3):
+            connection.execute(
+                text(
+                    "INSERT INTO dunning_levels (level, days_after_due, payment_days, fee,"
+                    " text_de, text_en) VALUES (:level, 10, 10, 0, 'Bitte zahlen', 'Please pay')"
+                ).bindparams(level=level)
             )
-        )
     upgrade(database_url)
     with migrated_engine.begin() as connection:
-        row = connection.execute(select(dunning_levels)).one()
+        rows = connection.execute(select(dunning_levels).order_by(dunning_levels.c.level)).all()
         connection.execute(dunning_levels.delete())
-    assert (row.text_de, row.text_en) == ("Bitte zahlen", "Please pay")
-    assert (row.text_fr, row.text_it) == (FRENCH_TEXTS[2], ITALIAN_TEXTS[2])
+    assert [(row.level, row.text_de, row.text_en) for row in rows] == [
+        (level, "Bitte zahlen", "Please pay") for level in (1, 2, 3)
+    ]
+    for row in rows:
+        # Each level reads in its language and names the new due date.
+        assert "{faellig}" in row.text_fr
+        assert "{faellig}" in row.text_it
+        assert row.text_fr != row.text_it
+    assert len({row.text_fr for row in rows}) == len({row.text_it for row in rows}) == 3
+    assert "facture" in rows[1].text_fr
+    assert "fattura" in rows[1].text_it

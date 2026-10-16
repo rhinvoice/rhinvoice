@@ -11,7 +11,7 @@ Sources (checked 2026-10):
   (https://www.wko.at/steuern/umsatzsteuer-rechnung-faq).
 - Small business: § 6 Abs. 1 Z 27 UStG. Intra-Community supply: Art. 6 Abs. 1, Art. 7
   and Art. 11 Abs. 2 UStG (Binnenmarktregelung); export delivery: § 6 Abs. 1 Z 1, § 7 UStG.
-- French and Italian (ADR 0026): the mentions of the VAT Directive in its French and
+- French and Italian (ADR 0027): the mentions of the VAT Directive in its French and
   Italian version: "Autoliquidation" / "inversione contabile" (Art. 226 point 11a),
   "franchise pour les petites entreprises" / "franchigia per le piccole imprese"
   (Art. 284, Directive (EU) 2020/285), exempt supplies "exonérée" / "esente"

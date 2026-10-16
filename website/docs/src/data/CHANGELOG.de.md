@@ -5,6 +5,15 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Neu
+- Dokumente auf **Französisch** und **Italienisch**, so wie man sie in der Schweiz schreibt:
+  Rechnungen, Offerten, Stornorechnungen, Mahnungen, E-Mails, Textbausteine und der Zahlteil der
+  QR-Rechnung. Die gesetzlichen Hinweise von Firmen in der Schweiz und in Liechtenstein verwenden
+  die Begriffe des MWSTG in seiner französischen (LTVA) und italienischen (LIVA) Fassung, Firmen in
+  Deutschland und Österreich bekommen die Angaben der MWST-Richtlinie der EU («Autoliquidation»,
+  «inversione contabile»). Die Sprache wählen Sie pro Dokument, pro Kunde oder als Vorgabe der
+  Firma; im Mahnwesen gibt es pro Stufe einen französischen und einen italienischen Text.
+
 ## [0.7.4] – 2026-10-16
 
 ### Neu

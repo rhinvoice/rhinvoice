@@ -5,6 +5,15 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Added
+- Documents in **French** and **Italian**, as written in Switzerland: invoices, quotes,
+  credit notes, payment reminders, e-mails, ready-made texts and the QR-bill payment part. Legal
+  notices of Swiss and Liechtenstein companies use the terms of the VAT Act in its French (LTVA)
+  and Italian (LIVA) version; German and Austrian companies get the mentions of the EU VAT
+  Directive ("Autoliquidation", "inversione contabile"). Choose the language per document, per
+  customer or as the company's default; the dunning settings have a French and an Italian text
+  per level.
+
 ## [0.7.4] – 2026-10-16
 
 ### Added

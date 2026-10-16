@@ -10,7 +10,7 @@ Sources (checked 2026-10):
   Leistungsempfängers".
 - Small business: since 2025 the invoice states that § 19 UStG applies.
 - Intra-Community supply: § 14a Abs. 3 UStG; export delivery: § 4 Nr. 1 lit. a, § 6 UStG.
-- French and Italian (ADR 0026): the mentions of the VAT Directive in its French and
+- French and Italian (ADR 0027): the mentions of the VAT Directive in its French and
   Italian version: "Autoliquidation" / "inversione contabile" (Art. 226 point 11a),
   "franchise pour les petites entreprises" / "franchigia per le piccole imprese"
   (Art. 284, Directive (EU) 2020/285), exempt supplies "exonérée" / "esente"

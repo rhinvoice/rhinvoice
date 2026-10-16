@@ -10,6 +10,8 @@ faq:
     a: Nur wenn Sie mit QR-Referenz arbeiten. Mit einer QR-IBAN druckt Rhinvoice die 27-stellige QR-Referenz, mit einer normalen IBAN die Creditor Reference (SCOR, beginnt mit RF). Beide funktionieren in CHF und EUR.
   - q: Rundet Rhinvoice Rechnungsbeträge auf 5 Rappen?
     a: Ja, wenn Sie unter Einstellungen → Firma die Rappenrundung einschalten. Dann wird nur der Endbetrag in CHF auf 0.05 gerundet und als eigene Zeile «Rundung» gezeigt. Die MWST bleibt auf den Rappen genau.
+  - q: Kann ich Rechnungen auf Französisch oder Italienisch schreiben?
+    a: Ja. Rechnungen, Offerten, Mahnungen, E-Mails und der QR-Zahlteil erscheinen auf Französisch oder Italienisch, wie man sie in der Schweiz schreibt, mit TVA bzw. IVA und den Begriffen des MWSTG in seiner französischen (LTVA) und italienischen (LIVA) Fassung.
   - q: Wie lange muss ich Rechnungen in der Schweiz aufbewahren?
     a: Zehn Jahre (Art. 958f OR). Rhinvoice sperrt ausgestellte Rechnungen samt PDF, Korrekturen gehen nur über eine Stornorechnung.
 ---
@@ -83,6 +85,21 @@ Rhinvoice bestimmt den Steuerfall aus dem Land Ihrer Firma, dem Land des Kunden 
 | Ware, die die Schweiz verlässt | nein | «Steuerbefreite Ausfuhrlieferung (Art. 23 Abs. 2 Ziff. 1 MWSTG).» |
 
 Englische Dokumente drucken «Reverse charge: the recipient is liable for the VAT.», «Place of supply abroad, not subject to domestic VAT.» und «VAT exempt export delivery.». Der Reverse-Charge-Hinweis richtet sich nach dem Land des Kunden (Art. 219a Abs. 1 MWST-Richtlinie der EU). Deutsche Kunden brauchen zum Beispiel den Wortlaut von § 14a Abs. 5 UStG, deshalb steht er in Klammern dabei. Bei Waren erinnert Sie der Editor an den Ausfuhrnachweis (Zoll). Den Steuerfall können Sie im Editor von Hand ändern, Rhinvoice hält die Änderung mit Begründung im Verlauf fest.
+
+## Rechnungen auf Französisch und Italienisch
+
+Für Kunden in der Romandie und im Tessin schreibt Rhinvoice Dokumente auch auf **Französisch** und **Italienisch**, so wie man sie in der Schweiz schreibt: «Facture» und «Fattura», «TVA 8.1 % sur …» und «IVA 8.1 % su …», Beträge als `1’234.50`, Daten als «9 mars 2026» und «9 marzo 2026». Der QR-Zahlteil erscheint in derselben Sprache. Die Sprache wählen Sie im Editor unter *Sprache*, beim Kunden als *Dokumentsprache* oder als Vorgabe unter *Einstellungen → Firma*. Textbausteine, E-Mail-Vorlagen und Mahntexte gibt es in beiden Sprachen.
+
+Die gesetzlichen Hinweise verwenden die Begriffe des MWSTG in seiner französischen (LTVA) und italienischen (LIVA) Fassung:
+
+| Fall | Französisch | Italienisch |
+|---|---|---|
+| Nicht MWST-pflichtig | «Non assujetti à la TVA.» | «Non assoggettato all’IVA.» |
+| Dienstleistung an eine Firma in der EU mit UID | «Autoliquidation : la TVA est due par le destinataire de la prestation.» | «Inversione contabile: l’imposta è dovuta dal destinatario della prestazione.» |
+| Dienstleistung an alle anderen Kunden im Ausland | «Lieu de la prestation de services à l’étranger, non soumis à la TVA.» | «Luogo della prestazione di servizi all’estero, non soggetto all’IVA.» |
+| Ware, die die Schweiz verlässt | «Livraison à l’exportation exonérée de l’impôt (art. 23, al. 2, ch. 1, LTVA).» | «Fornitura all’esportazione esente dall’imposta (art. 23 cpv. 2 n. 1 LIVA).» |
+
+«Autoliquidation» und «inversione contabile» sind die Angaben, die die MWST-Richtlinie der EU (Art. 226 Nr. 11a) in diesen Sprachen vorsieht. Die ESTV schreibt die MWST-Nummer auf Französisch als `CHE-123.456.789 TVA` und auf Italienisch als `CHE-123.456.789 IVA`; Rhinvoice druckt sie so, wie Sie sie unter *Einstellungen → Firma* eingetragen haben. Den Wortlaut ändern Sie unter *Einstellungen → Texte → Gesetzliche Hinweise*.
 
 ## E-Rechnung
 

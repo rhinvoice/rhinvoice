@@ -3,7 +3,7 @@
 de-CH: 1'234.50 (typographic apostrophe), de-DE/de-AT: 1.234,50, en: 1,234.50.
 French and Italian follow the country like German does: fr-CH and it-CH write
 1'234.50 as in Swiss German, a German or Austrian company writes 1 234,50 in
-French and 1.234,50 in Italian (CLDR fr, it; see ADR 0026).
+French and 1.234,50 in Italian (CLDR fr, it; see ADR 0027).
 Dates: 14.02.2026 in German, 14 February 2026 in English, 14 février 2026 in
 French, 14 febbraio 2026 in Italian (CLDR long dates, as Intl.DateTimeFormat).
 """

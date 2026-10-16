@@ -11,7 +11,7 @@ Sources (checked 2026-10):
 - Services to EU businesses: no Swiss wording is required; the recipient's country
   asks for the reverse charge note (Art. 219a(1) VAT Directive, OPEN_QUESTIONS 8).
 - Export deliveries: Art. 23 Abs. 2 Ziff. 1 MWSTG.
-- French and Italian (ADR 0026): the words of the law in its French (LTVA) and Italian
+- French and Italian (ADR 0027): the words of the law in its French (LTVA) and Italian
   (LIVA) version: assujetti / assoggettato (Art. 10), exonérées / esenti (Art. 23), lieu
   de la prestation de services / luogo della prestazione di servizi (Art. 8),
   contre-prestations convenues / controprestazioni convenute (Art. 39); the UID-MWST

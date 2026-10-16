@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.8.0] – 2026-10-17
+
 ### Neu
 - Die Programme für Windows und Mac können die Update-Prüfung abschalten: `"update_check": false`
   in `rhinvoice.json` (Docker: `RHINVOICE_UPDATE_CHECK=false`).

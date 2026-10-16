@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.8.0] – 2026-10-17
+
 ### Added
 - The programs for Windows and Mac can switch the update check off: `"update_check": false` in
   `rhinvoice.json` (Docker: `RHINVOICE_UPDATE_CHECK=false`).

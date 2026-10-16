@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside } from "@astrojs/starlight/components";
 
 Rhinvoice erstellt E-Rechnungen kostenlos: Jedes PDF einer ausgestellten Rechnung ist ein **PDF/A-3b mit eingebetteter ZUGFeRD-/Factur-X-Rechnung** (Profil EN 16931), und für deutsche Behörden laden Sie zusätzlich die **XRechnung 3.0** (CII) als XML herunter. Beide prüft Rhinvoice mit den offiziellen Validatoren von KoSIT und Mustang.
@@ -44,7 +45,7 @@ Rhinvoice speichert die eingebettete XML-Datei zusammen mit dem PDF und ändert 
 
 Behörden in Deutschland verlangen die XRechnung. So erstellen Sie sie:
 
-1. Tragen Sie beim Kunden die **Leitweg-ID** der Behörde ein, im Feld *Leitweg-ID oder feste Käuferreferenz*. Das Feld erscheint bei Kunden in Deutschland.
+1. Tragen Sie beim Kunden die **Leitweg-ID** der Behörde ein, im Feld *Leitweg-ID oder feste Käuferreferenz*. Das Feld erscheint bei Kunden in Deutschland. <Since version="0.8.0" />
 2. Stellen Sie die Rechnung aus.
 3. Öffnen Sie den Abschnitt *E-Rechnung* → *XRechnung für deutsche Behörden* und klicken Sie auf *XRechnung (XML)*.
 

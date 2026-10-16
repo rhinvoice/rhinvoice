@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../components/Faq.astro";
+import Since from "../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 To update Rhinvoice, set the new version in `.env`, pull the images and restart the containers. Database migrations run automatically on start. Before that, read the changelog and make a backup.
@@ -32,7 +33,7 @@ To update Rhinvoice, set the new version in `.env`, pull the images and restart 
 
 <Steps>
 
-1. In the folder with `compose.yml` and `.env`, set `RHINVOICE_VERSION` in `.env` to the new version, e.g. `RHINVOICE_VERSION=0.7.4`.
+1. In the folder with `compose.yml` and `.env`, set `RHINVOICE_VERSION` in `.env` to the new version, e.g. `RHINVOICE_VERSION=0.8.0`.
 
 2. Pull the images and restart:
 
@@ -54,7 +55,7 @@ Database migrations run automatically on start (`RHINVOICE_RUN_MIGRATIONS=true` 
 
 | `RHINVOICE_VERSION` | Behaviour |
 |---|---|
-| a version, e.g. `0.7.4` | pinned: changes only when you change it |
+| a version, e.g. `0.8.0` | pinned: changes only when you change it |
 | `latest` | follows every release on the next `docker compose pull` |
 
 A pinned version is the safer choice for real invoices: you decide when to update and can read the changelog first.
@@ -73,7 +74,7 @@ For the check Rhinvoice downloads a small, signed file from the latest release o
 RHINVOICE_UPDATE_CHECK=false
 ```
 
-In the program for Windows and Mac, add the line `"update_check": false` to `rhinvoice.json` in the data folder (see [where your data lives](/docs/getting-started/install-desktop/#where-your-data-lives)) and start Rhinvoice again.
+In the program for Windows and Mac, add the line `"update_check": false` to `rhinvoice.json` in the data folder (see [where your data lives](/docs/getting-started/install-desktop/#where-your-data-lives)) and start Rhinvoice again. <Since version="0.8.0" />
 
 ## Testing release candidates
 

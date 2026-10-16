@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Per aggiornare Rhinvoice, imposti la nuova versione in `.env`, scarichi le immagini e riavvii i container. Le migrazioni del database vengono eseguite automaticamente all’avvio. Prima legga il changelog e faccia un backup.
@@ -32,7 +33,7 @@ Per aggiornare Rhinvoice, imposti la nuova versione in `.env`, scarichi le immag
 
 <Steps>
 
-1. Nella cartella con `compose.yml` e `.env`, imposti `RHINVOICE_VERSION` in `.env` sulla nuova versione, p. es. `RHINVOICE_VERSION=0.7.4`.
+1. Nella cartella con `compose.yml` e `.env`, imposti `RHINVOICE_VERSION` in `.env` sulla nuova versione, p. es. `RHINVOICE_VERSION=0.8.0`.
 
 2. Scarichi le immagini e riavvii:
 
@@ -54,7 +55,7 @@ Le migrazioni del database vengono eseguite automaticamente all’avvio (`RHINVO
 
 | `RHINVOICE_VERSION` | Comportamento |
 |---|---|
-| una versione, p. es. `0.7.4` | fissata: cambia solo quando la cambia Lei |
+| una versione, p. es. `0.8.0` | fissata: cambia solo quando la cambia Lei |
 | `latest` | segue ogni release al prossimo `docker compose pull` |
 
 Per le fatture vere una versione fissata è la scelta più sicura: decide Lei quando aggiornare e può leggere prima il changelog.
@@ -73,7 +74,7 @@ Per il controllo Rhinvoice scarica un piccolo file firmato dall’ultima release
 RHINVOICE_UPDATE_CHECK=false
 ```
 
-Nel programma per Windows e Mac, aggiunga la riga `"update_check": false` a `rhinvoice.json` nella cartella dei dati (vedi [dove si trovano i Suoi dati](/docs/it/getting-started/install-desktop/#dove-si-trovano-i-suoi-dati)) e riavvii Rhinvoice.
+Nel programma per Windows e Mac, aggiunga la riga `"update_check": false` a `rhinvoice.json` nella cartella dei dati (vedi [dove si trovano i Suoi dati](/docs/it/getting-started/install-desktop/#dove-si-trovano-i-suoi-dati)) e riavvii Rhinvoice. <Since version="0.8.0" />
 
 ## Provare le release candidate
 

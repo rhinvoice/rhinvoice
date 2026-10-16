@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import type { Customer, CustomerRequest } from "@/features/customers/api";
 import { fields, toApiDecimal } from "@/features/shared/form-schema";
+import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import { formatDecimalInput } from "@/lib/format";
 import type { T } from "@/lib/i18n";
 import type { Locale } from "@/lib/locale";
@@ -46,7 +47,7 @@ export function customerSchema(t: T, locale: Locale) {
       vat_number: f.vatNumber,
       group: f.optionalText(50),
       default_currency: z.enum(["", "CHF", "EUR"]),
-      default_language: z.enum(["", "de", "en"]),
+      default_language: z.enum(["", ...DOCUMENT_LANGUAGES]),
       tax_exempt: z.boolean(),
       default_discount: f.decimal({ max: 100, decimals: 2 }),
       payment_terms_days: f.days,

@@ -33,6 +33,7 @@ import {
   type CompanyFormValues,
 } from "@/features/company/company-form-model";
 import { AddressFields } from "@/features/shared/address-fields";
+import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import { FormAlert } from "@/features/shared/form-alert";
 import { summaryItems } from "@/features/shared/form-errors";
 import { FormFooter } from "@/features/shared/form-footer";
@@ -210,8 +211,11 @@ export function CompanySettings({ company }: { readonly company: Company | null 
             </Field>
             <Field label={t("company.defaultLanguage")} error={error("default_language")}>
               <NativeSelect id="default_language" {...form.register("default_language")}>
-                <option value="de">{t("language.de")}</option>
-                <option value="en">{t("language.en")}</option>
+                {DOCUMENT_LANGUAGES.map((language) => (
+                  <option key={language} value={language}>
+                    {t(`language.${language}`)}
+                  </option>
+                ))}
               </NativeSelect>
             </Field>
             <Field label={t("company.paymentTerms")} error={error("payment_terms_days")}>

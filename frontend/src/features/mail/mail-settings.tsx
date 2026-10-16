@@ -23,6 +23,7 @@ import {
   type ServerValues,
 } from "@/features/mail/mail-settings-model";
 import { companyQuery } from "@/features/shared/company-api";
+import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import { FormAlert } from "@/features/shared/form-alert";
 import {
   mailServerQuery,
@@ -47,7 +48,6 @@ const KINDS = [
   "reminder_2",
   "reminder_3",
 ] as const satisfies readonly MailKind[];
-const LANGUAGES = ["de", "en"] as const;
 const PLACEHOLDERS = [
   "nummer",
   "datum",
@@ -333,7 +333,7 @@ function Templates() {
   const { t } = useI18n();
   const templates = useQuery(mailTemplatesQuery);
   const [kind, setKind] = useState<MailKind>("invoice");
-  const [language, setLanguage] = useState<(typeof LANGUAGES)[number]>("de");
+  const [language, setLanguage] = useState<(typeof DOCUMENT_LANGUAGES)[number]>("de");
   const template = templates.data?.find(
     (candidate) => candidate.kind === kind && candidate.language === language,
   );
@@ -365,11 +365,11 @@ function Templates() {
             id="mail-template-language"
             value={language}
             onChange={(event) => {
-              const next = LANGUAGES.find((candidate) => candidate === event.target.value);
+              const next = DOCUMENT_LANGUAGES.find((candidate) => candidate === event.target.value);
               if (next !== undefined) setLanguage(next);
             }}
           >
-            {LANGUAGES.map((option) => (
+            {DOCUMENT_LANGUAGES.map((option) => (
               <option key={option} value={option}>
                 {t(`language.${option}`)}
               </option>

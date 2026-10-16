@@ -5,6 +5,7 @@ from pathlib import Path
 
 from rhinvoice.domain.shared.country import EU_MEMBER_STATES, Country
 from rhinvoice.domain.shared.iban import IBAN_LENGTHS
+from rhinvoice.domain.shared.language import Language
 
 # Searched upwards: mutmut runs the tests from a copy below backend/mutants.
 FRONTEND = next(
@@ -41,3 +42,13 @@ def test_eu_member_states_match_the_frontend() -> None:
         encoding="utf-8"
     )
     assert set(_string_list(source, "EU_COUNTRIES", "]);")) == EU_MEMBER_STATES
+
+
+def test_document_languages_match_the_frontend() -> None:
+    """A new language also goes into the selects of the interface."""
+    source = (FRONTEND / "features" / "shared" / "document-languages.ts").read_text(
+        encoding="utf-8"
+    )
+    start = source.index("DOCUMENT_LANGUAGES =")
+    listed = re.findall(r'"([a-z]{2})"', source[start : source.index("]", start)])
+    assert listed == [language.value for language in Language]

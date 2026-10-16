@@ -502,6 +502,8 @@ export const en: Catalog<MessageKey> = {
   "company.logoTooLarge": "The logo must be at most 1 MB.",
   "language.de": "German",
   "language.en": "English",
+  "language.fr": "French",
+  "language.it": "Italian",
   "bank.title": "Bank accounts",
   "bank.description":
     "Accounts for payment details and QR codes. One account per currency is the default.",
@@ -1444,6 +1446,8 @@ export const en: Catalog<MessageKey> = {
     "In the invoice's currency, without VAT. Only with an agreement or proven costs; 0 for none.",
   "dunning.textDe": "Text (German)",
   "dunning.textEn": "Text (English)",
+  "dunning.textFr": "Text (French)",
+  "dunning.textIt": "Text (Italian)",
   "dunning.textHint":
     "Placeholders: {faellig} (new deadline), {betrag}, {waehrung}, {nummer}, {kunde}.",
   "error.not_remindable": "This invoice is not overdue or has had all reminders.",

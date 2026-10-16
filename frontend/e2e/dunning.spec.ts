@@ -39,6 +39,8 @@ test("the dunning levels are set in the settings", async ({ page }) => {
   await expect(page.getByRole("tab", { name: "Mahnwesen", selected: true })).toBeVisible();
   const first = page.getByRole("region", { name: "Zahlungserinnerung" });
   await expect(first.getByLabel("Mahngebühr")).toHaveValue("0.00");
+  await expect(first.getByLabel("Text (Französisch)")).toHaveValue(/^Sans doute/);
+  await expect(first.getByLabel("Text (Italienisch)")).toHaveValue(/^Forse vi è sfuggito/);
   await first.getByLabel("Mahngebühr").fill("12.33");
   await page.getByRole("button", { name: "Speichern" }).click();
   await expect(page.getByText("Bitte die markierten Felder korrigieren.")).toBeVisible();

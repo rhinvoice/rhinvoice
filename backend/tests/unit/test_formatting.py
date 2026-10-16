@@ -94,17 +94,29 @@ def test_percent_and_dates() -> None:
     assert day(date(2026, 12, 31), PrintLocale.FR) == "31 décembre 2026"
     assert day(date(2026, 1, 9), PrintLocale.IT_CH) == "9 gennaio 2026"
     assert day(date(2026, 12, 31), PrintLocale.IT) == "31 dicembre 2026"
+    assert day(date(2026, 8, 1), PrintLocale.IT) == "1° agosto 2026"
+    assert day(date(2026, 3, 1), PrintLocale.IT_CH) == "1° marzo 2026"
+    assert day(date(2026, 3, 2), PrintLocale.IT_CH) == "2 marzo 2026"
     assert percent(Decimal("2.6"), PrintLocale.FR) == "2,6\u00a0%"
 
 
 @given(st.dates(), st.sampled_from(list(PrintLocale)))
 def test_long_dates_name_the_month_of_their_language(value: date, locale: PrintLocale) -> None:
-    """Long dates read day, month name, year; German keeps the numeric date."""
+    """Long dates read day, month name, year; German keeps the numeric date.
+
+    French and Italian write the first of the month as an ordinal ("1er", "1°").
+    """
     text = day(value, locale)
     if locale.months is None:
         assert text == value.strftime("%d.%m.") + str(value.year)
     else:
-        first = "er" if locale in {PrintLocale.FR, PrintLocale.FR_CH} and value.day == 1 else ""
+        ordinals = {
+            PrintLocale.FR: "er",
+            PrintLocale.FR_CH: "er",
+            PrintLocale.IT: "°",
+            PrintLocale.IT_CH: "°",
+        }
+        first = ordinals.get(locale, "") if value.day == 1 else ""
         assert text == f"{value.day}{first} {locale.months[value.month - 1]} {value.year}"
         assert len(set(locale.months)) == 12
 

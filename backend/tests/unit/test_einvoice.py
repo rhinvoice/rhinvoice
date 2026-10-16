@@ -17,13 +17,16 @@ from hypothesis import strategies as st
 from rhinvoice.application.document.einvoice import (
     EInvoiceProblem,
     EInvoiceProfile,
+    buyer_reference,
     problems,
     seller_ids,
     vat_id,
+    wants_xrechnung,
 )
 from rhinvoice.application.document.handlers import DraftInput, LineInput
 from rhinvoice.application.document.printing import PrintModel
 from rhinvoice.domain.document.lines import LineKind, PriceMode
+from rhinvoice.domain.shared.country import CountryCode
 from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
 from rhinvoice.domain.shared.money import Currency, Money, round_half_up
 from rhinvoice.domain.tax.category import TaxCategory
@@ -556,6 +559,47 @@ def test_what_xrechnung_asks_for_beyond_en_16931() -> None:
     assert EInvoiceProblem.BANK_ACCOUNT_MISSING in found(
         replace(cancellation, cancelled_account=None), EInvoiceProfile.XRECHNUNG
     )
+
+
+def without_reference(printed: PrintModel) -> PrintModel:
+    document = printed.view.document
+    content = replace(document.content, reference=" ")
+    return replace(printed, view=replace(printed.view, document=replace(document, content=content)))
+
+
+def test_the_buyer_reference_of_a_german_customer_wins() -> None:
+    authority = model(samples()["de-authority"])
+    # The customer's Leitweg-ID, not the order number of the invoice.
+    assert authority.view.document.content.reference == "Bestellung 17"
+    assert buyer_reference(authority) == "04011000-12345-34"
+    # Without the invoice's reference nothing is missing.
+    assert found(without_reference(authority), EInvoiceProfile.XRECHNUNG) == set()
+    # Without the customer's, the invoice's reference is the buyer reference.
+    assert authority.recipient is not None
+    plain = replace(authority, recipient=replace(authority.recipient, buyer_reference=""))
+    assert buyer_reference(plain) == "Bestellung 17"
+    assert buyer_reference(without_reference(plain)) is None
+    assert found(without_reference(plain), EInvoiceProfile.XRECHNUNG) == {
+        EInvoiceProblem.BUYER_REFERENCE_MISSING
+    }
+
+
+def test_the_buyer_reference_of_other_customers_is_the_invoices() -> None:
+    """The field is only shown for German customers; a kept value elsewhere does nothing."""
+    swiss = model(samples()["ch-domestic"])
+    assert swiss.recipient is not None
+    kept = replace(swiss, recipient=replace(swiss.recipient, buyer_reference="991-33333TEST-33"))
+    assert buyer_reference(kept) == "PO-4711"
+    assert EInvoiceProblem.BUYER_REFERENCE_MISSING in found(
+        without_reference(kept), EInvoiceProfile.XRECHNUNG
+    )
+
+
+def test_only_german_customers_want_an_xrechnung() -> None:
+    assert wants_xrechnung(factories.customer(address=factories.address(country=CountryCode("DE"))))
+    for country in ("CH", "LI", "AT", "FR"):
+        customer = factories.customer(address=factories.address(country=CountryCode(country)))
+        assert not wants_xrechnung(customer)
 
 
 def test_an_e_invoice_needs_a_customer() -> None:

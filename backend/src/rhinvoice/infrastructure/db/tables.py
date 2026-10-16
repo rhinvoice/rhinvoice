@@ -162,6 +162,7 @@ customers = Table(
     Column("email", String(254)),
     Column("phone", String(50), nullable=False, server_default=""),
     Column("vat_number", String(40)),
+    Column("buyer_reference", String(100), nullable=False, server_default=""),
     Column("customer_group", String(50), nullable=False, server_default=""),
     Column("default_currency", String(3)),
     Column("default_language", String(2)),

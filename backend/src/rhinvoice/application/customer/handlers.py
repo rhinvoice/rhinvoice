@@ -43,6 +43,8 @@ class SaveCustomer:
     email: str | None = None
     phone: str = ""
     vat_number: str | None = None
+    buyer_reference: str = ""
+    """Leitweg-ID or another fixed buyer reference for e-invoices (German customers)."""
     group: str = ""
     default_currency: Currency | None = None
     default_language: Language | None = None
@@ -150,6 +152,7 @@ def build_customer(
         email=optional_email(command.email),
         phone=command.phone,
         vat_number=optional_vat_number(command.vat_number),
+        buyer_reference=command.buyer_reference,
         group=command.group,
         default_currency=command.default_currency,
         default_language=command.default_language,

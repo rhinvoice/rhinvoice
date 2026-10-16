@@ -268,7 +268,10 @@ def test_the_customers_live_where_the_company_does() -> None:
     assert swiss == CUSTOMERS
     assert customers_for(Country.LI) == CUSTOMERS
     home = customers_for(Country.DE)
-    assert Counter(customer.address.country for customer in home)["DE"] == 7
+    # Six moved home, one business and one authority in Germany anyway.
+    assert Counter(customer.address.country for customer in home)["DE"] == 8
+    [authority] = [customer for customer in home if customer.buyer_reference]
+    assert authority.company_name == "Stadtverwaltung Musterstadt"
     # Names and everything else stay.
     assert [customer.company_name for customer in home] == [
         customer.company_name for customer in CUSTOMERS

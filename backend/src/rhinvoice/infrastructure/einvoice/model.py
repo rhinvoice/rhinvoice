@@ -27,6 +27,7 @@ from rhinvoice.application.document.einvoice import (
     buyer_reference,
     customer_of,
     not_subject,
+    order_reference,
     payment_account,
     seller_ids,
     vat_category,
@@ -184,6 +185,8 @@ class EInvoice:
     """BT-22."""
     buyer_reference: str | None
     """BT-10: the Leitweg-ID of a German authority or another buyer reference."""
+    order_reference: str | None
+    """BT-13: the invoice's reference when BT-10 is the customer's fixed reference."""
     preceding: tuple[str, date] | None
     """BG-3, the cancelled invoice."""
     seller: Party
@@ -447,6 +450,7 @@ def build(model: PrintModel, profile: EInvoiceProfile) -> EInvoice:
         currency=totals.currency,
         notes=tuple(note for note in (content.subject.strip(),) if note),
         buyer_reference=buyer_reference(model),
+        order_reference=order_reference(model),
         preceding=preceding,
         seller=_seller(model, profile),
         buyer=_buyer(model),

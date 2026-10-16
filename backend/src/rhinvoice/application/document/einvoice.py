@@ -182,6 +182,19 @@ def buyer_reference(model: PrintModel) -> str | None:
     return fixed or model.view.document.content.reference.strip() or None
 
 
+def order_reference(model: PrintModel) -> str | None:
+    """BT-13: the invoice's reference, when a German customer's fixed reference took BT-10.
+
+    EN 16931-1 names BT-13 "Purchase order reference" (0..1, any text); EN 16931-3-3 maps it
+    to ram:BuyerOrderReferencedDocument/ram:IssuerAssignedID in the header trade agreement.
+    XRechnung 3.0 (KoSIT, "Spezifikation XRechnung 3.0.x", BT-13) adds no rule to it. So
+    "Bestellung 4711" stays in the e-invoice next to the Leitweg-ID; a reference that already
+    is BT-10 is not repeated.
+    """
+    reference = model.view.document.content.reference.strip()
+    return reference if reference and reference != buyer_reference(model) else None
+
+
 def _xrechnung_problems(model: PrintModel) -> list[EInvoiceProblem]:
     """Name what XRechnung asks for beyond EN 16931 (BR-DE-1, -2, -5 to -7, -15, BT-49)."""
     company = model.company

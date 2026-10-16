@@ -19,6 +19,7 @@ from rhinvoice.application.document.einvoice import (
     EInvoiceProblem,
     EInvoiceProfile,
     buyer_reference,
+    order_reference,
     problems,
     seller_ids,
     vat_id,
@@ -173,6 +174,8 @@ def test_the_parties_of_a_swiss_invoice() -> None:
     root = xml("ch-domestic")
     agreement = "rsm:SupplyChainTradeTransaction/ram:ApplicableHeaderTradeAgreement"
     assert text(root, f"{agreement}/ram:BuyerReference") == "PO-4711"
+    # The invoice's reference already is BT-10; it is not repeated as the order (BT-13).
+    assert absent(root, f"{agreement}/ram:BuyerOrderReferencedDocument")
     assert text(root, f"{SELLER}/ram:Name") == "Muster Werkstatt GmbH"
     assert text(root, f"{SELLER}/ram:Description") == "Handelsregister des Kantons Zürich"
     legal = root.find(f"{SELLER}/ram:SpecifiedLegalOrganization/ram:ID", NAMESPACES)
@@ -470,6 +473,10 @@ def test_xrechnung_for_an_authority() -> None:
     )
     agreement = "rsm:SupplyChainTradeTransaction/ram:ApplicableHeaderTradeAgreement"
     assert text(root, f"{agreement}/ram:BuyerReference") == "04011000-12345-34"
+    # The invoice's own reference stays, as the buyer's order (BT-13).
+    assert text(root, f"{agreement}/ram:BuyerOrderReferencedDocument/ram:IssuerAssignedID") == (
+        "Bestellung 17"
+    )
     assert text(root, f"{BUYER}/ram:DefinedTradeContact/ram:PersonName") == "Frau Beispiel"
 
 
@@ -581,10 +588,14 @@ def test_what_xrechnung_asks_for_beyond_en_16931() -> None:
     )
 
 
-def without_reference(printed: PrintModel) -> PrintModel:
+def with_reference(printed: PrintModel, reference: str) -> PrintModel:
     document = printed.view.document
-    content = replace(document.content, reference=" ")
+    content = replace(document.content, reference=reference)
     return replace(printed, view=replace(printed.view, document=replace(document, content=content)))
+
+
+def without_reference(printed: PrintModel) -> PrintModel:
+    return with_reference(printed, " ")
 
 
 def test_the_buyer_reference_of_a_german_customer_wins() -> None:
@@ -592,12 +603,18 @@ def test_the_buyer_reference_of_a_german_customer_wins() -> None:
     # The customer's Leitweg-ID, not the order number of the invoice.
     assert authority.view.document.content.reference == "Bestellung 17"
     assert buyer_reference(authority) == "04011000-12345-34"
+    # The invoice's reference does not get lost: it is the buyer's order reference (BT-13).
+    assert order_reference(authority) == "Bestellung 17"
+    assert order_reference(without_reference(authority)) is None
+    # The same text is not written twice.
+    assert order_reference(with_reference(authority, " 04011000-12345-34 ")) is None
     # Without the invoice's reference nothing is missing.
     assert found(without_reference(authority), EInvoiceProfile.XRECHNUNG) == set()
     # Without the customer's, the invoice's reference is the buyer reference.
     assert authority.recipient is not None
     plain = replace(authority, recipient=replace(authority.recipient, buyer_reference=""))
     assert buyer_reference(plain) == "Bestellung 17"
+    assert order_reference(plain) is None
     assert buyer_reference(without_reference(plain)) is None
     assert found(without_reference(plain), EInvoiceProfile.XRECHNUNG) == {
         EInvoiceProblem.BUYER_REFERENCE_MISSING
@@ -610,6 +627,7 @@ def test_the_buyer_reference_of_other_customers_is_the_invoices() -> None:
     assert swiss.recipient is not None
     kept = replace(swiss, recipient=replace(swiss.recipient, buyer_reference="991-33333TEST-33"))
     assert buyer_reference(kept) == "PO-4711"
+    assert order_reference(kept) is None
     assert EInvoiceProblem.BUYER_REFERENCE_MISSING in found(
         without_reference(kept), EInvoiceProfile.XRECHNUNG
     )

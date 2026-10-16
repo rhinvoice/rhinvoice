@@ -1,0 +1,46 @@
+---
+// Starlight's banner (frontmatter `banner`), then, on a machine-translated page, a notice that
+// says so and where to report a wrong translation. Pages shown in English because they have no
+// translation yet carry Starlight's own "not translated" notice instead.
+import Default from "@astrojs/starlight/components/Banner.astro";
+
+import { MACHINE_TRANSLATED, translationIssueHref } from "../lib/ui";
+
+const { lang, isFallback } = Astro.locals.starlightRoute;
+const notice = isFallback ? undefined : MACHINE_TRANSLATED[lang];
+const page = new URL(Astro.url.pathname, "https://rhinvoice.com").href;
+---
+
+<Default />
+{
+  notice && (
+    <div class="mt-notice" data-pagefind-ignore>
+      <p>
+        {notice.text} <a href={translationIssueHref(notice.language, page)}>{notice.link}</a> {notice.mail}{" "}
+        <span class="mail">hello@rhinvoice.com</span>.
+      </p>
+    </div>
+  )
+}
+
+<style>
+  /* Calm: a quiet line above the title, not a warning. */
+  .mt-notice {
+    padding: 0.6rem var(--sl-content-pad-x);
+    border-bottom: 1px solid var(--sl-color-hairline);
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-gray-2);
+    font-size: var(--sl-text-sm);
+    line-height: 1.5;
+  }
+  .mt-notice p {
+    max-width: var(--sl-content-width);
+    margin-inline: auto;
+  }
+  .mt-notice a {
+    color: var(--sl-color-accent);
+  }
+  .mail {
+    white-space: nowrap;
+  }
+</style>

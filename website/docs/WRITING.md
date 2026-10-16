@@ -3,6 +3,22 @@
 Rules for every page under `src/content/docs/`. English pages live at `<slug>.mdx`, German pages at
 `de/<slug>.mdx`, with the same slug, so the language switch and `hreflang` pair them.
 
+## French and Italian
+
+The core pages also exist in Swiss French (`fr/<slug>.mdx`) and Swiss Italian (`it/<slug>.mdx`):
+the start page, installation, Windows and Mac, first start, first invoice, Switzerland, updating and
+the FAQ. Every other page is shown in English below `/docs/fr/` and `/docs/it/`, with Starlight's
+"not translated yet" notice; its canonical URL is the English page, and it stays out of the sitemap
+and the `hreflang` links (`src/route-data.ts`, `astro.config.mjs`).
+
+- The French and Italian texts were machine-translated. `src/components/Banner.astro` says so above
+  each of them and links to the *Translation* issue form; a page added in French or Italian gets
+  the notice by itself.
+- When an English or German core page changes, change its French and Italian twin too.
+- Link within a language: `/docs/fr/<slug>/`, also to pages that have no translation yet.
+- French: "vous", TVA, IDE, facture QR, no space before `?`, `!` and `;`. Italian: "Lei", IVA, IDI,
+  fattura QR. Amounts as in Switzerland: `CHF 1’234.50`.
+
 ## Who reads this
 
 Owners of small businesses, freelancers and their bookkeepers in Switzerland, Liechtenstein, Germany

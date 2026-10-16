@@ -1,0 +1,43 @@
+---
+title: Questions fréquentes sur Rhinvoice
+description: "Réponses sur Rhinvoice, le logiciel de facturation gratuit et open source pour CH, LI, DE et AT. Coût, licence, données, GoBD, sauvegardes, facture électronique, Docker."
+faq:
+  - q: Combien coûte Rhinvoice?
+    a: "Rien. Rhinvoice est gratuit et open source. Il n’existe ni version payante ni service hébergé, et il n’est pas prévu d’en faire un service hébergé payant. Vous faites tourner Rhinvoice sur votre propre serveur ou ordinateur."
+  - q: Sous quelle licence Rhinvoice est-il publié?
+    a: "La GNU Affero General Public License v3.0 ou ultérieure (AGPL-3.0). Vous pouvez utiliser, modifier et partager Rhinvoice librement. Si vous proposez à d’autres une version modifiée sous forme de service, vous partagez vos modifications sous la même licence."
+  - q: Pour quels pays Rhinvoice est-il conçu?
+    a: "Pour les entreprises en Suisse, au Liechtenstein, en Allemagne et en Autriche, avec les taux de TVA, les mentions obligatoires et les codes QR de paiement de chaque pays. Vos clients peuvent se trouver n’importe où dans le monde."
+  - q: D’autres pays seront-ils ajoutés?
+    a: "Rhinvoice est construit pour cela. Tout ce qui diffère d’un pays à l’autre se trouve dans un profil de pays, un par pays. Un nouveau pays comme les Pays-Bas est un nouveau profil avec taux, mentions, mentions obligatoires et sources officielles. Les demandes passent par le formulaire GitHub « Tax or legal rule »."
+  - q: Dans quelles langues Rhinvoice est-il disponible?
+    a: "L’interface est en allemand, dans les variantes suisse, allemande et autrichienne, en anglais, en français et en italien. Rhinvoice établit les documents dans ces quatre langues."
+  - q: Où mes données sont-elles conservées?
+    a: "Sur votre propre serveur ou ordinateur, dans la base de données PostgreSQL de Rhinvoice. Elle contient les clients, les articles, les documents et les PDF archivés. Rhinvoice n’est pas un service cloud; les données restent chez vous. Le programme pour Windows et Mac les conserve dans votre dossier utilisateur."
+  - q: Rhinvoice respecte-t-il les règles d’inaltérabilité de la GoBD, de l’art. 958f CO et de la BAO?
+    a: "Rhinvoice les met en œuvre. Dès l’émission, le contenu et le PDF d’une facture sont verrouillés, directement dans la base de données aussi, et le PDF est conservé avec son SHA-256. Les corrections se font uniquement par une facture d’annulation avec son propre numéro. La conformité de votre comptabilité dans son ensemble est à régler avec votre conseiller fiscal ou votre fiduciaire."
+  - q: Comment Rhinvoice sauvegarde-t-il mes données?
+    a: "Avec restic, de façon chiffrée et dédupliquée, chaque jour et environ deux minutes après l’émission ou l’annulation de documents. Les destinations sont un stockage compatible S3, SFTP, un dossier, Dropbox, Google Drive et d’autres; le programme pour Windows et Mac sauvegarde dans un dossier comme OneDrive ou iCloud Drive. Rhinvoice conserve 7 sauvegardes quotidiennes, 4 hebdomadaires, 12 mensuelles et toutes les annuelles."
+  - q: Rhinvoice peut-il créer des factures électroniques?
+    a: "Oui. Le PDF de chaque facture émise est un PDF/A-3b et contient une facture ZUGFeRD / Factur-X (EN 16931), sauf si vous la désactivez dans le modèle d’impression ou si des données requises manquent. Pour les autorités publiques allemandes, Rhinvoice établit aussi la XRechnung 3.0. Les deux sont vérifiées avec le validateur KoSIT et Mustang."
+  - q: Puis-je reprendre les données du logiciel de facturation que j’utilisais avant?
+    a: "Oui. Rhinvoice importe les clients, les articles et les anciennes factures depuis des fichiers CSV et Excel (XLSX, XLS), avec attribution des colonnes, essai à blanc et modèles enregistrés. Les anciennes factures arrivent avec leurs PDF d’origine et restent inchangées."
+  - q: Ai-je besoin de Docker?
+    a: "Non. Sous Windows 10/11 et sur un Mac avec puce Apple (macOS 12 ou plus récent), Rhinvoice s’installe comme programme ordinaire avec un seul setup, base de données comprise (bêta). Pour un serveur, un NAS, un Raspberry Pi ou plusieurs utilisateurs sur des ordinateurs différents, il fonctionne avec Docker et Docker Compose, aussi sur votre propre portable avec Docker Desktop."
+  - q: Rhinvoice fonctionne-t-il sur un Raspberry Pi ou un NAS?
+    a: "Oui. Rhinvoice est publié pour linux/amd64 et linux/arm64, donc aussi pour le Raspberry Pi 4 et 5. Il fonctionne sur un NAS capable de faire tourner Docker avec Docker Compose."
+  - q: Puis-je utiliser Rhinvoice sur mon téléphone?
+    a: "Oui. L’interface s’adapte au téléphone. En déplacement, vous vérifiez l’état des factures, les marquez comme payées, et ouvrez et partagez le PDF."
+  - q: Où trouver de l’aide, et existe-t-il une licence commerciale?
+    a: "Les questions et les idées vont dans les GitHub Discussions, les bugs dans les GitHub Issues de rhinvoice/rhinvoice. Pour une licence commerciale, un partenariat ou la reprise du projet, écrivez à hello@rhinvoice.com."
+  - q: Puis-je essayer Rhinvoice sans l’installer?
+    a: "Oui, dans la démo publique pour la Suisse (ch.rhinvoice.com), l’Allemagne (de.rhinvoice.com) et l’Autriche (at.rhinvoice.com). Elle est réinitialisée chaque heure et n’accepte pas de fichiers, donc pas d’imports, pas de logo et pas de documents joints. Elle n’envoie pas d’e-mails."
+---
+
+import Faq from "../../../../components/Faq.astro";
+
+Rhinvoice est un logiciel de facturation gratuit et open source pour les petites entreprises en Suisse, au Liechtenstein, en Allemagne et en Autriche, que vous faites tourner vous-même avec Docker. Il est encore en bêta (version 0.x) : essayez-le d’abord sur une installation de test. Voici les questions les plus fréquentes; plus d’informations dans [installation](/docs/fr/getting-started/installation/), [facture électronique](/docs/fr/invoices/e-invoice/), [sauvegarde](/docs/fr/operations/backup/) et sur les pages des pays [Suisse](/docs/fr/countries/switzerland/), [Liechtenstein](/docs/fr/countries/liechtenstein/), [Allemagne](/docs/fr/countries/germany/) et [Autriche](/docs/fr/countries/austria/).
+
+## Questions fréquentes
+
+<Faq />

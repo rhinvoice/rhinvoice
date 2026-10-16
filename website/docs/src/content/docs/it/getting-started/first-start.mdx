@@ -1,0 +1,78 @@
+---
+title: "Primo avvio: Paese, azienda e conto bancario"
+description: Configurare Rhinvoice al primo avvio. La procedura chiede Paese e azienda, poi la lista di controllo porta a conto, numerazioni, clienti e backup.
+faq:
+  - q: Che cosa chiede Rhinvoice al primo avvio?
+    a: Due cose, in una breve procedura guidata. Prima il Paese della Sua azienda (Svizzera, Liechtenstein, Germania o Austria) e se è una piccola impresa, poi nome, indirizzo e numero IVA dell’azienda. Tutto il resto segue come lista di controllo nella panoramica.
+  - q: Posso cambiare in seguito il Paese o i dati dell’azienda?
+    a: Sì. Tutto ciò che è stato inserito nella procedura guidata si può cambiare in seguito in Impostazioni, Azienda.
+  - q: Come continuo i numeri delle fatture del mio programma precedente?
+    a: In Impostazioni, Numerazioni, imposti il prossimo contatore della numerazione delle fatture. L’anteprima mostra il numero successivo prima di salvare.
+  - q: Posso saltare la configurazione?
+    a: Sì. Configura più tardi chiude la procedura guidata; il passo resta aperto nella lista di controllo della panoramica. Può anche nascondere la lista di controllo.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Al primo avvio Rhinvoice chiede, in una procedura guidata in due passi, il **Paese** e l’**azienda**. Poi una lista di controllo nella panoramica La guida attraverso il resto: conto bancario, numerazioni, clienti, la prima fattura e i backup. Tutto si può cambiare in seguito in *Impostazioni*.
+
+Prima della procedura guidata, la prima visita Le chiede di creare il primo account utente; vedi [Installazione](/docs/it/getting-started/installation/).
+
+## La procedura guidata: Paese e azienda
+
+<Steps>
+
+1. **Paese.** *Dove ha sede la Sua azienda?* Scelga Svizzera, Liechtenstein, Germania o Austria. Il Paese determina le aliquote IVA, le indicazioni obbligatorie, l’arrotondamento e il codice QR di pagamento sulle fatture. Se è una piccola impresa, spunti la casella sotto (p. es. *Non assoggettato all’IVA (cifra d’affari inferiore a CHF 100’000)* in Svizzera, *Piccola impresa (§ 19 UStG)* in Germania, *Piccola impresa (§ 6 Abs. 1 Z 27 UStG)* in Austria): le fatture vengono allora scritte senza IVA, con l’indicazione richiesta. Poi *Avanti*.
+
+2. **Azienda.** *La Sua azienda*: nome e indirizzo sono il mittente su ogni fattura. E-mail, telefono e numero IVA (numero IDI / numero IVA in Svizzera, numero IVA nel Liechtenstein, USt-IdNr. in Germania, numero UID in Austria) qui sono facoltativi. In Germania può anche inserire il numero fiscale dell’ufficio delle imposte se non ha una USt-IdNr. Poi *Salva e continua*.
+
+</Steps>
+
+*Configura più tardi* chiude la procedura guidata senza salvare. Il passo resta nella lista di controllo, così può tornarci.
+
+## La lista di controllo nella panoramica
+
+Dopo la procedura guidata, la panoramica mostra *Benvenuto in Rhinvoice* con i passi rimanenti e quanti sono già fatti. Ogni passo ha un pulsante che porta al posto giusto.
+
+| Passo | A che cosa serve | Dove |
+|---|---|---|
+| *Paese e azienda* | Mittente, aliquote IVA e indicazioni obbligatorie delle fatture | la procedura guidata |
+| *Aggiungere un conto bancario* | Per il codice QR di pagamento: fattura QR o codice QR EPC | *Impostazioni → Conti bancari* |
+| *Controllare le numerazioni* | Il prossimo numero di fattura può continuare quello del programma precedente | *Impostazioni → Numerazioni* |
+| *Aggiungere o importare clienti* | Uno alla volta o da un file CSV o Excel | *Clienti* |
+| *Scrivere la prima fattura* | Con anteprima dal vivo; viene emessa solo quando lo decide Lei | *Nuova fattura* |
+| *Configurare i backup* | Perché nessuna fattura vada persa | *Impostazioni → Backup* |
+
+Un passo è fatto quando i suoi dati esistono: un conto bancario, un cliente, una fattura emessa, un backup riuscito. *Controllare le numerazioni* conta come fatto appena clicca su *Controlla*. *Nascondi lista di controllo* toglie la lista dalla panoramica; il messaggio che segue ha un pulsante *Annulla*.
+
+## Aggiungere un conto bancario
+
+In *Impostazioni → Conti bancari → Aggiungi conto* inserisca banca, titolare del conto, IBAN, BIC e valuta. Aggiunga almeno un conto per ogni valuta di fatturazione; un conto per valuta è quello predefinito (*Conto predefinito per questa valuta*). Il conto compare nei dati di pagamento e nel codice QR delle Sue fatture.
+
+- **Svizzera e Liechtenstein:** la fattura QR svizzera. Un **QR-IBAN** serve solo per fatture QR con riferimento QR. Vedi [Svizzera](/docs/it/countries/switzerland/).
+- **Germania e Austria:** il codice QR EPC (GiroCode) per fatture in euro. Vedi [Germania](/docs/it/countries/germany/) e [Austria](/docs/it/countries/austria/).
+
+<Aside type="tip" title="Le fatture emesse mantengono il loro conto">
+I documenti emessi mantengono le coordinate bancarie con cui sono stati emessi. Modificare o eliminare un conto in seguito riguarda solo i documenti non ancora emessi.
+</Aside>
+
+## Controllare le numerazioni
+
+In *Impostazioni → Numerazioni* vede gli schemi di fatture, offerte, fatture di storno, clienti e articoli. I numeri di fattura vengono assegnati solo all’emissione, senza lacune e univoci. Gli schemi predefiniti sono `R{YYYY}{NNNN}` per le fatture (p. es. R20260001), `A{YYYY}{NNNN}` per le offerte e `S{YYYY}{NNNN}` per le fatture di storno, ciascuno ricomincia ogni anno.
+
+- *Schema*: `{YYYY}` anno, `{YY}` anno a due cifre, `{MM}` mese, `{NNNN}` contatore (il numero di N è il numero minimo di cifre).
+- *Prossimo contatore*: per continuare senza lacune dal programma precedente.
+- *Ricomincia ogni anno*: richiede `{YYYY}` o `{YY}` nello schema, altrimenti i numeri si ripetono.
+- *Prossimo numero*: mostra il numero che riceverà il prossimo documento.
+
+Se passa da un altro programma, veda anche [Clienti e articoli](/docs/it/moving/customers-and-articles/) e [Riprendere le vecchie fatture](/docs/it/moving/old-invoices/).
+
+## Prossimi passi
+
+- [La prima fattura](/docs/it/getting-started/first-invoice/)
+- [Configurare i backup](/docs/it/operations/backup/)
+
+## Domande frequenti
+
+<Faq />

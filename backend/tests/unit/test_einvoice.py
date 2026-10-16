@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001 - French and Italian elide with the typographic apostrophe.
 """E-invoices (EN 16931, CII): the business terms of each tax case.
 
 The KoSIT validator judges the same samples against the official rules in
@@ -406,6 +407,24 @@ def test_goods_leaving_the_vat_area_are_exports() -> None:
     assert texts(swiss, f"{taxes}/ram:ExemptionReason")[1] == (
         "Steuerbefreite Ausfuhrlieferung (Art. 23 Abs. 2 Ziff. 1 MWSTG)."
     )
+
+
+def test_french_and_italian_invoices_give_their_notices_as_exemption_reasons() -> None:
+    taxes = f"{SETTLEMENT}/ram:ApplicableTradeTax"
+    french = xml("ch-export-french")
+    assert texts(french, f"{taxes}/ram:CategoryCode") == ["G"]
+    assert texts(french, f"{taxes}/ram:ExemptionReason") == [
+        (
+            "Lieu de la prestation de services à l’étranger, non soumis à la TVA."
+            " Livraison à l’exportation exonérée de l’impôt (art. 23, al. 2, ch. 1, LTVA)."
+        ),
+    ]
+    italian = xml("de-intra-community-italian")
+    assert texts(italian, f"{taxes}/ram:CategoryCode") == ["AE", "K"]
+    assert texts(italian, f"{taxes}/ram:ExemptionReason") == [
+        "Inversione contabile.",
+        "Cessione intracomunitaria esente (§ 4 Nr. 1 Buchst. b i. V. m. § 6a UStG).",
+    ]
 
 
 def test_a_service_and_a_goods_export_share_the_category() -> None:

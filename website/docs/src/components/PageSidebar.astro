@@ -2,8 +2,10 @@
 // Starlight's "on this page", followed by a way into the demo.
 import Default from "@astrojs/starlight/components/PageSidebar.astro";
 
+import { words } from "../lib/ui";
+
 const { lang, toc } = Astro.locals.starlightRoute;
-const german = lang === "de";
+const { demoTitle, demoText } = words(lang);
 const demos = [
   ["CH", "https://ch.rhinvoice.com"],
   ["DE", "https://de.rhinvoice.com"],
@@ -14,9 +16,9 @@ const demos = [
 <Default />
 {
   toc && (
-    <aside class="demo sl-hidden lg:sl-block" aria-label={german ? "Demo" : "Demo"}>
-      <p class="demo-title">{german ? "Demo ausprobieren" : "Try the demo"}</p>
-      <p>{german ? "Rechnungen schreiben, ohne etwas zu installieren:" : "Write invoices without installing anything:"}</p>
+    <aside class="demo sl-hidden lg:sl-block" aria-label="Demo">
+      <p class="demo-title">{demoTitle}</p>
+      <p>{demoText}</p>
       <p class="demo-links">
         {demos.map(([country, href]) => (
           <a href={href}>{country}</a>

@@ -8,6 +8,8 @@ import { resolve } from "node:path";
 
 import { marked } from "marked";
 
+import { docsBase } from "./paths";
+
 /** The builds run in website/docs; the repository's changelog lies two folders up. */
 const SOURCES = {
   en: resolve(process.cwd(), "../../CHANGELOG.md"),
@@ -73,6 +75,5 @@ export function releases(lang: ChangelogLang): Release[] {
 
 /** Where a version's notes are, for "since version …" badges. */
 export function releaseHref(version: string, lang: string): string {
-  const base = lang === "de" ? "/docs/de/help/changelog/" : "/docs/help/changelog/";
-  return `${base}#${anchorOf(version)}`;
+  return `${docsBase(lang)}help/changelog/#${anchorOf(version)}`;
 }

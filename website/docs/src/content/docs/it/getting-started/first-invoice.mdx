@@ -1,0 +1,96 @@
+---
+title: Scrivere la prima fattura
+description: Scrivere una fattura in Rhinvoice passo per passo. Scegliere il cliente, aggiungere le posizioni, controllare l’anteprima, emettere, aprire il PDF, segnare pagato.
+faq:
+  - q: Quando riceve il suo numero una fattura?
+    a: Solo quando la emette. Le bozze non hanno ancora un numero, quindi le bozze eliminate non lasciano lacune. Rhinvoice assegna il numero successivo della numerazione delle fatture, senza lacune e senza doppioni.
+  - q: Posso modificare una fattura dopo averla emessa?
+    a: No. Dall’emissione in poi contenuto e PDF sono bloccati (GoBD, art. 958f CO, BAO). Una correzione richiede una fattura di storno con un proprio numero; poi scrive una nuova fattura.
+  - q: Come registro un pagamento parziale?
+    a: Apra la fattura e scelga Registra pagamento (tasto P). Inserisca la data del pagamento e l’importo ricevuto; la fattura appare allora come pagata parzialmente, con l’importo aperto.
+  - q: Esiste una scorciatoia da tastiera per una nuova fattura?
+    a: Sì. Prema N ovunque fuori da un campo di inserimento. Cmd+Invio (Ctrl+Invio su Windows e Linux) salva, e ? mostra tutte le scorciatoie.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+In Rhinvoice una fattura si scrive nell’editor: scegliere il cliente, aggiungere le posizioni, controllare l’**anteprima dal vivo** e cliccare su *Emetti*. Solo allora la fattura riceve il suo numero e diventa immodificabile. Poi apre il PDF, lo invia e segna la fattura come pagata quando arriva il denaro.
+
+Prima della prima fattura completi il [primo avvio](/docs/it/getting-started/first-start/): Paese, azienda e un conto bancario.
+
+## 1. Aggiungere un cliente
+
+L’editor sceglie tra i clienti già esistenti. Ne aggiunga uno in *Clienti → Nuovo cliente*, oppure importi i Suoi clienti da un file CSV o Excel ([clienti e articoli](/docs/it/moving/customers-and-articles/)).
+
+## 2. Aprire l’editor
+
+Clicchi su *Nuova fattura* nella navigazione, oppure prema **N** ovunque fuori da un campo di inserimento. L’editor mostra il modulo a sinistra e l’**anteprima** a destra, così come apparirà la fattura su carta. Su un telefono o in una finestra stretta si passa tra *Modifica* e *Anteprima*.
+
+## 3. Compilare la fattura
+
+<Steps>
+
+1. **Cliente**: digiti un nome, un numero o una località e scelga il cliente. Rhinvoice mostra l’indirizzo come apparirà sulla fattura.
+
+2. **Date**: lasci vuota la *Data* per usare la data di emissione, e vuota la *Scadenza* per usare le condizioni di pagamento del cliente o dell’azienda. Può anche scegliere *Pagabile entro* un numero di giorni.
+
+3. **Posizioni**: *Aggiungi posizione*, poi inserisca descrizione, quantità, unità e prezzo. Gli articoli vengono proposti mentre scrive. *Applica* porta la posizione nell’elenco; un clic su una posizione nell’elenco o nell’anteprima la riapre. *Aggiungi riga di testo* aggiunge un titolo o una nota senza importo. **Alt+↑** e **Alt+↓** spostano una posizione.
+
+4. **Testi** (facoltativo): introduzione, condizioni di pagamento e chiusura, anche dai Suoi modelli di testo.
+
+5. **Altri dettagli** (facoltativo): oggetto, riferimento, periodo della prestazione, valuta e uno sconto sull’intero documento.
+
+</Steps>
+
+Il *Trattamento fiscale* deriva dai Paesi della Sua azienda e del cliente: nazionale, reverse charge, esportazione o piccola impresa, con l’indicazione richiesta dalla legge. Rhinvoice usa l’aliquota IVA valida alla data della prestazione. Dettagli per Paese: [Svizzera](/docs/it/countries/switzerland/), [Liechtenstein](/docs/it/countries/liechtenstein/), [Germania](/docs/it/countries/germany/), [Austria](/docs/it/countries/austria/).
+
+## 4. Salvare la bozza
+
+*Salva* (**⌘↵** su un Mac, **Ctrl+Invio** su Windows e Linux) conserva la fattura come bozza. Una volta salvata la bozza, Rhinvoice salva da solo le modifiche successive; la barra in basso mostra *Salvato* e da quanto tempo. Una bozza si può ancora modificare o eliminare (*Elimina bozza*).
+
+## 5. Emettere la fattura
+
+Clicchi su *Emetti*. Rhinvoice chiede *Emettere la fattura?*: la fattura riceve il suo numero definitivo e in seguito non può più essere modificata. Le correzioni sono possibili solo con una fattura di storno. Prima dell’emissione Rhinvoice controlla le indicazioni obbligatorie del Suo Paese e dice che cosa manca.
+
+<Aside type="caution" title="Emessa significa definitiva">
+Dall’emissione in poi contenuto e PDF sono bloccati e il PDF viene conservato con la sua somma di controllo SHA-256. Per correggere una fattura emessa, la storni (*Storna fattura* crea una fattura di storno con un proprio numero) e ne scriva una nuova. Vedi [Emettere e stornare](/docs/it/invoices/issue-and-cancel/).
+</Aside>
+
+## 6. PDF, stampa, e-mail
+
+Sulla fattura emessa:
+
+- *PDF* apre il PDF in una nuova scheda, *Scarica* lo salva, *Stampa* lo stampa.
+- *Invia per e-mail* la invia con il PDF allegato, una volta configurato il server di posta in *Impostazioni → E-mail*.
+
+Il PDF contiene la parte di pagamento: la fattura QR svizzera (sezione pagamento e ricevuta) in Svizzera e nel Liechtenstein, il codice QR EPC (GiroCode) per le fatture in euro in Germania e Austria. Nel PDF è incorporata una fattura elettronica ZUGFeRD / Factur-X ([Fatture elettroniche](/docs/it/invoices/e-invoice/)).
+
+## 7. Segnare come pagata
+
+Quando arriva il denaro, apra la fattura:
+
+- *Segna come pagata* registra l’intero importo con la data di oggi. Il messaggio che segue ha *Annulla*.
+- *Registra pagamento* (tasto **P**) serve per un’altra data o per un pagamento parziale: inserisca *Data del pagamento* e importo, poi *Salva pagamento*. La fattura mostra allora *Pagata parzialmente* e l’importo aperto.
+
+Nell’elenco delle fatture, *Pagata* in una riga segna come pagata una singola fattura; si possono selezionare e segnare più fatture insieme. Una fattura oltre la scadenza appare come *Scaduta*. Altro in [Pagamenti e solleciti](/docs/it/invoices/payments-and-reminders/).
+
+## Scorciatoie da tastiera
+
+| Tasto | Azione |
+|---|---|
+| **N** | Nuova fattura |
+| **Q** | Nuova offerta |
+| **/** | Andare alla ricerca |
+| **⌘K** / **Ctrl+K** | Aprire la palette dei comandi |
+| **⌘↵** / **Ctrl+Invio** | Salvare |
+| **P** | Registrare un pagamento (in un documento) |
+| **⌘Z** / **Ctrl+Z** | Annullare l’ultima azione (finché il suo messaggio è visibile) |
+| **G** poi **I** | Andare alle fatture |
+| **?** | Mostrare tutte le scorciatoie |
+
+Le scorciatoie a un tasto funzionano solo quando nessun campo di inserimento è attivo.
+
+## Domande frequenti
+
+<Faq />

@@ -27,6 +27,10 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   Rhinvoice gleich in dieser Sprache. Beträge und Daten bleiben im Schweizer Format
   (`CHF 1’234.50`, `05.01.2026`). Beide Sprachen sind maschinell übersetzt; das Sprachmenü und
   *Über Rhinvoice* sagen das und bitten um Korrekturen.
+- rhinvoice.com auf Französisch (`/fr/`) und Italienisch (`/it/`), mit Impressum und
+  Datenschutzerklärung. Auch die Dokumentation gibt es auf Französisch und Italienisch, alle
+  Seiten. Diese Texte sind maschinell übersetzt und sagen das oben, mit einem Link für Hinweise zur
+  Übersetzung.
 
 ## [0.7.4] – 2026-10-16
 

@@ -1,0 +1,110 @@
+---
+title: "Factures électroniques gratuites : ZUGFeRD et XRechnung"
+description: "Créer gratuitement des factures électroniques XRechnung et ZUGFeRD avec Rhinvoice, open source. EN 16931 en PDF/A-3b, XRechnung 3.0 avec Leitweg-ID, validées par KoSIT."
+faq:
+  - q: Puis-je créer une XRechnung gratuitement avec Rhinvoice?
+    a: "Oui. Rhinvoice est gratuit et open source (AGPL). Pour chaque facture émise et chaque facture d’annulation, vous téléchargez la XRechnung 3.0 sous forme de fichier XML. La Leitweg-ID va dans le champ Référence de la facture."
+  - q: Chaque facture PDF de Rhinvoice est-elle une facture ZUGFeRD?
+    a: "Oui, chaque facture émise et chaque facture d’annulation, pour autant que les données requises soient présentes. Le PDF est un PDF/A-3b avec une facture ZUGFeRD / Factur-X intégrée selon le profil EN 16931. Rhinvoice indique sur la facture si la facture électronique est intégrée."
+  - q: De quoi une XRechnung a-t-elle besoin en plus?
+    a: "De la référence de la facture (Leitweg-ID ou référence de l’acheteur), de l’e-mail et du téléphone de votre entreprise, de l’e-mail du client et d’un compte bancaire. S’il manque quelque chose, Rhinvoice le nomme lors de l’émission."
+  - q: Comment Rhinvoice contrôle-t-il ses factures électroniques?
+    a: "À chaque modification du programme, des factures d’exemple pour chaque traitement fiscal passent par le validateur KoSIT (EN 16931 et XRechnung) et, en PDF, par Mustang (ZUGFeRD, PDF/A-3 avec veraPDF). Les avertissements comptent comme des erreurs."
+  - q: Pour quels pays Rhinvoice crée-t-il des factures électroniques?
+    a: "Pour les entreprises en Suisse, au Liechtenstein, en Allemagne et en Autriche, ZUGFeRD est dans chaque PDF. La XRechnung est destinée aux autorités publiques allemandes. UBL, Peppol et l’ebInterface autrichien ne sont pas pris en charge."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Rhinvoice crée gratuitement des factures électroniques : le PDF de chaque facture émise est un **PDF/A-3b avec une facture ZUGFeRD / Factur-X intégrée** (profil EN 16931), et pour les autorités publiques allemandes, vous téléchargez en plus la **XRechnung 3.0** (CII) en XML. Rhinvoice contrôle les deux avec les validateurs officiels, KoSIT et Mustang.
+
+## Deux formats, un contenu
+
+| | ZUGFeRD / Factur-X | XRechnung |
+|---|---|---|
+| Forme | intégrée au PDF (PDF/A-3b) | un fichier XML séparé |
+| Norme | EN 16931, syntaxe CII | XRechnung 3.0, syntaxe CII |
+| Pour | clients professionnels dans les quatre pays | autorités publiques allemandes |
+| Où | automatiquement dans chaque PDF | ouvrir la facture, section *Facture électronique* → *XRechnung pour les autorités allemandes* → *XRechnung (XML)* |
+
+**Ce qui est imprimé est ce que dit la facture électronique.** Chaque montant de la facture électronique est un montant du PDF; Rhinvoice ne recalcule rien, même avec des prix bruts, des rabais et l’arrondi à 5 centimes. Le PDF a le même aspect pour vos clients, et leur logiciel de comptabilité lit les données directement.
+
+Les factures d’annulation sont des notes de crédit (type 381) dans la facture électronique, avec référence à la facture annulée. Les offres, les brouillons et les [anciennes factures importées](/docs/fr/moving/old-invoices/) ne sont pas des factures électroniques.
+
+## ZUGFeRD dans chaque PDF
+
+La facture électronique est activée par défaut. Le réglage se trouve sous *Réglages → Modèle d’impression → Facture électronique dans le PDF (ZUGFeRD)*. Sur la facture émise, la section *Facture électronique* indique si le PDF archivé la contient :
+
+> Le PDF contient la facture électronique (ZUGFeRD, EN 16931) : les logiciels de comptabilité lisent les données directement.
+
+Rhinvoice enregistre le XML intégré avec le PDF et ne modifie plus jamais ni l’un ni l’autre. Tous les PDF de Rhinvoice sont des PDF/A-3b, offres et rappels compris.
+
+## XRechnung pour les autorités allemandes
+
+Les autorités publiques en Allemagne exigent la XRechnung. Pour la créer :
+
+1. Dans l’éditeur, saisissez la **Leitweg-ID** de l’autorité sous *Référence*. Rhinvoice écrit ce champ dans la XRechnung comme référence de l’acheteur (BT-10).
+2. Émettez la facture.
+3. Ouvrez la section *Facture électronique* → *XRechnung pour les autorités allemandes* et cliquez sur *XRechnung (XML)*.
+
+Lorsque vous envoyez la facture par e-mail, vous pouvez choisir *Joindre aussi la XRechnung (XML)*.
+
+## Ce dont une facture électronique a besoin
+
+Rhinvoice ne crée que des factures électroniques complètes. S’il manque quelque chose, la boîte de dialogue vous avertit avant l’émission («Cette facture sera émise sans facture électronique. Il manque : …»). Le PDF est créé quand même, simplement sans la facture électronique.
+
+**Chaque facture électronique (EN 16931) :**
+
+| Donnée | Quand | Où la saisir |
+|---|---|---|
+| IDE, numéro de TVA intracommunautaire ou inscription au registre du commerce | toujours | *Réglages → Entreprise* |
+| Numéro TVA ou numéro fiscal | factures imposées ou exonérées | *Réglages → Entreprise* |
+| Numéro TVA de votre entreprise | autoliquidation, livraison intracommunautaire, exportation | *Réglages → Entreprise* |
+| Numéro TVA du client avec préfixe de pays | autoliquidation, livraison intracommunautaire | sur le client |
+
+**En plus pour la XRechnung :**
+
+| Donnée | Où la saisir |
+|---|---|
+| La référence de la facture (Leitweg-ID ou référence de l’acheteur) | dans l’éditeur, champ *Référence* |
+| L’e-mail de votre entreprise | *Réglages → Entreprise* |
+| Le téléphone de votre entreprise | *Réglages → Entreprise* |
+| L’e-mail du client | sur le client |
+| Un compte bancaire | *Réglages → Comptes bancaires* |
+
+<Aside type="caution" title="Émise, c’est émise">
+Une facture émise ne change jamais, sa facture électronique non plus. Ce qui manquait lors de l’émission, ajoutez-le pour les factures suivantes.
+</Aside>
+
+## L’obligation de facture électronique en Allemagne
+
+Depuis 2025, les entreprises en Allemagne doivent pouvoir recevoir des factures électroniques (§ 14 UStG). Elles doivent en émettre pour les factures B2B nationales dès 2027 si leur chiffre d’affaires de l’année précédente dépassait EUR 800’000, et dès 2028 toutes (§ 27 Abs. 38 UStG). Les petites entreprises en sont dispensées (§ 34a UStDV). La facture ZUGFeRD dans le PDF remplit cette obligation lorsqu’elle est intégrée. Plus sur les factures allemandes : [factures en Allemagne](/docs/fr/countries/germany/).
+
+Les entreprises en [Suisse](/docs/fr/countries/switzerland/), au [Liechtenstein](/docs/fr/countries/liechtenstein/) et en [Autriche](/docs/fr/countries/austria/) reçoivent la même facture ZUGFeRD dans chaque PDF. En Autriche et en Suisse, les programmes de comptabilité lisent de plus en plus souvent directement les PDF ZUGFeRD.
+
+## Les traitements fiscaux dans la facture électronique
+
+Rhinvoice attribue à chaque groupe fiscal une catégorie selon UNCL 5305 :
+
+| Catégorie | Traitement fiscal |
+|---|---|
+| S | imposé normalement |
+| Z | taux de 0 % |
+| E | exonéré; petites entreprises en Allemagne et en Autriche, avec leur mention comme motif |
+| AE | autoliquidation (reverse charge), aussi de la Suisse et du Liechtenstein vers des entreprises de l’UE |
+| K | livraison intracommunautaire de biens, avec l’adresse de livraison |
+| G | exportation et livraison à l’exportation |
+| O | non soumis à la TVA : petites entreprises sans numéro TVA ni numéro fiscal (Suisse, Liechtenstein) |
+
+Un IDE suisse identifie l’entreprise dans la facture électronique (schéma 0183) et, pour les entreprises assujetties à la TVA, est en même temps son numéro TVA. Les numéros fiscaux allemands ont un champ à part.
+
+## Validées avec KoSIT et Mustang
+
+À chaque modification de Rhinvoice, des factures d’exemple pour chaque traitement fiscal passent par les validateurs officiels : le **validateur KoSIT** pour EN 16931 et XRechnung et, en PDF, **Mustang** pour ZUGFeRD et PDF/A-3 (avec veraPDF). Les avertissements comptent comme des erreurs.
+
+Non pris en charge : UBL, l’envoi via Peppol et l’ebInterface autrichien.
+
+## Questions fréquentes
+
+<Faq />

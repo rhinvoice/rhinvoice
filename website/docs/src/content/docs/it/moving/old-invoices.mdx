@@ -1,0 +1,87 @@
+---
+title: Riprendere le vecchie fatture
+description: Portare in Rhinvoice le fatture del Suo programma di fatturazione precedente con i loro PDF originali, da un elenco CSV o Excel e una cartella di PDF, con una prova.
+since: 0.5.0
+faq:
+  - q: Posso importare in Rhinvoice le vecchie fatture con i loro PDF?
+    a: Sì. Rhinvoice riprende le vecchie fatture da un elenco CSV o Excel insieme ai PDF originali da una cartella o da un file ZIP. Le fatture restano invariate e bloccate, con numero, data, cliente, importo e PDF.
+  - q: Rhinvoice ricalcola le fatture importate?
+    a: No. Rhinvoice salva gli importi dell’elenco e il PDF originale. Non ricalcola nulla e non crea un nuovo PDF, quindi la fattura che conserva è quella che ha ricevuto il Suo cliente.
+  - q: Che cosa succede se importo due volte lo stesso elenco?
+    a: Niente di grave. Rhinvoice salta i numeri di fattura che esistono già. Una fattura emessa non cambia mai, nemmeno importandola di nuovo.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice riprende le fatture del programma che usava prima, con i loro **PDF originali**. Così può spegnere il vecchio programma e avere comunque le fatture degli ultimi dieci anni in un unico posto.
+
+<Aside type="tip" title="Ogni importazione inizia con una prova">
+Rhinvoice Le mostra riga per riga che cosa succederebbe e non modifica nulla. Solo il pulsante con il numero salva, per esempio **Riprendi 12 fatture**.
+</Aside>
+
+## In quest’ordine
+
+Le fatture cercano il loro cliente quando vengono importate. Importi quindi prima clienti e articoli ([clienti e articoli](/docs/it/moving/customers-and-articles/)), alla fine le fatture.
+
+<Steps>
+
+1. **Clienti**: *Clienti → Importa*
+2. **Articoli**: *Articoli → Importa*
+3. **Fatture con i loro PDF**: *Fatture → Importa*
+
+</Steps>
+
+## Che cosa serve
+
+### Un elenco delle fatture
+
+Esporti le fatture dal vecchio programma come file CSV (UTF-8 o Windows-1252) o Excel (`.xlsx`, `.xls`). Rhinvoice riconosce le colonne dai loro nomi; tutto il resto lo assegna a mano e lo salva come modello.
+
+| Colonna | Necessaria | A che cosa serve |
+|---|---|---|
+| Numero della fattura | <span class="need yes">Sì</span> | Resta esattamente com’era |
+| Data | <span class="need yes">Sì</span> | Data della fattura e anno nel fatturato |
+| Totale | <span class="need yes">Sì</span> | Importo IVA inclusa |
+| Numero cliente o nome | <span class="need yes">Sì</span> | Trova il cliente |
+| Scadenza, importo aperto | <span class="need opt">Se presente</span> | Scadenza e partite aperte |
+| Importo netto o importo dell’imposta | <span class="need opt">Se presente</span> | Importo netto e imposta |
+| Valuta, oggetto | <span class="need opt">Se presente</span> | Salvati con la fattura |
+| Indirizzo del cliente | <span class="need opt">Se presente</span> | Per i clienti che Rhinvoice non conosce ancora |
+
+### I file PDF
+
+Scelga la cartella con i PDF; funzionano anche sottocartelle, singoli file e file ZIP. Rhinvoice trova il numero della fattura in qualsiasi punto del nome del file:
+
+```text
+✓ Rechnung R20150001.pdf
+✓ 2015/R2015-0001.pdf
+✓ 2015/20150001_korrektur.pdf   → diventa un allegato, non la fattura
+✗ Scan_0042.pdf                 → nessun numero: avanza
+```
+
+Tra più file con lo stesso numero, quello che nel nome non ha nient’altro è la fattura. Solleciti, correzioni e copie («Mahnung», «Korrektur», «Kopie» …) vengono conservati con la stessa fattura come **allegati**. I file identici vengono conservati una sola volta; immagini e altri file della cartella vengono tralasciati.
+
+## Che cosa succede durante l’importazione
+
+- **La fattura resta com’era.** Rhinvoice non ricalcola nulla e non crea un nuovo PDF: conserva la fattura che ha ricevuto il Suo cliente. L’elenco delle fatture la segna come *Ripresa*.
+- **Viene trovata la colonna giusta del numero.** Alcuni programmi esportano un contatore come «numero di fattura» e il numero vero nel titolo («Rechnung R20150001»). Rhinvoice prende la colonna i cui valori corrispondono ai nomi dei file.
+- **I clienti vengono trovati** per numero, altrimenti per nome. Un numero che appartiene a un cliente con un nome chiaramente diverso non viene usato. I clienti che Rhinvoice non conosce vengono creati e **archiviati**.
+- **Una fattura senza importo aperto conta come pagata**, con un pagamento alla sua scadenza. Le fatture aperte si segnano in seguito come pagate come tutte le altre.
+- **Importare due volte non fa danni.** I numeri che esistono già vengono saltati, quindi può importare lo stesso elenco una seconda volta con i PDF.
+- **La numerazione continua** con il prossimo numero libero; il risultato indica quale numero riceverà la prossima fattura.
+- **I file avanzati** vengono elencati nella prova. Un PDF mancante si può aggiungere in seguito sulla fattura stessa (*Aggiungi PDF*).
+
+<Aside type="caution" title="Conservare le fatture">
+Le fatture vanno conservate per dieci anni (Svizzera: art. 958f CO, Germania: § 147 AO, Austria: § 132 BAO). I PDF importati sono bloccati e fanno parte di ogni [backup](/docs/it/operations/backup/). Conservi comunque l’esportazione del vecchio programma finché non ha controllato l’importazione.
+</Aside>
+
+## Limiti
+
+Per importazione: l’elenco al massimo 5 MB e 10’000 righe, ogni PDF al massimo 20 MB, tutti i PDF insieme al massimo 200 MB. Un browser invia al massimo 1000 file alla volta, quindi comprima le cartelle grandi in un file ZIP o importi anno per anno.
+
+Le fatture importate non si possono duplicare, stornare né inviare come fatture elettroniche: sono costituite dal loro PDF.
+
+## Domande frequenti
+
+<Faq />

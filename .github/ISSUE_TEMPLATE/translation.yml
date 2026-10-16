@@ -1,0 +1,36 @@
+name: Translation
+description: A text on rhinvoice.com, in the docs or in the program reads wrong in your language.
+labels: ["translation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. The French and Italian texts were machine-translated, so every correction helps.
+        You may write in French, Italian, German or English.
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options: ["French", "Italian", "German", "English"]
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Page or screen
+      description: The address of the page, or where in the program you saw the text.
+      placeholder: "https://rhinvoice.com/docs/fr/getting-started/first-invoice/"
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: The text as it is
+    validations:
+      required: true
+  - type: textarea
+    id: better
+    attributes:
+      label: How it should read
+    validations:
+      required: true

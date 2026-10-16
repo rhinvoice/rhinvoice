@@ -5,6 +5,9 @@
  */
 import { defineRouteMiddleware, type StarlightRouteData } from "@astrojs/starlight/route-data";
 
+import { LANGUAGES, languageOf } from "./lib/paths";
+import { words } from "./lib/ui";
+
 const SITE = "https://rhinvoice.com";
 const SOFTWARE = {
   "@type": "SoftwareApplication",
@@ -43,7 +46,7 @@ function currentGroup(entries: Entry[]): Group | undefined {
 function structuredData(route: StarlightRouteData, url: string): object[] {
   const { entry, lang, siteTitleHref, lastUpdated } = route;
   const docsHome = new URL(siteTitleHref, SITE).href;
-  const docsName = lang === "de" ? "Rhinvoice Dokumentation" : "Rhinvoice Docs";
+  const { docsName } = words(lang);
   const group = currentGroup(route.sidebar as Entry[]);
   // A group has no page of its own: its crumb leads to its first page.
   const first = group?.entries.find((child): child is Link => child.type === "link");
@@ -97,16 +100,20 @@ function structuredData(route: StarlightRouteData, url: string): object[] {
 export const onRequest = defineRouteMiddleware((context) => {
   const route = context.locals.starlightRoute;
   const url = new URL(context.url.pathname, SITE).href;
-  const german = route.lang === "de";
-  const image = `${SITE}/assets/img/${german ? "og-de" : "og"}.png`;
-  // Open Graph wants language and territory, as on the landing page.
+  const lang = languageOf(route.lang);
+  const { ogLocale, ogImage } = words(lang);
+  const image = `${SITE}/assets/img/${ogImage}`;
   for (const tag of route.head) {
     if (tag.tag === "meta" && tag.attrs?.property === "og:locale") {
-      tag.attrs.content = german ? "de_DE" : "en_US";
+      // Open Graph wants language and territory, as on the landing page.
+      tag.attrs.content = ogLocale;
     }
   }
   route.head.push(
-    { tag: "meta", attrs: { property: "og:locale:alternate", content: german ? "en_US" : "de_DE" } },
+    ...LANGUAGES.filter((other) => other !== lang).map((other) => ({
+      tag: "meta" as const,
+      attrs: { property: "og:locale:alternate", content: words(other).ogLocale },
+    })),
     { tag: "meta", attrs: { property: "og:image", content: image } },
     { tag: "meta", attrs: { name: "twitter:image", content: image } },
     {

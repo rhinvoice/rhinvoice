@@ -26,6 +26,9 @@ before 1.0, minor versions may contain breaking changes.
   with the globe icon; a browser set to French or Italian opens in that language. Amounts and
   dates keep the Swiss style (`CHF 1’234.50`, `05.01.2026`). Both are machine translated; the
   language menu and *About Rhinvoice* say so and ask for corrections.
+- rhinvoice.com in French (`/fr/`) and Italian (`/it/`), with legal notice and privacy notice.
+  The docs are in French and Italian too, every page. These texts were machine-translated and say
+  so at the top, with a link to report a wrong translation.
 
 ## [0.7.4] – 2026-10-16
 

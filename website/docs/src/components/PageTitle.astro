@@ -1,6 +1,7 @@
 ---
 // The title as in the first draft: the way there above it, then reading time and, for a feature
 // newer than the first public release (frontmatter `since`), the version that brought it.
+import { words } from "../lib/ui";
 import Since from "./Since.astro";
 
 // Starlight's id for the page title (its "skip to content" target); not exported by the package.
@@ -9,7 +10,7 @@ const WORDS_PER_MINUTE = 200;
 
 const { entry, sidebar, siteTitleHref, lang } = Astro.locals.starlightRoute;
 const { title, since } = entry.data;
-const german = lang === "de";
+const { docs, breadcrumbs, readingTime } = words(lang);
 
 type Entry = (typeof sidebar)[number];
 const group = sidebar.find(
@@ -23,8 +24,8 @@ const minutes = Math.max(1, Math.round((entry.body ?? "").split(/\s+/).length / 
 
 {
   !isHome && (
-    <nav class="crumbs" aria-label={german ? "Brotkrumen" : "Breadcrumbs"}>
-      <a href={siteTitleHref}>{german ? "Dokumentation" : "Docs"}</a>
+    <nav class="crumbs" aria-label={breadcrumbs}>
+      <a href={siteTitleHref}>{docs}</a>
       {group && groupStart && (
         <>
           <span aria-hidden="true">›</span>
@@ -38,7 +39,7 @@ const minutes = Math.max(1, Math.round((entry.body ?? "").split(/\s+/).length / 
 {
   !isHome && (
     <p class="meta">
-      <span>{german ? `Lesezeit ${minutes} ${minutes === 1 ? "Minute" : "Minuten"}` : `${minutes} min read`}</span>
+      <span>{readingTime(minutes)}</span>
       {since && <Since version={since} />}
     </p>
   )

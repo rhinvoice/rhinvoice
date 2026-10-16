@@ -1,0 +1,79 @@
+---
+title: Emettere, duplicare e stornare fatture
+description: Emettere fatture in Rhinvoice con un numero senza lacune, controllo delle indicazioni obbligatorie e PDF bloccato (GoBD, CO, BAO); correggerle con una fattura di storno.
+faq:
+  - q: Quando riceve il suo numero una fattura in Rhinvoice?
+    a: Solo quando viene emessa. Il numero viene assegnato nella stessa transazione della banca dati che emette la fattura, quindi non ci sono né lacune né numeri doppi.
+  - q: Posso ancora modificare o eliminare una fattura emessa?
+    a: No. Dall’emissione in poi contenuto e PDF sono bloccati, e le fatture emesse non possono mai essere eliminate. L’unica correzione è una fattura di storno, che riceve un proprio numero.
+  - q: Come correggo una fattura sbagliata?
+    a: Storni la fattura. Rhinvoice emette allora una fattura di storno con un proprio numero che la annulla. Poi duplichi la fattura, corregga la copia e la emetta di nuovo.
+  - q: Che cosa controlla Rhinvoice prima dell’emissione?
+    a: Tra l’altro le indicazioni obbligatorie del Suo paese, come il Suo numero IVA o numero fiscale, che ci sia almeno una posizione con un importo, che il totale sia superiore a zero e che la data non sia nel futuro.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Quando **emette** una fattura in Rhinvoice, questa riceve il suo numero definitivo, senza lacune e senza doppioni. Da quel momento contenuto e PDF sono bloccati. Una fattura emessa non può essere modificata; si può correggere solo con una **fattura di storno**, che riceve un proprio numero.
+
+## Emettere una fattura
+
+<Steps>
+
+1. Scriva la fattura come bozza (*Fatture → Nuova fattura*). Una bozza non ha ancora un numero e si salva da sola.
+2. Lasci vuoto *Data* per usare la data di emissione. Lasci vuoto *Scadenza* per usare le condizioni di pagamento del cliente o dell’azienda.
+3. Clicchi su **Emetti** e confermi *Emettere la fattura?*.
+
+</Steps>
+
+Se manca qualcosa, Rhinvoice non emette la fattura e dice che cosa fare. Controlla tra l’altro:
+
+- le **indicazioni obbligatorie del Suo paese**: in Svizzera e nel Liechtenstein il Suo numero IVA (a meno che non sia assoggettato all’IVA), in Germania il Suo numero fiscale o numero di partita IVA (non sulle fatture di piccolo importo fino a EUR 250), in Austria il Suo UID (non fino a EUR 400) e, sulle fatture oltre EUR 10’000 a imprese in Austria, anche l’UID del cliente; le piccole imprese in Austria non hanno bisogno di nessuno dei due,
+- almeno **una posizione con un importo** e un **totale superiore a zero**; gli accrediti nascono solo dagli storni,
+- un **conto bancario** nella valuta della fattura (*Impostazioni → Conti bancari*),
+- per l’inversione contabile, il **numero IVA del cliente**,
+- la **data**: non nel futuro e non anteriore all’ultima fattura emessa, in modo che numeri e date crescano insieme.
+
+Il numero segue la numerazione in *Impostazioni → Numerazioni*. Lo schema predefinito è `R{YYYY}{NNNN}` (per esempio R20260001), che ricomincia ogni anno; l’anno segue la data della fattura.
+
+## Che cosa blocca l’emissione
+
+- **Il numero.** Viene assegnato nella stessa transazione della banca dati dell’emissione. Se qualcosa non riesce, nessun numero viene consumato, e la banca dati stessa impedisce i numeri doppi.
+- **Contenuto e aliquote IVA.** Posizioni, importi e l’aliquota IVA di ogni posizione sono fissati. Vale l’aliquota della data della prestazione; le modifiche di aliquota successive non si applicano retroattivamente.
+- **Mittente, destinatario e conto bancario.** Rhinvoice salva azienda, cliente e conto bancario così come erano al momento dell’emissione. Se più tardi cambia l’indirizzo di un cliente, la fattura resta com’era. Viene conservato anche il modello di stampa di quel giorno.
+- **Il PDF.** La fattura conserva il suo primo PDF, salvato con la sua somma di controllo SHA-256.
+
+Il blocco non è solo nell’interfaccia: la banca dati stessa rifiuta le modifiche al contenuto e l’eliminazione dei documenti emessi. I cambiamenti di stato come pagamenti e storno restano possibili. Lo *Storico* di ogni fattura registra quando è stata creata, emessa, pagata o stornata.
+
+<Aside type="caution" title="Contesto giuridico">
+Le fatture emesse non devono essere modificate e devono essere conservate: in Germania secondo i GoBD, in Svizzera secondo l’art. 958f CO, in Austria secondo la BAO. Rhinvoice lo mette in pratica, ma non fornisce consulenza fiscale o legale.
+</Aside>
+
+## Eliminare bozze
+
+Elimini una bozza con *Elimina bozza* nel menu *Altre azioni* (il pulsante con tre puntini). Le fatture emesse non possono **mai** essere eliminate, nemmeno a mano nella banca dati.
+
+## Duplicare una fattura
+
+*Altre azioni → Duplica* crea una nuova bozza con lo stesso contenuto: cliente, posizioni, testi, sconti e valuta. Data e scadenza sono vuote, e il numero arriva solo con l’emissione. Funziona con ogni fattura, anche stornata, e con le offerte. Le fatture di storno e le [fatture riprese](/docs/it/moving/old-invoices/) non si possono duplicare.
+
+## Stornare una fattura
+
+Una fattura emessa, pagata parzialmente o pagata si annulla con *Altre azioni → Storna fattura*. Dopo la Sua conferma Rhinvoice emette subito una **fattura di storno**:
+
+- con **un proprio numero** dalla numerazione *Storni* (schema predefinito `S{YYYY}{NNNN}`),
+- con le stesse posizioni in quantità negativa e con le aliquote IVA, il mittente, il destinatario e l’arrotondamento fissati della fattura; il suo totale è esattamente il totale negativo della fattura,
+- senza introduzione né condizioni di pagamento, perché non chiede alcun pagamento. Scade il giorno dell’emissione e non risulta mai scaduta.
+
+La fattura è poi *Stornata*. *Apri fattura di storno* e *Apri fattura stornata* La portano dall’una all’altra. Uno storno non si può annullare.
+
+<Aside type="tip" title="Correggere in due passi">
+Storni la fattura sbagliata, poi scelga *Duplica* su di essa. Corregga la copia e la emetta: riceve un nuovo numero.
+</Aside>
+
+Se la fattura stornata era già pagata, rimborsi l’importo al di fuori di Rhinvoice; Rhinvoice non registra ancora i rimborsi.
+
+## Domande frequenti
+
+<Faq />

@@ -10,6 +10,8 @@
 <link rel="canonical" href="https://rhinvoice.com/de/datenschutz/">
 <link rel="alternate" hreflang="en" href="https://rhinvoice.com/privacy/">
 <link rel="alternate" hreflang="de" href="https://rhinvoice.com/de/datenschutz/">
+<link rel="alternate" hreflang="fr" href="https://rhinvoice.com/fr/protection-des-donnees/">
+<link rel="alternate" hreflang="it" href="https://rhinvoice.com/it/protezione-dei-dati/">
 <link rel="alternate" hreflang="x-default" href="https://rhinvoice.com/privacy/">
 <!-- Legal pages are for visitors, not for search results. -->
 <meta name="robots" content="noindex, follow">
@@ -30,6 +32,8 @@
     <nav class="lang" aria-label="Sprache">
       <a href="https://rhinvoice.com/privacy/" hreflang="en" lang="en">EN</a>
       <a href="https://rhinvoice.com/de/datenschutz/" hreflang="de" lang="de" aria-current="true">DE</a>
+      <a href="https://rhinvoice.com/fr/protection-des-donnees/" hreflang="fr" lang="fr">FR</a>
+      <a href="https://rhinvoice.com/it/protezione-dei-dati/" hreflang="it" lang="it">IT</a>
     </nav>
   </div>
 </header>
@@ -46,7 +50,8 @@
 
   <h2>2. Wofür diese Erklärung gilt, und wofür nicht</h2>
   <p>Sie gilt für die Website rhinvoice.com mit der Dokumentation unter rhinvoice.com/docs, für die öffentlichen Demos unter ch.rhinvoice.com, de.rhinvoice.com und at.rhinvoice.com und für E-Mails an Adressen von rhinvoice.com.</p>
-  <p><strong>Sie gilt nicht für Installationen von Rhinvoice.</strong> Wer Rhinvoice selbst installiert, betreibt es auf eigenen Rechnern und ist selbst für die Daten darin verantwortlich. Eine Installation sendet keine Daten an webberz: Sie enthält keine Statistik, keine Fehlerberichte nach aussen und keine Abfrage von Updates. Verbindungen nimmt sie nur zu den Diensten auf, die ihr Betreiber selbst einrichtet, etwa einem Mailserver oder einem Backup-Ziel.</p>
+  <p><strong>Sie gilt nicht für Installationen von Rhinvoice.</strong> Wer Rhinvoice selbst installiert, betreibt es auf eigenen Rechnern und ist selbst für die Daten darin verantwortlich. Eine Installation sendet keine Daten an webberz: Sie enthält keine Statistik und keine Fehlerberichte nach aussen. Verbindungen nimmt sie nur zu den Diensten auf, die ihr Betreiber selbst einrichtet, etwa einem Mailserver oder einem Backup-Ziel, und für die Update-Prüfung zu GitHub.</p>
+  <p><strong>Update-Prüfung.</strong> Solange sie nicht ausgeschaltet ist, fragt eine Installation bei GitHub, Inc. in den USA nach, ob es eine neuere Version von Rhinvoice gibt: etwa 30 Sekunden nach dem Start, danach einmal täglich und wenn jemand <em>Nach Updates suchen</em> anklickt. Sie lädt dazu eine kleine, signierte Datei (<code>release.json</code>) des neuesten Release von GitHub; eine Installation im Testkanal fragt zusätzlich die GitHub-API nach dem neuesten Release. Wie bei jedem Download erhält GitHub die üblichen Verbindungsdaten, etwa die IP-Adresse und den Namen der Programmbibliothek, die anfragt. Es werden keine Rechnungs-, Kunden- oder Kontodaten und keine Kennung der Installation übermittelt, und webberz erhält nichts. Eine Datei, deren Signatur nicht stimmt, wird verworfen. <em>Jetzt aktualisieren</em> im Programm für Windows und Mac lädt die neue Version ebenfalls von GitHub. Die Einstellung <code>RHINVOICE_UPDATE_CHECK=false</code> schaltet die Prüfung aus (mit Docker in der Datei <code>.env</code>).</p>
 
   <h2>3. Anwendbares Recht</h2>
   <p>Wir richten uns nach dem Schweizer Bundesgesetz über den Datenschutz (DSG) und der zugehörigen Verordnung. Soweit die Datenschutz-Grundverordnung der Europäischen Union (DSGVO) anwendbar ist, weil wir Personen im EWR ansprechen, halten wir zusätzlich deren Anforderungen ein.</p>
@@ -70,7 +75,7 @@
   <p>Quellcode, Fehlermeldungen und Diskussionen zu Rhinvoice liegen auf GitHub. Wenn Sie dort ein Issue eröffnen oder sich an einer Diskussion beteiligen, gilt die Datenschutzerklärung von GitHub; Ihre Beiträge sind öffentlich.</p>
 
   <h2>5. Zwecke und Rechtsgrundlagen</h2>
-  <div class="table-wrap">
+  <div class="table-wrap" role="region" tabindex="0" aria-label="Zwecke und Rechtsgrundlagen">
   <table>
     <thead><tr><th scope="col">Bearbeitung</th><th scope="col">Zweck</th><th scope="col">Grundlage nach DSGVO</th></tr></thead>
     <tbody>
@@ -85,7 +90,7 @@
 
   <h2>6. Auftragsbearbeiter und Bekanntgabe an Dritte</h2>
   <p>Wir geben Personendaten nicht an Dritte weiter, um sie zu verkaufen oder für Werbung zu nutzen. Für den Betrieb setzen wir folgende Anbieter ein:</p>
-  <div class="table-wrap">
+  <div class="table-wrap" role="region" tabindex="0" aria-label="Auftragsbearbeiter und Bekanntgabe an Dritte">
   <table>
     <thead><tr><th scope="col">Leistung</th><th scope="col">Anbieter</th><th scope="col">Standort</th></tr></thead>
     <tbody>

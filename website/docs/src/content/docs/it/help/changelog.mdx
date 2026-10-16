@@ -1,0 +1,23 @@
+---
+title: Novità di Rhinvoice
+description: Le novità di Rhinvoice, il programma di fatturazione gratuito e open source per CH, LI, DE e AT – ogni versione con le sue nuove funzioni e correzioni.
+tableOfContents: false
+faq:
+  - q: Quanto spesso escono nuove versioni di Rhinvoice?
+    a: Rhinvoice è in beta (0.x) ed esce spesso, a volte più volte alla settimana. Ogni versione è elencata con la sua data su questa pagina e su GitHub.
+  - q: Quale versione ho?
+    a: La versione è indicata nell’app in fondo alla barra laterale e nella finestra «Informazioni su Rhinvoice», per esempio «v0.7.4». La pagina di accesso la mostra sotto il modulo.
+  - q: Come aggiorno alla versione più recente?
+    a: Imposti la nuova versione in .env ed esegua docker compose pull e docker compose up -d. La banca dati viene aggiornata automaticamente all’avvio. Faccia prima un backup.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import Changelog from "../../../../components/Changelog.astro";
+
+Questa pagina elenca che cosa ha portato ogni versione di Rhinvoice, dalla più recente. Le funzioni aggiunte dopo la prima versione pubblica sono contrassegnate nella documentazione con «Dalla versione …» e rimandano qui. Le note di rilascio sono mostrate in inglese. Come aggiornare: [Aggiornamento](/docs/it/operations/update/).
+
+<Changelog />
+
+## Domande frequenti
+
+<Faq />

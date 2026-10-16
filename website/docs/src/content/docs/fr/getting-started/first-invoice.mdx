@@ -1,0 +1,96 @@
+---
+title: Établir votre première facture
+description: "Établir une facture dans Rhinvoice pas à pas. Choisir le client, ajouter les lignes, vérifier l’aperçu, émettre, ouvrir le PDF et la marquer payée. Pour CH, LI, DE, AT."
+faq:
+  - q: Quand une facture reçoit-elle son numéro?
+    a: "Seulement lorsque vous l’émettez. Les brouillons n’ont pas encore de numéro, les brouillons supprimés ne laissent donc pas de trou. Rhinvoice attribue le numéro suivant de la série des factures, sans trou et sans doublon."
+  - q: Puis-je modifier une facture après l’avoir émise?
+    a: "Non. Dès l’émission, le contenu et le PDF sont figés (GoBD, art. 958f CO, BAO). Une correction demande une facture d’annulation avec son propre numéro; ensuite, vous établissez une nouvelle facture."
+  - q: Comment enregistrer un paiement partiel?
+    a: "Ouvrez la facture et choisissez Enregistrer un paiement (touche P). Saisissez la date de paiement et le montant reçu; la facture apparaît alors comme partiellement payée, avec le montant ouvert."
+  - q: Existe-t-il un raccourci clavier pour une nouvelle facture?
+    a: "Oui. Appuyez sur N n’importe où en dehors d’un champ de saisie. Cmd+Entrée (Ctrl+Entrée sous Windows et Linux) enregistre, et ? affiche tous les raccourcis."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Dans Rhinvoice, vous établissez une facture dans l’éditeur : choisissez le client, ajoutez les lignes, vérifiez l’**aperçu en direct** et cliquez sur *Émettre*. C’est seulement à ce moment que la facture reçoit son numéro et devient non modifiable. Ensuite, vous ouvrez le PDF, l’envoyez et marquez la facture comme payée lorsque l’argent arrive.
+
+Avant votre première facture, terminez le [premier démarrage](/docs/fr/getting-started/first-start/) : pays, entreprise et un compte bancaire.
+
+## 1. Ajouter un client
+
+L’éditeur propose les clients qui existent déjà. Ajoutez-en un sous *Clients → Nouveau client*, ou importez vos clients depuis un fichier CSV ou Excel ([clients et articles](/docs/fr/moving/customers-and-articles/)).
+
+## 2. Ouvrir l’éditeur
+
+Cliquez sur *Nouvelle facture* dans la navigation, ou appuyez sur **N** n’importe où en dehors d’un champ de saisie. L’éditeur montre le formulaire à gauche et l’**aperçu** à droite, tel que la facture apparaîtra sur papier. Sur un téléphone ou dans une fenêtre étroite, vous passez de *Modifier* à *Aperçu*.
+
+## 3. Remplir la facture
+
+<Steps>
+
+1. **Client** : tapez un nom, un numéro ou une localité et choisissez le client. Rhinvoice montre l’adresse telle qu’elle figurera sur la facture.
+
+2. **Dates** : laissez *Date* vide pour utiliser la date d’émission, et *Échéance* vide pour utiliser les conditions de paiement du client ou de l’entreprise. Vous pouvez aussi choisir *Payable dans* un nombre de jours.
+
+3. **Lignes** : *Ajouter une ligne*, puis saisissez la description, la quantité, l’unité et le prix. Les articles sont proposés pendant la saisie. *Appliquer* reprend la ligne dans la liste; un clic sur une ligne de la liste ou de l’aperçu la rouvre. *Ajouter une ligne de texte* ajoute un titre ou une remarque sans montant. **Alt+↑** et **Alt+↓** déplacent une ligne.
+
+4. **Textes** (facultatif) : introduction, conditions de paiement et texte de conclusion, aussi depuis vos modèles de texte.
+
+5. **Plus de détails** (facultatif) : objet, référence, période de prestation, monnaie et un rabais sur l’ensemble du document.
+
+</Steps>
+
+Le *Traitement fiscal* découle des pays de votre entreprise et du client : national, autoliquidation (reverse charge), exportation ou petite entreprise, avec la mention exigée par la loi. Rhinvoice prend le taux de TVA en vigueur à la date de la prestation. Détails par pays : [Suisse](/docs/fr/countries/switzerland/), [Liechtenstein](/docs/fr/countries/liechtenstein/), [Allemagne](/docs/fr/countries/germany/), [Autriche](/docs/fr/countries/austria/).
+
+## 4. Enregistrer le brouillon
+
+*Enregistrer* (**⌘↵** sur un Mac, **Ctrl+Entrée** sous Windows et Linux) conserve la facture comme brouillon. Une fois un brouillon enregistré, Rhinvoice enregistre lui-même les modifications suivantes; la barre du bas affiche *Enregistré* et depuis combien de temps. Un brouillon peut encore être modifié ou supprimé (*Supprimer le brouillon*).
+
+## 5. Émettre la facture
+
+Cliquez sur *Émettre*. Rhinvoice demande *Émettre la facture?* : la facture reçoit son numéro définitif et ne peut plus être modifiée ensuite. Les corrections ne sont possibles qu’avec une facture d’annulation. Avant l’émission, Rhinvoice vérifie les mentions obligatoires de votre pays et indique ce qui manque.
+
+<Aside type="caution" title="Émise veut dire définitive">
+Dès l’émission, le contenu et le PDF sont figés et le PDF est conservé avec sa somme de contrôle SHA-256. Pour corriger une facture émise, annulez-la (*Annuler la facture* crée une facture d’annulation avec son propre numéro) et établissez-en une nouvelle. Voir [Émettre et annuler](/docs/fr/invoices/issue-and-cancel/).
+</Aside>
+
+## 6. PDF, impression, e-mail
+
+Sur la facture émise :
+
+- *PDF* ouvre le PDF dans un nouvel onglet, *Télécharger* l’enregistre, *Imprimer* l’imprime.
+- *Envoyer par e-mail* l’envoie avec le PDF en pièce jointe, une fois le serveur de messagerie configuré sous *Réglages → E-mail*.
+
+Le PDF contient la partie paiement : la facture QR suisse en Suisse et au Liechtenstein, le code QR EPC (GiroCode) pour les factures en euros en Allemagne et en Autriche. Une facture électronique ZUGFeRD / Factur-X est intégrée au PDF ([Factures électroniques](/docs/fr/invoices/e-invoice/)).
+
+## 7. Marquer comme payée
+
+Lorsque l’argent arrive, ouvrez la facture :
+
+- *Marquer comme payée* enregistre le montant total à la date du jour. Le message qui suit propose *Annuler*.
+- *Enregistrer un paiement* (touche **P**) sert pour une autre date ou un paiement partiel : saisissez la *Date de paiement* et le montant, puis *Enregistrer le paiement*. La facture affiche alors *Partiellement payée* et le montant ouvert.
+
+Dans la liste des factures, *Payée* sur une ligne marque une seule facture comme payée; plusieurs factures peuvent être sélectionnées et marquées en une fois. Une facture dont l’échéance est passée apparaît comme *En retard*. Plus d’informations dans [Paiements et rappels](/docs/fr/invoices/payments-and-reminders/).
+
+## Raccourcis clavier
+
+| Touche | Action |
+|---|---|
+| **N** | Nouvelle facture |
+| **Q** | Nouvelle offre |
+| **/** | Aller à la recherche |
+| **⌘K** / **Ctrl+K** | Ouvrir la palette de commandes |
+| **⌘↵** / **Ctrl+Entrée** | Enregistrer |
+| **P** | Enregistrer un paiement (dans un document) |
+| **⌘Z** / **Ctrl+Z** | Annuler la dernière action (tant que son message est visible) |
+| **G** puis **I** | Aller aux factures |
+| **?** | Afficher tous les raccourcis |
+
+Les raccourcis d’une seule touche ne fonctionnent que lorsqu’aucun champ de saisie n’est actif.
+
+## Questions fréquentes
+
+<Faq />

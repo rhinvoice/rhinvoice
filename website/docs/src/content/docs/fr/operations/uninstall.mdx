@@ -1,0 +1,75 @@
+---
+title: Désinstaller complètement Rhinvoice
+description: "Supprimer Rhinvoice avec ses conteneurs, volumes de données et images. Conservez d’abord les PDF des factures ou une sauvegarde : les factures se gardent dix ans."
+faq:
+  - q: Comment supprimer complètement Rhinvoice?
+    a: "Dans le dossier contenant compose.yml et .env, lancez docker compose down --volumes --rmi all, puis supprimez le dossier. Cela supprime les conteneurs, le réseau, les volumes de données et les images."
+  - q: Mes sauvegardes sont-elles supprimées lorsque je désinstalle Rhinvoice?
+    a: "Les sauvegardes dans le volume Docker local par défaut sont supprimées avec lui. Un dossier défini comme BACKUP_LOCAL_DIR, les destinations S3, SFTP et cloud ne sont pas touchés; supprimez-les vous-même lorsque vous n’en avez plus besoin."
+  - q: Que dois-je faire avant de désinstaller?
+    a: "Conservez les PDF de vos factures émises ou une sauvegarde en dehors de Docker. Les factures émises doivent en général être conservées dix ans."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Pour supprimer Rhinvoice, lancez `docker compose down --volumes --rmi all` dans son dossier et supprimez le dossier. Cela efface définitivement toutes les factures, tous les clients et tous les réglages; conservez donc d’abord les PDF de vos factures émises ou une sauvegarde en dehors de Docker.
+
+<Aside type="caution" title="Conservez d’abord vos factures">
+Les factures émises doivent en général être conservées dix ans (Suisse : art. 958f CO, Allemagne : § 147 AO, Autriche : § 132 BAO). Supprimer Rhinvoice les efface définitivement.
+</Aside>
+
+## 1. Une dernière sauvegarde
+
+Si vous avez configuré la sauvegarde ([Sauvegarde et restauration](/docs/fr/operations/backup/)), faites-en une dernière :
+
+```bash
+docker compose exec backup rhinvoice-backup backup   # une dernière sauvegarde, si vous en avez configuré une (backup.md)
+```
+
+## 2. Supprimer les conteneurs, les données et les images
+
+Dans le dossier contenant `compose.yml` et `.env` :
+
+```bash
+docker compose down --volumes --rmi all    # conteneurs, réseau, volumes de données et images
+cd .. && rm -r rhinvoice                   # compose.yml et .env (contient le mot de passe de la base de données)
+```
+
+`--volumes` supprime la base de données (`rhinvoice_db-data`) et les volumes de sauvegarde (`rhinvoice_backup-*`), y compris l’accès Dropbox ou Google Drive enregistré. Les sauvegardes dans le volume local par défaut disparaissent avec eux; un dossier défini comme `BACKUP_LOCAL_DIR`, les destinations S3, SFTP et cloud ne sont pas touchés. Supprimez-les vous-même lorsque vous n’en avez plus besoin.
+
+`--rmi all` supprime les images de Rhinvoice, de sa sauvegarde, de PostgreSQL et de Gotenberg. Docker conserve une image qu’un autre projet utilise encore et le signale; c’est en ordre.
+
+### Une installation avec un nom à part
+
+Pour une installation avec son propre nom de projet, lancez la commande dans son dossier si le nom figure dans son `.env` (`COMPOSE_PROJECT_NAME`), sinon ajoutez-le : `docker compose -p rhinvoice-try down --volumes --rmi all`. Les vérifications ci-dessous cherchent alors ce nom au lieu de `rhinvoice`.
+
+## 3. Vérifier qu’il ne reste rien
+
+```bash
+docker ps -a --filter name=rhinvoice                   # conteneurs : aucun
+docker volume ls --filter name=rhinvoice               # volumes : aucun
+docker image ls | grep -E "rhinvoice|gotenberg"        # images : aucune
+```
+
+Si quelque chose est encore listé, par exemple des images de versions plus anciennes que `--rmi all` ne connaît pas :
+
+```bash
+docker image rm $(docker image ls -q --filter "reference=ghcr.io/rhinvoice/*")
+docker volume rm rhinvoice_db-data                     # un par un, comme listés
+```
+
+Docker Desktop montre la même chose sous *Containers*, *Images* et *Volumes*, chacun avec un bouton de suppression.
+
+## Seulement arrêter
+
+Pour mettre Rhinvoice en pause sans perdre de données, arrêtez-le plutôt :
+
+```bash
+docker compose down          # arrêter; les données restent dans le volume "rhinvoice_db-data"
+docker compose up -d         # redémarrer, avec toutes les données
+```
+
+## Questions fréquentes
+
+<Faq />

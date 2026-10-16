@@ -1,0 +1,64 @@
+---
+title: Contribuer à Rhinvoice (pour les développeurs)
+description: "Pour les développeurs qui travaillent sur Rhinvoice : code source sur GitHub, guide de contribution, CLA, décisions d’architecture, ajout d’un pays et make qa."
+faq:
+  - q: Où se trouve le code source de Rhinvoice?
+    a: "Sur GitHub, à l’adresse github.com/rhinvoice/rhinvoice, sous la GNU Affero General Public License v3.0 ou ultérieure."
+  - q: Dois-je signer quelque chose pour contribuer?
+    a: "Oui. Avant que la première pull request soit fusionnée, vous acceptez le Contributor License Agreement en cochant sa case dans la pull request. Vous gardez le droit d’auteur sur votre travail."
+  - q: Puis-je ajouter un pays à Rhinvoice?
+    a: "Oui. Tout ce qui diffère d’un pays à l’autre se trouve dans un profil de pays par pays. Le guide docs/adding-a-country.md vous accompagne, guidé par des tests. Ouvrez d’abord un ticket avec les sources officielles."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Pour les développeurs">
+Cette page s’adresse aux personnes qui veulent modifier Rhinvoice ou y contribuer. Pour utiliser Rhinvoice, vous n’en avez pas besoin; commencez par l’[installation](/docs/fr/getting-started/installation/).
+</Aside>
+
+Rhinvoice est open source sur [GitHub](https://github.com/rhinvoice/rhinvoice) sous licence AGPL. Les signalements d’erreurs, les règles fiscales avec leur source officielle et les pull requests sont les bienvenus. Lisez d’abord [CONTRIBUTING.md](https://github.com/rhinvoice/rhinvoice/blob/main/CONTRIBUTING.md), et ouvrez un ticket avant une modification importante.
+
+## Par où commencer
+
+- [CONTRIBUTING.md](https://github.com/rhinvoice/rhinvoice/blob/main/CONTRIBUTING.md) : façons d’aider, environnement de développement, règles pour les pull requests
+- [Contributor License Agreement](https://github.com/rhinvoice/rhinvoice/blob/main/CLA.md) : accepté en cochant sa case dans votre première pull request; vous gardez le droit d’auteur sur votre travail
+- [Décisions d’architecture](https://github.com/rhinvoice/rhinvoice/tree/main/docs/adr) dans `docs/adr` : lisez l’ADR du domaine que vous modifiez
+- [Adding a country](https://github.com/rhinvoice/rhinvoice/blob/main/docs/adding-a-country.md) : un profil de pays, guidé par des tests (vue d’ensemble pour tous : [Autres pays](/docs/fr/countries/more-countries/))
+- [Changelog](https://github.com/rhinvoice/rhinvoice/blob/main/CHANGELOG.md)
+- Questions et idées : [discussions GitHub](https://github.com/rhinvoice/rhinvoice/discussions); erreurs : [issues](https://github.com/rhinvoice/rhinvoice/issues)
+- Les problèmes de sécurité passent par un signalement privé, jamais par un ticket public : [SECURITY.md](https://github.com/rhinvoice/rhinvoice/blob/main/SECURITY.md)
+
+## Technologies
+
+Le backend est en Python 3.13 avec FastAPI, SQLAlchemy 2 et Alembic sur PostgreSQL, en couches (`api → infrastructure → application → domain`) vérifiées par import-linter. Le frontend est en React avec TypeScript et Vite, TanStack Router et Query et Tailwind CSS, avec un client API généré à partir du schéma OpenAPI. Les PDF sont rendus à partir de HTML par Gotenberg et transformés en PDF/A-3b avec `pypdf`, la facture QR suisse vient de `qrbill`, le code QR EPC de `segno`, et les sauvegardes de restic dans un conteneur à part.
+
+## Développement
+
+Prérequis : Python 3.13 avec uv, Node.js 22 avec pnpm, Docker.
+
+```bash
+make install        # dépendances
+make dev-backend    # base de données sur :5433 + API sur :8000 (rechargement automatique)
+make dev-frontend   # Vite sur :5173, relaie /api vers le backend
+make demo           # clients, articles et documents de démonstration
+make qa             # le contrôle qualité complet (aussi exécuté par la CI)
+make help           # toutes les cibles
+```
+
+## Le contrôle qualité : make qa
+
+Rhinvoice traite de l’argent et des documents juridiques; chaque modification passe donc `make qa`, que la CI exécute aussi. Une pull request dont le contrôle échoue n’est pas relue.
+
+| Domaine | Outils |
+|---|---|
+| Backend | ruff (ALL), mypy --strict, pyright strict, import-linter, pytest avec 100 % de couverture des lignes et des branches, hypothesis, vrai PostgreSQL, schemathesis, mutmut (≥ 90 %), pip-audit |
+| Frontend | TypeScript strict, ESLint strict type-checked avec jsx-a11y, dependency-cruiser, Vitest avec 100 % de couverture, pnpm audit |
+| E2E | Playwright contre l’image de production, axe-core (WCAG 2.2 AA) dans chaque test, captures d’écran clair/sombre × bureau/mobile |
+| Factures électroniques | Validateur KoSIT et Mustang sur chaque exemple |
+
+Quelques règles de CONTRIBUTING.md : l’argent n’est jamais un float, le temps vient de la `Clock`, les documents émis restent inaltérables, et tout le code est en anglais.
+
+## Questions fréquentes
+
+<Faq />

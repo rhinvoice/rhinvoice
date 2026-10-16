@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- The social preview (Open Graph) of rhinvoice.com, 1200 x 630. Rendered by make-images.mjs;
-     ?lang=de gives the German one. Uses the site's own fonts and the demo screenshot. -->
+     ?lang=de, fr or it gives the German, French or Italian one. Uses the site's own fonts and the demo screenshot. -->
 <html>
 <head>
 <meta charset="utf-8">
@@ -32,14 +32,18 @@ svg path { fill: none; stroke-linecap: round; }
 </div>
 <div class="shot"><img src="../../docs/screenshots/dashboard.png" alt=""></div>
 <script>
-  const de = new URLSearchParams(location.search).get("lang") === "de";
-  document.getElementById("title").textContent = de
-    ? "Rechnungen für die Schweiz, Liechtenstein, Deutschland und Österreich."
-    : "Invoicing for Switzerland, Liechtenstein, Germany and Austria.";
-  document.getElementById("li").textContent = de ? "FL" : "LI";
-  document.getElementById("foot").textContent = de
-    ? "Open Source · selbst gehostet · rhinvoice.com"
-    : "Open source · self-hosted · rhinvoice.com";
+  const texts = {
+    en: ["Invoicing for Switzerland, Liechtenstein, Germany and Austria.", "LI", "Open source · self-hosted · rhinvoice.com"],
+    de: ["Rechnungen für die Schweiz, Liechtenstein, Deutschland und Österreich.", "FL", "Open Source · selbst gehostet · rhinvoice.com"],
+    fr: ["Facturation pour la Suisse, le Liechtenstein, l’Allemagne et l’Autriche.", "LI", "Open source · auto-hébergé · rhinvoice.com"],
+    it: ["Fatture per la Svizzera, il Liechtenstein, la Germania e l’Austria.", "LI", "Open source · sui propri server · rhinvoice.com"],
+  };
+  const lang = new URLSearchParams(location.search).get("lang") ?? "en";
+  const [title, li, foot] = texts[lang] ?? texts.en;
+  document.documentElement.lang = lang;
+  document.getElementById("title").textContent = title;
+  document.getElementById("li").textContent = li;
+  document.getElementById("foot").textContent = foot;
 </script>
 </body>
 </html>

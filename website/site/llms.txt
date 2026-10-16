@@ -5,7 +5,7 @@
 ## Facts
 
 - Name: Rhinvoice (from Rhine and invoice: the Rhine connects Switzerland, Liechtenstein, Austria and Germany)
-- Website: https://rhinvoice.com/ (English), https://rhinvoice.com/de/ (German)
+- Website: https://rhinvoice.com/ (English), https://rhinvoice.com/de/ (German), https://rhinvoice.com/fr/ (French), https://rhinvoice.com/it/ (Italian)
 - Source code: https://github.com/rhinvoice/rhinvoice
 - Licence: GNU Affero General Public License v3.0 or later (AGPL-3.0); contributions under a contributor licence agreement
 - Price: free; there is no paid version and no hosted service
@@ -73,6 +73,8 @@ All visitors share one login per demo; it sends no e-mail and takes no uploads (
 
 - [Rhinvoice (English)](https://rhinvoice.com/): overview, features, install
 - [Rhinvoice (Deutsch)](https://rhinvoice.com/de/): the same in German
+- [Rhinvoice (Français)](https://rhinvoice.com/fr/): the same in French (machine-translated)
+- [Rhinvoice (Italiano)](https://rhinvoice.com/it/): the same in Italian (machine-translated)
 - [README](https://github.com/rhinvoice/rhinvoice#readme): features, countries, quickstart
 - [Changelog](https://github.com/rhinvoice/rhinvoice/blob/main/CHANGELOG.md)
 - [Adding a country](https://github.com/rhinvoice/rhinvoice/blob/main/docs/adding-a-country.md)
@@ -80,7 +82,7 @@ All visitors share one login per demo; it sends no e-mail and takes no uploads (
 
 ## Documentation
 
-The user documentation, in English (https://rhinvoice.com/docs/) and German (https://rhinvoice.com/docs/de/, same paths below /docs/de/). Its sitemap: https://rhinvoice.com/docs/sitemap-index.xml
+The user documentation, in English (https://rhinvoice.com/docs/) and German (https://rhinvoice.com/docs/de/, same paths below /docs/de/). Also in French (https://rhinvoice.com/docs/fr/) and Italian (https://rhinvoice.com/docs/it/), machine-translated, with the same paths. Its sitemap: https://rhinvoice.com/docs/sitemap-index.xml
 
 - [What is Rhinvoice?](https://rhinvoice.com/docs/getting-started/what-is-rhinvoice/)
 - [Install on Windows or Mac](https://rhinvoice.com/docs/getting-started/install-desktop/): one setup, no Docker (beta)

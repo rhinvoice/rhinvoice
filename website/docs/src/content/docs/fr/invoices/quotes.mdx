@@ -1,0 +1,68 @@
+---
+title: Établir des offres et les transformer en factures
+description: "Établir des offres dans Rhinvoice, les marquer comme envoyées, acceptées ou refusées, et les transformer en facture en un clic. Open source pour CH, LI, DE, AT."
+faq:
+  - q: Comment transformer une offre en facture?
+    a: "Ouvrez l’offre envoyée ou acceptée et choisissez « Transformer en facture ». Rhinvoice crée un brouillon de facture avec les mêmes lignes, que vous vérifiez et émettez."
+  - q: Combien de temps une offre est-elle valable?
+    a: "Aussi longtemps que vous l’indiquez sous « Valable jusqu’au ». Si le champ reste vide, l’offre est valable 30 jours à partir de sa date. Ensuite, Rhinvoice l’affiche comme expirée."
+  - q: Puis-je encore modifier une offre une fois envoyée?
+    a: "Non. « Marquer comme envoyée » donne son numéro à l’offre et la verrouille. Pour la modifier, dupliquez-la et marquez la copie comme envoyée."
+  - q: Une offre peut-elle être transformée en facture plusieurs fois?
+    a: "Non, une seule fois. Si vous supprimez le brouillon de facture qu’elle a créé, l’offre peut de nouveau être transformée en facture."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Dans Rhinvoice, une offre passe de *Brouillon* à *Envoyée*, puis à *Acceptée*, *Refusée* ou *Expirée*. Une offre envoyée ou acceptée devient un brouillon de facture avec **Transformer en facture**, sans rien saisir deux fois.
+
+## Établir une offre
+
+<Steps>
+
+1. Ouvrez *Offres → Nouvelle offre*.
+2. Choisissez le client et saisissez les lignes. L’aperçu à droite montre l’offre telle qu’elle sera imprimée.
+3. Sous *Valable jusqu’au*, indiquez la durée de validité de l’offre. Si le champ reste vide, elle est de 30 jours à partir de la date.
+4. Cliquez sur **Marquer comme envoyée**. L’offre reçoit son numéro et est verrouillée dès ce moment.
+
+</Steps>
+
+Un brouillon n’a pas encore de numéro. Vous pouvez le modifier à tout moment, ou le supprimer avec *Supprimer le brouillon* dans le menu *Autres actions* (le bouton à trois points). Le numéro suit la série des offres sous *Réglages → Séries de numéros*; le modèle prédéfini est `A{YYYY}{NNNN}`, par exemple A20260001.
+
+<Aside type="note" title="Envoyée veut dire verrouillée">
+À partir de *Envoyée*, une offre ne change plus. Pour une version modifiée, choisissez *Autres actions → Dupliquer* : la copie est un nouveau brouillon avec le même contenu.
+</Aside>
+
+## Les statuts d’une offre
+
+| Statut | Signification |
+|---|---|
+| *Brouillon* | En cours de rédaction, pas encore de numéro |
+| *Envoyée* | Numéro attribué, contenu verrouillé |
+| *Acceptée* | Le client a dit oui |
+| *Refusée* | Le client a dit non |
+| *Expirée* | Envoyée, mais la date sous *Valable jusqu’au* est passée |
+
+Vous définissez vous-même *Acceptée* et *Refusée* avec les boutons du même nom sur l’offre envoyée. Personne ne définit *Expirée* : Rhinvoice le déduit de la date de validité. Dans la liste sous *Offres*, *Vue* filtre selon chacun de ces statuts.
+
+## Transformer une offre en facture
+
+Sur une offre envoyée ou acceptée, choisissez *Autres actions → Transformer en facture*. Rhinvoice crée un **brouillon de facture** :
+
+- avec les mêmes lignes, rabais et monnaie que l’offre,
+- avec les textes que vous avez écrits vous-même; là où l’offre a encore les textes standard des offres, le brouillon reçoit les textes standard des factures,
+- avec de nouvelles dates : la facture reçoit sa date et son échéance à l’émission,
+- avec un lien vers l’offre. Une offre envoyée compte dès lors comme *Acceptée*.
+
+Vérifiez le brouillon, complétez-le si nécessaire et émettez-le comme toute autre facture ([émettre et annuler](/docs/fr/invoices/issue-and-cancel/)). Le taux de TVA suit alors la date de la prestation de la facture, pas celle de l’offre.
+
+Une offre ne devient une facture qu’**une seule fois**. Si vous supprimez le brouillon de facture, l’offre est de nouveau libre. *Ouvrir la facture* ou *Ouvrir le brouillon de facture* vous mène de l’offre à la facture, *Ouvrir le document d’origine* en sens inverse.
+
+## PDF et envoi
+
+Sur l’offre, **PDF** ouvre la version imprimée dans un nouvel onglet, **Télécharger** l’enregistre et **Imprimer** l’imprime aussitôt. Lorsque l’envoi par e-mail est configuré, **Envoyer par e-mail** envoie une offre envoyée avec son PDF au client. L’e-mail est alors noté dans l’*Historique* de l’offre.
+
+## Questions fréquentes
+
+<Faq />

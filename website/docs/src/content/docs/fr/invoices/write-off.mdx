@@ -1,0 +1,78 @@
+---
+title: Passer en perte une facture qui ne sera pas payée
+description: "Passer en perte une facture irrécouvrable dans Rhinvoice au lieu de l’annuler. Avec les pertes sur débiteurs par année, la TVA comprise et les règles de chaque pays."
+since: 0.6.0
+faq:
+  - q: Quand passer une facture en perte et quand l’annuler?
+    a: "Annulez une facture qui était fausse ou dont la prestation n’a jamais été fournie. Le client reçoit alors une facture d’annulation. Le passage en perte concerne une facture correcte que le client ne paie plus. Le client ne reçoit rien et doit toujours le montant."
+  - q: Que se passe-t-il si le client paie finalement une facture passée en perte?
+    a: "Enregistrez le paiement comme d’habitude avec « Enregistrer un paiement ». Le passage en perte reste dans l’année de sa date, et le paiement compte comme « Payé après coup » dans l’année où il est arrivé."
+  - q: Puis-je annuler un passage en perte?
+    a: "Oui, avec « Plus d’actions → Reprendre le passage en perte ». Le montant passé en perte est ensuite de nouveau ouvert et peut faire l’objet d’un rappel. L’historique de la facture note les deux."
+  - q: Dois-je corriger la TVA à cause du passage en perte?
+    a: "Cela dépend de votre méthode de décompte de la TVA. Si vous devez l’impôt dès la facturation, vous le corrigez. Si vous ne le devez qu’à l’encaissement, il n’y a rien à corriger. Rhinvoice indique seulement l’impôt compris dans le montant."
+  - q: Puis-je passer en perte des factures reprises de mon ancien programme?
+    a: "Oui. Les factures reprises ne peuvent pas être annulées, mais elles peuvent être passées en perte, même sans PDF."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Une facture qui était correcte mais ne sera plus payée est **passée en perte dans Rhinvoice**. Elle ne compte alors plus comme ouverte ou en retard et ne fait plus l’objet de rappels. La facture elle-même reste inchangée, le client ne reçoit rien, et le montant ne compte pas comme un paiement reçu.
+
+## Passer en perte ou annuler?
+
+| | Annuler | Passer en perte |
+|---|---|---|
+| Quand | La facture était fausse ou la prestation n’a pas été fournie ainsi | La facture était correcte, le client ne paie pas |
+| Document au client | Facture d’annulation avec son propre numéro | Aucun |
+| La dette du client | Supprimée | Subsiste |
+| Factures reprises | Pas possible | Possible |
+
+Un rabais convenu après coup, par exemple par geste commercial, est une [annulation](/docs/fr/invoices/issue-and-cancel/) suivie d’une nouvelle facture, pas un passage en perte.
+
+## Passer une facture en perte
+
+<Steps>
+
+1. Ouvrez la facture émise ou partiellement payée.
+2. Choisissez *Plus d’actions → Passer en perte …*.
+3. Fixez la date sous *Passée en perte au*. La date du jour est proposée, *Fin de l’année de facturation* fixe le 31 décembre de l’année de la facture. La date se situe entre la date de la facture et aujourd’hui.
+4. Choisissez le *Motif* : *Entreprise dissoute ou en faillite*, *Prescrit*, *Petit montant*, *Introuvable* ou *Autre motif*. Une *Remarque* est facultative.
+5. Confirmez avec **Passer en perte**.
+
+</Steps>
+
+C’est toujours tout le montant ouvert qui est passé en perte. Après un paiement partiel, c’est le solde. La facture affiche alors *Passée en perte* et son montant ouvert est de 0. Sous *Détails*, la carte *Passage en perte* indique la date, le montant, le motif et l’impôt compris dans le montant. L’*Historique* note le passage en perte.
+
+Une facture passée en perte ne peut être ni annulée ni faire l’objet d’un rappel.
+
+## Paiement ultérieur et reprise
+
+Si le client paie finalement, enregistrez le paiement sur la facture avec *Enregistrer un paiement*, jusqu’au montant passé en perte et pas daté avant le passage en perte. Une fois tout le montant payé, la facture affiche *Payée*; sinon elle reste *Passée en perte* pour le solde.
+
+Si le passage en perte était une erreur, reprenez-le avec *Plus d’actions → Reprendre le passage en perte*. Le montant est alors de nouveau ouvert. Les paiements arrivés avant le passage en perte ne peuvent être supprimés qu’après la reprise. La reprise fonctionne aussi lorsque la facture a finalement été payée entièrement, et elle est nécessaire avant d’annuler une telle facture.
+
+## Pertes par année
+
+La liste des factures a la vue *Passées en perte*. En dessous, un tableau par année et par monnaie indique *Passé en perte*, *Payé après coup*, *Perte*, *Net* et l’impôt compris. Un passage en perte compte dans l’année de sa date, un paiement ultérieur dans l’année où il est arrivé. Avec l’interface en allemand, le tableau s’appelle *Debitorenverluste* en Suisse et au Liechtenstein et *Forderungsausfälle* en Allemagne et en Autriche; en anglais, *Bad debts*.
+
+Le chiffre d’affaires dans l’aperçu reste ce qui a été facturé. *Payé* ne compte que ce qui est réellement arrivé.
+
+## L’impôt selon le pays
+
+Rhinvoice ne sait pas comment votre entreprise décompte la TVA et ne comptabilise donc aucune correction. Il indique l’impôt compris, pour que vous ou votre comptable puissiez l’utiliser.
+
+| Pays | Règle | Date du passage en perte |
+|---|---|---|
+| Suisse, Liechtenstein | Si vous décomptez selon les contre-prestations convenues, le montant réduit la contre-prestation de la période où vous le comptabilisez (art. 41 LTVA). Selon les contre-prestations reçues, il n’y a rien à corriger. | Jour de la comptabilisation |
+| Allemagne | Si vous devez la TVA dès la facturation, corrigez-la dans la période où le montant est devenu irrécouvrable, et à nouveau s’il est finalement payé (§ 17 Abs. 2 Nr. 1 UStG). | Jour où le montant est devenu irrécouvrable |
+| Autriche | Comme en Allemagne (§ 16 Abs. 3 Z 1 UStG). | Jour où le montant est devenu irrécouvrable |
+
+<Aside type="caution" title="Pas de conseil fiscal">
+Savoir si un montant est irrécouvrable et si vous corrigez l’impôt est une question pour votre fiduciaire ou votre conseiller fiscal. Si vous tenez un bilan, indiquez à votre comptable quelles factures vous avez passées en perte.
+</Aside>
+
+## Questions fréquentes
+
+<Faq />

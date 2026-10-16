@@ -1,0 +1,60 @@
+---
+title: Documentazione di Rhinvoice
+description: Documentazione di Rhinvoice, il programma di fatturazione gratuito e open source per Svizzera, Liechtenstein, Germania e Austria. Installazione, fatture, IVA, backup.
+template: doc
+faq:
+  - q: Rhinvoice è gratuito?
+    a: Sì. Rhinvoice si può usare, modificare e distribuire gratuitamente secondo la GNU Affero General Public License (AGPL). Non esiste una versione a pagamento né un servizio in hosting.
+  - q: Quali Paesi supporta Rhinvoice?
+    a: Rhinvoice è fatto per aziende in Svizzera, nel Liechtenstein, in Germania e in Austria, con le aliquote IVA, le diciture legali e i codici di pagamento di ciascun Paese. I Suoi clienti possono trovarsi ovunque.
+  - q: Dove sono conservati i miei dati?
+    a: Sul Suo server o sul Suo computer. Rhinvoice funziona sulla Sua macchina, come programma per Windows o Mac oppure con Docker, e conserva tutto nel proprio database PostgreSQL; nulla va a un servizio cloud, a meno che ne scelga uno come destinazione del backup.
+---
+
+import Faq from "../../../components/Faq.astro";
+
+Rhinvoice è un programma di fatturazione gratuito e open source per piccole imprese in Svizzera, nel Liechtenstein, in Germania e in Austria. Scrive offerte, fatture, fatture di storno e solleciti di pagamento con le regole IVA, i codici di pagamento e i formati di fattura elettronica di ciascun Paese. Funziona come programma su Windows o su un Mac, oppure con Docker sul proprio server o computer.
+
+## Primi passi
+
+- [Che cos’è Rhinvoice?](/docs/it/getting-started/what-is-rhinvoice/): funzioni, licenza e che cosa non è
+- [Installare su Windows o Mac](/docs/it/getting-started/install-desktop/): un unico setup, senza Docker (beta)
+- [Installazione con Docker](/docs/it/getting-started/installation/): Docker Compose, `.env` e il primo utente
+- [Primo avvio](/docs/it/getting-started/first-start/): la procedura guidata e la lista di controllo
+- [La prima fattura](/docs/it/getting-started/first-invoice/): scrivere, vedere l’anteprima, emettere, segnare come pagata
+
+## Paesi
+
+- [Svizzera](/docs/it/countries/switzerland/): aliquote IVA, fattura QR, indicazioni obbligatorie
+- [Liechtenstein](/docs/it/countries/liechtenstein/)
+- [Germania](/docs/it/countries/germany/): IVA, piccole imprese, codice QR EPC, fatture elettroniche
+- [Austria](/docs/it/countries/austria/)
+- [Altri Paesi](/docs/it/countries/more-countries/): Rhinvoice si può estendere ad altri Paesi, per esempio ai Paesi Bassi
+
+## Fatture
+
+- [Offerte](/docs/it/invoices/quotes/)
+- [Emettere e stornare](/docs/it/invoices/issue-and-cancel/)
+- [Pagamenti e solleciti](/docs/it/invoices/payments-and-reminders/)
+- [Fatture ricorrenti](/docs/it/invoices/recurring/)
+- [Fatture elettroniche](/docs/it/invoices/e-invoice/): ZUGFeRD / Factur-X e XRechnung
+
+## Cambio di programma
+
+- [Clienti e articoli](/docs/it/moving/customers-and-articles/): importare da CSV o Excel
+- [Riprendere le vecchie fatture](/docs/it/moving/old-invoices/): con i loro PDF originali
+
+## Gestione
+
+- [Backup e ripristino](/docs/it/operations/backup/)
+- [Aggiornamento](/docs/it/operations/update/)
+- [Disinstallazione](/docs/it/operations/uninstall/)
+
+## Aiuto
+
+- [Domande frequenti](/docs/it/help/faq/)
+- [Per sviluppatori](/docs/it/help/developers/)
+
+## Domande frequenti
+
+<Faq />

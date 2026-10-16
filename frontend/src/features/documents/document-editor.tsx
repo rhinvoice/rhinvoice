@@ -65,6 +65,7 @@ import { LineItems } from "@/features/documents/line-items";
 import { PaperPreview } from "@/components/paper-preview";
 import { printPage } from "@/features/documents/print-page";
 import type { Company } from "@/features/shared/company-api";
+import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import { FormAlert } from "@/features/shared/form-alert";
 import { applyServerErrors } from "@/features/shared/server-errors";
 import { textTemplatesQuery } from "@/features/shared/texts-api";
@@ -826,8 +827,11 @@ function MoreFields({ tax, autoTreatment, plan }: MoreFieldsProps) {
         </Field>
         <Field label={t("documents.language")} error={errors.language?.message}>
           <NativeSelect id={fieldId("language")} {...register("language")}>
-            <option value="de">{t("language.de")}</option>
-            <option value="en">{t("language.en")}</option>
+            {DOCUMENT_LANGUAGES.map((language) => (
+              <option key={language} value={language}>
+                {t(`language.${language}`)}
+              </option>
+            ))}
           </NativeSelect>
         </Field>
       </div>

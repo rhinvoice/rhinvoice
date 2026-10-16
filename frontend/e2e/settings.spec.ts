@@ -43,6 +43,13 @@ test("text templates and legal notices are managed in the settings", async ({ pa
     .click();
   const closing = page.getByRole("region", { name: "Schlusstext" });
   await expect(closing.getByText("Validity")).toBeVisible();
+  // French and Italian come with ready-made texts as well.
+  const language = page.getByRole("group", { name: "Sprache" });
+  await language.getByRole("button", { name: "Französisch" }).click();
+  await expect(closing.getByText("Validité")).toBeVisible();
+  await language.getByRole("button", { name: "Italienisch" }).click();
+  await expect(closing.getByText("Validità")).toBeVisible();
+  await language.getByRole("button", { name: "Englisch" }).click();
 
   await closing.getByRole("button", { name: "Hinzufügen Schlusstext" }).click();
   const dialog = page.getByRole("dialog", { name: /Neuer Textbaustein/ });

@@ -148,6 +148,28 @@ function DunningForm({ saved }: { readonly saved: DunningLevel[] }) {
                 }}
               />
             </Field>
+            <Field label={t("dunning.textFr")} error={error(index, "text_fr")}>
+              <Textarea
+                id={id("text-fr")}
+                rows={3}
+                lang="fr"
+                value={level.text_fr}
+                onChange={(event) => {
+                  change(index, { text_fr: event.target.value });
+                }}
+              />
+            </Field>
+            <Field label={t("dunning.textIt")} error={error(index, "text_it")}>
+              <Textarea
+                id={id("text-it")}
+                rows={3}
+                lang="it"
+                value={level.text_it}
+                onChange={(event) => {
+                  change(index, { text_it: event.target.value });
+                }}
+              />
+            </Field>
           </Card>
         );
       })}

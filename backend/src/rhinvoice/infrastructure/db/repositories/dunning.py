@@ -48,6 +48,8 @@ class SqlDunningRepository:
                 fee=row["fee"],
                 text_de=row["text_de"],
                 text_en=row["text_en"],
+                text_fr=row["text_fr"],
+                text_it=row["text_it"],
             )
             for row in rows
         ]
@@ -65,6 +67,8 @@ class SqlDunningRepository:
                     "fee": level.fee,
                     "text_de": level.text_de,
                     "text_en": level.text_en,
+                    "text_fr": level.text_fr,
+                    "text_it": level.text_it,
                 }
                 for level in levels
             ],

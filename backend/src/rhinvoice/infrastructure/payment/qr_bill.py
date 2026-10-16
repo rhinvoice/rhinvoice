@@ -39,7 +39,13 @@ QR_BILL_CURRENCIES = frozenset({Currency.CHF, Currency.EUR})
 QR_BILL_IBAN_COUNTRIES = frozenset({"CH", "LI"})
 QR_BILL_MAX_NAME = 70
 _CURRENCIES: dict[Currency, Literal["CHF", "EUR"]] = {Currency.CHF: "CHF", Currency.EUR: "EUR"}
-_LANGUAGES: dict[Language, Literal["de", "en"]] = {Language.DE: "de", Language.EN: "en"}
+_LANGUAGES: dict[Language, Literal["de", "en", "fr", "it"]] = {
+    Language.DE: "de",
+    Language.EN: "en",
+    Language.FR: "fr",
+    Language.IT: "it",
+}
+"""The payment part is printed in the document's language (qrbill knows all four)."""
 # Chapter 4.1.1: Basic Latin, Latin-1 Supplement and Latin Extended-A ...
 _CHARACTER_RANGES = ((0x20, 0x7E), (0xA0, 0xFF), (0x100, 0x17F))
 # ... plus Ș ș Ț ț and €.

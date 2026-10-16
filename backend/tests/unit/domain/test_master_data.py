@@ -7,6 +7,7 @@ from rhinvoice.domain.customer.customer import CustomerKind
 from rhinvoice.domain.shared.country import Country, CountryCode
 from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.iban import Iban
+from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from tests.unit.domain import factories
 from tests.unit.domain.factories import CH_IBAN, CH_QR_IBAN
@@ -231,6 +232,13 @@ def test_units() -> None:
     assert hours.label_de == "Std."
     assert hours.label_en == "h"
     assert len(UNITS) >= 20
+    piece = Unit("C62")
+    assert [piece.label(language) for language in Language] == ["Stk.", "pcs", "pce", "pz."]
+    day = Unit("DAY")
+    assert (day.label(Language.FR), day.label(Language.IT)) == ("jour", "giorno")
+    # Symbols are the same in every language.
+    assert {Unit("KGM").label(language) for language in Language} == {"kg"}
+    assert Unit("MIN").label(Language.IT) == "min"
     with pytest.raises(ValidationError) as error:
         Unit("XYZ")
     assert error.value.details == {"unit": "'XYZ' is not a supported unit code"}

@@ -288,6 +288,8 @@ _LANGUAGES = {
     for language, names in {
         Language.DE: ("de", "deutsch", "german", "ger", "d"),
         Language.EN: ("en", "englisch", "english", "eng", "e"),
+        Language.FR: ("fr", "französisch", "french", "français", "fra", "fre", "f"),
+        Language.IT: ("it", "italienisch", "italian", "italiano", "ita", "i"),
     }.items()
     for name in names
 }

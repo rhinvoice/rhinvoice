@@ -40,6 +40,8 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 - Numbers assigned when issuing, without gaps; issued documents are immutable, also in the
   database (GoBD, OR 958f, BAO), the PDF is kept with its SHA-256
 - Partial payments, open and overdue amounts, full-text search and saved views
+- Documents in German, English, French and Italian (French and Italian as written in
+  Switzerland), with the QR-bill and the legal notices in the same language
 - Payment reminders in three levels with new deadlines, fees and texts per language
 - Recurring invoices every month, quarter, half-year or year: as a draft, issued, or issued and
   sent by e-mail

@@ -1,4 +1,4 @@
-# 0027 – Leitweg-ID as a fixed buyer reference of the customer
+# 0028 – Leitweg-ID as a fixed buyer reference of the customer
 
 - Status: accepted
 - Date: 2026-10-16

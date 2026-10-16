@@ -10,10 +10,16 @@ Sources (checked 2026-10):
   Leistungsempfängers".
 - Small business: since 2025 the invoice states that § 19 UStG applies.
 - Intra-Community supply: § 14a Abs. 3 UStG; export delivery: § 4 Nr. 1 lit. a, § 6 UStG.
+- French and Italian (ADR 0027): the mentions of the VAT Directive in its French and
+  Italian version: "Autoliquidation" / "inversione contabile" (Art. 226 point 11a),
+  "franchise pour les petites entreprises" / "franchigia per le piccole imprese"
+  (Art. 284, Directive (EU) 2020/285), exempt supplies "exonérée" / "esente"
+  (Art. 226 point 11); the national provision stays as the law cites it.
 
 Not tax advice.
 """
 
+# ruff: noqa: RUF001 - French and Italian elide with the typographic apostrophe.
 from __future__ import annotations
 
 from datetime import date
@@ -54,6 +60,36 @@ _NOTICES = {
     ),
     TaxTreatment.GOODS_EXPORT: (
         "Steuerfreie Ausfuhrlieferung (§ 4 Nr. 1 Buchst. a i. V. m. § 6 UStG)."
+    ),
+}
+
+_FRENCH_NOTICES = {
+    TaxTreatment.REVERSE_CHARGE: "Autoliquidation.",
+    TaxTreatment.EXPORT: "Prestation non soumise à la TVA en Allemagne.",
+    TaxTreatment.SMALL_BUSINESS: (
+        "Aucune TVA n’est facturée en vertu du § 19 UStG (franchise pour les petites entreprises)."
+    ),
+    TaxTreatment.EXEMPT: "Prestation exonérée.",
+    TaxTreatment.INTRA_COMMUNITY: (
+        "Livraison intracommunautaire exonérée (§ 4 Nr. 1 Buchst. b i. V. m. § 6a UStG)."
+    ),
+    TaxTreatment.GOODS_EXPORT: (
+        "Livraison à l’exportation exonérée (§ 4 Nr. 1 Buchst. a i. V. m. § 6 UStG)."
+    ),
+}
+
+_ITALIAN_NOTICES = {
+    TaxTreatment.REVERSE_CHARGE: "Inversione contabile.",
+    TaxTreatment.EXPORT: "Prestazione non soggetta all’IVA in Germania.",
+    TaxTreatment.SMALL_BUSINESS: (
+        "Nessuna IVA addebitata ai sensi del § 19 UStG (franchigia per le piccole imprese)."
+    ),
+    TaxTreatment.EXEMPT: "Prestazione esente.",
+    TaxTreatment.INTRA_COMMUNITY: (
+        "Cessione intracomunitaria esente (§ 4 Nr. 1 Buchst. b i. V. m. § 6a UStG)."
+    ),
+    TaxTreatment.GOODS_EXPORT: (
+        "Cessione all’esportazione esente (§ 4 Nr. 1 Buchst. a i. V. m. § 6 UStG)."
     ),
 }
 
@@ -116,6 +152,45 @@ PROFILE = CountryProfile(
             closing="Kind regards",
             notices=ENGLISH_NOTICES,
         ),
+        Language.FR: CountryTerms(
+            tax_name="TVA",
+            vat_number_label="N° TVA",
+            customer_vat_label="Votre N° TVA",
+            vat_number_field="N° d’identification TVA",
+            vat_number_hint="Ou le numéro fiscal : l’un des deux doit figurer sur la facture.",
+            small_business="Petite entreprise (§ 19 UStG)",
+            bad_debts="Créances irrécouvrables",
+            write_off_hint=(
+                "Si vous déclarez la TVA à la facturation, corrigez-la dans la période où le "
+                "montant est devenu irrécouvrable, et à nouveau s’il est finalement payé "
+                "(§ 17 Abs. 2 Nr. 1 UStG). La date est le jour où il est devenu irrécouvrable. "
+                "Si vous déclarez la TVA à l’encaissement ou êtes une petite entreprise, "
+                "il n’y a rien à corriger."
+            ),
+            special_rate=None,
+            salutation="Bonjour",
+            closing="Meilleures salutations",
+            notices=_FRENCH_NOTICES,
+        ),
+        Language.IT: CountryTerms(
+            tax_name="IVA",
+            vat_number_label="N. IVA",
+            customer_vat_label="Vostro N. IVA",
+            vat_number_field="N. di identificazione IVA",
+            vat_number_hint="Oppure il numero fiscale: uno dei due deve figurare sulla fattura.",
+            small_business="Piccola impresa (§ 19 UStG)",
+            bad_debts="Crediti inesigibili",
+            write_off_hint=(
+                "Se versate l’IVA alla fatturazione, correggetela nel periodo in cui l’importo "
+                "è diventato inesigibile, e di nuovo se viene comunque pagato (§ 17 Abs. 2 "
+                "Nr. 1 UStG). La data è il giorno in cui è diventato inesigibile. Se versate "
+                "l’IVA all’incasso o siete una piccola impresa, non c’è nulla da correggere."
+            ),
+            special_rate=None,
+            salutation="Buongiorno",
+            closing="Cordiali saluti",
+            notices=_ITALIAN_NOTICES,
+        ),
     },
     check_invoice=check_invoice,
     number_style=NumberStyle.DOT_COMMA,
@@ -129,5 +204,7 @@ PROFILE = CountryProfile(
         "https://www.gesetze-im-internet.de/ustg_1980/__14a.html",
         "https://www.gesetze-im-internet.de/ustdv_1980/__33.html",
         "https://www.gesetze-im-internet.de/ustg_1980/__17.html",
+        "https://eur-lex.europa.eu/eli/dir/2010/45/oj (art. 226, 11 bis, French and Italian)",
+        "https://eur-lex.europa.eu/eli/dir/2020/285/oj (art. 284, French and Italian)",
     ),
 )

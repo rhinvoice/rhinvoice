@@ -14,7 +14,7 @@ A profile holds:
 - the VAT law, with a choice between the EU VAT Directive and the Swiss MWSTG
 - the VAT area
 - the rates, with the date each applies from
-- the legal notices, labels and mail greeting, in German and English
+- the legal notices, labels and mail greeting, in German, English, French and Italian
 - what an invoice must state
 - the number style, payment codes and default currency
 - whether rounding to 0.05 is offered and whether the national tax number counts as a tax ID
@@ -55,7 +55,8 @@ Then change the following:
 - **The module docstring:** list every source with the article of the law and the date you checked it.
 - **`rates`:** the dated `TaxRateSet`s, oldest first, without gaps. The last one has
   `valid_to=None`. `special` is the third rate, or `None` if there is none.
-- **`terms`:** the words for German and English documents. `notices` needs a text for every
+- **`terms`:** the words for German, English, French and Italian documents (French and Italian
+  as the law or the EU VAT Directive words them in that language, see ADR 0027). `notices` needs a text for every
   treatment the VAT law knows: reverse charge, export, small business, exempt, intra-Community
   supply and export delivery. The texts must say what the law asks the invoice to say.
 - **`check_invoice`:** raise a `ValidationError` with a `code` when an invoice lacks a detail the

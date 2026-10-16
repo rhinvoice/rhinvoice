@@ -16,7 +16,7 @@ familiar document.
   for all countries; can be switched off in the print template (default: on). One file for people and programs.
 - **XRechnung 3.0 (CII)** as a separate XML file for download, for German public authorities. The
   invoice's *reference* field is the buyer reference (BT-10), for public authorities the Leitweg-ID.
-  Since 0.8.0 a German customer's fixed buyer reference wins over it ([ADR 0027](0027-buyer-reference-per-customer.md)).
+  Since 0.8.0 a German customer's fixed buyer reference wins over it ([ADR 0028](0028-buyer-reference-per-customer.md)).
 - **A mirror of what is printed:** every amount in the e-invoice is an amount in the PDF; the domain
   recalculates nothing. Cancellation invoices are credit notes (381) with positive amounts and a reference to
   the cancelled invoice. Gross prices become net amounts: the net of each tax group is the

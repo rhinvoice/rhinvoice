@@ -529,6 +529,8 @@ export const de = {
   "company.logoTooLarge": "Das Logo darf höchstens 1 MB groß sein.",
   "language.de": "Deutsch",
   "language.en": "Englisch",
+  "language.fr": "Französisch",
+  "language.it": "Italienisch",
   "bank.title": "Bankkonten",
   "bank.description":
     "Konten für Zahlungsangaben und QR-Codes. Pro Währung ist ein Konto das Standardkonto.",
@@ -1494,6 +1496,8 @@ export const de = {
     "In der Währung der Rechnung, ohne MWST/USt. Nur mit Vereinbarung oder belegten Kosten; 0 für keine.",
   "dunning.textDe": "Text (Deutsch)",
   "dunning.textEn": "Text (Englisch)",
+  "dunning.textFr": "Text (Französisch)",
+  "dunning.textIt": "Text (Italienisch)",
   "dunning.textHint":
     "Platzhalter: {faellig} (neue Frist), {betrag}, {waehrung}, {nummer}, {kunde}.",
   "error.not_remindable": "Diese Rechnung ist nicht überfällig oder hat schon alle Mahnungen.",

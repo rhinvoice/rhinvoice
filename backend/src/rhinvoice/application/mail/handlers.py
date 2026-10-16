@@ -318,6 +318,14 @@ _TEST = {
         "Rhinvoice: test mail",
         "This mail confirms that Rhinvoice can send through the configured server.",
     ),
+    Language.FR: (
+        "Rhinvoice : e-mail de test",
+        "Cet e-mail confirme que Rhinvoice peut envoyer par le serveur configuré.",
+    ),
+    Language.IT: (
+        "Rhinvoice: e-mail di prova",
+        "Questa e-mail conferma che Rhinvoice può inviare tramite il server configurato.",
+    ),
 }
 
 

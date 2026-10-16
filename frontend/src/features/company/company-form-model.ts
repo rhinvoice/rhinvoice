@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import type { Company, CompanyRequest } from "@/features/company/api";
 import { fields } from "@/features/shared/form-schema";
+import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import type { T } from "@/lib/i18n";
 import type { Locale } from "@/lib/locale";
 
@@ -28,7 +29,7 @@ export function companySchema(t: T, locale: Locale) {
     small_business: z.boolean(),
     cash_rounding: z.boolean(),
     default_currency: z.enum(["CHF", "EUR"]),
-    default_language: z.enum(["de", "en"]),
+    default_language: z.enum(DOCUMENT_LANGUAGES),
     payment_terms_days: z
       .string()
       .trim()

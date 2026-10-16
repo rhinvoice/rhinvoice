@@ -1,7 +1,12 @@
 """Numbers and dates as printed on documents, per print locale.
 
 de-CH: 1'234.50 (typographic apostrophe), de-DE/de-AT: 1.234,50, en: 1,234.50.
-Dates: 14.02.2026 in German, 14 February 2026 in English.
+French and Italian follow the country like German does: Swiss and Liechtenstein
+companies write 1'234.50 in both (CLDR it-CH; for French a choice, CLDR fr-CH
+writes 1 234,50, see ADR 0027), German and Austrian companies 1 234,50 in
+French and 1.234,50 in Italian (CLDR fr, it).
+Dates: 14.02.2026 in German, 14 February 2026 in English, 14 février 2026 in
+French, 14 febbraio 2026 in Italian (CLDR long dates, as Intl.DateTimeFormat).
 """
 
 from __future__ import annotations
@@ -31,33 +36,84 @@ _ENGLISH_MONTHS = (
     "December",
 )
 
+_FRENCH_MONTHS = (
+    "janvier",
+    "février",
+    "mars",
+    "avril",
+    "mai",
+    "juin",
+    "juillet",
+    "août",
+    "septembre",
+    "octobre",
+    "novembre",
+    "décembre",
+)
+_ITALIAN_MONTHS = (
+    "gennaio",
+    "febbraio",
+    "marzo",
+    "aprile",
+    "maggio",
+    "giugno",
+    "luglio",
+    "agosto",
+    "settembre",
+    "ottobre",
+    "novembre",
+    "dicembre",
+)
+
 
 # Written as code points: the characters look like ASCII ones in the source.
 APOSTROPHE = chr(0x2019)
 MINUS = chr(0x2212)
 NO_BREAK_SPACE = chr(0x00A0)
+NARROW_NO_BREAK_SPACE = chr(0x202F)
 
 
 class PrintLocale(StrEnum):
     DE_CH = "de-CH"
     DE_DE = "de-DE"
     EN = "en"
+    FR_CH = "fr-CH"
+    FR = "fr"
+    IT_CH = "it-CH"
+    IT = "it"
 
     @classmethod
     def of(cls, language: Language, style: NumberStyle) -> PrintLocale:
-        """English documents use English numbers, German ones the style of the country."""
-        if language is Language.EN:
-            return cls.EN
-        return cls.DE_CH if style is NumberStyle.APOSTROPHE else cls.DE_DE
+        """English documents use English numbers, the others the style of the country."""
+        swiss = style is NumberStyle.APOSTROPHE
+        return {
+            Language.DE: cls.DE_CH if swiss else cls.DE_DE,
+            Language.EN: cls.EN,
+            Language.FR: cls.FR_CH if swiss else cls.FR,
+            Language.IT: cls.IT_CH if swiss else cls.IT,
+        }[language]
 
     @property
     def separators(self) -> tuple[str, str]:
         """(thousands, decimal)."""
-        if self is PrintLocale.DE_CH:
+        if self in {PrintLocale.DE_CH, PrintLocale.FR_CH, PrintLocale.IT_CH}:
             return (APOSTROPHE, ".")
-        if self is PrintLocale.DE_DE:
+        if self in {PrintLocale.DE_DE, PrintLocale.IT}:
             return (".", ",")
+        if self is PrintLocale.FR:
+            return (NARROW_NO_BREAK_SPACE, ",")
         return (",", ".")
+
+    @property
+    def months(self) -> tuple[str, ...] | None:
+        """Month names of the long dates; None for German, which writes 14.02.2026."""
+        if self is PrintLocale.EN:
+            return _ENGLISH_MONTHS
+        if self in {PrintLocale.FR_CH, PrintLocale.FR}:
+            return _FRENCH_MONTHS
+        if self in {PrintLocale.IT_CH, PrintLocale.IT}:
+            return _ITALIAN_MONTHS
+        return None
 
 
 def _grouped(integer: str, separator: str) -> str:
@@ -104,6 +160,7 @@ def percent(value: Decimal, locale: PrintLocale) -> str:
 
 
 def day(value: date, locale: PrintLocale) -> str:
-    if locale is PrintLocale.EN:
-        return f"{value.day} {_ENGLISH_MONTHS[value.month - 1]} {value.year}"
-    return f"{value.day:02d}.{value.month:02d}.{value.year}"
+    months = locale.months
+    if months is None:
+        return f"{value.day:02d}.{value.month:02d}.{value.year}"
+    return f"{value.day} {months[value.month - 1]} {value.year}"

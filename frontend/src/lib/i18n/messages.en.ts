@@ -361,6 +361,9 @@ export const en: Catalog<MessageKey> = {
   "customers.phone": "Phone",
   "customers.vatNumber": "VAT number",
   "customers.vatNumberHint": "Required for reverse charge with business customers in the EU.",
+  "customers.buyerReference": "Leitweg-ID or fixed buyer reference",
+  "customers.buyerReferenceHint":
+    "For the XRechnung. Authorities: their Leitweg-ID. Businesses: only fill this in if they always want the same reference. If the reference changes with every order (e.g. the order number), leave this field empty and enter it in the invoice under “More details → Reference”.",
   "customers.defaultCurrency": "Default currency",
   "customers.defaultLanguage": "Document language",
   "customers.taxExempt": "Tax exempt",
@@ -806,6 +809,8 @@ export const en: Catalog<MessageKey> = {
   "documents.subjectHint": "e.g. “Website relaunch, phase 2”",
   "documents.reference": "Reference",
   "documents.referenceHint": "e.g. the customer's order number",
+  "documents.referenceHintXRechnung": "Order number or similar – needed for the XRechnung",
+  "documents.referenceHintFixed": "The XRechnung uses the customer's Leitweg-ID: {value}",
   "documents.currency": "Currency",
   "documents.language": "Language",
   "documents.sectionDates": "Dates",
@@ -1133,6 +1138,7 @@ export const en: Catalog<MessageKey> = {
   "import.field.email": "Email",
   "import.field.phone": "Phone",
   "import.field.vat_number": "VAT number",
+  "import.field.buyer_reference": "Leitweg-ID / buyer reference",
   "import.field.group": "Group",
   "import.field.default_currency": "Currency",
   "import.field.default_language": "Language",
@@ -1402,6 +1408,7 @@ export const en: Catalog<MessageKey> = {
   "dunning.problem.text": "At most 2000 characters",
   "eInvoice.beforeEInvoices": "The PDF was created before Rhinvoice embedded e-invoices.",
   "eInvoice.issueWarning": "This invoice will be issued without e-invoice. Missing:",
+  "eInvoice.issueXRechnungWarning": "Missing for the XRechnung (German authorities):",
   "eInvoice.xrechnungSummary": "XRechnung for German authorities",
   "eInvoice.title": "E-invoice",
   "eInvoice.embedded":
@@ -1411,7 +1418,8 @@ export const en: Catalog<MessageKey> = {
   "eInvoice.disabled": "The e-invoice was switched off in the print template when this was issued.",
   "eInvoice.missing": "Missing for an e-invoice when it was issued:",
   "eInvoice.xrechnung": "XRechnung (XML)",
-  "eInvoice.xrechnungHint": "For German authorities; the invoice's reference is the Leitweg-ID.",
+  "eInvoice.xrechnungHint":
+    "For German authorities; the Leitweg-ID comes from the customer or the invoice's reference.",
   "eInvoice.xrechnungMissing": "Missing for an XRechnung when it was issued:",
   "eInvoice.nextTime":
     "Issued invoices stay as they are. Please add the details for future invoices.",
@@ -1421,7 +1429,7 @@ export const en: Catalog<MessageKey> = {
   "eInvoice.problem.seller_tax_id_missing": "VAT number or tax number (Settings → Company)",
   "eInvoice.problem.buyer_vat_id_missing": "VAT number with country code at the customer",
   "eInvoice.problem.buyer_reference_missing":
-    "Reference of the invoice (Leitweg-ID or buyer reference)",
+    "Leitweg-ID at the customer or reference of the invoice",
   "eInvoice.problem.seller_email_missing": "E-mail (Settings → Company)",
   "eInvoice.problem.seller_phone_missing": "Phone (Settings → Company)",
   "eInvoice.problem.buyer_email_missing": "E-mail at the customer",

@@ -498,3 +498,55 @@ test("the editor points out a missing VAT number of an EU business", async ({ pa
     page.getByRole("link", { name: "UID / USt-IdNr. beim Kunden erfassen" }),
   ).toHaveAttribute("href", `/customers/${customer.id}`);
 });
+
+test("German customers: Leitweg-ID, reference hint and XRechnung warning before issuing", async ({
+  page,
+}, testInfo) => {
+  const suffix = unique(testInfo.project.name);
+  const customer = await post<{ id: string }>(page, "/api/customers", {
+    kind: "company",
+    company_name: `Bezirksamt ${suffix}`,
+    address: { postal_code: "10115", city: "Berlin", country: "DE" },
+  });
+  const draft = await post<{ id: string }>(page, "/api/documents", {
+    type: "invoice",
+    customer_id: customer.id,
+    lines: [{ description: "Beratung", quantity: "1", unit_price: "100" }],
+  });
+  await page.goto(`/documents/${draft.id}`);
+  await page.getByText("Weitere Angaben", { exact: true }).click();
+  await expect(page.getByText("Bestellnummer o. ä. – nötig für die XRechnung")).toBeVisible();
+
+  // The warning comes before the invoice is frozen; issuing stays possible.
+  await page.getByRole("button", { name: "Ausstellen" }).click();
+  const confirm = page.getByRole("alertdialog", { name: "Rechnung ausstellen?" });
+  await expect(confirm.getByText("Für die XRechnung (deutsche Behörden) fehlt:")).toBeVisible();
+  await expect(
+    confirm.getByText("Leitweg-ID beim Kunden oder Referenz der Rechnung"),
+  ).toBeVisible();
+  await expect(confirm.getByRole("button", { name: "Ausstellen" })).toBeEnabled();
+  await expectAccessible(page);
+  await confirm.getByRole("button", { name: "Abbrechen" }).click();
+
+  // The Leitweg-ID belongs to the customer; the field is shown for German customers only.
+  await page.goto(`/customers/${customer.id}`);
+  const leitwegId = page.getByLabel("Leitweg-ID oder feste Käuferreferenz");
+  await leitwegId.fill("04011000-1234512345-06");
+  await page.getByRole("button", { name: "Speichern" }).click();
+  await expect(page.getByText("Gespeichert", { exact: true })).toBeVisible();
+  await expectAccessible(page);
+  const country = page.getByLabel("Land").first();
+  await country.selectOption("CH");
+  await expect(leitwegId).toBeHidden();
+  await country.selectOption("DE");
+  await expect(leitwegId).toHaveValue("04011000-1234512345-06");
+
+  await page.goto(`/documents/${draft.id}`);
+  await page.getByText("Weitere Angaben", { exact: true }).click();
+  await expect(
+    page.getByText("Für die XRechnung gilt die Leitweg-ID des Kunden: 04011000-1234512345-06"),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Ausstellen" }).click();
+  await expect(confirm.getByText("E-Mail beim Kunden")).toBeVisible();
+  await expect(confirm.getByText("Leitweg-ID beim Kunden oder Referenz der Rechnung")).toBeHidden();
+});

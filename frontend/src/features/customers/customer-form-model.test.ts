@@ -125,6 +125,7 @@ describe("customer form", () => {
       email: null,
       phone: "",
       vat_number: null,
+      buyer_reference: "",
       group: "",
       default_currency: null,
       default_language: "en",
@@ -180,6 +181,7 @@ describe("customer form", () => {
         email: "anna@example.com",
         phone: "+41 31 000 00 00",
         vat_number: "CHE-123.456.788",
+        buyer_reference: "04011000-1234512345-06",
         group: "VIP",
         default_currency: "EUR",
         default_language: null,
@@ -206,6 +208,15 @@ describe("customer form", () => {
     expect(request.delivery_address).toMatchObject({ supplement: "Lager", country: "LI" });
     expect(request.vat_number).toBe("CHE-123.456.788");
     expect(request.email).toBe("anna@example.com");
+    // Kept although the field is only shown for German customers.
+    expect(form.buyer_reference).toBe("04011000-1234512345-06");
+    expect(request.buyer_reference).toBe("04011000-1234512345-06");
+  });
+
+  it("limits the buyer reference to 100 characters", () => {
+    const base = { company_name: "X", postal_code: "1", city: "Y" };
+    expect(issues({ ...base, buyer_reference: "1".repeat(101) })["buyer_reference"]).toBeDefined();
+    expect(issues({ ...base, buyer_reference: "991-33333TEST-33" })).toEqual({});
   });
 
   it("maps API error fields to form fields", () => {

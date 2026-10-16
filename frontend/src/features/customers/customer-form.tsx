@@ -24,6 +24,7 @@ import { summaryItems } from "@/features/shared/form-errors";
 import { FormFooter } from "@/features/shared/form-footer";
 import { applyServerErrors } from "@/features/shared/server-errors";
 import { useErrorMessage } from "@/features/shared/use-error-message";
+import { asksForBuyerReference } from "@/lib/xrechnung";
 
 interface CustomerFormProps {
   readonly defaultValues: CustomerFormValues;
@@ -200,6 +201,17 @@ export function CustomerForm({ defaultValues, onSubmit, submitLabel }: CustomerF
           >
             <Input id="vat_number" {...form.register("vat_number")} />
           </Field>
+          {asksForBuyerReference(country) ? (
+            <Field
+              className="sm:col-span-2"
+              label={t("customers.buyerReference")}
+              description={t("customers.buyerReferenceHint")}
+              error={error("buyer_reference")}
+              optionalLabel={t("common.optional")}
+            >
+              <Input id="buyer_reference" {...form.register("buyer_reference")} />
+            </Field>
+          ) : null}
           <Field label={t("customers.defaultCurrency")} error={error("default_currency")}>
             <NativeSelect id="default_currency" {...form.register("default_currency")}>
               <option value="">{t("common.useDefault")}</option>

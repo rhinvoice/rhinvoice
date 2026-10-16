@@ -327,7 +327,7 @@ export const it: Catalog<MessageKey> = {
   "address.houseNumber": "N.",
   "address.supplement": "Complemento d’indirizzo",
   "address.supplementHint": "ad es. c/o, casella postale o reparto",
-  "address.postalCode": "NPA",
+  "address.postalCode": "NAP",
   "address.city": "Località",
   "address.country": "Paese",
   "validation.maxLength": "Al massimo {max} caratteri.",
@@ -1114,7 +1114,7 @@ export const it: Catalog<MessageKey> = {
   "import.deleteTemplateTitle": "Eliminare il modello?",
   "import.deleteTemplateDescription":
     "Il modello «{name}» viene eliminato. I dati importati vengono mantenuti.",
-  "import.problem.unknown_country_prefix": "sigla del Paese sconosciuta prima del NPA",
+  "import.problem.unknown_country_prefix": "sigla del Paese sconosciuta prima del NAP",
   "import.open": "Importa",
   "import.run.customers": {
     zero: "Nessun cliente da importare",
@@ -1158,12 +1158,12 @@ export const it: Catalog<MessageKey> = {
   "import.duplicates.update": "Aggiorna",
   "import.duplicates.create": "Crea nuova",
   "import.duplicatesHint.customers":
-    "Uguale significa: stesso numero cliente; senza numero, stesso nome e stesso NPA. Durante l’aggiornamento le celle vuote non hanno effetto.",
+    "Uguale significa: stesso numero cliente; senza numero, stesso nome e stesso NAP. Durante l’aggiornamento le celle vuote non hanno effetto.",
   "import.duplicatesHint.articles":
     "Uguale significa: stesso numero articolo; senza numero, stessa descrizione. Durante l’aggiornamento le celle vuote non hanno effetto.",
   "import.mapping": "Associa le colonne ({mapped} di {total} associate)",
   "import.required.customers":
-    "È necessaria una colonna per il numero cliente o il nome (azienda o cognome). I nuovi clienti richiedono inoltre NPA e località.",
+    "È necessaria una colonna per il numero cliente o il nome (azienda o cognome). I nuovi clienti richiedono inoltre NAP e località.",
   "import.required.articles":
     "È necessaria una colonna per il numero articolo o la descrizione. I nuovi articoli richiedono una descrizione.",
   "import.mappingCaption": "Associazione delle colonne",
@@ -1181,9 +1181,9 @@ export const it: Catalog<MessageKey> = {
   "import.field.street": "Via (con numero civico)",
   "import.field.house_number": "Numero civico",
   "import.field.supplement": "Complemento d’indirizzo",
-  "import.field.postal_code": "NPA",
+  "import.field.postal_code": "NAP",
   "import.field.city": "Località",
-  "import.field.postal_city": "NPA e località",
+  "import.field.postal_city": "NAP e località",
   "import.field.country": "Paese",
   "import.field.email": "E-mail",
   "import.field.phone": "Telefono",
@@ -1223,7 +1223,7 @@ export const it: Catalog<MessageKey> = {
   "import.statusTitle": "Risultato",
   "import.number": "N.",
   "import.name": "Nome",
-  "import.detail.customers": "NPA e località",
+  "import.detail.customers": "NAP e località",
   "import.detail.articles": "Prezzo",
   "import.problemTitle": "Nota",
   "import.problemText": "{field}: {reason}",
@@ -1237,7 +1237,8 @@ export const it: Catalog<MessageKey> = {
   "import.problem.unknown_unit": "unità sconosciuta",
   "import.problem.unknown_tax_rate": "aliquota sconosciuta",
   "import.problem.unknown_supply": "né merce né servizio",
-  "import.problem.unknown_language": "lingua non supportata (tedesco o inglese)",
+  "import.problem.unknown_language":
+    "lingua non supportata (tedesco, inglese, francese o italiano)",
   "import.problem.unknown_currency": "valuta non supportata (CHF o EUR)",
   "import.doneTitle": "Importazione completata",
   "import.show.customers": "Vai ai clienti",

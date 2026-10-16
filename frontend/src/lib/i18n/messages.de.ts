@@ -1234,7 +1234,8 @@ export const de = {
   "import.problem.unknown_unit": "unbekannte Einheit",
   "import.problem.unknown_tax_rate": "unbekannter Steuersatz",
   "import.problem.unknown_supply": "weder Ware noch Dienstleistung",
-  "import.problem.unknown_language": "Sprache nicht unterstützt (Deutsch oder Englisch)",
+  "import.problem.unknown_language":
+    "Sprache nicht unterstützt (Deutsch, Englisch, Französisch oder Italienisch)",
   "import.problem.unknown_currency": "Währung nicht unterstützt (CHF oder EUR)",
   "import.doneTitle": "Import abgeschlossen",
   "import.show.customers": "Zu den Kunden",

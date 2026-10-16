@@ -1192,7 +1192,7 @@ export const en: Catalog<MessageKey> = {
   "import.problem.unknown_unit": "unknown unit",
   "import.problem.unknown_tax_rate": "unknown VAT rate",
   "import.problem.unknown_supply": "neither goods nor a service",
-  "import.problem.unknown_language": "language not supported (German or English)",
+  "import.problem.unknown_language": "language not supported (German, English, French or Italian)",
   "import.problem.unknown_currency": "currency not supported (CHF or EUR)",
   "import.doneTitle": "Import finished",
   "import.show.customers": "Go to customers",

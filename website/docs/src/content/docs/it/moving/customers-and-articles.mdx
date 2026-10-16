@@ -7,7 +7,7 @@ faq:
   - q: Che cosa succede ai clienti che esistono già in Rhinvoice?
     a: Lo sceglie prima dell’importazione. Rhinvoice li salta, li aggiorna o li crea di nuovo. Durante l’aggiornamento le celle vuote non cambiano nulla, quindi un’esportazione con meno colonne non cancella mai dati.
   - q: Devo assegnare le colonne a mano?
-    a: Per lo più no. Rhinvoice riconosce i nomi di colonna usuali come «Numero cliente», «NPA» o «Numero IVA». Ciò che non riconosce lo assegna a mano e lo salva come modello per la prossima importazione.
+    a: Per lo più no. Rhinvoice riconosce i nomi di colonna usuali come «Numero cliente», «NAP» o «Numero IVA». Ciò che non riconosce lo assegna a mano e lo salva come modello per la prossima importazione.
   - q: Le aliquote IVA precedenti come il 7,7 % vengono riconosciute?
     a: Sì. Rhinvoice conosce le aliquote precedenti del Suo Paese, come il 7,7 % e l’8 % in Svizzera o il 16 % e il 5 % in Germania, e assegna all’articolo l’aliquota IVA corrispondente.
 ---
@@ -60,7 +60,7 @@ Ciò che non viene riconosciuto lo assegna a mano in *Associa le colonne*: per o
 | *Numero* | Senza numero, il cliente riceve il prossimo numero libero |
 | *Ragione sociale*, oppure *Nome* e *Cognome* | Senza ragione sociale, il cliente viene creato come persona |
 | *Appellativo*, *Persona di contatto* | |
-| Indirizzo | *Via (con numero civico)*, oppure separatamente con *Numero civico*, più *Complemento d’indirizzo*, *NPA* e *Località*, oppure entrambi in una colonna (*NPA e località*, anche «CH-9470 Buchs») |
+| Indirizzo | *Via (con numero civico)*, oppure separatamente con *Numero civico*, più *Complemento d’indirizzo*, *NAP* e *Località*, oppure entrambi in una colonna (*NAP e località*, anche «CH-9470 Buchs») |
 | *Paese* | Come nome o codice; senza, vale il Paese della Sua azienda |
 | *E-mail*, *Telefono* | |
 | *IDI / n. IVA* | |
@@ -70,7 +70,7 @@ Ciò che non viene riconosciuto lo assegna a mano in *Associa le colonne*: per o
 | *Sconto in %*, *Termine di pagamento in giorni*, *Esente da imposta* | |
 | *Cliente dal* <Since version="0.4.3" /> | Per esempio da «Kunde seit», «Angelegt am» o «Created», come 14.03.2019 o 2019-03-14, anche con un’ora |
 
-Serve una colonna per il numero cliente o il nome (azienda o cognome). I nuovi clienti hanno inoltre bisogno di NPA e località.
+Serve una colonna per il numero cliente o il nome (azienda o cognome). I nuovi clienti hanno inoltre bisogno di NAP e località.
 
 ### Articoli
 
@@ -92,7 +92,7 @@ Gli elenchi di articoli di programmi più vecchi contengono spesso aliquote che 
 
 ## Se la voce esiste già
 
-Un cliente è lo stesso se ha lo stesso numero cliente oppure, senza numero, lo stesso nome e NPA. Un articolo è lo stesso se ha lo stesso numero di articolo oppure, senza numero, lo stesso nome.
+Un cliente è lo stesso se ha lo stesso numero cliente oppure, senza numero, lo stesso nome e NAP. Un articolo è lo stesso se ha lo stesso numero di articolo oppure, senza numero, lo stesso nome.
 
 | Scelta | Che cosa succede |
 |---|---|

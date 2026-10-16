@@ -967,7 +967,7 @@ export const fr: Catalog<MessageKey> = {
   "documents.acceptedToast": "Offre marquée comme acceptée.",
   "documents.decline": "Refusée",
   "documents.declinedToast": "Offre marquée comme refusée.",
-  "documents.cancel": "Annuler",
+  "documents.cancel": "Annuler la facture",
   "documents.cancelTitle": "Annuler la facture ?",
   "documents.cancelDescription":
     "Une facture d’annulation avec son propre numéro est émise et annule cette facture. Cette action est irréversible.",
@@ -1247,7 +1247,8 @@ export const fr: Catalog<MessageKey> = {
   "import.problem.unknown_unit": "unité inconnue",
   "import.problem.unknown_tax_rate": "taux de TVA inconnu",
   "import.problem.unknown_supply": "ni marchandise ni prestation de services",
-  "import.problem.unknown_language": "langue non prise en charge (allemand ou anglais)",
+  "import.problem.unknown_language":
+    "langue non prise en charge (allemand, anglais, français ou italien)",
   "import.problem.unknown_currency": "monnaie non prise en charge (CHF ou EUR)",
   "import.doneTitle": "Importation terminée",
   "import.show.customers": "Vers les clients",
@@ -1462,8 +1463,8 @@ export const fr: Catalog<MessageKey> = {
   },
   "dunning.none": "Aucun pour l’instant",
   "dunning.level.1": "Rappel de paiement",
-  "dunning.level.2": "1re sommation",
-  "dunning.level.3": "2e sommation",
+  "dunning.level.2": "1er rappel",
+  "dunning.level.3": "2e rappel",
   "dunning.done":
     "Tous les niveaux sont établis. Les étapes suivantes (p. ex. recouvrement) se font en dehors de Rhinvoice.",
   "dunning.write": "Établir : {level}",
@@ -1522,7 +1523,7 @@ export const fr: Catalog<MessageKey> = {
   "documents.reminders": "Rappels",
   "dunning.settingsTitle": "Niveaux de relance",
   "dunning.settingsDescription":
-    "Trois niveaux : rappel de paiement, 1re et 2e sommation. Chaque niveau devient échu après un nombre de jours et fixe un nouveau délai de paiement.",
+    "Trois niveaux : rappel de paiement, 1er et 2e rappel. Chaque niveau devient échu après un nombre de jours et fixe un nouveau délai de paiement.",
   "dunning.daysAfterInvoice": "Jours après l’échéance",
   "dunning.daysAfterReminder": "Jours après l’expiration du dernier délai",
   "dunning.paymentDays": "Nouveau délai de paiement en jours",
@@ -1699,7 +1700,7 @@ export const fr: Catalog<MessageKey> = {
   "mail.kind.quote": "Offre",
   "mail.kind.cancellation": "Facture d’annulation",
   "mail.kind.reminder_1": "Rappel de paiement",
-  "mail.kind.reminder_2": "1re sommation",
-  "mail.kind.reminder_3": "2e sommation",
+  "mail.kind.reminder_2": "1er rappel",
+  "mail.kind.reminder_3": "2e rappel",
   "mail.reminderSent": "{level} envoyé(e) par e-mail",
 };

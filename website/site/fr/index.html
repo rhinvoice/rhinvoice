@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<!--
+
+██████╗ ██╗  ██╗██╗███╗   ██╗██╗   ██╗ ██████╗ ██╗ ██████╗███████╗
+██╔══██╗██║  ██║██║████╗  ██║██║   ██║██╔═══██╗██║██╔════╝██╔════╝
+██████╔╝███████║██║██╔██╗ ██║██║   ██║██║   ██║██║██║     █████╗
+██╔══██╗██╔══██║██║██║╚██╗██║╚██╗ ██╔╝██║   ██║██║██║     ██╔══╝
+██║  ██║██║  ██║██║██║ ╚████║ ╚████╔╝ ╚██████╔╝██║╚██████╗███████╗
+╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝  ╚═══╝   ╚═════╝ ╚═╝ ╚═════╝╚══════╝
+
+   Vous lisez le code source. Le vrai est encore plus intéressant :
+
+       https://github.com/rhinvoice/rhinvoice      (AGPL-3.0)
+
+   Signalements, règles fiscales avec leur source et pull requests sont
+   les bienvenus. Ce que vous ne trouverez pas ici : framework, traqueur,
+   cookies, requêtes à des tiers. Une page, une feuille de style, un petit script.
+
+   made by webberz, Balgach, dans la vallée suisse du Rhin · www.webberz.ch
+
+-->
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'self'; object-src 'none'; manifest-src 'self'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+
+<title>Rhinvoice — Logiciel de facturation open source pour la Suisse, le Liechtenstein, l’Allemagne et l’Autriche</title>
+<meta name="description" content="Logiciel de facturation gratuit pour CH, LI, DE et AT, pour Windows, Mac ou Docker : TVA par pays, facture QR, ZUGFeRD et XRechnung. AGPL.">
+<link rel="canonical" href="https://rhinvoice.com/fr/">
+<link rel="alternate" hreflang="en" href="https://rhinvoice.com/">
+<link rel="alternate" hreflang="de" href="https://rhinvoice.com/de/">
+<link rel="alternate" hreflang="fr" href="https://rhinvoice.com/fr/">
+<link rel="alternate" hreflang="it" href="https://rhinvoice.com/it/">
+<link rel="alternate" hreflang="x-default" href="https://rhinvoice.com/">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Rhinvoice">
+<meta property="og:locale" content="fr_CH">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="de_DE">
+<meta property="og:locale:alternate" content="it_CH">
+<meta property="og:url" content="https://rhinvoice.com/fr/">
+<meta property="og:title" content="Rhinvoice — logiciel de facturation open source pour CH, LI, DE et AT">
+<meta property="og:description" content="Logiciel de facturation gratuit pour CH, LI, DE et AT, pour Windows, Mac ou Docker : TVA par pays, facture QR, ZUGFeRD et XRechnung. AGPL.">
+<meta property="og:image" content="https://rhinvoice.com/assets/img/og-fr.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Rhinvoice : logiciel de facturation open source pour la Suisse, le Liechtenstein, l’Allemagne et l’Autriche">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Rhinvoice — logiciel de facturation open source pour CH, LI, DE et AT">
+<meta name="twitter:description" content="Logiciel de facturation gratuit pour CH, LI, DE et AT, pour Windows, Mac ou Docker : TVA par pays, facture QR, ZUGFeRD et XRechnung. AGPL.">
+<meta name="twitter:image" content="https://rhinvoice.com/assets/img/og-fr.png">
+
+<meta name="theme-color" content="#f6f8fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1520" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<!-- For answer engines: the facts about Rhinvoice in plain text (llmstxt.org). -->
+<link rel="alternate" type="text/markdown" href="/llms.txt" title="llms.txt">
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/main.css">
+<script src="/assets/js/main.js" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://rhinvoice.com/#software",
+      "name": "Rhinvoice",
+      "description": "Logiciel de facturation gratuit pour CH, LI, DE et AT, pour Windows, Mac ou Docker : TVA par pays, facture QR, ZUGFeRD et XRechnung. AGPL.",
+      "url": "https://rhinvoice.com/",
+      "applicationCategory": "BusinessApplication",
+      "applicationSubCategory": "Invoicing",
+      "operatingSystem": "Windows, macOS, Linux (Docker)",
+      "downloadUrl": [
+        "https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-Setup-Windows.exe",
+        "https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-macOS.dmg"
+      ],
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "CHF"
+      },
+      "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+      "isAccessibleForFree": true,
+      "inLanguage": [
+        "en",
+        "de",
+        "fr",
+        "it"
+      ],
+      "countriesSupported": [
+        "CH",
+        "LI",
+        "DE",
+        "AT"
+      ],
+      "featureList": [
+        "Offres, factures, annulations",
+        "Traitement fiscal par pays",
+        "Biens et services",
+        "Facture QR suisse et code QR EPC",
+        "ZUGFeRD et XRechnung",
+        "Rappels",
+        "Factures récurrentes",
+        "Envoi par e-mail",
+        "Programmes pour Windows et Mac, ou Docker",
+        "Migration depuis votre ancien programme",
+        "Sauvegardes",
+        "Clavier d’abord",
+        "Sur le smartphone"
+      ],
+      "softwareHelp": {
+        "@type": "CreativeWork",
+        "url": "https://rhinvoice.com/docs/fr/"
+      },
+      "screenshot": "https://rhinvoice.com/assets/img/shots/dashboard.png",
+      "image": "https://rhinvoice.com/assets/img/og-fr.png",
+      "sameAs": [
+        "https://github.com/rhinvoice/rhinvoice"
+      ],
+      "author": {
+        "@id": "https://www.webberz.ch/#firma"
+      },
+      "publisher": {
+        "@id": "https://www.webberz.ch/#firma"
+      }
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "@id": "https://rhinvoice.com/#source",
+      "name": "Rhinvoice",
+      "codeRepository": "https://github.com/rhinvoice/rhinvoice",
+      "programmingLanguage": [
+        "Python",
+        "TypeScript"
+      ],
+      "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+      "targetProduct": {
+        "@id": "https://rhinvoice.com/#software"
+      },
+      "author": {
+        "@id": "https://www.webberz.ch/#firma"
+      }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://www.webberz.ch/#firma",
+      "name": "webberz",
+      "url": "https://www.webberz.ch/"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://rhinvoice.com/#website",
+      "name": "Rhinvoice",
+      "url": "https://rhinvoice.com/",
+      "inLanguage": [
+        "en",
+        "de",
+        "fr",
+        "it"
+      ],
+      "publisher": {
+        "@id": "https://www.webberz.ch/#firma"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://rhinvoice.com/fr/#webpage",
+      "url": "https://rhinvoice.com/fr/",
+      "name": "Rhinvoice — Logiciel de facturation open source pour la Suisse, le Liechtenstein, l’Allemagne et l’Autriche",
+      "description": "Logiciel de facturation gratuit pour CH, LI, DE et AT, pour Windows, Mac ou Docker : TVA par pays, facture QR, ZUGFeRD et XRechnung. AGPL.",
+      "inLanguage": "fr",
+      "isPartOf": {
+        "@id": "https://rhinvoice.com/#website"
+      },
+      "about": {
+        "@id": "https://rhinvoice.com/#software"
+      },
+      "primaryImageOfPage": "https://rhinvoice.com/assets/img/og-fr.png"
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#content">Aller au contenu</a>
+<div data-machine-translated></div>
+
+<header class="wrap top" id="top">
+  <a class="brand" href="https://rhinvoice.com/fr/"><img src="/assets/img/favicon.svg" alt="" width="30" height="30">Rhinvoice</a>
+  <div class="top-end">
+    <nav aria-label="Navigation principale"><a href="#features">Fonctions</a><a href="#install">Installation</a><a href="/docs/fr/">Documentation</a><a href="https://github.com/rhinvoice/rhinvoice">GitHub</a></nav>
+    <nav class="lang" aria-label="Langue">
+      <a href="https://rhinvoice.com/" hreflang="en" lang="en">EN</a>
+      <a href="https://rhinvoice.com/de/" hreflang="de" lang="de">DE</a>
+      <a href="https://rhinvoice.com/fr/" hreflang="fr" lang="fr" aria-current="true">FR</a>
+      <a href="https://rhinvoice.com/it/" hreflang="it" lang="it">IT</a>
+    </nav>
+  </div>
+</header>
+
+<main id="content">
+  <div class="wrap hero">
+    <div class="copy">
+      <p class="eyebrow">Open source · Auto-hébergé</p>
+      <h1>Facturation pour la Suisse, le Liechtenstein, l’Allemagne et l’Autriche.</h1>
+      <p class="lead">Rhinvoice suit le Rhin de la Suisse, le long du Liechtenstein et de l’Autriche, jusqu’en Allemagne, et connaît les exigences de facturation des quatre pays. Open source. Auto-hébergé.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="#demo">Essayer la démo</a>
+        <a class="btn btn-ghost" href="#install">Installer avec Docker</a>
+      </div>
+      <div class="dl-panel">
+        <strong>Nouveau : Rhinvoice en application, sans Docker</strong>
+        <div class="dl-buttons">
+          <a class="btn btn-soft btn-sm" href="https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-Setup-Windows.exe"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.4 9.8 2v9.5H0zM11 1.8 24 0v11.4H11zM0 12.6h9.8V22L0 20.6zM11 12.6h13V24l-13-1.8z"/></svg> Télécharger pour Windows<span class="dl-size" data-release-size="Rhinvoice-Setup-Windows.exe"></span></a>
+          <a class="btn btn-soft btn-sm" href="https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-macOS.dmg"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.89-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.79 1.3 10.34.86 1.25 1.89 2.65 3.24 2.6 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.38.81 1.4-.02 2.29-1.27 3.14-2.53.99-1.45 1.4-2.86 1.42-2.93-.03-.01-2.72-1.04-2.75-4.13zM13.79 4.97c.72-.87 1.2-2.07 1.07-3.27-1.03.04-2.28.69-3.02 1.55-.66.77-1.24 2-1.09 3.18 1.15.09 2.32-.58 3.04-1.46z"/></svg> Télécharger pour Mac<span class="dl-size" data-release-size="Rhinvoice-macOS.dmg"></span></a>
+        </div>
+        <span class="dl-note">Bêta<span data-release-version></span> · Windows 10/11 · macOS 12+ (Apple silicon) · gratuit</span>
+      </div>
+      <ul class="proof" aria-label="Points forts">
+        <li>Facture QR suisse</li>
+        <li>ZUGFeRD et XRechnung</li>
+        <li>AGPL-3.0</li>
+      </ul>
+    </div>
+    <picture>
+        <source srcset="/assets/img/shots/dashboard.avif" type="image/avif">
+        <source srcset="/assets/img/shots/dashboard.webp" type="image/webp">
+        <img class="shot" src="/assets/img/shots/dashboard.png" alt="L’aperçu de Rhinvoice : chiffre d’affaires comparé à l’année précédente, montants ouverts et échus, offres ouvertes" width="1440" height="900" fetchpriority="high">
+      </picture>
+  </div>
+
+  <section id="demo" class="river" aria-labelledby="countries-title">
+    <div class="wrap">
+      <h2 id="countries-title" class="eyebrow">Quatre pays le long du Rhin</h2>
+      <svg viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <path class="bank" d="M0 70 C 120 20, 200 110, 320 64 S 520 20, 640 70 S 860 110, 1000 50"></path>
+        <path class="flow" d="M0 70 C 120 20, 200 110, 320 64 S 520 20, 640 70 S 860 110, 1000 50"></path>
+      </svg>
+      <ul class="stations">
+        <li><strong><abbr title="Suisse">CH</abbr></strong><span>TVA 8,1 % · facture QR</span><a href="https://ch.rhinvoice.com">Ouvrir la démo <span aria-hidden="true">→</span></a></li>
+        <li><strong><abbr title="Liechtenstein">LI</abbr></strong><span>TVA suisse par le traité douanier</span></li>
+        <li><strong><abbr title="Autriche">AT</abbr></strong><span>USt. 20 % · code QR EPC</span><a href="https://at.rhinvoice.com">Ouvrir la démo <span aria-hidden="true">→</span></a></li>
+        <li><strong><abbr title="Allemagne">DE</abbr></strong><span>USt. 19 % · XRechnung</span><a href="https://de.rhinvoice.com">Ouvrir la démo <span aria-hidden="true">→</span></a></li>
+      </ul>
+      <p class="note more-countries">D’autres pays peuvent être ajoutés : un profil par pays, par exemple les Pays-Bas. <a href="/docs/fr/countries/more-countries/">Comment ajouter un pays</a></p>
+    </div>
+  </section>
+
+  <section aria-label="Captures d’écran">
+    <div class="wrap shots">
+      <picture>
+        <source srcset="/assets/img/shots/editor.avif" type="image/avif">
+        <source srcset="/assets/img/shots/editor.webp" type="image/webp">
+        <img class="shot" src="/assets/img/shots/editor.png" alt="L’éditeur de factures avec son aperçu papier en direct" width="1440" height="900" loading="lazy" decoding="async">
+      </picture>
+      <picture>
+        <source srcset="/assets/img/shots/dashboard-dark.avif" type="image/avif">
+        <source srcset="/assets/img/shots/dashboard-dark.webp" type="image/webp">
+        <img class="shot" src="/assets/img/shots/dashboard-dark.png" alt="L’aperçu d’une entreprise allemande en mode sombre" width="1440" height="900" loading="lazy" decoding="async">
+      </picture>
+    </div>
+  </section>
+
+  <section id="features" aria-labelledby="features-title">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Fonctions</p><h2 id="features-title">Tout ce qu’il faut à une petite entreprise pour facturer</h2></div>
+      <ul class="features">
+        <li><strong>Offres, factures, annulations</strong><span>aperçu en direct, numéros sans lacunes, documents émis verrouillés</span></li>
+        <li><strong>Traitement fiscal par pays</strong><span>national, autoliquidation (reverse charge), intracommunautaire, exportation, petite entreprise</span></li>
+        <li><strong>Biens et services</strong><span>séparés, même sur les factures mixtes</span></li>
+        <li><strong>Facture QR suisse et code QR EPC</strong><span>le bon code selon la monnaie et le client</span></li>
+        <li><strong>ZUGFeRD et XRechnung</strong><span>validés avec KoSIT et Mustang</span></li>
+        <li><strong>Rappels</strong><span>trois niveaux, frais, nouveaux délais</span></li>
+        <li><strong>Factures récurrentes</strong><span>de mensuelles à annuelles, en brouillon, émises ou envoyées</span></li>
+        <li><strong>Envoi par e-mail</strong><span>par votre propre serveur de messagerie</span></li>
+        <li><strong>Migration depuis votre ancien programme</strong><span>clients, articles et anciennes factures avec leurs PDF originaux</span></li>
+        <li><strong>Sauvegardes</strong><span>chiffrées avec restic, vers S3, SFTP, Dropbox ou Google Drive</span></li>
+        <li><strong>Clavier d’abord</strong><span>⌘K, raccourcis, clair et sombre</span></li>
+        <li><strong>Sur le smartphone</strong><span>vérifier le statut, marquer comme payée, partager le PDF</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="free" aria-labelledby="free-title">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Gratuit, et ça le restera</p><h2 id="free-title">Open source, sans version payante prévue</h2></div>
+      <div class="grid">
+        <article class="card"><h3>Aucun service hébergé prévu</h3><p>Rhinvoice peut être utilisé, modifié et partagé gratuitement sous la licence AGPL. Il n’est pas prévu d’en faire un service payant.</p></article>
+        <article class="card"><h3>Vous le voulez hébergé?</h3><p>Dites-le-nous dans les <a href="https://github.com/rhinvoice/rhinvoice/discussions">discussions GitHub</a>. Si suffisamment de sponsors se réunissent pour couvrir les frais d’exploitation, un Rhinvoice hébergé est envisageable.</p></article>
+        <article class="card"><h3>Intérêt commercial</h3><p>Une licence commerciale, un partenariat ou la reprise du projet vous intéressent? Écrivez-nous à <span class="tabular">hello@rhinvoice.com</span>.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" aria-labelledby="install-title">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Installation</p><h2 id="install-title">Prêt en cinq minutes.</h2><p class="lead">Avec un programme d’installation sous Windows ou Mac, ou avec Docker sur votre propre ordinateur portable, un NAS, un Raspberry Pi ou un serveur.</p></div>
+      <div class="platforms">
+        <div class="platform"><h3><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.4 9.8 2v9.5H0zM11 1.8 24 0v11.4H11zM0 12.6h9.8V22L0 20.6zM11 12.6h13V24l-13-1.8z"/></svg> Windows</h3><p>Windows 10 et 11. Un programme d’installation avec une entrée dans le menu Démarrer; les mises à jour arrivent dans le programme.</p><a class="btn btn-primary" href="https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-Setup-Windows.exe">Télécharger pour Windows<span class="dl-size" data-release-size="Rhinvoice-Setup-Windows.exe"></span></a></div>
+        <div class="platform"><h3><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.89-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.79 1.3 10.34.86 1.25 1.89 2.65 3.24 2.6 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.38.81 1.4-.02 2.29-1.27 3.14-2.53.99-1.45 1.4-2.86 1.42-2.93-.03-.01-2.72-1.04-2.75-4.13zM13.79 4.97c.72-.87 1.2-2.07 1.07-3.27-1.03.04-2.28.69-3.02 1.55-.66.77-1.24 2-1.09 3.18 1.15.09 2.32-.58 3.04-1.46z"/></svg> Mac</h3><p>macOS 12 ou plus récent, Apple silicon. Glissez-le dans Applications; les mises à jour arrivent dans le programme.</p><a class="btn btn-primary" href="https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-macOS.dmg">Télécharger pour Mac<span class="dl-size" data-release-size="Rhinvoice-macOS.dmg"></span></a></div>
+        <div class="platform"><h3><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg> Docker</h3><p>Sur votre propre ordinateur portable avec Docker Desktop (Mac, Windows, Linux), un NAS, un Raspberry Pi ou un serveur. Aussi pour une équipe.</p><a class="btn btn-ghost" href="#docker">Commandes Docker ↓</a></div>
+      </div>
+      <p class="note platforms-note">Bêta · Gratuit et open source · Les programmes d’installation ne sont pas encore signés : Windows et macOS demandent une fois avant de les ouvrir (<a href="/docs/fr/getting-started/install-desktop/">comment les ouvrir</a>).</p>
+      <h3 id="docker" class="docker-title">Installer avec Docker</h3>
+<pre class="code"><span class="c"># un dossier à part</span>
+mkdir rhinvoice &amp;&amp; cd rhinvoice
+
+<span class="c"># le fichier compose et les réglages</span>
+curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/deploy/compose.yml
+curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/.env.example -o .env
+
+<span class="c"># dans .env, mettre POSTGRES_PASSWORD sur une longue valeur aléatoire, puis démarrer</span>
+docker compose pull
+docker compose up -d
+
+<span class="c"># ouvrir http://rhinvoice.localhost:8000, la première visite crée le premier utilisateur</span>
+
+<span class="c"># facultatif, à côté d’autres installations : un nom et un port à part</span>
+<span class="c"># (dans .env : RHINVOICE_PORT=8100, puis ajouter -p rhinvoice-test à chaque commande docker compose)</span>
+docker compose -p rhinvoice-test up -d
+
+<span class="c"># facultatif, seulement sur votre propre ordinateur : l’adresse courte http://rhinvoice:8000</span>
+echo "127.0.0.1 rhinvoice" | sudo tee -a /etc/hosts
+<span class="c"># et dans .env : RHINVOICE_COOKIE_SECURE=false, puis relancer docker compose up -d</span></pre>
+      <p class="note install-note">Sur un serveur : HTTPS et sauvegardes, voir le <a href="/docs/fr/getting-started/installation/">guide d’installation</a>.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Rhinvoice · AGPL-3.0 · Pas de conseil fiscal</span>
+    <nav aria-label="Pied de page"><a href="https://github.com/rhinvoice/rhinvoice">GitHub</a><a href="/docs/fr/">Documentation</a><a href="/fr/mentions-legales/">Mentions légales</a><a href="/fr/protection-des-donnees/">Protection des données</a><a href="https://www.webberz.ch/">made by webberz</a></nav>
+  </div>
+</footer>
+
+<a class="to-top" href="#top" aria-label="Retour en haut">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5"></path><path d="m5 12 7-7 7 7"></path></svg>
+</a>
+</body>
+</html>

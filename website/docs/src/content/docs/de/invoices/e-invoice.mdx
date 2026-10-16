@@ -3,11 +3,11 @@ title: "E-Rechnung erstellen: ZUGFeRD und XRechnung kostenlos"
 description: XRechnung und ZUGFeRD kostenlos erstellen mit Rhinvoice, Open Source. EN 16931 im PDF/A-3b, XRechnung 3.0 mit Leitweg-ID, geprüft mit KoSIT und Mustang.
 faq:
   - q: Kann ich mit Rhinvoice kostenlos eine XRechnung erstellen?
-    a: Ja. Rhinvoice ist kostenlos und Open Source (AGPL). Zu jeder ausgestellten Rechnung und Stornorechnung laden Sie die XRechnung 3.0 als XML-Datei herunter. Die Leitweg-ID tragen Sie im Feld Referenz der Rechnung ein.
+    a: Ja. Rhinvoice ist kostenlos und Open Source (AGPL). Zu jeder ausgestellten Rechnung und Stornorechnung laden Sie die XRechnung 3.0 als XML-Datei herunter. Die Leitweg-ID der Behörde tragen Sie einmal beim Kunden ein, im Feld Leitweg-ID oder feste Käuferreferenz.
   - q: Ist jede PDF-Rechnung aus Rhinvoice eine ZUGFeRD-Rechnung?
     a: Ja, jede ausgestellte Rechnung und Stornorechnung, wenn alle nötigen Angaben vorhanden sind. Das PDF ist ein PDF/A-3b mit eingebetteter ZUGFeRD-/Factur-X-Rechnung im Profil EN 16931. Rhinvoice zeigt bei der Rechnung, ob die E-Rechnung eingebettet ist.
   - q: Was braucht eine XRechnung zusätzlich?
-    a: Die Referenz der Rechnung (Leitweg-ID oder Käuferreferenz), die E-Mail und das Telefon Ihrer Firma, die E-Mail des Kunden und ein Bankkonto. Fehlt etwas, nennt Rhinvoice es beim Ausstellen.
+    a: Eine Käuferreferenz (die Leitweg-ID beim Kunden oder die Referenz der Rechnung), die E-Mail und das Telefon Ihrer Firma, die E-Mail des Kunden und ein Bankkonto. Fehlt bei einem Kunden in Deutschland etwas, nennt Rhinvoice es vor dem Ausstellen.
   - q: Wie prüft Rhinvoice seine E-Rechnungen?
     a: Bei jeder Änderung am Programm laufen Musterrechnungen für jeden Steuerfall durch den KoSIT-Validator (EN 16931 und XRechnung) und als PDF durch Mustang (ZUGFeRD, PDF/A-3 mit veraPDF). Auch Warnungen gelten dabei als Fehler.
   - q: Für welche Länder erstellt Rhinvoice E-Rechnungen?
@@ -44,15 +44,27 @@ Rhinvoice speichert die eingebettete XML-Datei zusammen mit dem PDF und ändert 
 
 Behörden in Deutschland verlangen die XRechnung. So erstellen Sie sie:
 
-1. Tragen Sie im Editor unter *Referenz* die **Leitweg-ID** der Behörde ein. Rhinvoice schreibt dieses Feld als Käuferreferenz (BT-10) in die XRechnung.
+1. Tragen Sie beim Kunden die **Leitweg-ID** der Behörde ein, im Feld *Leitweg-ID oder feste Käuferreferenz*. Das Feld erscheint bei Kunden in Deutschland.
 2. Stellen Sie die Rechnung aus.
 3. Öffnen Sie den Abschnitt *E-Rechnung* → *XRechnung für deutsche Behörden* und klicken Sie auf *XRechnung (XML)*.
 
 Beim Versand per E-Mail können Sie *XRechnung (XML) zusätzlich anhängen* wählen.
 
+### Leitweg-ID und Käuferreferenz
+
+Die XRechnung braucht eine Käuferreferenz (BT-10). Rhinvoice nimmt sie so:
+
+- Hat der Kunde eine **Leitweg-ID oder feste Käuferreferenz**, gilt immer diese.
+- Sonst gilt die **Referenz der Rechnung** (*Weitere Angaben → Referenz*), zum Beispiel die Bestellnummer.
+- Fehlen beide, fehlt der XRechnung die Käuferreferenz.
+
+Firmen tragen beim Kunden nur dann etwas ein, wenn sie immer dieselbe Referenz wünschen. Wechselt die Referenz pro Auftrag, bleibt das Feld beim Kunden leer und die Referenz kommt in die Rechnung. Unter dem Feld *Referenz* zeigt der Editor bei Kunden in Deutschland, welche Leitweg-ID gilt oder dass die Referenz für die XRechnung nötig ist.
+
+Beim Ausstellen hält Rhinvoice den Kunden mit der Rechnung fest. Ändern Sie die Leitweg-ID später beim Kunden, bleibt die XRechnung bereits ausgestellter Rechnungen gleich.
+
 ## Welche Angaben eine E-Rechnung braucht
 
-Rhinvoice erstellt nur vollständige E-Rechnungen. Fehlt etwas, warnt schon der Dialog vor dem Ausstellen («Diese Rechnung wird ohne E-Rechnung ausgestellt. Es fehlt: …»). Das PDF entsteht trotzdem, nur ohne E-Rechnung.
+Rhinvoice erstellt nur vollständige E-Rechnungen. Fehlt etwas, warnt schon der Dialog vor dem Ausstellen («Diese Rechnung wird ohne E-Rechnung ausgestellt. Es fehlt: …»). Das PDF entsteht trotzdem, nur ohne E-Rechnung. Bei Kunden in Deutschland nennt der Dialog auch, was der XRechnung fehlt («Für die XRechnung (deutsche Behörden) fehlt: …»). Ausstellen können Sie trotzdem.
 
 **Für jede E-Rechnung (EN 16931):**
 
@@ -67,7 +79,7 @@ Rhinvoice erstellt nur vollständige E-Rechnungen. Fehlt etwas, warnt schon der 
 
 | Angabe | Wo eintragen |
 |---|---|
-| Referenz der Rechnung (Leitweg-ID oder Käuferreferenz) | im Editor, Feld *Referenz* |
+| Leitweg-ID oder Käuferreferenz | beim Kunden (*Leitweg-ID oder feste Käuferreferenz*) oder in der Rechnung (*Weitere Angaben → Referenz*) |
 | E-Mail Ihrer Firma | *Einstellungen → Firma* |
 | Telefon Ihrer Firma | *Einstellungen → Firma* |
 | E-Mail des Kunden | beim Kunden |

@@ -1,5 +1,7 @@
 import { de, type MessageKey } from "@/lib/i18n/messages.de";
 import { en } from "@/lib/i18n/messages.en";
+import { fr } from "@/lib/i18n/messages.fr";
+import { it } from "@/lib/i18n/messages.it";
 import {
   createTranslator,
   mapCatalog,
@@ -18,6 +20,8 @@ const CATALOGS: Readonly<Record<Locale, Catalog<MessageKey>>> = {
   "de-CH": deCH,
   "de-DE": de,
   "de-AT": de,
+  "fr-CH": fr,
+  "it-CH": it,
   en,
 };
 

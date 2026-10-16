@@ -1,4 +1,4 @@
-import { intlLocale, type Locale } from "@/lib/locale";
+import { intlLocale, numberLocale, numericMediumDates, type Locale } from "@/lib/locale";
 
 /**
  * All user visible numbers, amounts and dates go through these functions.
@@ -32,7 +32,7 @@ export function formatMoney(
   const formatter = cached(
     `money:${locale}:${currency}:${maximumFractionDigits}`,
     () =>
-      new Intl.NumberFormat(intlLocale(locale), {
+      new Intl.NumberFormat(numberLocale(locale), {
         style: "currency",
         currency,
         currencyDisplay: "code",
@@ -46,7 +46,7 @@ export function formatMoney(
 export function formatNumber(value: string, locale: Locale, maximumFractionDigits = 3): string {
   const formatter = cached(
     `number:${locale}:${maximumFractionDigits}`,
-    () => new Intl.NumberFormat(intlLocale(locale), { maximumFractionDigits }),
+    () => new Intl.NumberFormat(numberLocale(locale), { maximumFractionDigits }),
   );
   return formatter.format(value as Intl.StringNumericLiteral);
 }
@@ -64,7 +64,7 @@ export function formatDecimalInput(
   const formatter = cached(
     `input:${locale}:${minimumFractionDigits}:${maximumFractionDigits}`,
     () =>
-      new Intl.NumberFormat(intlLocale(locale), {
+      new Intl.NumberFormat(numberLocale(locale), {
         useGrouping: false,
         minimumFractionDigits,
         maximumFractionDigits,
@@ -77,7 +77,8 @@ export function formatDecimalInput(
 export function formatPercent(rate: string, locale: Locale): string {
   const formatter = cached(
     `percent:${locale}`,
-    () => new Intl.NumberFormat(intlLocale(locale), { style: "percent", maximumFractionDigits: 2 }),
+    () =>
+      new Intl.NumberFormat(numberLocale(locale), { style: "percent", maximumFractionDigits: 2 }),
   );
   return formatter.format(Number(rate) / 100);
 }
@@ -87,7 +88,7 @@ export function formatChange(fraction: number, locale: Locale): string {
   const formatter = cached(
     `change:${locale}`,
     () =>
-      new Intl.NumberFormat(intlLocale(locale), {
+      new Intl.NumberFormat(numberLocale(locale), {
         style: "percent",
         maximumFractionDigits: 0,
         signDisplay: "exceptZero",
@@ -98,6 +99,13 @@ export function formatChange(fraction: number, locale: Locale): string {
 }
 
 export type DateStyle = "medium" | "long";
+
+const NUMERIC_DATE = { day: "2-digit", month: "2-digit", year: "numeric" } as const;
+
+/** Medium dates are numeric in every Swiss locale (05.01.2026), long dates spell the month. */
+function dateOptions(locale: Locale, style: DateStyle): Intl.DateTimeFormatOptions {
+  return style === "medium" && numericMediumDates(locale) ? NUMERIC_DATE : { dateStyle: style };
+}
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})/;
 
@@ -113,7 +121,11 @@ export function formatDate(isoDate: string, locale: Locale, style: DateStyle = "
   const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
   const formatter = cached(
     `date:${locale}:${style}`,
-    () => new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: style, timeZone: "UTC" }),
+    () =>
+      new Intl.DateTimeFormat(intlLocale(locale), {
+        ...dateOptions(locale, style),
+        timeZone: "UTC",
+      }),
   );
   return formatter.format(date);
 }
@@ -123,8 +135,9 @@ export function formatDateTime(isoDateTime: string, locale: Locale, timeZone?: s
     `datetime:${locale}:${timeZone ?? "local"}`,
     () =>
       new Intl.DateTimeFormat(intlLocale(locale), {
-        dateStyle: "medium",
-        timeStyle: "short",
+        ...(numericMediumDates(locale)
+          ? { ...NUMERIC_DATE, hour: "2-digit", minute: "2-digit" }
+          : { dateStyle: "medium", timeStyle: "short" }),
         ...(timeZone === undefined ? {} : { timeZone }),
       }),
   );

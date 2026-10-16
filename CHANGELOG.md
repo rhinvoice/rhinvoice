@@ -5,6 +5,13 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Added
+- rhinvoice.com in French (`/fr/`) and Italian (`/it/`), with legal notice and privacy notice.
+  The docs have their core pages in French and Italian too: start, installation with Docker and
+  for Windows and Mac, first start, first invoice, Switzerland with the QR-bill, updating and the
+  FAQ. These texts were machine-translated and say so at the top, with a link to report a wrong
+  translation; the other docs pages show the English text there.
+
 ## [0.7.4] – 2026-10-16
 
 ### Added

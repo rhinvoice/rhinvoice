@@ -5,6 +5,14 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Neu
+- rhinvoice.com auf Französisch (`/fr/`) und Italienisch (`/it/`), mit Impressum und
+  Datenschutzerklärung. Auch die Dokumentation hat ihre wichtigsten Seiten auf Französisch und
+  Italienisch: Start, Installation mit Docker und für Windows und Mac, erster Start, erste Rechnung,
+  Schweiz mit der QR-Rechnung, Update und die häufigen Fragen. Diese Texte sind maschinell
+  übersetzt und sagen das oben, mit einem Link für Hinweise zur Übersetzung; die übrigen Seiten
+  zeigen dort den englischen Text.
+
 ## [0.7.4] – 2026-10-16
 
 ### Neu

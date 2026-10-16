@@ -15,7 +15,7 @@ Docker, or as an app on Windows and Mac: your data stays with you.
 
 Rhinvoice is in beta (0.x). Try it on a test installation before you write real invoices with it.
 
-**Documentation:** [rhinvoice.com/docs](https://rhinvoice.com/docs/) (English) · [rhinvoice.com/docs/de](https://rhinvoice.com/docs/de/) (Deutsch) · Demo: [ch.rhinvoice.com](https://ch.rhinvoice.com)
+**Documentation:** [rhinvoice.com/docs](https://rhinvoice.com/docs/) (English) · [rhinvoice.com/docs/de](https://rhinvoice.com/docs/de/) (Deutsch) · [français](https://rhinvoice.com/docs/fr/) · [italiano](https://rhinvoice.com/docs/it/) · Demo: [ch.rhinvoice.com](https://ch.rhinvoice.com)
 
 **Download:** [Windows 10/11](https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-Setup-Windows.exe) · [Mac (Apple silicon)](https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-macOS.dmg) (beta, no Docker needed) · or [with Docker](#quickstart-docker) on a server, a NAS or your own computer
 
@@ -67,7 +67,7 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 - Dashboard: revenue against last year, open and overdue amounts, open quotes, best customers,
   expected payments
 - Command palette (⌘K / Ctrl+K), keyboard shortcuts, light and dark mode
-- German (CH, DE, AT) and English; usable on the phone
+- German (CH, DE, AT), English, French and Italian; usable on the phone
 
 **Operations**
 - Encrypted, deduplicated backups with restic: daily and after issuing, to S3, SFTP, a folder,

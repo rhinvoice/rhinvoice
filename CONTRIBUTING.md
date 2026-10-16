@@ -68,15 +68,18 @@ The architecture and its reasons are in [`docs/adr`](docs/adr), the design syste
 
 ## How a change is released
 
-Nothing reaches users untested ([ADR 0025](docs/adr/0025-tested-releases.md)):
+Nothing reaches users untested ([ADR 0025](docs/adr/0025-tested-releases.md), [ADR 0026](docs/adr/0026-dev-and-main.md)).
+Work happens on `dev`; `main` only holds what was released.
 
-1. **Pull request** into `main`. CI must be green; changes to the program also build the
+1. **Pull request** into `dev`. CI must be green; changes to the program also build the
    Windows setup and the macOS disk image as a preview, attached to the run.
-2. **Release candidate.** The maintainer tags `vX.Y.Z-rc.N`. That builds a public
+2. **Release candidate.** The maintainer tags `vX.Y.Z-rc.N` on `dev`. That builds a public
    pre-release: setups, Docker images tagged `X.Y.Z-rc.N`, nothing users get by themselves.
    You are welcome to test it.
 3. **Promotion.** Once tested, the maintainer starts *Promote release*; the candidate's files
    become release `vX.Y.Z`.
+4. **Into main.** A pull request from `release/vX.Y.Z` into `main` brings the release there;
+   rhinvoice.com and the README follow.
 
 ## Licence
 

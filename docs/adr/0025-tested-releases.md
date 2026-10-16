@@ -1,6 +1,6 @@
 # 0025 – Nothing reaches users untested
 
-- Status: accepted
+- Status: accepted, branches amended by [0026](0026-dev-and-main.md)
 - Date: 2026-10-16
 
 ## Context

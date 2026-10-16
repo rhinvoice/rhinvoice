@@ -1,6 +1,6 @@
 name: Release
 
-# Builds a release candidate (ADR 0025): a tag vX.Y.Z-rc.N becomes a public pre-release with
+# Builds a release candidate (ADR 0025, 0026): a tag vX.Y.Z-rc.N on dev becomes a public pre-release with
 # the setups, the app packages, a signed release.json and Docker images tagged X.Y.Z-rc.N.
 # Nobody gets it by itself: GitHub's "latest", the update check, rhinvoice.com and the demos
 # stay on the last release. Once the candidate is tested, "Promote release" releases exactly
@@ -22,8 +22,10 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - id: version
-        name: The tag names the version the program carries
+        name: The tag names the version the program carries, on dev
         run: |
           if ! printf '%s' "$GITHUB_REF_NAME" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$'; then
             echo "::error::A candidate's tag looks like v0.7.4-rc.1, not $GITHUB_REF_NAME"
@@ -38,6 +40,11 @@ jobs:
           fi
           if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
             echo "::error::v$version is released already; a fix needs a new version"
+            exit 1
+          fi
+          # Candidates come from dev; main only receives what was released (ADR 0026).
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/dev; then
+            echo "::error::$GITHUB_REF_NAME is not on dev; tag a commit of dev"
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"

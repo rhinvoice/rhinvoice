@@ -38,6 +38,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # The candidate's own changelog and history.
+          ref: ${{ inputs.candidate }}
           fetch-depth: 0
 
       - name: The candidate exists and is not released yet
@@ -126,10 +128,22 @@ jobs:
           gh release create "v$VERSION" --target "$COMMIT" --latest \
             --title "Rhinvoice $VERSION" --notes-file build/notes.md build/release/*
 
-      - name: Rebuild rhinvoice.com and deploy the demos
+      - name: Deploy the demos
         env:
           VERSION: ${{ steps.version.outputs.version }}
         # A release made with this token starts no workflow by itself.
+        run: gh workflow run demo.yml --ref dev -f version="$VERSION"
+
+      - name: Offer the release to main
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          COMMIT: ${{ steps.version.outputs.commit }}
+        # The released commit, not dev's newest one: dev may already hold the next changes.
         run: |
-          gh workflow run pages.yml --ref main
-          gh workflow run demo.yml --ref main -f version="$VERSION"
+          git push origin "$COMMIT:refs/heads/release/v$VERSION"
+          url="https://github.com/${GITHUB_REPOSITORY}/compare/main...release/v$VERSION?expand=1"
+          {
+            echo "Released v$VERSION. Last step: bring it to main (rhinvoice.com and the README follow)."
+            echo
+            echo "[Open the pull request into main]($url)"
+          } >> "$GITHUB_STEP_SUMMARY"

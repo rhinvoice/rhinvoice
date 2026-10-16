@@ -85,6 +85,21 @@ def test_the_update_channel_is_test_only_when_it_says_so(
 
 
 @pytest.mark.parametrize(
+    ("written", "check"),
+    [(None, True), (False, False), (True, True), ("false", True), (0, True)],
+)
+def test_only_a_written_false_switches_the_update_check_off(
+    tmp_path: Path, written: object, *, check: bool
+) -> None:
+    path = tmp_path / "rhinvoice.json"
+    values: dict[str, object] = {"database_password": "x"}
+    if written is not None:
+        values["update_check"] = written
+    path.write_text(json.dumps(values))
+    assert load_or_create(path).update_check is check
+
+
+@pytest.mark.parametrize(
     ("content", "reason"),
     [
         ("{", "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"),

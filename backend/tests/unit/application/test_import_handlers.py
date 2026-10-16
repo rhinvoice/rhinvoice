@@ -311,6 +311,15 @@ def test_the_mapping_can_be_given(handlers: ImportHandlers, store: Store) -> Non
     assert [c.company_name for c in store.customers.values()] == ["Muster AG"]
 
 
+def test_the_leitweg_id_of_an_authority_is_imported(handlers: ImportHandlers, store: Store) -> None:
+    content = lines(
+        "Firma;PLZ;Ort;Land;Leitweg-ID", "Bezirksamt Beispiel;10115;Berlin;DE;991-33333TEST-33"
+    )
+    run = handlers.run(customers_request(content=content, commit=True))
+    assert run.mapping["buyer_reference"] == 4
+    assert [c.buyer_reference for c in store.customers.values()] == ["991-33333TEST-33"]
+
+
 @pytest.mark.parametrize(
     ("mapping", "code", "message"),
     [

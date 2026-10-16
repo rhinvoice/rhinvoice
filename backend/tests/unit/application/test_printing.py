@@ -6,7 +6,11 @@ from uuid import UUID
 
 import pytest
 
-from rhinvoice.application.document.einvoice import EInvoiceProblem, EInvoiceProfile
+from rhinvoice.application.document.einvoice import (
+    EInvoiceProblem,
+    EInvoiceProfile,
+    buyer_reference,
+)
 from rhinvoice.application.document.handlers import DocumentHandlers, DraftInput, LineInput
 from rhinvoice.application.document.printing import (
     EInvoiceStatus,
@@ -417,3 +421,54 @@ def test_drafts_tell_what_their_e_invoice_lacks(printing: PrintHandlers, store: 
     assert printing.draft_e_invoice_problems(lacking) == ()
     store.print_layout = PrintLayout(e_invoice=False)
     assert handlers.draft_e_invoice_problems(lacking) == ()
+
+
+def test_drafts_to_german_customers_tell_what_their_xrechnung_lacks(
+    printing: PrintHandlers, store: Store
+) -> None:
+    handlers, _ = e_invoicing(printing)
+    # Swiss customer: no XRechnung, nothing to warn about.
+    swiss = handlers.documents.preview(DocumentType.INVOICE, draft()).view
+    assert handlers.draft_xrechnung_problems(swiss) == ()
+    store.customers[CUSTOMER] = replace(
+        store.customers[CUSTOMER],
+        address=replace(store.customers[CUSTOMER].address, country=CountryCode("DE")),
+    )
+    german = handlers.documents.preview(DocumentType.INVOICE, draft()).view
+    assert handlers.draft_xrechnung_problems(german) == XRECHNUNG_GAPS
+    # Also when the PDF embeds no e-invoice: the XRechnung is a file of its own.
+    store.print_layout = PrintLayout(e_invoice=False)
+    assert handlers.draft_xrechnung_problems(german) == XRECHNUNG_GAPS
+    # The customer's Leitweg-ID is the buyer reference.
+    store.customers[CUSTOMER] = replace(
+        store.customers[CUSTOMER], buyer_reference="04011000-1234512345-06"
+    )
+    fixed = handlers.documents.preview(DocumentType.INVOICE, draft()).view
+    assert handlers.draft_xrechnung_problems(fixed) == XRECHNUNG_GAPS[1:]
+    # Not for quotes, without customer, or when not configured.
+    quote = handlers.documents.preview(DocumentType.QUOTE, draft()).view
+    assert handlers.draft_xrechnung_problems(quote) == ()
+    assert handlers.draft_xrechnung_problems(replace(german, customer=None)) == ()
+    assert printing.draft_xrechnung_problems(german) == ()
+
+
+def xrechnung_problems(handlers: PrintHandlers, document_id: UUID) -> tuple[EInvoiceProblem, ...]:
+    return handlers.e_invoice_status(document_id).problems[EInvoiceProfile.XRECHNUNG]
+
+
+def test_issued_xrechnungen_keep_the_buyer_reference_of_their_day(
+    printing: PrintHandlers, store: Store
+) -> None:
+    handlers, _ = e_invoicing(printing)
+    store.customers[CUSTOMER] = replace(
+        store.customers[CUSTOMER],
+        address=replace(store.customers[CUSTOMER].address, country=CountryCode("DE")),
+        buyer_reference="04011000-1234512345-06",
+    )
+    invoice = issue(handlers)
+    assert EInvoiceProblem.BUYER_REFERENCE_MISSING not in xrechnung_problems(handlers, invoice)
+    # Clearing it at the customer later does not change the issued invoice.
+    store.customers[CUSTOMER] = replace(store.customers[CUSTOMER], buyer_reference="")
+    model = handlers.model(handlers.documents.get(invoice))
+    assert buyer_reference(model) == "04011000-1234512345-06"
+    assert EInvoiceProblem.BUYER_REFERENCE_MISSING not in xrechnung_problems(handlers, invoice)

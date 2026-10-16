@@ -1,0 +1,109 @@
+---
+title: "Factures en Allemagne : TVA, mentions, factures électroniques"
+description: "Logiciel de facturation gratuit et open source pour l’Allemagne. TVA de 19 % et 7 %, mentions du § 14 UStG, petite entreprise § 19 UStG, GiroCode, ZUGFeRD, XRechnung."
+faq:
+  - q: Quels taux de TVA Rhinvoice applique-t-il en Allemagne?
+    a: "19 % et 7 % (§ 12 UStG). Pour les prestations du 1er juillet au 31 décembre 2020, Rhinvoice utilise 16 % et 5 %. Le taux à la date de la prestation s’applique."
+  - q: Le numéro fiscal ou le numéro de TVA doit-il figurer sur la facture?
+    a: "L’un des deux (§ 14 Abs. 4 Nr. 2 UStG). Rhinvoice n’émet pas de facture sans l’un ou l’autre. Les factures de petit montant jusqu’à EUR 250 brut font exception (§ 33 UStDV)."
+  - q: Quelle mention Rhinvoice imprime-t-il pour les petites entreprises?
+    a: "Les documents en allemand portent la mention « Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung). » Vous pouvez modifier le texte sous Paramètres → Textes → Mentions légales."
+  - q: À partir de quand les entreprises allemandes doivent-elles émettre des factures électroniques?
+    a: "Les entreprises doivent pouvoir les recevoir depuis 2025. Elles doivent les émettre pour les factures B2B nationales dès 2027 si leur chiffre d’affaires de l’année précédente dépassait EUR 800’000, et dès 2028 toutes (§ 27 Abs. 38 UStG). Les petites entreprises en sont dispensées. Rhinvoice intègre la facture électronique (ZUGFeRD) dans le PDF de chaque facture émise, pour autant que les données nécessaires soient complètes."
+  - q: Rhinvoice respecte-t-il les GoBD?
+    a: "Rhinvoice met en œuvre l’inaltérabilité. Les factures émises sont verrouillées avec leur PDF, aussi dans la base de données, le PDF est conservé avec son SHA-256, et les corrections se font uniquement par une facture d’annulation avec son propre numéro. Si votre comptabilité dans son ensemble respecte les GoBD, c’est à voir avec votre conseiller fiscal."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Une facture allemande de Rhinvoice porte **19 % ou 7 % de TVA** (§ 12 UStG) à la date de la prestation, votre **numéro fiscal ou numéro de TVA** (§ 14 Abs. 4 Nr. 2 UStG), la date de la prestation, la mention légale pour l’autoliquidation, les petites entreprises ou les livraisons exonérées, un **GiroCode** (code QR EPC) et une **facture électronique** intégrée (ZUGFeRD). Pour les administrations publiques, Rhinvoice établit aussi la **XRechnung**.
+
+<Aside type="note" title="Pas de conseil fiscal">
+État : octobre 2026. Les taux et les règles sont vérifiés selon l’UStG et l’UStDV, mais sans garantie. En cas de doute, demandez à votre conseiller fiscal.
+</Aside>
+
+## Quel taux de TVA s’applique?
+
+| Validité | Taux normal | Taux réduit |
+|---|---|---|
+| depuis le 1er janvier 2021 | 19 % | 7 % |
+| du 1er juillet 2020 au 31 décembre 2020 | 16 % | 5 % |
+| du 1er janvier 2007 au 30 juin 2020 | 19 % | 7 % |
+
+Source : § 12 UStG; les taux de 2020 proviennent du Zweites Corona-Steuerhilfegesetz.
+
+Le taux à la **date de la prestation** s’applique : la fin de la période de prestation, sinon son début, sinon la date de la facture. À l’émission, Rhinvoice fige le taux de chaque ligne.
+
+## Mentions obligatoires selon le § 14 UStG
+
+Avant l’émission, Rhinvoice vérifie ce qu’il peut vérifier et imprime le reste à partir de vos données :
+
+- **Numéro fiscal ou numéro de TVA** de votre entreprise (§ 14 Abs. 4 Nr. 2 UStG). Saisissez-les sous *Paramètres → Entreprise*. Sans l’un ou l’autre, Rhinvoice n’émet pas la facture. L’exception : les **factures de petit montant jusqu’à EUR 250 brut** (§ 33 UStDV). Le numéro de TVA a la forme `DE123456789`.
+- **Date de la prestation** (§ 14 Abs. 4 Nr. 6 UStG). Sans période de prestation, Rhinvoice imprime la date de la facture comme date de la prestation.
+- **Numéro de facture séquentiel.** Rhinvoice ne l’attribue qu’à l’émission, sans trou ni doublon.
+- **Montant net et TVA par taux**, votre nom et adresse et ceux du client, date et lignes.
+
+Les petites entreprises indiquent elles aussi leur numéro fiscal ou leur numéro de TVA (§ 34a UStDV).
+
+## Petite entreprise selon le § 19 UStG
+
+Activez *Petite entreprise (§ 19 UStG)* sous *Paramètres → Entreprise*. Vos factures ne contiennent alors pas de TVA et portent cette mention :
+
+> Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).
+
+(Documents en anglais : « No VAT is charged (small business scheme). » Les documents en français et en italien désignent la franchise dans les termes de la directive TVA de l’UE : « Aucune TVA n’est facturée en vertu du § 19 UStG (franchise pour les petites entreprises). » et « Nessuna IVA addebitata ai sensi del § 19 UStG (franchigia per le piccole imprese). ») Depuis 2025, la facture indique que le § 19 UStG s’applique; ce texte le fait. Vous pouvez le modifier sous *Paramètres → Textes → Mentions légales*.
+
+## Autoliquidation et livraisons à l’étranger
+
+Rhinvoice détermine le traitement fiscal d’après votre pays, le pays du client, le fait que le client soit une entreprise et qu’il ait un numéro de TVA. Les biens et les services sont traités séparément, aussi sur une même facture.
+
+| Cas | TVA | Mention sur les documents en allemand |
+|---|---|---|
+| Client en Allemagne | oui | aucune |
+| Prestation de services à une entreprise d’un autre pays de l’UE avec numéro de TVA | non | « Steuerschuldnerschaft des Leistungsempfängers. » (§ 14a Abs. 5 UStG) |
+| Biens à une entreprise d’un autre pays de l’UE avec numéro de TVA | non | « Steuerfreie innergemeinschaftliche Lieferung (§ 4 Nr. 1 Buchst. b i. V. m. § 6a UStG). » |
+| Biens quittant l’UE, clients privés compris | non | « Steuerfreie Ausfuhrlieferung (§ 4 Nr. 1 Buchst. a i. V. m. § 6 UStG). » |
+| Prestation de services à une entreprise hors de l’UE | non | « Nicht im Inland steuerbare Leistung. » |
+| Client privé dans ou hors de l’UE (prestation de services) | oui | aucune |
+
+Bon à savoir :
+
+- **Pas d’autoliquidation sans numéro de TVA du client.** Une entreprise de l’UE sans numéro de TVA se voit facturer la TVA allemande. L’éditeur le signale.
+- **Livraison intracommunautaire** : la facture indique votre numéro de TVA et celui du client (§ 14a Abs. 3 UStG). Rhinvoice ne l’émet pas sans les deux, et vous rappelle la preuve d’arrivée (Gelangensbestätigung ou preuve d’expédition) et l’état récapitulatif (Zusammenfassende Meldung).
+- **L’autoliquidation nationale selon le § 13b UStG** (par exemple § 13b Abs. 2 Nr. 7 UStG) se choisit à la main dans l’éditeur. Rhinvoice consigne chaque modification du traitement fiscal avec un motif dans l’historique.
+- **Les ventes à distance à des clients privés dans l’UE** gardent la TVA allemande. Rhinvoice ne suit pas le seuil de EUR 10’000 par an valable dans toute l’UE (OSS).
+
+## GiroCode (code QR EPC)
+
+Chaque facture en **EUR** reçoit un **GiroCode** à côté des conditions de paiement, selon les directives de l’European Payments Council (EPC069-12). Il contient votre IBAN, le titulaire du compte, le montant et « Rechnung » avec le numéro de facture comme motif de paiement; votre client le scanne avec une application bancaire. Il vous faut un compte en EUR sous *Paramètres → Comptes bancaires*. Les factures dans d’autres monnaies n’ont pas de GiroCode, les brouillons un emplacement réservé.
+
+## Facture électronique : ZUGFeRD et XRechnung
+
+Depuis 2025, les entreprises en Allemagne doivent pouvoir **recevoir** des factures électroniques (§ 14 UStG). Elles doivent les **émettre** pour les factures B2B nationales par étapes (§ 27 Abs. 38 UStG) :
+
+| Dès | Qui |
+|---|---|
+| 2027 | entreprises dont le chiffre d’affaires de l’année précédente dépassait EUR 800’000 |
+| 2028 | toutes les entreprises |
+
+Les petites entreprises en sont dispensées (§ 34a UStDV).
+
+Rhinvoice intègre par défaut une **facture ZUGFeRD / Factur-X** (profil EN 16931) dans le PDF de chaque facture émise (réglage : *Paramètres → Mise en page d’impression*). S’il manque une donnée nécessaire, le PDF est créé sans elle. Le PDF a le même aspect pour vos clients; leur logiciel comptable lit les données directement. Rhinvoice indique sur la facture si la facture électronique est intégrée. Pour les administrations publiques, vous téléchargez en plus la **XRechnung** (XML), avec la Leitweg-ID que vous saisissez une fois sur le client (*Leitweg-ID ou référence d’acheteur fixe*), ou sinon la *Référence* de la facture. Détails et prérequis : [facture électronique](/docs/fr/invoices/e-invoice/).
+
+## GoBD et conservation
+
+Conservez les factures **dix ans** (§ 147 AO). Rhinvoice les rend inaltérables :
+
+- Dès l’émission, le contenu et le PDF sont verrouillés, directement dans la base de données aussi.
+- Le PDF est conservé avec son empreinte SHA-256.
+- Les corrections se font uniquement par une [facture d’annulation](/docs/fr/invoices/issue-and-cancel/) avec son propre numéro. Les brouillons peuvent être supprimés, les factures émises jamais.
+- Chaque changement (émission, paiement, annulation, traitement fiscal) figure dans l’historique avec un horodatage.
+
+Protégez les données avec une [sauvegarde](/docs/fr/operations/backup/). Essayez tout dans la démo sur [de.rhinvoice.com](https://de.rhinvoice.com).
+
+Le pays de votre entreprise manque? Rhinvoice peut être étendu : [Ajouter d’autres pays](/docs/fr/countries/more-countries/).
+
+## Questions fréquentes
+
+<Faq />

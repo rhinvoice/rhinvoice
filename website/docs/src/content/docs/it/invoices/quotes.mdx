@@ -1,0 +1,68 @@
+---
+title: Scrivere offerte e trasformarle in fatture
+description: Scrivere offerte in Rhinvoice, segnarle come inviate, accettate o rifiutate e trasformarle in fattura con un clic. Fatturazione gratuita e open source per CH, LI, DE, AT.
+faq:
+  - q: Come trasformo un’offerta in fattura?
+    a: Apra l’offerta inviata o accettata e scelga «Converti in fattura». Rhinvoice crea una bozza di fattura con le stesse posizioni, che Lei controlla ed emette.
+  - q: Per quanto tempo è valida un’offerta?
+    a: Per il periodo che inserisce in «Valida fino al». Se il campo resta vuoto, l’offerta è valida 30 giorni dalla sua data. Dopo Rhinvoice la mostra come scaduta.
+  - q: Posso ancora modificare un’offerta dopo averla inviata?
+    a: No. «Segna come inviata» assegna all’offerta il suo numero e la blocca. Per modificarla, la duplichi e segni la copia come inviata.
+  - q: Un’offerta si può trasformare in fattura più di una volta?
+    a: No, una sola volta. Se elimina la bozza di fattura creata, l’offerta può essere di nuovo trasformata in fattura.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Un’offerta in Rhinvoice passa da *Bozza* a *Inviata* e poi ad *Accettata*, *Rifiutata* o *Scaduta*. Un’offerta inviata o accettata diventa una bozza di fattura con **Converti in fattura**, senza inserire nulla due volte.
+
+## Scrivere un’offerta
+
+<Steps>
+
+1. Apra *Offerte → Nuova offerta*.
+2. Scelga il cliente e inserisca le posizioni. L’anteprima a destra mostra l’offerta così come verrà stampata.
+3. In *Valida fino al* indichi per quanto tempo l’offerta è valida. Se il campo resta vuoto, sono 30 giorni dalla data.
+4. Clicchi su **Segna come inviata**. L’offerta riceve il suo numero e da quel momento è bloccata.
+
+</Steps>
+
+Una bozza non ha ancora un numero. Può modificarla in qualsiasi momento, oppure eliminarla con *Elimina bozza* nel menu *Altre azioni* (il pulsante con tre puntini). Il numero segue la numerazione delle offerte in *Impostazioni → Numerazioni*; lo schema predefinito è `A{YYYY}{NNNN}`, per esempio A20260001.
+
+<Aside type="note" title="Inviata significa bloccata">
+Da *Inviata* in poi un’offerta non cambia più. Per una versione modificata scelga *Altre azioni → Duplica*: la copia è una nuova bozza con lo stesso contenuto.
+</Aside>
+
+## Gli stati di un’offerta
+
+| Stato | Significato |
+|---|---|
+| *Bozza* | In lavorazione, ancora senza numero |
+| *Inviata* | Numero assegnato, contenuto bloccato |
+| *Accettata* | Il cliente ha detto sì |
+| *Rifiutata* | Il cliente ha detto no |
+| *Scaduta* | Inviata, ma la data in *Valida fino al* è passata |
+
+*Accettata* e *Rifiutata* li imposta Lei con i pulsanti omonimi sull’offerta inviata. *Scaduta* non la imposta nessuno: Rhinvoice la deriva dalla data di validità. Nell’elenco in *Offerte*, *Vista* filtra per ciascuno di questi stati.
+
+## Trasformare un’offerta in fattura
+
+Su un’offerta inviata o accettata scelga *Altre azioni → Converti in fattura*. Rhinvoice crea una **bozza di fattura**:
+
+- con le stesse posizioni, gli stessi sconti e la stessa valuta dell’offerta,
+- con i testi che ha scritto Lei; dove l’offerta ha ancora i testi standard per le offerte, la bozza riceve i testi standard per le fatture,
+- con date nuove: la fattura riceve la sua data e la sua scadenza all’emissione,
+- con un collegamento all’offerta. Un’offerta inviata conta da quel momento come *Accettata*.
+
+Controlli la bozza, la completi se necessario e la emetta come qualsiasi altra fattura ([emettere e stornare](/docs/it/invoices/issue-and-cancel/)). L’aliquota IVA segue allora la data della prestazione della fattura, non quella dell’offerta.
+
+Un’offerta diventa fattura una **sola volta**. Se elimina la bozza di fattura, l’offerta torna libera. *Apri fattura* o *Apri bozza di fattura* La porta dall’offerta alla fattura, *Apri documento d’origine* indietro.
+
+## PDF e invio
+
+Sull’offerta, **PDF** apre la versione stampata in una nuova scheda, **Scarica** la salva e **Stampa** la stampa subito. Se l’invio per e-mail è configurato, **Invia per e-mail** invia al cliente un’offerta inviata con il suo PDF. L’e-mail viene poi annotata nello *Cronologia* dell’offerta.
+
+## Domande frequenti
+
+<Faq />

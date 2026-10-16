@@ -267,8 +267,12 @@ def test_languages() -> None:
     assert parse_language("") is None
     assert parse_language("Deutsch") is Language.DE
     assert parse_language("EN") is Language.EN
+    assert parse_language("Français") is Language.FR
+    assert parse_language("Französisch") is Language.FR
+    assert parse_language("italiano") is Language.IT
+    assert parse_language("I") is Language.IT
     with pytest.raises(ValidationError) as caught:
-        parse_language("Französisch")
+        parse_language("Rätoromanisch")
     assert (caught.value.field, caught.value.code) == ("default_language", "unknown_language")
 
 

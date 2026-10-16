@@ -58,6 +58,7 @@ def test_create_with_all_fields(handlers: CustomerHandlers, store: Store) -> Non
             email="erika@example.com",
             phone="+41 79 000 00 00",
             vat_number="CHE-123.456.788",
+            buyer_reference="991-33333TEST-33",
             default_currency=Currency.EUR,
             default_language=Language.EN,
             tax_exempt=True,
@@ -80,6 +81,7 @@ def test_create_with_all_fields(handlers: CustomerHandlers, store: Store) -> Non
     assert str(customer.email) == "erika@example.com"
     assert customer.phone == "+41 79 000 00 00"
     assert str(customer.vat_number) == "CHE-123.456.788"
+    assert customer.buyer_reference == "991-33333TEST-33"
     assert customer.group == "Privat"
     assert customer.default_currency is Currency.EUR
     assert customer.default_language is Language.EN

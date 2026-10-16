@@ -118,6 +118,7 @@ const FIELD_KEYS = [
   "email",
   "phone",
   "vat_number",
+  "buyer_reference",
   "group",
   "default_currency",
   "default_language",

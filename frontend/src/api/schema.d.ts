@@ -1942,6 +1942,10 @@ export interface components {
             unit_label_de: string;
             /** Unit Label En */
             unit_label_en: string;
+            /** Unit Label Fr */
+            unit_label_fr: string;
+            /** Unit Label It */
+            unit_label_it: string;
         };
         /**
          * ArticleSort
@@ -2412,6 +2416,12 @@ export interface components {
         CustomerRequest: {
             address: components["schemas"]["AddressSchema"];
             /**
+             * Buyer Reference
+             * @description Leitweg-ID or fixed buyer reference for e-invoices (German customers)
+             * @default
+             */
+            buyer_reference: string;
+            /**
              * Company Name
              * @default
              */
@@ -2483,6 +2493,8 @@ export interface components {
             address: components["schemas"]["AddressSchema"];
             /** Archived */
             archived: boolean;
+            /** Buyer Reference */
+            buyer_reference: string;
             /** Company Name */
             company_name: string;
             /** Contact Person */
@@ -2652,6 +2664,8 @@ export interface components {
             };
             totals: components["schemas"]["TotalsResponse"];
             treatment: components["schemas"]["TaxTreatment"];
+            /** Xrechnung Problems */
+            xrechnung_problems: components["schemas"]["EInvoiceProblem"][];
         };
         /** DocumentResponse */
         DocumentResponse: {
@@ -2828,6 +2842,10 @@ export interface components {
             text_de: string;
             /** Text En */
             text_en: string;
+            /** Text Fr */
+            text_fr: string;
+            /** Text It */
+            text_it: string;
         };
         /** DunningLevelSchema */
         "DunningLevelSchema-Output": {
@@ -2843,6 +2861,10 @@ export interface components {
             text_de: string;
             /** Text En */
             text_en: string;
+            /** Text Fr */
+            text_fr: string;
+            /** Text It */
+            text_it: string;
         };
         /**
          * DuplicateStrategy
@@ -3108,9 +3130,12 @@ export interface components {
         };
         /**
          * Language
+         * @description The languages of documents, mails and legal notices.
+         *
+         *     French and Italian are written as in Switzerland (fr-CH, it-CH), see ADR 0027.
          * @enum {string}
          */
-        Language: "de" | "en";
+        Language: "de" | "en" | "fr" | "it";
         /** LegalNoticeRequest */
         LegalNoticeRequest: {
             /** Text */
@@ -3892,10 +3917,15 @@ export interface components {
             name: string;
             target: components["schemas"]["ImportTarget"];
         };
-        /** TermsResponse */
+        /**
+         * TermsResponse
+         * @description The country's words per language of documents (and of the interface).
+         */
         TermsResponse: {
             de: components["schemas"]["CountryTermsResponse"];
             en: components["schemas"]["CountryTermsResponse"];
+            fr: components["schemas"]["CountryTermsResponse"];
+            it: components["schemas"]["CountryTermsResponse"];
         };
         /** TestMailRequest */
         TestMailRequest: {
@@ -3981,6 +4011,10 @@ export interface components {
             label_de: string;
             /** Label En */
             label_en: string;
+            /** Label Fr */
+            label_fr: string;
+            /** Label It */
+            label_it: string;
         };
         /**
          * UpdateAction

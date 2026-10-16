@@ -1,0 +1,107 @@
+---
+title: Installare Rhinvoice su Windows e macOS (senza Docker)
+description: Installare il programma di fatturazione Rhinvoice come programma normale per Windows e Mac, senza Docker. Scaricare il setup, confermare l’avviso, avviare.
+faq:
+  - q: Perché Windows o macOS mostrano un avviso la prima volta?
+    a: I setup di Rhinvoice non sono ancora firmati con un certificato a pagamento, quindi Windows e macOS non conoscono l’editore e chiedono conferma. La dia una volta; in seguito Rhinvoice si avvia senza domande.
+  - q: Dove conserva i miei dati Rhinvoice?
+    a: Su Windows in %LOCALAPPDATA%\Rhinvoice, su un Mac in ~/Library/Application Support/Rhinvoice. Lì si trovano il database, le impostazioni e i log. Gli aggiornamenti e la disinstallazione non toccano questa cartella.
+  - q: Mi servono Docker, Python o un server?
+    a: No. Il setup porta tutto con sé, database compreso. Rhinvoice funziona su questo computer ed è raggiungibile solo da qui.
+  - q: Come ricevo gli aggiornamenti?
+    a: Rhinvoice controlla da solo se ci sono nuove versioni e mostra allora un avviso con «Aggiorna ora». Prima copia il database. Se qualcosa va storto, si riavvia la versione precedente.
+since: 0.7.0
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice esiste anche come **programma normale per Windows e Mac**: scaricare, installare, avviare. Non servono né Docker, né Python, né un server. Il database è integrato, Rhinvoice si apre in una propria finestra ed è raggiungibile solo da questo computer. Per un server, un NAS o più persone su computer diversi usi l’[installazione con Docker](/docs/it/getting-started/installation/).
+
+<Aside type="caution" title="Beta">
+Il programma senza Docker è nuovo e ancora in fase di test, e Rhinvoice stesso è in una fase iniziale di sviluppo (0.x). Le aliquote e le regole fiscali sono fornite senza garanzia e non sostituiscono una consulenza fiscale. Configuri il [backup](/docs/it/operations/backup-desktop/) subito dopo l’installazione.
+</Aside>
+
+## Che cosa serve
+
+- **Windows** 10 o 11, 64 bit, oppure
+- **un Mac con Apple silicon** (M1 o più recente) e macOS 12 o più recente. Per i Mac Intel non esiste ancora un programma; lì Rhinvoice funziona con [Docker Desktop](/docs/it/getting-started/installation/).
+
+## Scaricare
+
+Scarichi la versione più recente per il Suo sistema. I link portano sempre all’ultima release su GitHub, dove trova anche [tutte le versioni e le loro modifiche](https://github.com/rhinvoice/rhinvoice/releases):
+
+- Windows: [`Rhinvoice-Setup-Windows.exe`](https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-Setup-Windows.exe)
+- Mac: [`Rhinvoice-macOS.dmg`](https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-macOS.dmg)
+
+## Installare su Windows
+
+<Steps>
+
+1. Faccia doppio clic su `Rhinvoice-Setup-Windows.exe`.
+
+2. **Confermi l’avviso di Windows.** La prima volta Windows mostra «PC protetto da Windows». Clicchi su **Ulteriori informazioni**, poi su **Esegui comunque**. Il pulsante compare solo dopo il clic su «Ulteriori informazioni».
+
+3. Segua il setup. Installa Rhinvoice solo per il Suo account utente, in `%LOCALAPPDATA%\Programs\Rhinvoice`, e non richiede diritti di amministratore.
+
+4. Avvii Rhinvoice dal menu Start (o direttamente alla fine del setup). Il primo avvio prepara il database e dura un po’ di più.
+
+</Steps>
+
+## Installare su un Mac
+
+<Steps>
+
+1. Apra `Rhinvoice-macOS.dmg` e trascini **Rhinvoice** in **Applicazioni**.
+
+2. Apra Rhinvoice da Applicazioni. La prima volta macOS dice che non ha potuto verificare Rhinvoice e non lo apre. Clicchi su **Fine**.
+
+3. **Consenta Rhinvoice.** Apra  > **Impostazioni di Sistema** > **Privacy e sicurezza** e scorra fino a **Sicurezza**. Lì è indicato che Rhinvoice è stato bloccato. Clicchi su **Apri comunque**, confermi con la password di accesso e clicchi di nuovo su **Apri comunque** nella finestra successiva. Il pulsante compare solo per circa un’ora dopo il tentativo del passo 2.
+
+4. Rhinvoice si avvia. D’ora in poi lo apre come qualsiasi altro programma, senza domande.
+
+</Steps>
+
+<Aside title="Perché questi avvisi?">
+I setup non sono ancora firmati con un certificato a pagamento di Microsoft o Apple, quindi Windows e macOS non conoscono l’editore e chiedono una volta. Scarichi Rhinvoice solo dalla [pagina GitHub del progetto](https://github.com/rhinvoice/rhinvoice/releases).
+
+I programmi per Windows e Mac sono un’offerta in fase di test, accanto all’installazione con Docker. Vengono curati finché sono usati. Quando abbastanza persone lavoreranno con loro, saranno firmati anch’essi e gli avvisi spariranno.
+</Aside>
+
+## Primo avvio
+
+Subito dopo il doppio clic una scheda di avvio con il logo di Rhinvoice mostra che cosa succede, per esempio «Avvio del database …». Poi Rhinvoice apre la propria finestra e chiede il primo account utente e la Sua azienda, come descritto in [Primo avvio](/docs/it/getting-started/first-start/). Se lo avvia una seconda volta, per esempio con un doppio clic di troppo, porta in primo piano la finestra già aperta invece di aprirne un’altra. Quando chiude la finestra, Rhinvoice termina insieme al suo database.
+
+## Dove si trovano i Suoi dati
+
+| | Programma | Dati (database, impostazioni, log) |
+|---|---|---|
+| Windows | `%LOCALAPPDATA%\Programs\Rhinvoice` | `%LOCALAPPDATA%\Rhinvoice` |
+| Mac | `/Applications/Rhinvoice.app` | `~/Library/Application Support/Rhinvoice` |
+
+Solo il Suo account utente può aprire la cartella dei dati. Gli aggiornamenti e la disinstallazione non la toccano: le fatture vanno conservate per dieci anni. Il [backup](/docs/it/operations/backup-desktop/) salva il suo contenuto.
+
+## Configurare il backup
+
+La panoramica di Rhinvoice ha una lista di controllo con la voce **Configura il backup**. Porta a *Impostazioni → Backup*, dove sceglie una cartella, preferibilmente in OneDrive, Dropbox, iCloud Drive o Google Drive, e conserva la chiave di ripristino. I dettagli sono in [Backup nel programma per Windows e Mac](/docs/it/operations/backup-desktop/).
+
+## Aggiornamenti
+
+Rhinvoice controlla da solo se ci sono nuove versioni. Compare allora un avviso **Nuova versione …** con il pulsante **Aggiorna ora**. L’aggiornamento dura circa mezzo minuto: Rhinvoice copia prima il database, scarica la nuova versione, verifica che sia arrivata intatta e si riavvia. Se la nuova versione non si avvia, torna automaticamente quella precedente, con i Suoi dati invariati. Anche *Informazioni su Rhinvoice* mostra lo stato; **Cerca aggiornamenti** lì controlla subito.
+
+Raramente una nuova versione richiede un nuovo setup, per esempio per una nuova versione del database integrato. L’avviso mostra allora **Scarica il setup**. Lo installi sopra il programma esistente; i Suoi dati restano.
+
+## Segnalare un problema
+
+*Informazioni su Rhinvoice* (clic sulla versione in fondo alla navigazione) contiene il link **Segnala un problema**. Copia la versione, il Suo sistema e la fine del log e porta a una nuova segnalazione di errore su GitHub; può anche inviarla per e-mail a hello@rhinvoice.com. Rhinvoice non invia nulla da solo. Il log può contenere nomi di clienti, quindi controlli ciò che incolla.
+
+## Disinstallare
+
+- **Windows:** *Impostazioni → App → App installate → Rhinvoice → Disinstalla*.
+- **Mac:** chiuda Rhinvoice e trascini `Rhinvoice.app` da Applicazioni nel Cestino.
+
+I Suoi dati restano, anche per un’installazione successiva. Per rimuovere tutto, elimini poi la cartella dei dati indicata nella tabella sopra (su Windows contiene anche la `cache`), su un Mac anche `~/Library/Caches/Rhinvoice`. Prima conservi altrove i PDF delle fatture emesse o un backup.
+
+## Domande frequenti
+
+<Faq />

@@ -104,6 +104,8 @@ class DunningLevelSchema(ApiModel):
     """In the invoice's currency."""
     text_de: str = Field(max_length=MAX_TEXT)
     text_en: str = Field(max_length=MAX_TEXT)
+    text_fr: str = Field(max_length=MAX_TEXT)
+    text_it: str = Field(max_length=MAX_TEXT)
 
     @classmethod
     def of(cls, level: DunningLevel) -> Self:
@@ -114,6 +116,8 @@ class DunningLevelSchema(ApiModel):
             fee=level.fee,
             text_de=level.text_de,
             text_en=level.text_en,
+            text_fr=level.text_fr,
+            text_it=level.text_it,
         )
 
     def to_domain(self) -> DunningLevel:
@@ -124,6 +128,8 @@ class DunningLevelSchema(ApiModel):
             fee=self.fee.quantize(Decimal("0.01")),
             text_de=self.text_de,
             text_en=self.text_en,
+            text_fr=self.text_fr,
+            text_it=self.text_it,
         )
 
 

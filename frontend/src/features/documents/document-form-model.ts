@@ -10,6 +10,7 @@ import type {
   TaxTreatment,
 } from "@/features/documents/api";
 import type { Company } from "@/features/shared/company-api";
+import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import { fields, toApiDecimal } from "@/features/shared/form-schema";
 import { formatDecimalInput } from "@/lib/format";
 import type { T } from "@/lib/i18n";
@@ -76,7 +77,7 @@ export function documentSchema(t: T, locale: Locale) {
     .object({
       customer_id: z.string(),
       currency: z.enum(["CHF", "EUR"]),
-      language: z.enum(["de", "en"]),
+      language: z.enum(DOCUMENT_LANGUAGES),
       price_mode: z.enum(["net", "gross"]),
       issue_date: isoDate,
       due_date: isoDate,

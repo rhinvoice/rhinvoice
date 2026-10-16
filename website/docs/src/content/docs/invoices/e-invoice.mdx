@@ -3,11 +3,11 @@ title: "Creating e-invoices: ZUGFeRD and XRechnung for free"
 description: Create XRechnung and ZUGFeRD e-invoices for free with Rhinvoice, open source. EN 16931 in PDF/A-3b, XRechnung 3.0 with Leitweg-ID, validated with KoSIT and Mustang.
 faq:
   - q: Can I create an XRechnung for free with Rhinvoice?
-    a: Yes. Rhinvoice is free and open source (AGPL). For every issued invoice and cancellation invoice you download the XRechnung 3.0 as an XML file. The Leitweg-ID goes into the invoice's Reference field.
+    a: Yes. Rhinvoice is free and open source (AGPL). For every issued invoice and cancellation invoice you download the XRechnung 3.0 as an XML file. You enter the authority's Leitweg-ID once on the customer, in the field Leitweg-ID or fixed buyer reference.
   - q: Is every PDF invoice from Rhinvoice a ZUGFeRD invoice?
     a: Yes, every issued invoice and cancellation invoice, as long as the required details are there. The PDF is a PDF/A-3b with an embedded ZUGFeRD / Factur-X invoice in the EN 16931 profile. Rhinvoice shows on the invoice whether the e-invoice is embedded.
   - q: What else does an XRechnung need?
-    a: The invoice's reference (Leitweg-ID or buyer reference), your company's e-mail and phone, the customer's e-mail and a bank account. If something is missing, Rhinvoice names it when you issue.
+    a: A buyer reference (the Leitweg-ID on the customer or the invoice's reference), your company's e-mail and phone, the customer's e-mail and a bank account. If something is missing for a customer in Germany, Rhinvoice names it before you issue.
   - q: How does Rhinvoice check its e-invoices?
     a: On every change to the program, sample invoices for every tax treatment go through the KoSIT validator (EN 16931 and XRechnung) and, as PDF, through Mustang (ZUGFeRD, PDF/A-3 with veraPDF). Warnings count as errors.
   - q: For which countries does Rhinvoice create e-invoices?
@@ -44,15 +44,27 @@ Rhinvoice stores the embedded XML together with the PDF and never changes either
 
 Public authorities in Germany require the XRechnung. To create it:
 
-1. In the editor, enter the authority's **Leitweg-ID** under *Reference*. Rhinvoice writes this field into the XRechnung as the buyer reference (BT-10).
+1. On the customer, enter the authority's **Leitweg-ID** in the field *Leitweg-ID or fixed buyer reference*. The field appears for customers in Germany.
 2. Issue the invoice.
 3. Open the section *E-invoice* → *XRechnung for German authorities* and click *XRechnung (XML)*.
 
 When you send the invoice by e-mail, you can choose *Also attach the XRechnung (XML)*.
 
+### Leitweg-ID and buyer reference
+
+The XRechnung needs a buyer reference (BT-10). Rhinvoice takes it like this:
+
+- If the customer has a **Leitweg-ID or fixed buyer reference**, that one always applies. The invoice's reference then goes into the e-invoice as the order reference (BT-13), so an order number such as "Bestellung 4711" is not lost.
+- Otherwise the **invoice's reference** applies (*More details → Reference*), for example the order number.
+- If both are empty, the XRechnung lacks the buyer reference.
+
+For businesses, fill in the field on the customer only if they always want the same reference. If the reference changes with every order, leave the field on the customer empty and put the reference on the invoice. Below the field *Reference*, the editor shows for customers in Germany which Leitweg-ID applies or that the reference is needed for the XRechnung.
+
+When you issue an invoice, Rhinvoice keeps the customer as it was with the invoice. If you change the Leitweg-ID on the customer later, the XRechnung of invoices already issued stays the same.
+
 ## What an e-invoice needs
 
-Rhinvoice creates only complete e-invoices. If something is missing, the dialog warns you before issuing ("This invoice will be issued without e-invoice. Missing: …"). The PDF is created anyway, only without the e-invoice.
+Rhinvoice creates only complete e-invoices. If something is missing, the dialog warns you before issuing ("This invoice will be issued without e-invoice. Missing: …"). The PDF is created anyway, only without the e-invoice. For customers in Germany the dialog also names what the XRechnung lacks ("Missing for the XRechnung (German authorities): …"). You can still issue the invoice.
 
 **Every e-invoice (EN 16931):**
 
@@ -67,7 +79,7 @@ Rhinvoice creates only complete e-invoices. If something is missing, the dialog 
 
 | Detail | Where to enter it |
 |---|---|
-| The invoice's reference (Leitweg-ID or buyer reference) | in the editor, field *Reference* |
+| Leitweg-ID or buyer reference | on the customer (*Leitweg-ID or fixed buyer reference*) or on the invoice (*More details → Reference*) |
 | Your company's e-mail | *Settings → Company* |
 | Your company's phone | *Settings → Company* |
 | The customer's e-mail | on the customer |

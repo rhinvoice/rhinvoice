@@ -1,0 +1,97 @@
+---
+title: Registrare pagamenti e inviare solleciti di pagamento
+description: Registrare pagamenti e pagamenti parziali in Rhinvoice, segnare più fatture come pagate in una volta e inviare solleciti in tre livelli con spese facoltative.
+faq:
+  - q: Come segno una fattura come pagata?
+    a: Nella fattura clicchi su «Segna come pagata». Rhinvoice registra un pagamento dell’intero importo aperto con la data di oggi. Per un’altra data o un pagamento parziale usi «Registra pagamento».
+  - q: Posso segnare più fatture come pagate in una volta?
+    a: Sì. Selezioni le fatture nell’elenco e clicchi su «Contrassegna come pagate». Ognuna riceve un pagamento del suo importo aperto con la data di oggi, e «Annulla» li toglie tutti.
+  - q: Quando una fattura è scaduta?
+    a: Appena la sua scadenza è passata e non è interamente pagata. Rhinvoice lo deduce ogni giorno dalla scadenza; non viene salvato.
+  - q: Quanti livelli di sollecito ci sono?
+    a: Tre, un promemoria di pagamento, un secondo sollecito e un ultimo sollecito. Ognuno diventa dovuto un numero fisso di giorni dopo l’ultimo termine, fissa un nuovo termine e può includere spese di sollecito, che di base sono 0.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+In Rhinvoice registra i pagamenti su ogni fattura emessa con **data e importo**, pagamenti parziali compresi, e segna una o più fatture come pagate in una volta. Una fattura ancora aperta dopo la scadenza è *Scaduta* e si può sollecitare in **tre livelli**.
+
+## Registrare un pagamento
+
+Una fattura emessa o pagata parzialmente ha due pulsanti:
+
+- **Segna come pagata** registra un pagamento dell’intero importo aperto, con la data di oggi.
+- **Registra pagamento** apre un modulo con *Data di pagamento*, importo e *Nota*. L’importo aperto è proposto; lo modifichi per un **pagamento parziale**. *Salva pagamento* lo salva.
+
+Dopo un pagamento parziale la fattura è *Parzialmente pagata*; una volta saldato l’importo aperto, è *Pagata*. Ogni pagamento:
+
+- è positivo e ha al massimo due decimali,
+- non è datato nel futuro,
+- non supera l’importo aperto. Un pagamento in eccesso, per esempio un doppio pagamento, si rimborsa al di fuori di Rhinvoice.
+
+Ogni pagamento appare nella *Cronologia* della fattura. In *Pagamenti* può rimuovere un pagamento registrato per errore; anche questo viene annotato nella cronologia. Subito dopo la registrazione il messaggio in basso propone anche **Annulla**.
+
+## Segnare più fatture come pagate in una volta
+
+<Steps>
+
+1. Apra *Fatture*, per esempio con la vista *Aperti*.
+2. Spunti le fatture pagate. La casella nell’intestazione della tabella seleziona tutte le fatture aperte della pagina.
+3. Clicchi su **Contrassegna come pagate**.
+
+</Steps>
+
+Ogni fattura selezionata riceve un pagamento del suo importo aperto, con la data di oggi. Se una di esse non può essere segnata come pagata perché nel frattempo è stata pagata o stornata, Rhinvoice non cambia nulla e indica quella fattura. **Annulla** nel messaggio rimuove tutti i pagamenti appena registrati. Una singola fattura si può segnare anche direttamente nella sua riga con **Pagata**.
+
+## Fatture scadute
+
+Una fattura è *Scaduta* quando è emessa o pagata parzialmente e la sua scadenza è passata. Rhinvoice deduce questo stato dalla data; non viene salvato, quindi una fattura diventa scaduta da sola il giorno dopo la scadenza. Le fatture di storno non sono mai scadute.
+
+Trova le fatture scadute nell’elenco delle fatture in *Vista → Scaduti*, nella panoramica e tutte insieme in *Fatture → Solleciti*.
+
+## Solleciti in tre livelli
+
+*Fatture → Solleciti* elenca tutte le fatture scadute con il loro importo aperto, i solleciti già scritti e il passo successivo (colonna *Passo successivo*). I tre livelli sono:
+
+| Livello | Diventa dovuto (predefinito) | Nuovo termine (predefinito) |
+|---|---|---|
+| *Promemoria di pagamento* | 7 giorni dopo la scadenza della fattura | 10 giorni |
+| *1° sollecito* | 7 giorni dopo l’ultimo termine | 10 giorni |
+| *2° sollecito* | 7 giorni dopo l’ultimo termine | 7 giorni |
+
+Quando un livello è dovuto, lo scriva con *Scrivi Promemoria di pagamento* (oppure *Scrivi 1° sollecito* …). Rhinvoice chiede prima conferma e indica il cliente, il nuovo termine e le spese di sollecito. Scrivere un livello prima della sua data richiede una conferma esplicita, e un secondo clic non scrive mai per sbaglio il livello successivo. Ogni sollecito resta nella cronologia della fattura; ogni livello viene scritto una sola volta per fattura.
+
+Dopo l’ultimo sollecito Rhinvoice si ferma. Ulteriori passi, come l’esecuzione o l’incasso, avvengono al di fuori di Rhinvoice. Se rinuncia a un credito, [stralci la fattura](/docs/it/invoices/write-off/).
+
+### Configurare i livelli
+
+In *Impostazioni → Solleciti* (oppure *Imposta i livelli di sollecito* nella pagina dei solleciti) imposta per ogni livello:
+
+- dopo quanti giorni diventa dovuto (da 0 a 365) e il *Nuovo termine di pagamento in giorni* (da 1 a 365),
+- le *Spese di sollecito*,
+- il testo in tedesco, inglese, francese e italiano. I segnaposto sono `{faellig}` (nuovo termine), `{betrag}`, `{waehrung}`, `{nummer}` e `{kunde}`.
+
+### Spese di sollecito
+
+Le spese di sollecito sono **0 di base**. Sono nella valuta della fattura, senza IVA, e vanno da 0 a 1000 a passi di 0.05. A seconda del Paese, le spese richiedono un accordo con il cliente o costi comprovati. Rhinvoice non calcola interessi di mora.
+
+<Aside type="caution" title="Nessuna consulenza fiscale">
+Rhinvoice tratta le spese di sollecito come risarcimento del danno senza IVA (Svizzera: art. 18 cpv. 2 lett. i LIVA, Germania: UStAE 1.3 cpv. 6). Se e quali spese può chiedere, in caso di dubbio è una domanda per il Suo fiduciario o consulente fiscale.
+</Aside>
+
+Se il cliente paga l’importo aperto più le spese, registri l’importo aperto sulla fattura e contabilizzi le spese al di fuori di Rhinvoice.
+
+## Il sollecito come PDF
+
+Apra ogni sollecito scritto nella pagina dei solleciti con *Apri PDF*. Il PDF è la pagina della fattura, con intestazione, indirizzo e piè di pagina come erano il giorno dell’emissione, più il testo del livello, l’importo aperto, le spese e il totale. La fattura QR svizzera o il codice QR EPC (GiroCode) chiede il totale e riporta il riferimento della fattura, così può abbinare il pagamento.
+
+Rhinvoice salva il testo con il sollecito, quindi il PDF appare sempre come quando è stato scritto, anche se in seguito cambia le impostazioni.
+
+## Inviare fatture e solleciti per e-mail
+
+Quando un server di posta è configurato in *Impostazioni → E-mail*, **Invia per e-mail** invia fatture emesse e solleciti scritti direttamente da Rhinvoice, con il PDF allegato. Prima di ogni e-mail controlla destinatari, oggetto e testo; l’indirizzo del cliente è precompilato e sono possibili fino a cinque destinatari. Ogni e-mail viene annotata nella cronologia della fattura. Se il server di posta rifiuta, Rhinvoice mostra la sua risposta. Senza server di posta, scarichi il PDF e lo invii Lei stesso.
+
+## Domande frequenti
+
+<Faq />

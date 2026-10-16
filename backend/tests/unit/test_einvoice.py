@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001 - French and Italian elide with the typographic apostrophe.
 """E-invoices (EN 16931, CII): the business terms of each tax case.
 
 The KoSIT validator judges the same samples against the official rules in
@@ -17,13 +18,17 @@ from hypothesis import strategies as st
 from rhinvoice.application.document.einvoice import (
     EInvoiceProblem,
     EInvoiceProfile,
+    buyer_reference,
+    order_reference,
     problems,
     seller_ids,
     vat_id,
+    wants_xrechnung,
 )
 from rhinvoice.application.document.handlers import DraftInput, LineInput
 from rhinvoice.application.document.printing import PrintModel
 from rhinvoice.domain.document.lines import LineKind, PriceMode
+from rhinvoice.domain.shared.country import CountryCode
 from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
 from rhinvoice.domain.shared.money import Currency, Money, round_half_up
 from rhinvoice.domain.tax.category import TaxCategory
@@ -169,6 +174,8 @@ def test_the_parties_of_a_swiss_invoice() -> None:
     root = xml("ch-domestic")
     agreement = "rsm:SupplyChainTradeTransaction/ram:ApplicableHeaderTradeAgreement"
     assert text(root, f"{agreement}/ram:BuyerReference") == "PO-4711"
+    # The invoice's reference already is BT-10; it is not repeated as the order (BT-13).
+    assert absent(root, f"{agreement}/ram:BuyerOrderReferencedDocument")
     assert text(root, f"{SELLER}/ram:Name") == "Muster Werkstatt GmbH"
     assert text(root, f"{SELLER}/ram:Description") == "Handelsregister des Kantons Zürich"
     legal = root.find(f"{SELLER}/ram:SpecifiedLegalOrganization/ram:ID", NAMESPACES)
@@ -408,6 +415,25 @@ def test_goods_leaving_the_vat_area_are_exports() -> None:
     )
 
 
+def test_french_and_italian_invoices_give_their_notices_as_exemption_reasons() -> None:
+    taxes = f"{SETTLEMENT}/ram:ApplicableTradeTax"
+    french = xml("ch-export-french")
+    assert texts(french, f"{taxes}/ram:CategoryCode") == ["G"]
+    assert texts(french, f"{taxes}/ram:ExemptionReason") == [
+        (
+            "Prestation de services non soumise à la TVA (lieu de la prestation de services"
+            " à l’étranger)."
+            " Livraison à l’exportation exonérée de l’impôt (art. 23, al. 2, ch. 1, LTVA)."
+        ),
+    ]
+    italian = xml("de-intra-community-italian")
+    assert texts(italian, f"{taxes}/ram:CategoryCode") == ["AE", "K"]
+    assert texts(italian, f"{taxes}/ram:ExemptionReason") == [
+        "Inversione contabile.",
+        "Cessione intracomunitaria esente (§ 4 Nr. 1 Buchst. b i. V. m. § 6a UStG).",
+    ]
+
+
 def test_a_service_and_a_goods_export_share_the_category() -> None:
     printed = model(samples()["ch-goods-export"])
     content = printed.view.document.content
@@ -447,6 +473,10 @@ def test_xrechnung_for_an_authority() -> None:
     )
     agreement = "rsm:SupplyChainTradeTransaction/ram:ApplicableHeaderTradeAgreement"
     assert text(root, f"{agreement}/ram:BuyerReference") == "04011000-12345-34"
+    # The invoice's own reference stays, as the buyer's order (BT-13).
+    assert text(root, f"{agreement}/ram:BuyerOrderReferencedDocument/ram:IssuerAssignedID") == (
+        "Bestellung 17"
+    )
     assert text(root, f"{BUYER}/ram:DefinedTradeContact/ram:PersonName") == "Frau Beispiel"
 
 
@@ -556,6 +586,58 @@ def test_what_xrechnung_asks_for_beyond_en_16931() -> None:
     assert EInvoiceProblem.BANK_ACCOUNT_MISSING in found(
         replace(cancellation, cancelled_account=None), EInvoiceProfile.XRECHNUNG
     )
+
+
+def with_reference(printed: PrintModel, reference: str) -> PrintModel:
+    document = printed.view.document
+    content = replace(document.content, reference=reference)
+    return replace(printed, view=replace(printed.view, document=replace(document, content=content)))
+
+
+def without_reference(printed: PrintModel) -> PrintModel:
+    return with_reference(printed, " ")
+
+
+def test_the_buyer_reference_of_a_german_customer_wins() -> None:
+    authority = model(samples()["de-authority"])
+    # The customer's Leitweg-ID, not the order number of the invoice.
+    assert authority.view.document.content.reference == "Bestellung 17"
+    assert buyer_reference(authority) == "04011000-12345-34"
+    # The invoice's reference does not get lost: it is the buyer's order reference (BT-13).
+    assert order_reference(authority) == "Bestellung 17"
+    assert order_reference(without_reference(authority)) is None
+    # The same text is not written twice.
+    assert order_reference(with_reference(authority, " 04011000-12345-34 ")) is None
+    # Without the invoice's reference nothing is missing.
+    assert found(without_reference(authority), EInvoiceProfile.XRECHNUNG) == set()
+    # Without the customer's, the invoice's reference is the buyer reference.
+    assert authority.recipient is not None
+    plain = replace(authority, recipient=replace(authority.recipient, buyer_reference=""))
+    assert buyer_reference(plain) == "Bestellung 17"
+    assert order_reference(plain) is None
+    assert buyer_reference(without_reference(plain)) is None
+    assert found(without_reference(plain), EInvoiceProfile.XRECHNUNG) == {
+        EInvoiceProblem.BUYER_REFERENCE_MISSING
+    }
+
+
+def test_the_buyer_reference_of_other_customers_is_the_invoices() -> None:
+    """The field is only shown for German customers; a kept value elsewhere does nothing."""
+    swiss = model(samples()["ch-domestic"])
+    assert swiss.recipient is not None
+    kept = replace(swiss, recipient=replace(swiss.recipient, buyer_reference="991-33333TEST-33"))
+    assert buyer_reference(kept) == "PO-4711"
+    assert order_reference(kept) is None
+    assert EInvoiceProblem.BUYER_REFERENCE_MISSING in found(
+        without_reference(kept), EInvoiceProfile.XRECHNUNG
+    )
+
+
+def test_only_german_customers_want_an_xrechnung() -> None:
+    assert wants_xrechnung(factories.customer(address=factories.address(country=CountryCode("DE"))))
+    for country in ("CH", "LI", "AT", "FR"):
+        customer = factories.customer(address=factories.address(country=CountryCode(country)))
+        assert not wants_xrechnung(customer)
 
 
 def test_an_e_invoice_needs_a_customer() -> None:

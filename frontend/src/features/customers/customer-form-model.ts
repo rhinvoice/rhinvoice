@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import type { Customer, CustomerRequest } from "@/features/customers/api";
 import { fields, toApiDecimal } from "@/features/shared/form-schema";
+import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import { formatDecimalInput } from "@/lib/format";
 import type { T } from "@/lib/i18n";
 import type { Locale } from "@/lib/locale";
@@ -44,9 +45,10 @@ export function customerSchema(t: T, locale: Locale) {
       email: f.email,
       phone: f.optionalText(50),
       vat_number: f.vatNumber,
+      buyer_reference: f.optionalText(100),
       group: f.optionalText(50),
       default_currency: z.enum(["", "CHF", "EUR"]),
-      default_language: z.enum(["", "de", "en"]),
+      default_language: z.enum(["", ...DOCUMENT_LANGUAGES]),
       tax_exempt: z.boolean(),
       default_discount: f.decimal({ max: 100, decimals: 2 }),
       payment_terms_days: f.days,
@@ -85,6 +87,7 @@ export const CUSTOMER_FIELD_ORDER: readonly (keyof CustomerFormValues)[] = [
   "email",
   "phone",
   "vat_number",
+  "buyer_reference",
   "default_discount",
   "payment_terms_days",
   "delivery_street",
@@ -118,6 +121,7 @@ export function emptyCustomer(country: CountryCode): CustomerFormValues {
     email: "",
     phone: "",
     vat_number: "",
+    buyer_reference: "",
     group: "",
     default_currency: "",
     default_language: "",
@@ -154,6 +158,7 @@ export function customerToForm(customer: Customer, locale: Locale): CustomerForm
     email: customer.email ?? "",
     phone: customer.phone,
     vat_number: customer.vat_number ?? "",
+    buyer_reference: customer.buyer_reference,
     group: customer.group,
     default_currency: customer.default_currency ?? "",
     default_language: customer.default_language ?? "",
@@ -198,6 +203,8 @@ export function formToRequest(values: CustomerFormValues, locale: Locale): Custo
     email: values.email === "" ? null : values.email,
     phone: values.phone,
     vat_number: values.vat_number === "" ? null : values.vat_number,
+    // Kept when the country changes: hidden, it does nothing outside Germany.
+    buyer_reference: values.buyer_reference,
     group: values.group,
     default_currency: values.default_currency === "" ? null : values.default_currency,
     default_language: values.default_language === "" ? null : values.default_language,

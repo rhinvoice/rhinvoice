@@ -1,0 +1,83 @@
+---
+title: Fatture ricorrenti e fatturazione di abbonamenti
+description: Rhinvoice scrive fatture ricorrenti ogni mese, trimestre, semestre o anno, come bozza, emesse o emesse e inviate per e-mail. Gratuito e open source.
+faq:
+  - q: Rhinvoice può scrivere fatture automaticamente ogni mese?
+    a: Sì. Un piano in «Fatture ricorrenti» scrive la stessa fattura ogni mese, trimestre, semestre o anno. Sceglie Lei se crea una bozza, emette la fattura oppure la emette e la invia per e-mail.
+  - q: Che cosa succede se il server è rimasto spento per un po’?
+    a: Rhinvoice recupera le date perse. Ogni periodo riceve la sua fattura con il proprio periodo della prestazione, datata il giorno in cui viene scritta, al massimo 24 per piano ed esecuzione.
+  - q: Che cosa succede alle date mentre un piano è in pausa?
+    a: Vengono saltate. Quando riprende il piano, Rhinvoice continua con la data successiva e non scrive in seguito le fatture della pausa.
+  - q: Una fattura può essere scritta due volte?
+    a: No. Ogni periodo viene scritto esattamente una volta, anche con più container dell’app, dopo un riavvio o dopo un crash.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Per hosting, manutenzione, abbonamenti o forfait configura in Rhinvoice un **piano**. Scrive da solo la stessa fattura *Mensile*, *Trimestrale*, *Semestrale* o *Annuale*: come bozza, emessa, oppure emessa e inviata al cliente per e-mail.
+
+## Configurare un piano
+
+<Steps>
+
+1. Apra *Fatture → Ricorrente* e clicchi su **Nuovo piano**. Oppure, su una fattura esistente, scelga *Altre azioni → Rendi ricorrente*.
+2. Dia al piano un *Nome*. Serve solo a Lei, per esempio «Hosting Holzwerk».
+3. Scelga il *Cliente*, l’*Intervallo* e il giorno in *Prima fattura il* (oggi o più tardi). In *Ultima fattura entro il* può fissare una fine.
+4. In *Alla scadenza*, scelga che cosa deve succedere.
+5. Sotto, inserisca la fattura come nel normale editor. L’anteprima mostra la prossima fattura.
+6. Clicchi su **Crea piano**.
+
+</Steps>
+
+Ogni fattura fissa data, scadenza e trattamento fiscale da sé quando viene scritta; Rhinvoice determina il trattamento fiscale automaticamente. Prezzi e testi provengono dal piano: se in seguito modifica un articolo, il piano non cambia.
+
+## Che cosa succede alla data
+
+| *Alla scadenza* | Risultato |
+|---|---|
+| *Crea una bozza* | La bozza attende in *Fatture* finché non la controlla e la emette |
+| *Emetti* | La fattura viene emessa con un numero; la invia Lei stesso |
+| *Emetti e invia per e-mail* | La fattura viene emessa e inviata all’indirizzo e-mail del cliente |
+
+L’invio per e-mail richiede un server di posta in *Impostazioni → E-mail*. L’e-mail contiene il PDF della fattura. Una XRechnung separata per le autorità tedesche si invia a mano dalla fattura ([fatture elettroniche](/docs/it/invoices/e-invoice/)).
+
+## Date e periodo della prestazione
+
+Tutte le date si contano dal primo giorno. Un piano mensile che inizia il 31 fattura l’ultimo giorno dei mesi più corti e poi di nuovo il 31.
+
+Con *Inserisci il periodo della prestazione*, ogni fattura indica il periodo che copre: dal proprio giorno al giorno prima della fattura successiva. I periodi si susseguono senza lacune né sovrapposizioni; l’ultimo termina con il piano.
+
+Se durante la modifica cambia il primo giorno o l’intervallo, il conteggio riparte, e il nuovo primo giorno deve essere oggi o più tardi.
+
+## Mettere in pausa, riprendere, eliminare
+
+- **Metti in pausa** ferma il piano. Le date durante la pausa vengono saltate.
+- **Riprendi** continua con la data successiva. Rhinvoice non scrive in seguito le date perse durante la pausa.
+- **Elimina piano** termina il piano. Le fatture già scritte restano come sono.
+
+Un piano con una data di fine è *Terminato* dopo l’ultima fattura. Se il cliente è archiviato, il piano continua a fatturargli; Rhinvoice lo segnala, e Lei mette in pausa il piano se non è più corretto.
+
+## Chi scrive le fatture
+
+L’app stessa scrive in background le fatture dovute; non serve alcun container aggiuntivo. Cerca i piani dovuti un minuto dopo l’avvio e poi ogni dieci minuti.
+
+- **Ogni periodo viene scritto una volta**, anche con più container dell’app, dopo un riavvio o dopo un crash.
+- **Le date perse vengono recuperate** quando l’app è rimasta spenta per un po’. Ogni periodo riceve la sua fattura, datata il giorno in cui viene scritta, con il proprio periodo della prestazione; al massimo 24 per piano ed esecuzione.
+- **I problemi vengono mostrati.** Una fattura che non si può emettere (per esempio senza conto bancario) resta una bozza; una che non si può inviare (nessun indirizzo e-mail del cliente, il server di posta rifiuta) resta emessa. In *Fatture scritte* il piano mostra ogni esecuzione con il suo motivo e la sua fattura, e l’elenco segna il piano come *Problema*.
+
+Nel file `.env`, `RHINVOICE_RECURRING_INTERVAL` stabilisce ogni quanti secondi l’app controlla (almeno 60, predefinito 600), e `RHINVOICE_RECURRING=false` disattiva la scrittura in background.
+
+Quando è disattivata, scriva Lei stesso le fatture dovute, per esempio da cron. Il comando termina con il codice 1 quando una fattura richiede attenzione:
+
+```bash
+docker compose exec app rhinvoice recurring
+```
+
+<Aside type="note" title="Nella demo pubblica">
+La demo pubblica non scrive fatture ricorrenti. Provi i piani su una Sua [installazione](/docs/it/getting-started/installation/).
+</Aside>
+
+## Domande frequenti
+
+<Faq />

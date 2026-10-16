@@ -105,6 +105,21 @@ def test_qr_bill_with_an_iban_uses_a_creditor_reference(store: Store) -> None:
     assert "Zahlteil" in svg
 
 
+@pytest.mark.parametrize(
+    ("language", "receipt", "payment_part"),
+    [
+        (Language.FR, "Récépissé", "Section paiement"),
+        (Language.IT, "Ricevuta", "Sezione pagamento"),
+    ],
+)
+def test_qr_bill_speaks_the_document_language(
+    store: Store, language: Language, receipt: str, payment_part: str
+) -> None:
+    svg = qr_svg(issued(store, language=language))
+    assert receipt in svg
+    assert payment_part in svg
+
+
 def test_qr_bill_with_a_qr_iban_uses_a_qr_reference(store: Store) -> None:
     for account in list(store.bank_accounts.values()):
         store.bank_accounts[account.id] = replace(account, qr_iban=Iban(CH_QR_IBAN))

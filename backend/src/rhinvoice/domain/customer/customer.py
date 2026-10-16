@@ -26,6 +26,7 @@ MAX_SHORT = 50
 MAX_PHONE = 50
 MAX_GROUP = 50
 MAX_NOTE = 4000
+MAX_BUYER_REFERENCE = 100
 MAX_PAYMENT_TERMS_DAYS = 365
 
 
@@ -50,6 +51,11 @@ class Customer:
     email: EmailAddress | None = None
     phone: str = ""
     vat_number: VatNumber | None = None
+    buyer_reference: str = ""
+    """A fixed buyer reference (BT-10), e.g. the Leitweg-ID of a German authority.
+
+    Set, it is the reference of every e-invoice to the customer; empty, the document's.
+    """
     group: str = ""
     default_currency: Currency | None = None
     default_language: Language | None = None
@@ -89,6 +95,10 @@ class Customer:
             clean_text(self.contact_person, "contact_person", max_length=MAX_NAME),
         )
         self._set("phone", clean_text(self.phone, "phone", max_length=MAX_PHONE))
+        self._set(
+            "buyer_reference",
+            clean_text(self.buyer_reference, "buyer_reference", max_length=MAX_BUYER_REFERENCE),
+        )
         self._set("group", clean_text(self.group, "group", max_length=MAX_GROUP))
         self._set("note", clean_multiline(self.note, "note", max_length=MAX_NOTE))
         if not Decimal(0) <= self.default_discount <= Decimal(100):

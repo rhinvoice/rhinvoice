@@ -153,6 +153,16 @@ def test_default_templates_greet_like_the_country() -> None:
     assert english.subject == "Quote {nummer}"
     assert english.body.startswith("Dear Sir or Madam\n\nPlease find attached our quote")
     assert english.body.endswith("\n\nKind regards\n{firma}")
+    french = default_template(MailKind.CANCELLATION, Language.FR, Country.CH)
+    assert french.subject == "Note de crédit {nummer}"
+    assert french.body == (
+        "Bonjour\n\nVeuillez trouver ci-joint la note de crédit {nummer}."
+        "\n\nMeilleures salutations\n{firma}"
+    )
+    italian = default_template(MailKind.REMINDER_1, Language.IT, Country.CH)
+    assert italian.subject == "Promemoria di pagamento per la fattura {nummer}"
+    assert italian.body.startswith("Buongiorno\n\nLa nostra fattura {nummer}")
+    assert italian.body.endswith("\n\nCordiali saluti\n{firma}")
 
 
 def test_every_default_template_is_valid() -> None:
@@ -162,6 +172,11 @@ def test_every_default_template_is_valid() -> None:
                 template = default_template(kind, language, country)
                 assert unknown_placeholders(template.subject + template.body) == []
                 assert "{nummer}" in template.subject
+    # Each language words its mails itself.
+    bodies = {
+        default_template(MailKind.INVOICE, language, Country.CH).body for language in Language
+    }
+    assert len(bodies) == len(Language)
 
 
 def test_template_rules() -> None:

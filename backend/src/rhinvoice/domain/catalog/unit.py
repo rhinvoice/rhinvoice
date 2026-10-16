@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from rhinvoice.domain.shared.errors import ValidationError
+from rhinvoice.domain.shared.language import Language
 
 # Code -> (German label, English label). A curated subset of Rec 20 / Rec 21.
 UNITS: dict[str, tuple[str, str]] = {
@@ -31,6 +32,21 @@ UNITS: dict[str, tuple[str, str]] = {
     "E48": ("Leistung", "service unit"),
 }
 
+# Code -> (French label, Italian label), as written in Switzerland; symbols stay as they are.
+_ROMANCE_UNITS: dict[str, tuple[str, str]] = {
+    "C62": ("pce", "pz."),
+    "HUR": ("h", "h"),
+    "DAY": ("jour", "giorno"),
+    "WEE": ("semaine", "settimana"),
+    "MON": ("mois", "mese"),
+    "ANN": ("année", "anno"),
+    "LS": ("forfait", "forfait"),
+    "SET": ("set", "set"),
+    "PR": ("paire", "paio"),
+    "XPK": ("paquet", "pacco"),
+    "E48": ("prestation", "prestazione"),
+}
+
 DEFAULT_UNIT_CODE = "C62"
 
 
@@ -49,3 +65,12 @@ class Unit:
     @property
     def label_en(self) -> str:
         return UNITS[self.code][1]
+
+    def label(self, language: Language) -> str:
+        """Return the label printed on documents in ``language``."""
+        if language is Language.DE:
+            return self.label_de
+        if language is Language.EN:
+            return self.label_en
+        romance = _ROMANCE_UNITS.get(self.code, (self.label_en, self.label_en))
+        return romance[0] if language is Language.FR else romance[1]

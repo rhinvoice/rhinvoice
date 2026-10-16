@@ -11,10 +11,20 @@ Sources (checked 2026-10):
 - Services to EU businesses: no Swiss wording is required; the recipient's country
   asks for the reverse charge note (Art. 219a(1) VAT Directive, OPEN_QUESTIONS 8).
 - Export deliveries: Art. 23 Abs. 2 Ziff. 1 MWSTG.
+- French and Italian (ADR 0027): the words of the law in its French (LTVA) and Italian
+  (LIVA) version: assujetti / assoggettato (Art. 10), exonérées / esenti (Art. 23), lieu
+  de la prestation de services / luogo della prestazione di servizi (Art. 8),
+  contre-prestations convenues / controprestazioni convenute (Art. 39); the UID-MWST
+  number is written CHE-123.456.789 TVA / IVA (ESTV, numéro IDE / numero IDI); rates
+  as named by the ESTV (taux spécial pour l'hébergement / aliquota speciale per il
+  settore alberghiero). Services to EU businesses: the mention of Art. 226 point 11a
+  VAT Directive in its French and Italian version ("Autoliquidation", "inversione
+  contabile"). The law prescribes no wording for these notices.
 
 Not tax advice.
 """
 
+# ruff: noqa: RUF001 - French and Italian elide with the typographic apostrophe.
 from __future__ import annotations
 
 from datetime import date
@@ -47,6 +57,13 @@ SWISS_SOURCES = (
     "https://www.estv.admin.ch/estv/de/home/mehrwertsteuer/mwst-steuersaetze.html",
     "https://www.fedlex.admin.ch/eli/cc/2009/615/de (MWSTG Art. 23, 26, 39 to 41)",
     "https://www.llv.li/de/unternehmen/steuern/mehrwertsteuer",
+    "https://www.fedlex.admin.ch/eli/cc/2009/615/fr (LTVA art. 8, 10, 23, 39, 41)",
+    "https://www.fedlex.admin.ch/eli/cc/2009/615/it (LIVA art. 8, 10, 23, 39, 41)",
+    "https://www.estv.admin.ch/fr/numero-identification-des-entreprises-ide",
+    "https://www.estv.admin.ch/it/numero-identificazione-delle-imprese-idi",
+    "https://www.estv.admin.ch/fr/taux-de-la-tva-suisse",
+    "https://www.estv.admin.ch/it/aliquote-iva-svizzere",
+    "https://eur-lex.europa.eu/eli/dir/2010/45/oj (art. 226, 11 bis, French and Italian)",
 )
 
 _GERMAN_NOTICES = {
@@ -63,6 +80,40 @@ _GERMAN_NOTICES = {
     TaxTreatment.GOODS_EXPORT: "Steuerbefreite Ausfuhrlieferung (Art. 23 Abs. 2 Ziff. 1 MWSTG).",
 }
 """Goods leave the Swiss VAT area as exports: there is no intra-Community supply."""
+
+_FRENCH_NOTICES = {
+    # Art. 226 point 11a of the VAT Directive in French: the customer's country asks for it.
+    TaxTreatment.REVERSE_CHARGE: (
+        "Autoliquidation : la TVA est due par le destinataire de la prestation."
+    ),
+    TaxTreatment.EXPORT: (
+        "Prestation de services non soumise à la TVA "
+        "(lieu de la prestation de services à l’étranger)."
+    ),
+    TaxTreatment.SMALL_BUSINESS: "Non assujetti à la TVA.",
+    TaxTreatment.EXEMPT: "Prestation exonérée de la TVA.",
+    TaxTreatment.GOODS_EXPORT: (
+        "Livraison à l’exportation exonérée de l’impôt (art. 23, al. 2, ch. 1, LTVA)."
+    ),
+}
+"""The French notices, in the words of the LTVA."""
+
+_ITALIAN_NOTICES = {
+    # Art. 226 point 11a of the VAT Directive in Italian: the customer's country asks for it.
+    TaxTreatment.REVERSE_CHARGE: (
+        "Inversione contabile: l’imposta è dovuta dal destinatario della prestazione."
+    ),
+    TaxTreatment.EXPORT: (
+        "Prestazione di servizi non soggetta all’IVA "
+        "(luogo della prestazione di servizi all’estero)."
+    ),
+    TaxTreatment.SMALL_BUSINESS: "Non assoggettato all’IVA.",
+    TaxTreatment.EXEMPT: "Prestazione esente dall’IVA.",
+    TaxTreatment.GOODS_EXPORT: (
+        "Fornitura all’esportazione esente dall’imposta (art. 23 cpv. 2 n. 1 LIVA)."
+    ),
+}
+"""The Italian notices, in the words of the LIVA."""
 
 
 SWISS_TERMS = {
@@ -106,6 +157,50 @@ SWISS_TERMS = {
         salutation="Dear Sir or Madam",
         closing="Kind regards",
         notices={treatment: ENGLISH_NOTICES[treatment] for treatment in _GERMAN_NOTICES},
+    ),
+    Language.FR: CountryTerms(
+        tax_name="TVA",
+        vat_number_label="N° TVA",
+        customer_vat_label="Votre IDE",
+        vat_number_field="IDE / numéro TVA",
+        vat_number_hint=(
+            "Obligatoire sur les factures des entreprises assujetties à la TVA, "
+            "p. ex. CHE-123.456.789 TVA."
+        ),
+        small_business="Non assujetti à la TVA (chiffre d’affaires inférieur à 100 000 francs)",
+        bad_debts="Pertes sur débiteurs",
+        write_off_hint=(
+            "En cas de décompte selon les contre-prestations convenues, le montant diminue la "
+            "contre-prestation de la période dans laquelle vous le comptabilisez (art. 41 LTVA). "
+            "En cas de décompte selon les contre-prestations reçues, il n’y a rien à corriger ; "
+            "la date sert alors uniquement à votre vue d’ensemble."
+        ),
+        special_rate="Taux spécial pour l’hébergement",
+        salutation="Bonjour",
+        closing="Meilleures salutations",
+        notices=_FRENCH_NOTICES,
+    ),
+    Language.IT: CountryTerms(
+        tax_name="IVA",
+        vat_number_label="N. IVA",
+        customer_vat_label="Vostro IDI",
+        vat_number_field="IDI / numero IVA",
+        vat_number_hint=(
+            "Obbligatorio sulle fatture delle imprese assoggettate all’IVA, "
+            "p. es. CHE-123.456.789 IVA."
+        ),
+        small_business="Non assoggettato all’IVA (cifra d’affari inferiore a 100 000 franchi)",
+        bad_debts="Perdite su debitori",
+        write_off_hint=(
+            "Con il rendiconto secondo le controprestazioni convenute, l’importo riduce la "
+            "controprestazione del periodo in cui lo registrate (art. 41 LIVA). Con il "
+            "rendiconto secondo le controprestazioni ricevute non c’è nulla da correggere; "
+            "la data serve allora solo alla vostra panoramica."
+        ),
+        special_rate="Aliquota speciale per il settore alberghiero",
+        salutation="Buongiorno",
+        closing="Cordiali saluti",
+        notices=_ITALIAN_NOTICES,
     ),
 }
 """The terms of Switzerland; Liechtenstein names its VAT number differently."""

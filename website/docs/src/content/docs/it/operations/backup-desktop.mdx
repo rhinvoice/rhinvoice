@@ -1,0 +1,65 @@
+---
+title: Backup nel programma per Windows e Mac
+description: Configurare i backup di Rhinvoice senza Docker. Scegliere una cartella in OneDrive, Dropbox, iCloud Drive o Google Drive, conservare la chiave, ripristinare.
+faq:
+  - q: Dove fa il backup il programma?
+    a: In una cartella a Sua scelta, preferibilmente una che OneDrive, Dropbox, iCloud Drive o Google Drive mantiene sincronizzata. Così una copia si trova fuori dal computer. Un’unità di rete o un disco USB funzionano allo stesso modo.
+  - q: Che cosa succede se perdo la chiave di ripristino?
+    a: Finché il computer funziona, Impostazioni, Backup, Mostra chiave la mostra di nuovo. Se il computer va perso e la chiave non era conservata altrove, nessuno può ripristinare i backup.
+  - q: L’installazione con Docker può ripristinare questi backup?
+    a: Sì. Sono gli stessi backup restic del container di backup. Usi la cartella come RESTIC_REPOSITORY e la chiave come RESTIC_PASSWORD.
+since: 0.7.0
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Il [programma per Windows e Mac](/docs/it/getting-started/install-desktop/) fa da sé il backup del suo database, con lo stesso [restic](https://restic.net) del container di backup dell’installazione con Docker: **cifrato, deduplicato e compresso**, ogni giorno, circa due minuti dopo un’emissione o uno storno, e con la semplice pressione di un pulsante. Conserva 7 backup giornalieri, 4 settimanali, 12 mensili e ogni backup annuale. Se Rhinvoice non è in funzione alle 02:00, esegue il backup giornaliero all’avvio successivo.
+
+## Configurazione
+
+<Steps>
+
+1. Apra *Impostazioni → Backup*, per esempio tramite la voce **Configurare i backup** della lista di controllo nella panoramica.
+
+2. **Scelga una cartella.** Rhinvoice propone le cartelle di OneDrive, Dropbox, iCloud Drive e Google Drive che trova sul computer, ognuna con una sottocartella `Rhinvoice-Backup`. In **Altra cartella …** inserisce un percorso completo, come un’unità di rete o un disco USB. Una cartella mancante viene creata. Clicchi su **Avanti alla chiave**.
+
+3. **Conservi la chiave di ripristino.** Rhinvoice mostra la chiave che cifra i backup. La copi nel Suo gestore di password o la stampi, separata da questo computer. Spunti **Ho conservato la chiave in modo sicuro** e clicchi su **Configura backup**.
+
+</Steps>
+
+Il primo backup parte entro mezzo minuto. *Impostazioni → Backup* elenca gli ultimi backup, e la panoramica avvisa quando l’ultimo riuscito ha più di 24 ore. In seguito, **Mostra chiave** mostra di nuovo la chiave e **Cambia cartella** sceglie un’altra cartella; la chiave resta la stessa.
+
+<Aside type="caution" title="Senza chiave, nessun ripristino">
+Rhinvoice conserva la chiave nella sua cartella dei dati, così i backup funzionano senza chiedere nulla. Se il computer va perso, anche quella copia va persa. Allora solo la chiave che ha conservato altrove apre i backup.
+</Aside>
+
+## Ripristinare
+
+Il ripristino **sostituisce tutti i dati** con lo stato di un backup, in un’unica transazione: se qualcosa non riesce, non cambia nulla. Prima chiuda Rhinvoice.
+
+**Windows** (PowerShell):
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -m rhinvoice_boot --list-backups
+& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -m rhinvoice_boot --restore latest
+```
+
+**Mac** (Terminale):
+
+```bash
+/Applications/Rhinvoice.app/Contents/MacOS/Rhinvoice --list-backups
+/Applications/Rhinvoice.app/Contents/MacOS/Rhinvoice --restore latest
+```
+
+`--list-backups` mostra i backup con ID e ora. Al posto di `latest`, indichi un ID per riportare un backup più vecchio. Poi avvii Rhinvoice come di consueto; lo stato ripristinato viene subito salvato di nuovo.
+
+**Su un nuovo computer:** installi Rhinvoice, attenda che il servizio cloud abbia scaricato la cartella `Rhinvoice-Backup` e la indichi con `--backup-folder`. Rhinvoice chiede allora la chiave di ripristino e in seguito fa il backup nella stessa cartella:
+
+```bash
+/Applications/Rhinvoice.app/Contents/MacOS/Rhinvoice --restore latest --backup-folder "/Users/anna/Library/CloudStorage/OneDrive-Personal/Rhinvoice-Backup"
+```
+
+## Domande frequenti
+
+<Faq />

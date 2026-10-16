@@ -19,6 +19,7 @@ import {
   MAKER_URL,
   REPOSITORY_URL,
 } from "@/lib/about";
+import { isMachineTranslated } from "@/lib/locale";
 
 export function AboutDialog({
   open,
@@ -27,7 +28,7 @@ export function AboutDialog({
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [reportOpen, setReportOpen] = useState(false);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -66,6 +67,20 @@ export function AboutDialog({
             </ExternalLink>
           </li>
         </ul>
+        {isMachineTranslated(locale) ? (
+          <p className="text-sm text-muted-foreground">
+            {t("about.machineTranslated")}{" "}
+            <button
+              type="button"
+              className="inline-flex min-h-6 items-center text-primary underline-offset-4 hover:underline"
+              onClick={() => {
+                setReportOpen(true);
+              }}
+            >
+              {t("about.reportTranslation")}
+            </button>
+          </p>
+        ) : null}
         <p className="text-xs text-muted-foreground">{t("about.noAdvice")}</p>
         <UpdateSection />
         <p className="border-t pt-4 text-sm text-muted-foreground">

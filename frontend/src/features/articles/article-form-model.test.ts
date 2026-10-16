@@ -43,6 +43,8 @@ describe("article form", () => {
         unit: "HUR",
         unit_label_de: "Std.",
         unit_label_en: "h",
+        unit_label_fr: "h",
+        unit_label_it: "h",
         tax_category: "standard",
         supply: "goods",
         prices: { CHF: "150.00" },

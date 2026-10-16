@@ -217,6 +217,12 @@ def test_a_test_mail_goes_out_in_the_company_language(
     store.company = replace(store.company, default_language=Language.EN)
     mail.send_test("anna@example.com")
     assert sender.sent[-1][1].subject == "Rhinvoice: test mail"
+    store.company = replace(store.company, default_language=Language.FR)
+    mail.send_test("anna@example.com")
+    assert sender.sent[-1][1].subject == "Rhinvoice : e-mail de test"
+    store.company = replace(store.company, default_language=Language.IT)
+    mail.send_test("anna@example.com")
+    assert sender.sent[-1][1].subject == "Rhinvoice: e-mail di prova"
 
 
 def test_templates_are_built_in_until_changed(mail: MailHandlers, store: Store) -> None:

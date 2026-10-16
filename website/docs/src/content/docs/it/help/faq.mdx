@@ -1,0 +1,43 @@
+---
+title: Domande frequenti su Rhinvoice
+description: Risposte su Rhinvoice, il programma di fatturazione gratuito e open source per CH, LI, DE e AT. Costi, licenza, dati, GoBD, backup, fatture elettroniche, demo.
+faq:
+  - q: Quanto costa Rhinvoice?
+    a: Niente. Rhinvoice è gratuito e open source. Non esiste una versione a pagamento né un servizio in hosting, e non è previsto di trasformarlo in un servizio in hosting a pagamento. Rhinvoice funziona sul Suo server o sul Suo computer.
+  - q: Con quale licenza è pubblicato Rhinvoice?
+    a: La GNU Affero General Public License v3.0 o successiva (AGPL-3.0). Può usare, modificare e distribuire Rhinvoice liberamente. Se offre ad altri una versione modificata come servizio, condivide le Sue modifiche con la stessa licenza.
+  - q: Per quali Paesi è fatto Rhinvoice?
+    a: Per aziende in Svizzera, nel Liechtenstein, in Germania e in Austria, con le aliquote IVA, le indicazioni obbligatorie, le diciture e i codici QR di pagamento di ciascun Paese. I Suoi clienti possono trovarsi ovunque nel mondo.
+  - q: Verranno aggiunti altri Paesi?
+    a: Rhinvoice è costruito per questo. Tutto ciò che varia da un Paese all’altro si trova in un profilo per Paese. Un nuovo Paese come i Paesi Bassi è un nuovo profilo con aliquote, diciture, indicazioni obbligatorie e fonti ufficiali. Le richieste passano dal modulo GitHub «Tax or legal rule».
+  - q: In quali lingue è disponibile Rhinvoice?
+    a: L’interfaccia è in tedesco, nelle varianti svizzera, tedesca e austriaca, in francese, in italiano e in inglese. Francese e italiano sono tradotti automaticamente; la lingua si sceglie con l’icona del globo. Rhinvoice scrive i documenti in tedesco, inglese, francese o italiano (francese e italiano come si scrivono in Svizzera).
+  - q: Dove sono conservati i miei dati?
+    a: Sul Suo server o sul Suo computer, nel database PostgreSQL di Rhinvoice. Contiene clienti, articoli, documenti e i PDF archiviati. Rhinvoice non è un servizio cloud; i dati restano da Lei. Il programma per Windows e Mac li conserva nella Sua cartella utente.
+  - q: Rhinvoice rispetta le regole di immodificabilità della GoBD, dell’art. 958f CO e della BAO?
+    a: Rhinvoice le applica. Dall’emissione in poi contenuto e PDF di una fattura sono bloccati, anche direttamente nel database, e il PDF viene conservato con il suo SHA-256. Le correzioni si fanno solo con una fattura di storno con un proprio numero. Se la Sua contabilità nel suo insieme rispetta le regole va chiarito con il Suo consulente fiscale o fiduciario.
+  - q: Come fa Rhinvoice il backup dei miei dati?
+    a: Con restic, cifrato e deduplicato, ogni giorno e circa due minuti dopo l’emissione o lo storno di documenti. Le destinazioni sono storage compatibili con S3, SFTP, una cartella, Dropbox, Google Drive e altre; il programma per Windows e Mac salva in una cartella come OneDrive o iCloud Drive. Rhinvoice conserva 7 backup giornalieri, 4 settimanali, 12 mensili e tutti quelli annuali.
+  - q: Rhinvoice può creare fatture elettroniche?
+    a: Sì. Il PDF di ogni fattura emessa è un PDF/A-3b e contiene una fattura ZUGFeRD / Factur-X (EN 16931), a meno che la disattivi nel layout di stampa o manchino dati obbligatori. Per le autorità pubbliche tedesche Rhinvoice scrive anche la XRechnung 3.0. Entrambe sono verificate con il validatore KoSIT e con Mustang.
+  - q: Posso riprendere i dati dal programma di fatturazione che usavo prima?
+    a: Sì. Rhinvoice importa clienti, articoli e vecchie fatture da file CSV ed Excel (XLSX, XLS), con assegnazione delle colonne, prova a vuoto e modelli salvati. Le vecchie fatture arrivano con i loro PDF originali e restano invariate.
+  - q: Mi serve Docker?
+    a: No. Su Windows 10/11 e su un Mac con Apple silicon (macOS 12 o più recente) Rhinvoice si installa come programma normale con un unico setup, database compreso (beta). Per un server, un NAS, un Raspberry Pi o più utenti su computer diversi funziona con Docker e Docker Compose, anche sul proprio laptop con Docker Desktop.
+  - q: Rhinvoice funziona su un Raspberry Pi o su un NAS?
+    a: Sì. Rhinvoice è pubblicato per linux/amd64 e linux/arm64, quindi anche per il Raspberry Pi 4 e 5. Funziona su un NAS che può eseguire Docker con Docker Compose.
+  - q: Posso usare Rhinvoice sul telefono?
+    a: Sì. L’interfaccia si adatta al telefono. In giro controlla lo stato delle fatture, le segna come pagate, apre e condivide il PDF.
+  - q: Dove trovo aiuto, ed esiste una licenza commerciale?
+    a: Domande e idee vanno nelle GitHub Discussions, gli errori nelle GitHub Issues di rhinvoice/rhinvoice. Per una licenza commerciale, una collaborazione o la ripresa del progetto scriva a hello@rhinvoice.com.
+  - q: Posso provare Rhinvoice senza installarlo?
+    a: Sì, nella demo pubblica per la Svizzera (ch.rhinvoice.com), la Germania (de.rhinvoice.com) e l’Austria (at.rhinvoice.com). Si azzera ogni ora e non accetta caricamenti, quindi niente importazioni, niente logo e niente file. Non invia e-mail.
+---
+
+import Faq from "../../../../components/Faq.astro";
+
+Rhinvoice è un programma di fatturazione gratuito e open source per piccole imprese in Svizzera, nel Liechtenstein, in Germania e in Austria, che fa funzionare Lei stesso, come programma per Windows e Mac o con Docker. È ancora in beta (versione 0.x): lo provi prima su un’installazione di prova. Ecco le domande più frequenti; altro in [installazione](/docs/it/getting-started/installation/), [fattura elettronica](/docs/it/invoices/e-invoice/), [backup](/docs/it/operations/backup/) e nelle pagine dei Paesi [Svizzera](/docs/it/countries/switzerland/), [Liechtenstein](/docs/it/countries/liechtenstein/), [Germania](/docs/it/countries/germany/) e [Austria](/docs/it/countries/austria/).
+
+## Domande frequenti
+
+<Faq />

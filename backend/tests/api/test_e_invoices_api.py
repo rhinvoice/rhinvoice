@@ -1,5 +1,6 @@
 from dataclasses import replace
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -92,6 +93,8 @@ def test_the_preview_warns_before_issuing(user_client: TestClient, customer_id: 
     body = {"type": "invoice", "customer_id": customer_id, "lines": LINES}
     preview = user_client.post("/api/documents/preview", json=body)
     assert preview.json()["e_invoice_problems"] == []
+    # Swiss customers need no XRechnung.
+    assert preview.json()["xrechnung_problems"] == []
     # Reverse charge to a German business whose VAT number lacks the country code.
     customer = {
         "kind": "company",
@@ -102,3 +105,66 @@ def test_the_preview_warns_before_issuing(user_client: TestClient, customer_id: 
     german = user_client.post("/api/customers", json=customer).json()["id"]
     lacking = user_client.post("/api/documents/preview", json={**body, "customer_id": german})
     assert lacking.json()["e_invoice_problems"] == ["buyer_vat_id_missing"]
+    # German customers are warned about their XRechnung, too.
+    assert lacking.json()["xrechnung_problems"] == [
+        "buyer_vat_id_missing",
+        "buyer_reference_missing",
+        "seller_email_missing",
+        "seller_phone_missing",
+        "buyer_email_missing",
+    ]
+    # The customer's Leitweg-ID is the buyer reference.
+    authority = user_client.post(
+        "/api/customers",
+        json={
+            **customer,
+            "company_name": "Bezirksamt Beispiel",
+            "vat_number": None,
+            "email": "rechnung@bezirksamt.example",
+            "buyer_reference": "04011000-1234512345-06",
+        },
+    ).json()
+    assert authority["buyer_reference"] == "04011000-1234512345-06"
+    fixed = user_client.post(
+        "/api/documents/preview", json={**body, "customer_id": authority["id"]}
+    )
+    assert fixed.json()["xrechnung_problems"] == ["seller_email_missing", "seller_phone_missing"]
+
+
+@pytest.mark.usefixtures("customer_id")  # the company's bank account
+def test_an_issued_xrechnung_keeps_the_leitweg_id_of_its_day(
+    app: FastAPI, container: Container, user_client: TestClient
+) -> None:
+    app.state.container = replace(
+        container, printing=replace(container.printing, pdf_renderer=FakePdf())
+    )
+    company = {
+        "name": "Muster GmbH",
+        "address": ADDRESS,
+        "default_currency": "CHF",
+        "vat_number": "CHE-123.456.788",
+        "email": "info@muster.example",
+        "phone": "+41 71 000 00 00",
+    }
+    assert user_client.put("/api/company", json=company).status_code == 200
+    customer = {
+        "kind": "company",
+        "company_name": "Bezirksamt Beispiel",
+        "address": {"postal_code": "10115", "city": "Berlin", "country": "DE"},
+        "email": "rechnung@bezirksamt.example",
+        "buyer_reference": "04011000-1234512345-06",
+    }
+    authority = user_client.post("/api/customers", json=customer).json()["id"]
+    draft = create(user_client, authority, reference="Bestellung 4711")
+    issued = post(user_client, f"/api/documents/{draft['id']}/issue")
+
+    changed = {**customer, "buyer_reference": "04011000-9999999999-12"}
+    assert user_client.put(f"/api/customers/{authority}", json=changed).status_code == 200
+
+    xrechnung = user_client.get(f"/api/documents/{issued['id']}/xrechnung")
+    assert xrechnung.status_code == 200
+    xml = xrechnung.text
+    assert "<ram:BuyerReference>04011000-1234512345-06</ram:BuyerReference>" in xml
+    assert "04011000-9999999999-12" not in xml
+    # The invoice's own reference stays, as the buyer's order reference (BT-13).
+    assert "<ram:IssuerAssignedID>Bestellung 4711</ram:IssuerAssignedID>" in xml

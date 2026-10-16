@@ -2,20 +2,46 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://rhinvoice.com/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://rhinvoice.com/"/>
     <xhtml:link rel="alternate" hreflang="de" href="https://rhinvoice.com/de/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://rhinvoice.com/fr/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://rhinvoice.com/it/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rhinvoice.com/"/>
   </url>
   <url>
     <loc>https://rhinvoice.com/de/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://rhinvoice.com/"/>
     <xhtml:link rel="alternate" hreflang="de" href="https://rhinvoice.com/de/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://rhinvoice.com/fr/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://rhinvoice.com/it/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rhinvoice.com/"/>
+  </url>
+  <url>
+    <loc>https://rhinvoice.com/fr/</loc>
+    <lastmod>2026-10-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rhinvoice.com/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://rhinvoice.com/de/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://rhinvoice.com/fr/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://rhinvoice.com/it/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rhinvoice.com/"/>
+  </url>
+  <url>
+    <loc>https://rhinvoice.com/it/</loc>
+    <lastmod>2026-10-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rhinvoice.com/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://rhinvoice.com/de/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://rhinvoice.com/fr/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://rhinvoice.com/it/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rhinvoice.com/"/>
   </url>
 </urlset>

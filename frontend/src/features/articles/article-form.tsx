@@ -26,6 +26,7 @@ import { offersCategory, taxCategoryLabel } from "@/features/shared/country-prof
 import { unitsQuery } from "@/features/shared/reference-api";
 import { applyServerErrors } from "@/features/shared/server-errors";
 import { useErrorMessage } from "@/features/shared/use-error-message";
+import { unitName } from "@/lib/locale";
 
 interface ArticleFormProps {
   readonly defaultValues: ArticleFormValues;
@@ -111,11 +112,13 @@ export function ArticleForm({ defaultValues, onSubmit }: ArticleFormProps) {
                     code: defaultValues.unit,
                     label_de: defaultValues.unit,
                     label_en: defaultValues.unit,
+                    label_fr: defaultValues.unit,
+                    label_it: defaultValues.unit,
                   },
                 ]
               ).map((unit) => (
                 <option key={unit.code} value={unit.code}>
-                  {locale === "en" ? unit.label_en : unit.label_de} ({unit.code})
+                  {unitName(locale, unit)} ({unit.code})
                 </option>
               ))}
             </NativeSelect>

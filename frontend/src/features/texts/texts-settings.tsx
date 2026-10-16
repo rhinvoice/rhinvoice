@@ -37,6 +37,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { FormAlert } from "@/features/shared/form-alert";
+import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import {
   legalNoticesQuery,
@@ -105,10 +106,7 @@ export function TextsSettings() {
         <Segmented
           label={t("documents.language")}
           value={language}
-          options={[
-            ["de", t("language.de")],
-            ["en", t("language.en")],
-          ]}
+          options={DOCUMENT_LANGUAGES.map((option) => [option, t(`language.${option}`)])}
           onChange={setLanguage}
         />
       </div>

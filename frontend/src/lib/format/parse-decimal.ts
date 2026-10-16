@@ -5,8 +5,16 @@ const UNAMBIGUOUS_GROUPING = /[\s'\u2019\u00a0\u202f]/g;
 
 type Separator = "." | ",";
 
-function localeDecimal(locale: Locale): Separator {
-  return locale === "de-DE" || locale === "de-AT" ? "," : ".";
+/**
+ * The separators that mean "decimal" when typed once. French- and Italian-speaking
+ * Swiss write a decimal comma by hand ("1,250" is 1.25), while the interface shows
+ * the Swiss dot; apostrophes and spaces group thousands, so both count as decimal.
+ */
+function localeDecimals(locale: Locale): readonly Separator[] {
+  if (locale === "de-DE" || locale === "de-AT") {
+    return [","];
+  }
+  return locale === "fr-CH" || locale === "it-CH" ? [".", ","] : ["."];
 }
 
 function other(separator: Separator): Separator {
@@ -24,7 +32,8 @@ function count(text: string, separator: Separator): number {
  * - One kind, several times: it groups thousands ("1.234.567").
  * - One kind, once: the locale's decimal separator is decimal. The other one is
  *   decimal too unless exactly three digits follow ("1,5" in de-CH is 1.5,
- *   "1,234" is 1234) – people often type the "wrong" separator.
+ *   "1,234" is 1234) – people often type the "wrong" separator. In fr-CH and
+ *   it-CH both are decimal ("1,250" and "1.250" are 1.25).
  */
 function decimalSeparator(body: string, locale: Locale): Separator | null {
   const lastDot = body.lastIndexOf(".");
@@ -39,7 +48,7 @@ function decimalSeparator(body: string, locale: Locale): Separator | null {
   if (count(body, separator) > 1) {
     return null;
   }
-  if (separator === localeDecimal(locale)) {
+  if (localeDecimals(locale).includes(separator)) {
     return separator;
   }
   const digitsAfter = body.length - body.lastIndexOf(separator) - 1;

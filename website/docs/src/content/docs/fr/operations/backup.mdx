@@ -1,0 +1,193 @@
+---
+title: Sauvegarder et restaurer Rhinvoice
+description: "Sauvegardes chiffrées de Rhinvoice avec restic vers S3, SFTP, Dropbox, Google Drive ou un dossier. Chaque jour et après l’émission, sauvegardes annuelles conservées."
+faq:
+  - q: À quelle fréquence Rhinvoice fait-il une sauvegarde?
+    a: "Chaque jour, par défaut à 02:00, et environ deux minutes après l’émission ou l’annulation de documents. Paramètres, Sauvegarde, Sauvegarder maintenant en demande une immédiatement."
+  - q: Combien de temps les sauvegardes sont-elles conservées?
+    a: "7 quotidiennes, 4 hebdomadaires, 12 mensuelles et toutes les sauvegardes annuelles. Les sauvegardes annuelles ne sont jamais supprimées, car les factures doivent être conservées dix ans."
+  - q: Rhinvoice peut-il sauvegarder sur Dropbox ou Google Drive?
+    a: "Oui, via rclone, qui fait partie du conteneur de sauvegarde. Les sauvegardes sont chiffrées avant de quitter la machine, si bien que le fournisseur cloud ne stocke que des blocs illisibles."
+  - q: Que se passe-t-il si je perds le mot de passe de sauvegarde?
+    a: "Alors personne ne peut restaurer les sauvegardes, pas même vous. Conservez RESTIC_PASSWORD aussi ailleurs, par exemple dans un gestionnaire de mots de passe ou imprimé dans un coffre."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice sauvegarde toute sa base de données avec [restic](https://restic.net) : **chiffrée, dédupliquée et compressée**, chaque jour et peu après chaque document émis ou annulé, vers une destination de votre choix (S3, SFTP, Dropbox, Google Drive ou un dossier). La base de données contient tout : clients, articles, documents, les PDF archivés des documents émis, le logo et les réglages.
+
+Cette page traite de l’installation avec Docker. Le programme pour Windows et Mac se sauvegarde lui-même : [sauvegarde dans le programme](/docs/fr/operations/backup-desktop/).
+
+## Quand et combien de temps
+
+- **Quand :** chaque jour (par défaut à 02:00, `BACKUP_DAILY_AT`) et environ deux minutes après l’émission ou l’annulation de documents (plusieurs à la suite donnent une seule sauvegarde). *Paramètres → Sauvegarde → Sauvegarder maintenant* en demande une immédiatement.
+- **Conservées :** 7 quotidiennes, 4 hebdomadaires, 12 mensuelles et **toutes les annuelles**. Les factures doivent être conservées dix ans (art. 958f CO, GoBD, BAO); les sauvegardes annuelles ne sont jamais supprimées. Les anciennes sauvegardes sont supprimées le dimanche, jour où un échantillon de 5 % des données est aussi vérifié.
+- **Pas sauvegardée :** une installation sans données d’entreprise (une installation neuve). Sa base de données vide ne doit jamais devenir la dernière sauvegarde.
+- **Affiché :** l’aperçu avertit lorsque la dernière sauvegarde réussie date de plus de 24 heures ou que la sauvegarde n’est pas configurée. *Paramètres → Sauvegarde* liste les dernières sauvegardes.
+
+## Configuration
+
+Choisissez une destination et inscrivez-la dans `.env` (à côté de `compose.yml`), puis redémarrez avec `docker compose up -d`.
+
+```dotenv
+RESTIC_PASSWORD='a-long-random-password'   # chiffre les sauvegardes
+RESTIC_REPOSITORY=...                      # voir ci-dessous
+```
+
+<Aside type="caution" title="Conservez aussi le mot de passe ailleurs">
+Sans `RESTIC_PASSWORD`, personne ne peut restaurer les sauvegardes, pas même vous. Conservez-le dans un gestionnaire de mots de passe ou imprimé dans un coffre. Créez-le avec `openssl rand -hex 32`, ou mettez-le entre apostrophes simples : sinon Docker Compose modifierait un `$` qu’il contient.
+</Aside>
+
+### Stockage compatible S3
+
+Backblaze B2, Infomaniak Swiss Backup, AWS, Wasabi et d’autres :
+
+```dotenv
+RESTIC_REPOSITORY=s3:https://s3.eu-central-003.backblazeb2.com/my-bucket/rhinvoice
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+```
+
+Utilisez une clé qui n’a accès qu’à ce bucket.
+
+### SFTP (NAS, serveur)
+
+```dotenv
+RESTIC_REPOSITORY=sftp:backup@nas.example:/backups/rhinvoice
+```
+
+Le conteneur a besoin de la clé SSH et de la clé d’hôte du serveur (`known_hosts`). Montez-les, par exemple dans un `compose.override.yml` :
+
+```yaml
+services:
+  backup:
+    volumes:
+      - ./ssh:/home/backup/.ssh:ro   # id_ed25519 et known_hosts
+```
+
+```bash
+ssh-keyscan nas.example > ssh/known_hosts
+sudo chown -R 10001 ssh && chmod 700 ssh && chmod 600 ssh/id_ed25519   # l’utilisateur du conteneur
+```
+
+### Dropbox et autres stockages cloud
+
+restic les atteint via [rclone](https://rclone.org), qui fait partie du conteneur de sauvegarde. La première sauvegarde contient tous les PDF archivés; les suivantes n’ajoutent que ce qui a changé, en général quelques kilo-octets.
+
+<Steps>
+
+1. **Autoriser l’accès**, une fois, sur un ordinateur avec un navigateur web (ce n’est pas forcément le serveur) : installez rclone 1.75 ou plus récent ([rclone.org/downloads](https://rclone.org/downloads/), sur un Mac `brew install rclone`) et lancez
+
+   ```bash
+   rclone authorize "dropbox"
+   ```
+
+   Connectez-vous à Dropbox dans le navigateur qui s’ouvre et autorisez l’accès. Le terminal affiche ensuite un jeton : une ligne qui commence par `{"access_token":`.
+
+2. **Remettre le jeton au conteneur de sauvegarde**, sur le serveur, dans le dossier de Rhinvoice. `read` garde le jeton hors de l’écran et de l’historique du shell :
+
+   ```bash
+   read -rs TOKEN    # collez le jeton, appuyez sur Entrée
+   docker compose run --rm --no-deps backup rclone config create dropbox dropbox \
+     config_refresh_token false token "$TOKEN"
+   unset TOKEN
+   ```
+
+   La configuration est conservée, non chiffrée, dans le volume `backup-rclone`; rclone y renouvelle lui-même l’accès.
+
+3. **Choisir le dossier** dans `.env` et redémarrer (`docker compose up -d`) :
+
+   ```dotenv
+   RESTIC_REPOSITORY=rclone:dropbox:Rhinvoice-Backup
+   ```
+
+4. **Essayer :** attendez que `docker compose logs backup` affiche `waiting for requests`, puis lancez `docker compose exec backup rhinvoice-backup backup`. Le dossier `Rhinvoice-Backup` apparaît dans votre Dropbox; *Paramètres → Sauvegarde* montre la sauvegarde. La création du dépôt au premier démarrage prend environ une minute via rclone. Jusqu’à la version 0.6.0, une sauvegarde demandée avant échoue avec `config file already exists`, bien que tout soit en ordre.
+
+</Steps>
+
+L’app Dropbox propre à rclone peut accéder à toute votre Dropbox. Pour un accès limité à un seul dossier, créez votre propre app Dropbox avec l’accès «App folder» ([rclone.org/dropbox](https://rclone.org/dropbox/#get-your-own-dropbox-app-id)) et ajoutez son `client_id` et son `client_secret` aux deux commandes.
+
+**Google Drive** nécessite votre propre client ID, car celui partagé par rclone cesse de fonctionner au cours de 2026. Les étapes sont sur une page à part : [Sauvegarder sur Google Drive](/docs/fr/operations/backup-google-drive/).
+
+Pour d’autres fournisseurs (OneDrive, kDrive et autres stockages WebDAV), lancez `docker compose run --rm --no-deps backup rclone config`, répondez «No» lorsqu’on vous demande d’utiliser automatiquement un navigateur web et suivez la documentation rclone du fournisseur. Nommez le remote comme vous voulez et utilisez-le dans `RESTIC_REPOSITORY=rclone:<nom>:<dossier>`.
+
+### Un dossier de cette machine
+
+Un dossier iCloud ou Nextcloud, le dossier de l’app Dropbox ou un disque USB :
+
+```dotenv
+RESTIC_REPOSITORY=/repository
+BACKUP_LOCAL_DIR=/Users/me/Library/Mobile Documents/com~apple~CloudDocs/Rhinvoice-Backup
+```
+
+Le conteneur écrit en tant qu’utilisateur 10001; sous Linux, rendez le dossier accessible en écriture pour lui (`sudo chown 10001 /chemin/vers/dossier`). Sans `BACKUP_LOCAL_DIR`, les sauvegardes atterrissent dans un volume Docker sur le même disque : cela protège contre les erreurs, pas contre un disque défectueux.
+
+## Vérifier
+
+```bash
+docker compose logs backup                            # ce que fait le conteneur
+docker compose exec backup rhinvoice-backup snapshots # lister les sauvegardes
+docker compose exec backup rhinvoice-backup check     # vérifier le dépôt
+docker compose exec backup rhinvoice-backup backup    # sauvegarder maintenant
+docker compose exec backup rhinvoice-backup rclone lsd dropbox:  # une destination rclone est joignable
+```
+
+## Restaurer
+
+La restauration **remplace toute la base de données** par l’état d’une sauvegarde. Elle s’effectue en une seule transaction : si quelque chose échoue, rien ne change.
+
+```bash
+docker compose exec backup rhinvoice-backup snapshots   # choisir un ID de snapshot
+docker compose stop app backup
+docker compose run --rm --no-deps backup restore latest # ou l’ID, p. ex. 52365e00
+docker compose start app backup
+```
+
+Depuis le dossier des sources : `make restore SNAPSHOT=latest`.
+
+**Sur une nouvelle machine :** installez Rhinvoice comme décrit dans [Installation](/docs/fr/getting-started/installation/) avec les mêmes `RESTIC_REPOSITORY` et `RESTIC_PASSWORD`. Démarrez d’abord **seulement la base de données** (`docker compose up -d db`), puis restaurez comme ci-dessus et démarrez tout (`docker compose up -d`).
+
+## Essayer une restauration à côté de l’installation en service
+
+Essayez une restauration une fois après la configuration. Une deuxième installation dans son propre dossier restaure la dernière sauvegarde sans toucher à la première ([plusieurs installations sur un même ordinateur](/docs/fr/getting-started/installation/#plusieurs-installations-sur-un-même-ordinateur)). L’exemple suppose que l’installation se trouve dans `~/rhinvoice` avec le nom de projet `rhinvoice`. Utilisez vos propres noms.
+
+```bash
+mkdir ~/rhinvoice-restoretest && cd ~/rhinvoice-restoretest
+cp ~/rhinvoice/compose.yml ~/rhinvoice/.env .
+# Son propre nom de projet et son propre port, et pas de factures récurrentes depuis la copie.
+# Sous Linux : sed -i 's/…/…/' .env (sans les '').
+sed -i '' 's/^COMPOSE_PROJECT_NAME=.*/COMPOSE_PROJECT_NAME=rhinvoice-restoretest/; s/^RHINVOICE_PORT=.*/RHINVOICE_PORT=8100/' .env
+echo 'RHINVOICE_RECURRING=false' >> .env
+grep -E '^(COMPOSE_PROJECT_NAME|RHINVOICE_PORT|RHINVOICE_RECURRING)=' .env   # vérifier les trois
+
+docker compose up -d db
+# Seulement avec une destination rclone (Dropbox, Google Drive …) : copier l’accès dans le volume de la copie.
+docker compose run --rm --no-deps backup rclone version
+docker run --rm -v rhinvoice_backup-rclone:/from:ro \
+  -v rhinvoice-restoretest_backup-rclone:/to alpine sh -c 'cp -a /from/. /to/'
+
+docker compose run --rm --no-deps backup snapshots
+docker compose run --rm --no-deps backup restore latest
+docker compose up -d app        # seulement l’app, jamais le conteneur de sauvegarde de la copie
+```
+
+Ouvrez `http://localhost:8100`, connectez-vous et regardez quelques factures. N’envoyez rien depuis la copie : les réglages du serveur de messagerie ont été restaurés avec tout le reste. Ensuite, supprimez-la :
+
+```bash
+grep '^COMPOSE_PROJECT_NAME=' .env     # doit afficher rhinvoice-restoretest
+docker compose down -v
+cd ~ && rm -rf ~/rhinvoice-restoretest
+```
+
+<Aside type="caution" title="Le nom de projet décide de ce que touche une commande">
+Sans `COMPOSE_PROJECT_NAME` modifié, chaque commande ci-dessus, y compris `down -v`, agit sur l’installation réelle. Si `.env` n’a pas cette ligne, ajoutez-la.
+</Aside>
+
+- **Démarrez l’app par son nom.** Un simple `docker compose up -d` démarre aussi le conteneur de sauvegarde de la copie. Deux installations qui sauvegardent dans un même dépôt mélangeraient leurs sauvegardes. Si vous le voulez vraiment, donnez à chacune son propre `BACKUP_HOST`.
+- **L’accès rclone est conservé par projet**, dans le volume `<projet>_backup-rclone`. La copie ne l’a pas sans l’étape `cp`. `docker volume ls` liste les volumes.
+- `RHINVOICE_RECURRING=false` empêche la copie d’établir et d’envoyer par e-mail les factures récurrentes de l’installation réelle.
+
+## Questions fréquentes
+
+<Faq />

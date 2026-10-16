@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001 - French and Italian elide with the typographic apostrophe.
 """Payment reminders: when the next level is due and what it asks for."""
 
 from dataclasses import replace
@@ -125,8 +126,9 @@ def test_a_level_before_its_day_is_written_only_on_purpose() -> None:
     assert early.issued_on == today
 
 
-def test_english_invoices_keep_the_english_text() -> None:
-    invoice = issued(language=Language.EN)
+@pytest.mark.parametrize("language", list(Language))
+def test_reminders_keep_the_text_of_the_invoice_language(language: Language) -> None:
+    invoice = issued(language=language)
     reminder = Dunning(invoice).remind(
         DEFAULT_LEVELS,
         level=1,
@@ -135,7 +137,9 @@ def test_english_invoices_keep_the_english_text() -> None:
         today=DUE + timedelta(days=1),
         now=NOW,
     )
-    assert reminder.text == DEFAULT_LEVELS[0].text_en
+    assert reminder.text == DEFAULT_LEVELS[0].text(language)
+    texts = {getattr(DEFAULT_LEVELS[0], f"text_{other.value}") for other in Language}
+    assert len(texts) == len(Language), "every language has its own text"
 
 
 @pytest.mark.parametrize("change", ["paid", "quote", "cancelled", "draft"])
@@ -186,6 +190,8 @@ LEVEL = DEFAULT_LEVELS[0]
         ({"fee": Decimal("1000.05")}, "fee", "the fee must be between 0 and 1000 in steps of 0.05"),
         ({"fee": Decimal("12.33")}, "fee", "the fee must be between 0 and 1000 in steps of 0.05"),
         ({"text_de": "x" * 2001}, "text_de", "text_de must be at most 2000 characters long"),
+        ({"text_fr": "x" * 2001}, "text_fr", "text_fr must be at most 2000 characters long"),
+        ({"text_it": "x" * 2001}, "text_it", "text_it must be at most 2000 characters long"),
     ],
 )
 def test_levels_are_validated(changes: dict[str, object], field: str, message: str) -> None:
@@ -202,7 +208,10 @@ def test_level_texts_are_cleaned_and_limits_are_inclusive() -> None:
         fee=Decimal("1000.00"),
         text_de=" Bitte \r\n",
         text_en="",
+        text_fr=" S’il vous plaît\r\n",
+        text_it="\tPer favore ",
     )
     assert (level.text_de, level.days_after_due) == ("Bitte", 365)
+    assert (level.text_fr, level.text_it) == ("S’il vous plaît", "Per favore")
     assert replace(LEVEL, days_after_due=0, payment_days=1, fee=Decimal(0)).payment_days == 1
     assert replace(LEVEL, fee=Decimal("12.35")).fee == Decimal("12.35")

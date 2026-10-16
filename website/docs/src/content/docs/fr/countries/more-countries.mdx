@@ -1,0 +1,74 @@
+---
+title: Ajouter d’autres pays
+description: "Rhinvoice peut être étendu à d’autres pays. Chaque pays a un profil de pays avec ses taux de TVA, ses mentions et ses indications obligatoires, par exemple les Pays-Bas."
+faq:
+  - q: Rhinvoice peut-il être étendu à d’autres pays?
+    a: "Oui. Tout ce qui diffère d’un pays à l’autre se trouve dans un profil de pays par pays. Un nouveau pays, comme les Pays-Bas, est un nouveau profil avec les taux de TVA, les mentions, les indications obligatoires et les sources officielles. Les tests montrent ce qui manque encore."
+  - q: Puis-je facturer des clients à l’étranger dès aujourd’hui?
+    a: "Oui. Le pays de votre entreprise doit être la Suisse, le Liechtenstein, l’Allemagne ou l’Autriche, mais vos clients peuvent se trouver partout. Rhinvoice choisit le traitement fiscal d’après les deux pays, par exemple l’autoliquidation dans l’UE ou une exportation exonérée, et imprime la mention correspondante."
+  - q: Comment mon pays arrive-t-il dans Rhinvoice?
+    a: "Ouvrez un ticket sur GitHub avec le formulaire « Tax or legal rule » et indiquez les sources officielles. Un pays est construit selon le guide « Adding a country » et arrive par pull request."
+  - q: Qu’est-ce qui rend un nouveau pays plus coûteux?
+    a: "Une monnaie propre en plus du CHF et de l’EUR, des factures dans une autre langue que l’allemand, l’anglais, le français ou l’italien, un réseau national de factures électroniques comme celui de l’Italie, ou un droit de la TVA hors de l’UE. Pour un pays de l’UE avec l’euro, la logique fiscale existe déjà."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice est conçu dès le départ pour **d’autres pays**. Tout ce qui diffère d’un pays à l’autre se trouve dans **un profil de pays par pays** : taux de TVA datés, mentions légales, indications obligatoires, code QR de paiement, format des nombres et sources officielles. Le reste de Rhinvoice interroge uniquement le profil et ne nomme aucun pays. Un nouveau pays, par exemple les **Pays-Bas**, est donc un nouveau profil, pas une modification dans tout le programme.
+
+<Aside type="tip" title="Les clients à l’étranger, c’est déjà possible">
+Le pays de votre **entreprise** doit être la Suisse, le Liechtenstein, l’Allemagne ou l’Autriche. Vos **clients** peuvent se trouver partout : Rhinvoice choisit le traitement fiscal d’après le pays de l’entreprise et celui du client (national, autoliquidation, livraison intracommunautaire, exportation) et imprime la mention correspondante.
+</Aside>
+
+## Ce que contient un profil de pays
+
+- le droit de la TVA : la directive TVA de l’UE ou la LTVA suisse
+- le territoire TVA (la Suisse, par exemple, avec le Liechtenstein)
+- les **taux de TVA avec la date à partir de laquelle chacun s’applique**, pour que les anciennes factures soient justes elles aussi
+- les termes des documents en allemand, en anglais, en français et en italien : le nom de l’impôt, le libellé du numéro TVA, la **mention légale** par traitement fiscal et la formule de salutation des e-mails
+- les **indications obligatoires** que Rhinvoice vérifie avant l’émission
+- le format des nombres, le **code QR de paiement** (facture QR suisse ou code QR EPC), la monnaie par défaut et si l’arrondi à 0.05 est proposé
+- les **sources officielles** de tout cela
+
+L’interface affiche les noms d’impôt, les taux et les champs à partir du profil; elle n’a donc presque pas besoin de changer pour un nouveau pays.
+
+## Exemple : les Pays-Bas
+
+Le guide pour les développeurs décrit le travail avec les Pays-Bas (`NL`) comme exemple :
+
+<Steps>
+
+1. **Ajouter le code du pays.**
+2. **Écrire le profil**, en copiant celui de l’Allemagne ou de l’Autriche, puisque ce sont deux pays de l’UE : taux datés, mentions dans les quatre langues, indications obligatoires, code de paiement et sources.
+3. **Enregistrer le profil**, pour que Rhinvoice le connaisse.
+4. **Ajouter des données de démonstration**, avec des IBAN d’exemple officiels, jamais avec de vrais comptes.
+5. **Proposer le pays dans l’interface.**
+6. **Vérifier** : les tests indiquent si le profil est complet et ce qui manque. Pour finir, émettez une facture et regardez le PDF.
+
+</Steps>
+
+Comme les pays de l’UE partagent la logique de la directive TVA, un nouveau pays de l’UE avec l’euro ne demande aucune modification de la logique fiscale. Les Pays-Bas paient en euros, le code QR EPC y convient donc aussi.
+
+## Ce qui rend un pays plus coûteux
+
+Certaines choses ne sont pas encore dans un profil. Elles déterminent l’ampleur du travail pour un pays :
+
+- **Une monnaie propre.** Rhinvoice connaît le CHF et l’EUR. Un pays avec sa propre monnaie (par exemple PLN ou SEK) doit d’abord la faire ajouter.
+- **Une autre langue.** Les documents sont établis en allemand, en anglais, en français ou en italien. Si les clients attendent leur propre langue, il faut d’abord une nouvelle langue avec tous ses textes.
+- **Un réseau national de factures électroniques**, comme celui de l’Italie. Chaque facture contient déjà ZUGFeRD / Factur-X selon EN 16931 ([factures électroniques](/docs/fr/invoices/e-invoice/)); un réseau obligatoire serait un module à part.
+- **Un droit de la TVA hors de l’UE.** Un pays avec son propre droit de la TVA a besoin de ses propres règles pour les traitements fiscaux.
+
+## Comment votre pays arrive dans Rhinvoice
+
+1. **Le demander :** ouvrez un ticket sur [GitHub](https://github.com/rhinvoice/rhinvoice/issues/new/choose) avec le formulaire *Tax or legal rule*. Indiquez le pays et les sources officielles : la loi sur la TVA, les taux et ce qu’une facture doit indiquer.
+2. **Le construire :** les développeurs suivent le guide [Adding a country](https://github.com/rhinvoice/rhinvoice/blob/main/docs/adding-a-country.md). Plus d’informations sous [Pour les développeurs](/docs/fr/help/developers/).
+3. **Le proposer :** le pays arrive par pull request, avec les sources et le PDF d’une facture d’exemple.
+
+<Aside type="caution" title="Pas de conseil fiscal">
+Rhinvoice ne donne aucun conseil fiscal. Chaque règle de Rhinvoice indique sa source officielle, pour qu’elle puisse être vérifiée.
+</Aside>
+
+## Questions fréquentes
+
+<Faq />

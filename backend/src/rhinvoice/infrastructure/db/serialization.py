@@ -128,6 +128,7 @@ def customer_to_json(customer: Customer) -> Json:
         "email": _opt(customer.email),
         "phone": customer.phone,
         "vat_number": _opt(customer.vat_number),
+        "buyer_reference": customer.buyer_reference,
         "group": customer.group,
         "default_currency": _opt(customer.default_currency),
         "default_language": _opt(customer.default_language),
@@ -160,6 +161,8 @@ def customer_from_json(data: Json) -> Customer:
         email=None if data["email"] is None else EmailAddress(data["email"]),
         phone=data["phone"],
         vat_number=None if data["vat_number"] is None else VatNumber(data["vat_number"]),
+        # Customers frozen before version 0.8 have no buyer reference.
+        buyer_reference=data.get("buyer_reference", ""),
         group=data["group"],
         default_currency=None
         if data["default_currency"] is None

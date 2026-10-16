@@ -8,9 +8,14 @@ export interface LevelInput {
   readonly fee: string;
   readonly text_de: string;
   readonly text_en: string;
+  readonly text_fr: string;
+  readonly text_it: string;
 }
 
-export type LevelField = "days_after_due" | "payment_days" | "fee" | "text_de" | "text_en";
+/** The text fields of a level, one per document language. */
+export const TEXT_FIELDS = ["text_de", "text_en", "text_fr", "text_it"] as const;
+export type TextField = (typeof TEXT_FIELDS)[number];
+export type LevelField = "days_after_due" | "payment_days" | "fee" | TextField;
 export type LevelProblem = "days" | "paymentDays" | "fee" | "text";
 
 const MAX_DAYS = 365;
@@ -53,7 +58,7 @@ export function levelProblems(levels: readonly LevelInput[]): Map<string, LevelP
       problems.set(`${String(index)}.payment_days`, "paymentDays");
     }
     if (feeCents(level.fee) === null) problems.set(`${String(index)}.fee`, "fee");
-    for (const field of ["text_de", "text_en"] as const) {
+    for (const field of TEXT_FIELDS) {
       if (level[field].length > MAX_TEXT) problems.set(`${String(index)}.${field}`, "text");
     }
   });

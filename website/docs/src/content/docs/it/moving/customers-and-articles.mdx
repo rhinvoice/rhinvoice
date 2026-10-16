@@ -1,0 +1,115 @@
+---
+title: Importare clienti e articoli (CSV, Excel)
+description: Importare in Rhinvoice clienti e articoli dal Suo programma di fatturazione precedente da CSV o Excel, con prova, assegnazione delle colonne, modelli e doppioni.
+faq:
+  - q: Quali file posso importare in Rhinvoice?
+    a: File CSV in UTF-8 o Windows-1252 e file Excel nei formati .xlsx e .xls. Un file può avere al massimo 5 MB e al massimo 10’000 righe.
+  - q: Che cosa succede ai clienti che esistono già in Rhinvoice?
+    a: Lo sceglie prima dell’importazione. Rhinvoice li salta, li aggiorna o li crea di nuovo. Durante l’aggiornamento le celle vuote non cambiano nulla, quindi un’esportazione con meno colonne non cancella mai dati.
+  - q: Devo assegnare le colonne a mano?
+    a: Per lo più no. Rhinvoice riconosce i nomi di colonna usuali come «Numero cliente», «NAP» o «Numero IVA». Ciò che non riconosce lo assegna a mano e lo salva come modello per la prossima importazione.
+  - q: Le aliquote IVA precedenti come il 7,7 % vengono riconosciute?
+    a: Sì. Rhinvoice conosce le aliquote precedenti del Suo Paese, come il 7,7 % e l’8 % in Svizzera o il 16 % e il 5 % in Germania, e assegna all’articolo l’aliquota IVA corrispondente.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice importa clienti e articoli dal programma che usava prima, da **file CSV o Excel** (`.xlsx`, `.xls`). Ogni importazione inizia con una **prova** che non modifica nulla; Rhinvoice salva solo dopo che Lei ha controllato il risultato.
+
+<Aside type="tip" title="Prima clienti e articoli, alla fine le fatture">
+Le vecchie fatture cercano il loro cliente quando vengono importate. Importi quindi prima clienti e articoli, poi le fatture ([riprendere le vecchie fatture](/docs/it/moving/old-invoices/)).
+</Aside>
+
+## Come importare
+
+<Steps>
+
+1. Esporti clienti o articoli dal vecchio programma come file CSV o Excel.
+2. Apra *Clienti → Importa* o *Articoli → Importa* e clicchi su **Scegli file**.
+3. Controlli l’assegnazione delle colonne in *Associa le colonne*.
+4. In *Se la voce esiste già*, scelga che cosa succede alle voci esistenti.
+5. Controlli il *Risultato della prova*. Ogni riga indica se è *Nuovo*, *Aggiornato*, *Saltato* o un *Errore*.
+6. Clicchi su **Importa … clienti** o **Importa … articoli**. Solo questo salva.
+
+</Steps>
+
+La prova esegue la stessa importazione di quella reale, solo senza salvare. Ciò che riporta, compresi i numeri che assegna, è esattamente ciò che fa l’importazione.
+
+## File e codifiche
+
+- **CSV** in UTF-8 (anche UTF-16 con BOM) o Windows-1252. Rhinvoice riconosce da solo il separatore, come punto e virgola o virgola.
+- **Excel** nel formato attuale `.xlsx` e nel vecchio formato `.xls`. Rhinvoice riconosce il tipo di file dal contenuto, non dall’estensione.
+- **Limiti** per file: al massimo 5 MB, 10’000 righe e 100 colonne. Suddivida gli elenchi più grandi in più file.
+
+## Riconoscere e assegnare le colonne
+
+Rhinvoice riconosce le colonne dai nomi usuali, ignorando maiuscole, dieresi e punteggiatura. «Kunden-Nr.», «KdNr» e «Customer number» diventano tutti il numero cliente; «MwSt-Satz» e «VAT rate» diventano l’aliquota IVA.
+
+Ciò che non viene riconosciuto lo assegna a mano in *Associa le colonne*: per ogni colonna del file sceglie il campo di Rhinvoice in *Diventa*, oppure *Non importare*. Un valore di esempio dal file aiuta.
+
+**Salva come modello** conserva l’assegnazione con un nome. Va bene per ogni file con gli stessi nomi di colonna e viene proposto in *Modello* alla prossima importazione; *Riconosciuto automaticamente* usa di nuovo il riconoscimento. Eliminare un modello non tocca i dati importati.
+
+## Che cosa viene importato
+
+### Clienti
+
+| Campo | Nota |
+|---|---|
+| *Numero* | Senza numero, il cliente riceve il prossimo numero libero |
+| *Ragione sociale*, oppure *Nome* e *Cognome* | Senza ragione sociale, il cliente viene creato come persona |
+| *Appellativo*, *Persona di contatto* | |
+| Indirizzo | *Via (con numero civico)*, oppure separatamente con *Numero civico*, più *Complemento d’indirizzo*, *NAP* e *Località*, oppure entrambi in una colonna (*NAP e località*, anche «CH-9470 Buchs») |
+| *Paese* | Come nome o codice; senza, vale il Paese della Sua azienda |
+| *E-mail*, *Telefono* | |
+| *IDI / n. IVA* | |
+| *Leitweg-ID / riferimento dell’acquirente* | Per esempio da «Leitweg-ID» o «Buyer reference». Per la XRechnung ai clienti in Germania |
+| *Gruppo*, *Nota* | |
+| *Valuta*, *Lingua* | CHF o EUR, tedesco, inglese, francese o italiano (anche «fr», «Français», «it», «Italiano») |
+| *Sconto in %*, *Termine di pagamento in giorni*, *Esente da imposta* | |
+| *Cliente dal* <Since version="0.4.3" /> | Per esempio da «Kunde seit», «Angelegt am» o «Created», come 14.03.2019 o 2019-03-14, anche con un’ora |
+
+Serve una colonna per il numero cliente o il nome (azienda o cognome). I nuovi clienti hanno inoltre bisogno di NAP e località.
+
+### Articoli
+
+| Campo | Nota |
+|---|---|
+| *Numero* | Senza numero, l’articolo riceve il prossimo numero libero |
+| *Nome*, *Descrizione* | I nuovi articoli hanno bisogno di un nome |
+| *Unità* | Come codice o etichetta, per esempio «Std.», «Stunden», «HUR», «pro Monat», «jährlich» |
+| *Prezzo (valuta dell’azienda)*, *Prezzo CHF*, *Prezzo EUR* | Un prezzo per valuta |
+| *Aliquota IVA* | Come percentuale o come nome («Normal», «reduziert», «befreit») |
+| *Gruppo* | |
+| *Merce/servizio* | Vuoto conta come servizio |
+
+Rhinvoice legge gli importi in notazione svizzera, tedesca e inglese. Se «1.500» significa millecinquecento o uno e mezzo dipende dal Paese della Sua azienda.
+
+### Aliquote IVA precedenti
+
+Gli elenchi di articoli di programmi più vecchi contengono spesso aliquote che non valgono più. Rhinvoice conosce le aliquote precedenti del Paese della Sua azienda e assegna all’articolo l’aliquota IVA corrispondente: in Svizzera per esempio le aliquote normali del 7,7 % (dal 2018 al 2023) e dell’8 % (dal 2011 al 2017) secondo l’AFC, in Germania le aliquote del 16 % e del 5 % dal 1° luglio al 31 dicembre 2020. Sulla fattura vale poi l’aliquota della data della prestazione. Un’aliquota che il Suo Paese non ha mai avuto, come il 19 % per un’azienda svizzera, viene segnalata come errore della riga.
+
+## Se la voce esiste già
+
+Un cliente è lo stesso se ha lo stesso numero cliente oppure, senza numero, lo stesso nome e NAP. Un articolo è lo stesso se ha lo stesso numero di articolo oppure, senza numero, lo stesso nome.
+
+| Scelta | Che cosa succede |
+|---|---|
+| *Salta* | La voce esistente resta com’è |
+| *Aggiorna* | Le celle compilate sovrascrivono la voce, le celle vuote non cambiano nulla; via e numero civico cambiano insieme |
+| *Crea nuova* | Viene creata una seconda voce; se il numero è occupato, riceve il prossimo numero libero |
+
+Può quindi importare un file due volte, per esempio una seconda volta con *Aggiorna* quando mancava una colonna.
+
+## Righe con errori
+
+Rhinvoice non indovina mai. Una riga con un valore poco chiaro (non un importo, un’unità sconosciuta, un’aliquota IVA sconosciuta, una valuta diversa da CHF ed EUR …) viene segnalata con campo, motivo e valore e non viene importata; non consuma alcun numero. Le altre righe vengono importate. **Scarica rapporto (CSV)** Le fornisce tutte le righe con il loro risultato.
+
+<Aside type="note" title="Nella demo pubblica">
+La demo pubblica non accetta file: l’importazione è disattivata. La provi su una Sua [installazione](/docs/it/getting-started/installation/); con Docker bastano pochi minuti.
+</Aside>
+
+## Domande frequenti
+
+<Faq />

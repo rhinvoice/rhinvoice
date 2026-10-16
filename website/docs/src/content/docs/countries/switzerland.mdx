@@ -10,6 +10,8 @@ faq:
     a: Only when you use the QR reference. With a QR-IBAN Rhinvoice prints the 27-digit QR reference, with an ordinary IBAN the creditor reference (SCOR, starting with RF). Both work in CHF and EUR.
   - q: Does Rhinvoice round totals to 5 centimes?
     a: Yes, once you switch on cash rounding under Settings → Company. Only the CHF total is rounded to 0.05 and shown as a line of its own, "Rounding". The VAT stays exact to the centime.
+  - q: Can I write invoices in French or Italian?
+    a: Yes. Invoices, quotes, reminders, e-mails and the QR payment part come in French or Italian as written in Switzerland, with TVA or IVA and the terms of the VAT Act in its French (LTVA) and Italian (LIVA) version.
   - q: How long must invoices be kept in Switzerland?
     a: Ten years (Art. 958f CO). Rhinvoice locks issued invoices with their PDF; corrections are made only by a cancellation invoice.
 ---
@@ -83,6 +85,21 @@ Rhinvoice decides the tax treatment from your company's country, the customer's 
 | Goods leaving Switzerland | no | "Steuerbefreite Ausfuhrlieferung (Art. 23 Abs. 2 Ziff. 1 MWSTG)." |
 
 English documents print "Reverse charge: the recipient is liable for the VAT.", "Place of supply abroad, not subject to domestic VAT." and "VAT exempt export delivery." The reverse charge notice follows the customer's country (Art. 219a(1) of the EU VAT Directive); German customers, for example, need the wording of § 14a Abs. 5 UStG, which is why it stands in brackets. For goods, the editor reminds you of the proof of export (customs). You can change the tax treatment by hand in the editor; Rhinvoice logs the change with a reason in the history.
+
+## Invoices in French and Italian
+
+For customers in Romandy and Ticino, Rhinvoice also writes documents in **French** and **Italian** as they are written in Switzerland: "Facture" and "Fattura", "TVA 8.1 % sur …" and "IVA 8.1 % su …", amounts as `1’234.50`, dates as "9 mars 2026" and "9 marzo 2026". The QR payment part comes in the same language. Choose the language in the editor under *Language*, for a customer as *Document language*, or as the default under *Settings → Company*. Text templates, e-mail templates and reminder texts exist in both languages.
+
+The legal notices use the terms of the VAT Act in its French (LTVA) and Italian (LIVA) version:
+
+| Case | French | Italian |
+|---|---|---|
+| Not VAT registered | "Non assujetti à la TVA." | "Non assoggettato all’IVA." |
+| Service to a business in the EU with a VAT ID | "Autoliquidation : la TVA est due par le destinataire de la prestation." | "Inversione contabile: l’imposta è dovuta dal destinatario della prestazione." |
+| Service to any other customer abroad | "Prestation de services non soumise à la TVA (lieu de la prestation de services à l’étranger)." | "Prestazione di servizi non soggetta all’IVA (luogo della prestazione di servizi all’estero)." |
+| Goods leaving Switzerland | "Livraison à l’exportation exonérée de l’impôt (art. 23, al. 2, ch. 1, LTVA)." | "Fornitura all’esportazione esente dall’imposta (art. 23 cpv. 2 n. 1 LIVA)." |
+
+"Autoliquidation" and "inversione contabile" are the mentions the EU VAT Directive (Art. 226 point 11a) asks for in these languages. The ESTV writes the VAT number as `CHE-123.456.789 TVA` in French and `CHE-123.456.789 IVA` in Italian; Rhinvoice prints it as you entered it under *Settings → Company*. Change the wording under *Settings → Texts → Legal notices*.
 
 ## E-invoice
 

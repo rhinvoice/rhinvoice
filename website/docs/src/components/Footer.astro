@@ -2,22 +2,15 @@
 // Starlight's footer (edit link, last change, previous and next page), then the legal pages.
 import Default from "@astrojs/starlight/components/Footer.astro";
 
-const german = Astro.locals.starlightRoute.lang === "de";
-const links = german
-  ? [
-      ["/de/impressum/", "Impressum"],
-      ["/de/datenschutz/", "Datenschutz"],
-    ]
-  : [
-      ["/legal-notice/", "Legal notice"],
-      ["/privacy/", "Privacy"],
-    ];
+import { words } from "../lib/ui";
+
+const { legal, noTaxAdvice, legalLinks } = words(Astro.locals.starlightRoute.lang);
 ---
 
 <Default />
-<nav class="legal-links" aria-label={german ? "Rechtliches" : "Legal"}>
-  <span>Rhinvoice · AGPL-3.0 · {german ? "Keine Steuerberatung" : "No tax advice"}</span>
-  {links.map(([href, label]) => <a href={href}>{label}</a>)}
+<nav class="legal-links" aria-label={legal}>
+  <span>Rhinvoice · AGPL-3.0 · {noTaxAdvice}</span>
+  {legalLinks.map(([href, label]) => <a href={href}>{label}</a>)}
   <a href="https://www.webberz.ch/">made by webberz</a>
 </nav>
 

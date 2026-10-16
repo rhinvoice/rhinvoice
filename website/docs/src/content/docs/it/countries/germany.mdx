@@ -1,0 +1,109 @@
+---
+title: "Fatture in Germania: IVA, indicazioni, fatture elettroniche"
+description: Programma di fatturazione gratuito e open source per la Germania. IVA al 19 % e al 7 %, indicazioni § 14 UStG, piccole imprese § 19 UStG, GiroCode, ZUGFeRD e XRechnung.
+faq:
+  - q: Quali aliquote IVA applica Rhinvoice in Germania?
+    a: 19 % e 7 % (§ 12 UStG). Per le prestazioni dal 1° luglio al 31 dicembre 2020 Rhinvoice usa il 16 % e il 5 %. Vale l’aliquota alla data della prestazione.
+  - q: Sulla fattura deve figurare il numero fiscale o il numero di partita IVA?
+    a: Uno dei due (§ 14 Abs. 4 Nr. 2 UStG). Rhinvoice non emette una fattura senza nessuno dei due. Fanno eccezione le fatture di piccolo importo fino a EUR 250 lordi (§ 33 UStDV).
+  - q: Quale indicazione stampa Rhinvoice per le piccole imprese?
+    a: I documenti in tedesco riportano l’indicazione «Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).» Può modificare il testo in Impostazioni → Testi → Indicazioni legali.
+  - q: Da quando le aziende tedesche devono emettere fatture elettroniche?
+    a: Dal 2025 le imprese devono poterle ricevere. Devono emetterle per le fatture B2B nazionali dal 2027 se il loro fatturato dell’anno precedente superava EUR 800’000, e dal 2028 tutte (§ 27 Abs. 38 UStG). Le piccole imprese sono esentate. Rhinvoice integra la fattura elettronica (ZUGFeRD) nel PDF di ogni fattura emessa, purché i dati necessari siano completi.
+  - q: Rhinvoice rispetta i GoBD?
+    a: Rhinvoice realizza l’immodificabilità. Le fatture emesse sono bloccate con il loro PDF, anche nella banca dati, il PDF viene conservato con il suo SHA-256 e le correzioni si fanno solo con una fattura di storno con un proprio numero. Se la Sua contabilità nel suo insieme rispetta i GoBD va chiarito con il Suo consulente fiscale.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Una fattura tedesca di Rhinvoice riporta l’**IVA al 19 % o al 7 %** (§ 12 UStG) alla data della prestazione, il Suo **numero fiscale o numero di partita IVA** (§ 14 Abs. 4 Nr. 2 UStG), la data della prestazione, l’indicazione legale per l’inversione contabile (reverse charge), le piccole imprese o le cessioni esenti, un **GiroCode** (codice QR EPC) e una **fattura elettronica** integrata (ZUGFeRD). Per le autorità pubbliche Rhinvoice scrive anche la **XRechnung**.
+
+<Aside type="note" title="Nessuna consulenza fiscale">
+Stato: ottobre 2026. Aliquote e regole sono verificate nella UStG e nella UStDV, ma senza garanzia. In caso di dubbio chieda al Suo consulente fiscale.
+</Aside>
+
+## Quale aliquota IVA si applica?
+
+| Validità | Aliquota normale | Aliquota ridotta |
+|---|---|---|
+| dal 1° gennaio 2021 | 19 % | 7 % |
+| dal 1° luglio 2020 al 31 dicembre 2020 | 16 % | 5 % |
+| dal 1° gennaio 2007 al 30 giugno 2020 | 19 % | 7 % |
+
+Fonte: § 12 UStG; le aliquote del 2020 provengono dallo Zweites Corona-Steuerhilfegesetz.
+
+Vale l’aliquota alla **data della prestazione**: la fine del periodo della prestazione, altrimenti il suo inizio, altrimenti la data della fattura. All’emissione Rhinvoice fissa l’aliquota di ogni posizione.
+
+## Indicazioni obbligatorie secondo il § 14 UStG
+
+Prima dell’emissione Rhinvoice controlla ciò che può controllare e stampa il resto dai Suoi dati:
+
+- **Numero fiscale o numero di partita IVA** della Sua azienda (§ 14 Abs. 4 Nr. 2 UStG). Li inserisca in *Impostazioni → Azienda*. Senza nessuno dei due Rhinvoice non emette la fattura. L’eccezione: **fatture di piccolo importo fino a EUR 250 lordi** (§ 33 UStDV). Il numero di partita IVA ha la forma `DE123456789`.
+- **Data della prestazione** (§ 14 Abs. 4 Nr. 6 UStG). Senza un periodo della prestazione, Rhinvoice stampa la data della fattura come data della prestazione.
+- **Numero di fattura progressivo.** Rhinvoice lo assegna solo all’emissione, senza lacune né doppioni.
+- **Importo netto e IVA per aliquota**, nome e indirizzo Suoi e del cliente, data e posizioni.
+
+Anche le piccole imprese indicano il loro numero fiscale o numero di partita IVA (§ 34a UStDV).
+
+## Piccola impresa secondo il § 19 UStG
+
+Attivi *Piccola impresa (§ 19 UStG)* in *Impostazioni → Azienda*. Le Sue fatture non contengono allora IVA e riportano questa indicazione:
+
+> Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).
+
+(Documenti in inglese: «No VAT is charged (small business scheme).» I documenti in francese e in italiano indicano la franchigia con le parole della direttiva IVA dell’UE: «Aucune TVA n’est facturée en vertu du § 19 UStG (franchise pour les petites entreprises).» e «Nessuna IVA addebitata ai sensi del § 19 UStG (franchigia per le piccole imprese).») Dal 2025 la fattura indica che si applica il § 19 UStG; questo testo lo fa. Può modificarlo in *Impostazioni → Testi → Indicazioni legali*.
+
+## Inversione contabile e prestazioni all’estero
+
+Rhinvoice determina il trattamento fiscale in base al Suo paese, al paese del cliente, al fatto che il cliente sia un’impresa e che abbia un numero di partita IVA. Beni e servizi sono trattati separatamente, anche sulla stessa fattura.
+
+| Caso | IVA | Indicazione sui documenti in tedesco |
+|---|---|---|
+| Cliente in Germania | sì | nessuna |
+| Servizio a un’impresa di un altro paese UE con numero di partita IVA | no | «Steuerschuldnerschaft des Leistungsempfängers.» (§ 14a Abs. 5 UStG) |
+| Beni a un’impresa di un altro paese UE con numero di partita IVA | no | «Steuerfreie innergemeinschaftliche Lieferung (§ 4 Nr. 1 Buchst. b i. V. m. § 6a UStG).» |
+| Beni che lasciano l’UE, anche a clienti privati | no | «Steuerfreie Ausfuhrlieferung (§ 4 Nr. 1 Buchst. a i. V. m. § 6 UStG).» |
+| Servizio a un’impresa fuori dall’UE | no | «Nicht im Inland steuerbare Leistung.» |
+| Cliente privato dentro o fuori dall’UE (servizio) | sì | nessuna |
+
+Da sapere:
+
+- **Nessuna inversione contabile senza il numero di partita IVA del cliente.** A un’impresa dell’UE senza numero di partita IVA viene addebitata l’IVA tedesca. L’editor lo segnala.
+- **Cessione intracomunitaria**: la fattura indica il Suo numero di partita IVA e quello del cliente (§ 14a Abs. 3 UStG). Rhinvoice non la emette senza entrambi e Le ricorda la prova dell’arrivo (Gelangensbestätigung o prova della spedizione) e l’elenco riepilogativo (Zusammenfassende Meldung).
+- **L’inversione contabile nazionale secondo il § 13b UStG** (per esempio § 13b Abs. 2 Nr. 7 UStG) si sceglie a mano nell’editor. Rhinvoice registra ogni modifica del trattamento fiscale con un motivo nello storico.
+- **Le vendite a distanza a clienti privati nell’UE** mantengono l’IVA tedesca. Rhinvoice non tiene conto della soglia UE di EUR 10’000 all’anno (OSS).
+
+## GiroCode (codice QR EPC)
+
+Ogni fattura in **EUR** riceve un **GiroCode** accanto alle condizioni di pagamento, secondo le linee guida dell’European Payments Council (EPC069-12). Contiene il Suo IBAN, il titolare del conto, l’importo e «Rechnung» con il numero della fattura come causale; il Suo cliente lo scansiona con un’app bancaria. Le serve un conto in EUR in *Impostazioni → Conti bancari*. Le fatture in altre valute non hanno GiroCode, le bozze un segnaposto.
+
+## Fattura elettronica: ZUGFeRD e XRechnung
+
+Dal 2025 le imprese in Germania devono poter **ricevere** fatture elettroniche (§ 14 UStG). Devono **emetterle** per le fatture B2B nazionali a tappe (§ 27 Abs. 38 UStG):
+
+| Da | Chi |
+|---|---|
+| 2027 | imprese con un fatturato superiore a EUR 800’000 nell’anno precedente |
+| 2028 | tutte le imprese |
+
+Le piccole imprese sono esentate (§ 34a UStDV).
+
+Rhinvoice integra per impostazione predefinita una **fattura ZUGFeRD / Factur-X** (profilo EN 16931) nel PDF di ogni fattura emessa (opzione: *Impostazioni → Layout di stampa*). Se manca un dato necessario, il PDF viene creato senza di essa. Per i Suoi clienti il PDF ha lo stesso aspetto; il loro software contabile legge i dati direttamente. Rhinvoice mostra sulla fattura se la fattura elettronica è integrata. Per le autorità pubbliche scarica inoltre la **XRechnung** (XML), con la Leitweg-ID che inserisce una volta sul cliente (*Leitweg-ID o riferimento fisso dell’acquirente*), oppure il *Riferimento* della fattura. Dettagli e requisiti: [fattura elettronica](/docs/it/invoices/e-invoice/).
+
+## GoBD e conservazione delle fatture
+
+Le fatture vanno conservate per **dieci anni** (§ 147 AO). Rhinvoice le rende immodificabili:
+
+- Dall’emissione in poi contenuto e PDF sono bloccati, anche direttamente nella banca dati.
+- Il PDF viene conservato con il suo hash SHA-256.
+- Le correzioni si fanno solo con una [fattura di storno](/docs/it/invoices/issue-and-cancel/) con un proprio numero. Le bozze si possono eliminare, le fatture emesse mai.
+- Ogni modifica (emissione, pagamento, storno, trattamento fiscale) figura nello storico con data e ora.
+
+Protegga i dati con un [backup](/docs/it/operations/backup/). Provi tutto nella demo su [de.rhinvoice.com](https://de.rhinvoice.com).
+
+Manca il paese della Sua azienda? Rhinvoice si può estendere: [Aggiungere altri paesi](/docs/it/countries/more-countries/).
+
+## Domande frequenti
+
+<Faq />

@@ -5,6 +5,35 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Neu
+- Die Programme für Windows und Mac können die Update-Prüfung abschalten: `"update_check": false`
+  in `rhinvoice.json` (Docker: `RHINVOICE_UPDATE_CHECK=false`).
+- Kunden in Deutschland haben das Feld **Leitweg-ID oder feste Käuferreferenz**. Einmal
+  eingetragen, ist es die Käuferreferenz jeder XRechnung an diesen Kunden; sonst gilt wie bisher
+  die *Referenz* der Rechnung, und neben einer Leitweg-ID steht die *Referenz* als
+  Bestellreferenz (BT-13) in der E-Rechnung. Ausgestellte Rechnungen behalten den Wert vom Tag
+  des Ausstellens.
+  Der Kundenimport erkennt eine Spalte «Leitweg-ID».
+- Bei Kunden in Deutschland nennt der Dialog vor dem Ausstellen auch, was der XRechnung fehlt,
+  solange sich die Rechnung noch ergänzen lässt. Der Editor zeigt unter *Referenz*, ob die
+  Leitweg-ID des Kunden gilt oder für die XRechnung eine Referenz nötig ist.
+- Dokumente auf **Französisch** und **Italienisch**, so wie man sie in der Schweiz schreibt:
+  Rechnungen, Offerten, Stornorechnungen, Mahnungen, E-Mails, Textbausteine und der Zahlteil der
+  QR-Rechnung. Die gesetzlichen Hinweise von Firmen in der Schweiz und in Liechtenstein verwenden
+  die Begriffe des MWSTG in seiner französischen (LTVA) und italienischen (LIVA) Fassung, Firmen in
+  Deutschland und Österreich bekommen die Angaben der MWST-Richtlinie der EU («Autoliquidation»,
+  «inversione contabile»). Die Sprache wählen Sie pro Dokument, pro Kunde oder als Vorgabe der
+  Firma; im Mahnwesen gibt es pro Stufe einen französischen und einen italienischen Text.
+- Die Oberfläche auf **Französisch** und **Italienisch** (Schweizer Varianten): *Français* oder
+  *Italiano* über das Globus-Symbol wählen; ein Browser auf Französisch oder Italienisch öffnet
+  Rhinvoice gleich in dieser Sprache. Beträge und Daten bleiben im Schweizer Format
+  (`CHF 1’234.50`, `05.01.2026`). Beide Sprachen sind maschinell übersetzt; das Sprachmenü und
+  *Über Rhinvoice* sagen das und bitten um Korrekturen.
+- rhinvoice.com auf Französisch (`/fr/`) und Italienisch (`/it/`), mit Impressum und
+  Datenschutzerklärung. Auch die Dokumentation gibt es auf Französisch und Italienisch, alle
+  Seiten. Diese Texte sind maschinell übersetzt und sagen das oben, mit einem Link für Hinweise zur
+  Übersetzung.
+
 ## [0.7.4] – 2026-10-16
 
 ### Neu

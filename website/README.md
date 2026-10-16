@@ -1,6 +1,10 @@
 # rhinvoice.com
 
-The landing page of Rhinvoice, in English (`/`) and German (`/de/`), served by GitHub Pages.
+The landing page of Rhinvoice, in English (`/`), German (`/de/`), French (`/fr/`) and Italian
+(`/it/`), served by GitHub Pages. The French and Italian pages were machine-translated: each asks
+for `<div data-machine-translated></div>` right after its skip link, and `build.py` puts the notice
+in the page's language there, with a link to the *Translation* issue form. Their legal pages say
+that the German version prevails.
 
 ```
 website/
@@ -14,7 +18,7 @@ website/
 ## The docs
 
 `website/docs` holds the user documentation, English at `/docs/` and German at `/docs/de/` with the
-same paths. Each page is MDX in `website/docs/src/content/docs`; the rules for writing one
+same paths, also French at `/docs/fr/` and Italian at `/docs/it/`. Each page is MDX in `website/docs/src/content/docs`; the rules for writing one
 (search-friendly titles, answer first, facts only from the repository, questions and answers) are in
 [`docs/WRITING.md`](docs/WRITING.md). `make docs-qa` checks types, the writing rules, the build and
 every link. The Website workflow runs it and builds the docs into `dist/docs` after the landing
@@ -52,8 +56,8 @@ node ../website/tools/make-images.mjs        # needs cwebp and avifenc
 ## What the pages carry, and why
 
 - **For search engines:** title and description per language, canonical URLs, `hreflang` between
-  the two languages, Open Graph and Twitter cards with a 1200×630 preview, `sitemap.xml` with
-  the language pairs, JSON-LD (`SoftwareApplication`, `SoftwareSourceCode`, `WebSite`,
+  the four languages, Open Graph and Twitter cards with a 1200×630 preview, `sitemap.xml` with
+  the language versions, JSON-LD (`SoftwareApplication`, `SoftwareSourceCode`, `WebSite`,
   `WebPage`; publisher is the webberz organisation `https://www.webberz.ch/#firma`, the same
   node webberz.ch uses).
 - **For answer engines (LLMs):** `llms.txt` with the facts and what Rhinvoice is not;

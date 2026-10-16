@@ -198,7 +198,7 @@ test("create, issue, pay and cancel an invoice", async ({ page, isMobile }, test
   await eInvoice.getByText("XRechnung für deutsche Behörden").click();
   await expect(eInvoice).toContainText("Für eine XRechnung fehlte beim Ausstellen:");
   await expect(eInvoice.getByRole("listitem")).toContainText([
-    "Referenz der Rechnung (Leitweg-ID oder Käuferreferenz)",
+    "Leitweg-ID beim Kunden oder Referenz der Rechnung",
   ]);
 
   // Partial payment.

@@ -164,24 +164,85 @@ code { font-family: var(--mono); font-size: 0.9em; }
 
 .top-end { display: flex; align-items: center; gap: 18px; }
 
-.top nav { display: flex; flex-wrap: wrap; gap: 18px; font-size: 15px; }
-.top nav a { color: var(--muted); text-decoration: none; }
-.top nav a:hover { color: var(--fg); }
+.top nav:not(.lang) { display: flex; flex-wrap: wrap; gap: 18px; font-size: 15px; }
+.top nav:not(.lang) a { color: var(--muted); text-decoration: none; }
+.top nav:not(.lang) a:hover { color: var(--fg); }
 
-.lang { display: flex; gap: 4px; }
-.lang a {
+/*
+  The language menu, as in the app: a globe button opens a short list of the languages,
+  each in its own name. <details> keeps it working without the script and the entries stay
+  plain links between the language versions; main.js closes it on Escape and on a click
+  outside. The docs carry the same menu (docs/src/components/LanguageSelect.astro).
+*/
+.lang { position: relative; font-size: 14px; }
+.lang summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
   padding: 4px 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--muted);
-  font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+.lang summary::-webkit-details-marker { display: none; }
+.lang summary:hover, .lang details[open] summary { border-color: var(--muted); color: var(--fg); }
+.lang summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.lang svg { flex: none; }
+.lang-chevron { transition: transform 150ms ease; }
+.lang details[open] .lang-chevron { transform: rotate(180deg); }
+.lang-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 180px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.lang-menu p { padding: 6px 10px 4px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.lang-menu ul { padding: 0; list-style: none; }
+.lang-menu a {
+  position: relative;
+  display: block;
+  padding: 7px 10px 7px 30px;
+  border-radius: 6px;
+  color: var(--fg);
   text-decoration: none;
 }
-.lang a[aria-current="true"] {
+.lang-menu a:hover { background: var(--bg); }
+.lang-menu a:focus-visible { outline-offset: -2px; background: var(--bg); }
+.lang-menu a[aria-current="true"] { font-weight: 600; }
+.lang-menu a[aria-current="true"]::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: 50%;
   background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lang-chevron { transition: none; }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* Above a machine-translated page (French, Italian): a quiet line, not a warning. */

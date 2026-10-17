@@ -1,50 +1,170 @@
 ---
-// DE | EN | FR | IT as links, as on rhinvoice.com: one click, no menu.
+// The language menu, as in the app and on rhinvoice.com (website/site/assets/css/main.css): a
+// globe button opens a short list of the languages, each in its own name. <details> keeps it
+// working without the script and the entries stay plain links to the same page in another
+// language; the script closes it on Escape and on a click outside.
 import { LANGUAGES, languageOf, languagePath } from "../lib/paths";
 import { words } from "../lib/ui";
 
+const NAMES = { de: "Deutsch", en: "English", fr: "Français", it: "Italiano" } as const;
+
 const { lang } = Astro.locals.starlightRoute;
 const current = languageOf(lang);
+const label = words(lang).language;
 ---
 
-<nav class="lang" aria-label={words(lang).language}>
-  {
-    LANGUAGES.map((code) => (
-      <a
-        href={languagePath(Astro.url.pathname, current, code)}
-        hreflang={code}
-        lang={code}
-        aria-current={code === current ? "true" : undefined}
-      >
-        {code.toUpperCase()}
-      </a>
-    ))
-  }
+<nav class="lang" aria-label={label}>
+  <details>
+    <summary>
+      <svg class="globe" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>
+      <span class="sr-only">{label}: </span><span lang={current}>{NAMES[current]}</span>
+      <svg class="chevron" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+    </summary>
+    <div class="menu">
+      <p aria-hidden="true">{label}</p>
+      <ul>
+        {
+          LANGUAGES.map((code) => (
+            <li>
+              <a
+                href={languagePath(Astro.url.pathname, current, code)}
+                hreflang={code}
+                lang={code}
+                aria-current={code === current ? "true" : undefined}
+              >
+                {NAMES[code]}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </details>
 </nav>
+
+<script>
+  // The header and the mobile menu each carry one.
+  for (const menu of document.querySelectorAll<HTMLDetailsElement>(".lang details")) {
+    document.addEventListener("click", (event) => {
+      if (menu.open && event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
+    });
+    menu.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || !menu.open) return;
+      // Handled here: the phone menu around it must stay open.
+      event.preventDefault();
+      menu.open = false;
+      menu.querySelector("summary")?.focus();
+    });
+  }
+</script>
 
 <style>
   .lang {
-    display: flex;
-    border: 1px solid var(--sl-color-gray-5);
-    border-radius: 999px;
-    overflow: hidden;
+    --lang-surface: var(--sl-color-gray-6);
+    --lang-hover: var(--sl-color-black);
+    position: relative;
     font-size: var(--sl-text-sm);
   }
-  .lang a {
-    display: grid;
-    place-items: center;
-    min-width: 2.25rem;
-    min-height: 1.75rem;
-    padding-inline: 0.6rem;
-    color: var(--sl-color-gray-3);
-    text-decoration: none;
+  :global(:root[data-theme="light"]) .lang {
+    --lang-surface: var(--sl-color-black);
+    --lang-hover: var(--sl-color-gray-7);
   }
-  .lang a:hover {
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2rem;
+    padding: 0.25rem 0.625rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 999px;
+    color: var(--sl-color-gray-3);
+    font-weight: 500;
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary:hover,
+  details[open] summary {
+    border-color: var(--sl-color-gray-3);
     color: var(--sl-color-white);
   }
-  .lang a[aria-current] {
-    background: var(--sl-color-accent);
-    color: var(--sl-color-black);
+  summary:focus-visible {
+    outline: 2px solid var(--sl-color-accent);
+    outline-offset: 3px;
+  }
+  svg {
+    flex: none;
+  }
+  .chevron {
+    transition: transform 150ms ease;
+  }
+  details[open] .chevron {
+    transform: rotate(180deg);
+  }
+  .menu {
+    position: absolute;
+    top: calc(100% + 0.375rem);
+    right: 0;
+    z-index: 40;
+    min-width: 11.25rem;
+    padding: 0.25rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.625rem;
+    background: var(--lang-surface);
+    box-shadow: var(--sl-shadow-md);
+  }
+  /* At the foot of the phone menu there is no room below: it opens upwards. */
+  :global(.mobile-preferences) .menu {
+    top: auto;
+    bottom: calc(100% + 0.375rem);
+  }
+  .menu p {
+    margin: 0;
+    padding: 0.375rem 0.625rem 0.25rem;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-xs);
     font-weight: 600;
+  }
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .menu a {
+    position: relative;
+    display: block;
+    padding: 0.4375rem 0.625rem 0.4375rem 1.875rem;
+    border-radius: 0.375rem;
+    color: var(--sl-color-white);
+    text-decoration: none;
+  }
+  .menu a:hover,
+  .menu a:focus-visible {
+    background: var(--lang-hover);
+  }
+  .menu a:focus-visible {
+    outline-offset: -2px;
+  }
+  .menu a[aria-current="true"] {
+    font-weight: 600;
+  }
+  .menu a[aria-current="true"]::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0.75rem;
+    width: 7px;
+    height: 7px;
+    margin-top: -3.5px;
+    border-radius: 50%;
+    background: var(--sl-color-accent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chevron {
+      transition: none;
+    }
   }
 </style>

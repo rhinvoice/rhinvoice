@@ -6,7 +6,9 @@ name: Desktop
 # it for every release candidate, with the candidate's version, and attaches the files to the
 # pre-release. A pull request builds them only when it changes what the programs consist of
 # beyond the web application, which CI checks anyway (ADR 0029); "Run workflow" builds them
-# for any branch.
+# for any branch. Every run also builds Rhinvoice Beta (ADR 0030), the candidates' separate
+# installation, from the same runtime and app package, and checks that it lives beside Rhinvoice
+# without touching it. The candidate offers both; the promotion releases only Rhinvoice's.
 on:
   workflow_call:
     inputs:
@@ -35,7 +37,7 @@ jobs:
   windows:
     name: Windows setup (build, install, smoke test)
     runs-on: windows-2025
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - name: Give the program the candidate's version
@@ -87,11 +89,25 @@ jobs:
           Get-ChildItem build\windows\Rhinvoice-Setup-*.exe, build\windows\rhinvoice-app-*.zip |
             Format-Table Name, @{ Label = "MB"; Expression = { [math]::Round($_.Length / 1MB, 1) } }
 
+      - name: Build the Rhinvoice Beta setup (ADR 0030)
+        shell: pwsh
+        run: |
+          # The same program folder with another name and edition; its own AppId and folders.
+          python desktop/build.py windows-beta
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          $version = python desktop/build.py version
+          & $iscc "/DAppVersion=$version" "/DEdition=beta" desktop\windows\rhinvoice.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem build\windows\Rhinvoice-Beta-Setup-*.exe |
+            Format-Table Name, @{ Label = "MB"; Expression = { [math]::Round($_.Length / 1MB, 1) } }
+
       - uses: actions/upload-artifact@v4
         with:
           name: Rhinvoice-Setup-windows
           path: |
             build/windows/Rhinvoice-Setup-*.exe
+            build/windows/Rhinvoice-Beta-Setup-*.exe
             build/windows/rhinvoice-app-*.zip
           retention-days: 14
 
@@ -108,10 +124,32 @@ jobs:
         shell: pwsh
         run: python desktop/smoke_test.py "$env:LOCALAPPDATA\Programs\Rhinvoice"
 
+      - name: Install Rhinvoice Beta beside it
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem build\windows\Rhinvoice-Beta-Setup-*.exe | Select-Object -First 1
+          Start-Process -FilePath $setup.FullName -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
+          if (-not (Test-Path "$env:LOCALAPPDATA\Programs\Rhinvoice Beta\python\Rhinvoice.exe")) {
+            throw "Rhinvoice Beta was not installed"
+          }
+          if (-not (Test-Path "$env:LOCALAPPDATA\Programs\Rhinvoice\python\Rhinvoice.exe")) {
+            throw "Rhinvoice Beta replaced Rhinvoice"
+          }
+          # Two programs under "Installed apps", each with its own uninstall entry.
+          $entries = @(Get-ChildItem HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall |
+            Get-ItemProperty | Where-Object { $_.DisplayName -like "Rhinvoice*" })
+          $entries | Format-Table DisplayName, DisplayVersion, InstallLocation -AutoSize
+          $names = ($entries.DisplayName | Sort-Object) -join ", "
+          if ($names -ne "Rhinvoice, Rhinvoice Beta") { throw "uninstall entries: $names" }
+
+      - name: Smoke test Rhinvoice Beta (its own data; Rhinvoice's stays as it is)
+        shell: pwsh
+        run: python desktop/smoke_test.py "$env:LOCALAPPDATA\Programs\Rhinvoice Beta"
+
   macos:
     name: macOS app (build, start, disk image)
     runs-on: macos-15
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - name: Give the program the candidate's version
@@ -147,60 +185,83 @@ jobs:
       - name: Assemble Rhinvoice.app
         run: python desktop/build.py macos
 
-      - name: Start it once (it must answer)
+      - name: Derive Rhinvoice Beta.app (ADR 0030)
+        # Before the first start: the copy must not take anything a start leaves behind.
+        run: python desktop/build.py macos-beta
+
+      - name: Start each app once (it must answer, on its own data)
         run: |
-          app=build/macos/Rhinvoice.app/Contents/MacOS/Rhinvoice
-          # Without a terminal the app logs to ~/Library/Logs/Rhinvoice (as from the Finder).
-          "$app" --no-browser < /dev/null > /dev/null 2>&1 &
-          log="$HOME/Library/Logs/Rhinvoice/rhinvoice.log"
-          config="$HOME/Library/Application Support/Rhinvoice/rhinvoice.json"
-          for _ in $(seq 1 120); do
-            if [ -f "$config" ]; then
-              port="$(python -c "import json,sys; print(json.load(open(sys.argv[1]))['port'])" "$config")"
-              curl -fsS "http://127.0.0.1:$port/api/health" && break
+          for name in "Rhinvoice" "Rhinvoice Beta"; do
+            echo "--- $name"
+            app="build/macos/$name.app/Contents/MacOS/Rhinvoice"
+            # Without a terminal the app logs to ~/Library/Logs/<name> (as from the Finder).
+            "$app" --no-browser < /dev/null > /dev/null 2>&1 &
+            log="$HOME/Library/Logs/$name/rhinvoice.log"
+            config="$HOME/Library/Application Support/$name/rhinvoice.json"
+            port=""
+            for _ in $(seq 1 120); do
+              if [ -f "$config" ]; then
+                port="$(python -c "import json,sys; print(json.load(open(sys.argv[1]))['port'])" "$config")"
+                curl -fsS "http://127.0.0.1:$port/api/health" && break
+              fi
+              sleep 1
+            done
+            curl -fsS "http://127.0.0.1:$port/api/health" || { cat "$log"; exit 1; }
+            pkill -INT -f "MacOS/python3 -m rhinvoice_boot"
+            sleep 5
+            if pgrep -f "$name/database" >/dev/null; then
+              echo "the database still runs after the program ended" >&2
+              cat "$log"
+              exit 1
             fi
-            sleep 1
+            [ -d "$HOME/Library/Caches/$name/pycache" ] || { echo "no cache of $name" >&2; exit 1; }
+            # Rhinvoice Beta starts after Rhinvoice: Rhinvoice's data must stay as it was.
+            if [ "$name" = "Rhinvoice" ]; then
+              before="$(shasum "$config")"
+            elif [ "$(shasum "$HOME/Library/Application Support/Rhinvoice/rhinvoice.json")" != "$before" ]; then
+              echo "::error title=Editions::Rhinvoice Beta changed the data of Rhinvoice"
+              exit 1
+            fi
           done
-          curl -fsS "http://127.0.0.1:$port/api/health" || { cat "$log"; exit 1; }
-          pkill -INT -f "MacOS/python3 -m rhinvoice_boot"
-          sleep 5
-          if pgrep -f "Rhinvoice/database" >/dev/null; then
-            echo "the database still runs after the program ended" >&2
-            cat "$log"
-            exit 1
-          fi
 
-      - name: The start left the signed app unchanged
+      - name: The starts left the signed apps unchanged
         run: |
-          # Compiled Python files go to ~/Library/Caches/Rhinvoice, never into the bundle.
-          found="$(find build/macos/Rhinvoice.app -name __pycache__)"
-          if [ -n "$found" ]; then
-            echo "::error title=Seal::compiled files inside the app: $found"
-            exit 1
-          fi
-          codesign --verify --deep --strict build/macos/Rhinvoice.app
+          for app in "build/macos/Rhinvoice.app" "build/macos/Rhinvoice Beta.app"; do
+            # Compiled Python files go to ~/Library/Caches/<name>, never into the bundle.
+            found="$(find "$app" -name __pycache__)"
+            if [ -n "$found" ]; then
+              echo "::error title=Seal::compiled files inside the app: $found"
+              exit 1
+            fi
+            codesign --verify --deep --strict "$app"
+          done
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "build/macos/Rhinvoice Beta.app/Contents/Info.plist" |
+            grep -qx "com.webberz.rhinvoice.beta"
 
-      - name: Pack the disk image
+      - name: Pack the disk images
         run: |
           version="$(python desktop/build.py version)"
-          staging="$(mktemp -d)"
-          cp -R build/macos/Rhinvoice.app "$staging/"
-          ln -s /Applications "$staging/Applications"
-          # ULMO (LZMA) packs far tighter than the usual UDZO (zlib); macOS opens it from
-          # 10.15 on, below the app's minimum of 12.
-          # hdiutil on the hosted runners fails now and then with "Resource busy" (a scan of
-          # the fresh files still holds them): try again a few times before giving up.
-          for attempt in 1 2 3 4 5; do
-            hdiutil create -volname "Rhinvoice $version" -srcfolder "$staging" -format ULMO \
-              -ov "build/macos/Rhinvoice-$version.dmg" && break
-            [ "$attempt" = 5 ] && exit 1
-            echo "hdiutil failed (attempt $attempt), trying again"
-            sleep 10
+          for name in "Rhinvoice" "Rhinvoice Beta"; do
+            staging="$(mktemp -d)"
+            cp -R "build/macos/$name.app" "$staging/"
+            ln -s /Applications "$staging/Applications"
+            image="build/macos/${name// /-}-$version.dmg"
+            # ULMO (LZMA) packs far tighter than the usual UDZO (zlib); macOS opens it from
+            # 10.15 on, below the app's minimum of 12.
+            # hdiutil on the hosted runners fails now and then with "Resource busy" (a scan of
+            # the fresh files still holds them): try again a few times before giving up.
+            for attempt in 1 2 3 4 5; do
+              hdiutil create -volname "$name $version" -srcfolder "$staging" -format ULMO \
+                -ov "$image" && break
+              [ "$attempt" = 5 ] && exit 1
+              echo "hdiutil failed (attempt $attempt), trying again"
+              sleep 10
+            done
+            hdiutil verify "$image"
+            ls -l "$image"
           done
-          hdiutil verify "build/macos/Rhinvoice-$version.dmg"
           # What makes the app big, for the next steps (sizes in MB).
           du -sm build/macos/Rhinvoice.app/Contents/Resources/* | sort -rn | head -8
-          ls -l "build/macos/Rhinvoice-$version.dmg"
 
       - uses: actions/upload-artifact@v4
         with:

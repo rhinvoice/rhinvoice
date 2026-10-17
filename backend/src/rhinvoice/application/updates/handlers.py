@@ -104,7 +104,7 @@ class UpdateHandlers:
             action = _desktop_action(release, self._installer)
         setup_url = None
         if release is not None and self._installer is not None:
-            setup_url = release.setups.get(self._installer.platform)
+            setup_url = release.setups.get(self._installer.setup)
         return UpdateStatus(
             current=self._current,
             latest=None if release is None else release.version,

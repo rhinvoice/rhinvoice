@@ -35,6 +35,7 @@ from rhinvoice.desktop import window
 from rhinvoice.desktop.backup import CurrentArchive, DesktopBackupSetup, cloud_folders
 from rhinvoice.desktop.browser import find_chromium
 from rhinvoice.desktop.config import ConfigError, DesktopConfig, load_or_create, save, update
+from rhinvoice.desktop.edition import Edition, installed_edition
 from rhinvoice.desktop.ports import free_port, listening
 from rhinvoice.desktop.postgres import BundledPostgres, PostgresError
 from rhinvoice.desktop.updates import PackageInstaller, Restarter, platform_name
@@ -149,13 +150,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         if desktop.show_window is not None and _with_start_card(args):
-            folder = args.data_dir or data_folder(desktop.system, desktop.environ, desktop.home)
+            edition = installed_edition(args.install_dir or desktop.install)
+            folder = args.data_dir or default_data_folder(desktop, edition)
             return window.run_with_splash(
                 lambda splash: run(
                     args, replace(desktop, show_window=splash.show, status=splash.status)
                 ),
                 folder / "window",
                 installed_version(),
+                edition.name,
             )
         return run(args, desktop)
     except KeyboardInterrupt:
@@ -186,9 +189,18 @@ def end_on_break() -> None:
         signal.signal(sigbreak, signal.default_int_handler)
 
 
+def default_data_folder(desktop: Desktop, edition: Edition) -> Path:
+    """Return the edition's data folder, for a start without the boot (from a source tree)."""
+    if edition.beta:
+        return data_folder(desktop.system, desktop.environ, desktop.home, "beta")
+    # Without the edition: the boot of an earlier setup takes three arguments.
+    return data_folder(desktop.system, desktop.environ, desktop.home)
+
+
 def run(args: argparse.Namespace, desktop: Desktop) -> int:
     install: Path = args.install_dir or desktop.install
-    folder: Path = args.data_dir or data_folder(desktop.system, desktop.environ, desktop.home)
+    edition = installed_edition(install)
+    folder: Path = args.data_dir or default_data_folder(desktop, edition)
     if args.restore is not None or args.list_backups:
         return _restore(args, desktop, install, folder)
     if args.attach:
@@ -221,8 +233,9 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
             # A forgotten password: the code goes where only this computer's user looks.
             reset_code_dir=folder,
             # A problem report carries the end of the log.
-            log_file=program_log(desktop.system, desktop.home, folder),
-            update_channel=config.update_channel,
+            log_file=program_log(desktop.system, desktop.home, folder, edition),
+            # Rhinvoice Beta is offered release candidates, Rhinvoice never (ADR 0030).
+            update_channel=edition.update_channel,
             # Only this computer reaches the server, over http; Safari refuses secure
             # cookies there.
             cookie_secure=False,
@@ -231,7 +244,7 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
             # Off in rhinvoice.json; RHINVOICE_UPDATE_CHECK=false switches it off as well.
             settings = settings.model_copy(update={"update_check": False})
         restarter = Restarter()
-        own = _own_services(desktop, install, folder, database.url, restarter)
+        own = _own_services(desktop, install, folder, database.url, restarter, edition=edition)
         code = _serve(args, desktop, settings, config.port, folder, own=own, restarter=restarter)
         # After an update the boot starts the program again, with the new version.
         return RESTART if restarter.requested.is_set() else code
@@ -245,14 +258,15 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
             _failed(error)
 
 
-def program_log(system: str, home: Path, folder: Path) -> Path:
+def program_log(system: str, home: Path, folder: Path, edition: Edition) -> Path:
     """Where the program writes its messages when it has no console.
 
     On a Mac the start script writes them where Console.app finds them (desktop/build.py),
-    elsewhere the boot writes them into the data folder (rhinvoice_boot.log_without_console).
+    in a folder named after the edition; elsewhere the boot writes them into the data
+    folder (rhinvoice_boot.log_without_console).
     """
     if system == "Darwin":
-        return home / "Library" / "Logs" / "Rhinvoice" / "rhinvoice.log"
+        return home / "Library" / "Logs" / edition.name / "rhinvoice.log"
     return folder / "rhinvoice.log"
 
 
@@ -266,20 +280,26 @@ def _own_port(config: DesktopConfig, folder: Path) -> DesktopConfig:
     return moved
 
 
-def _own_services(
-    desktop: Desktop, install: Path, folder: Path, database_url: str, restarter: Restarter
+def _own_services(  # noqa: PLR0913 - the parts of one start (keyword for the edition)
+    desktop: Desktop,
+    install: Path,
+    folder: Path,
+    database_url: str,
+    restarter: Restarter,
+    *,
+    edition: Edition,
 ) -> OwnServices:
     """Bring updates and backups, when the installed program has what they need."""
-    setup, archive = _backups(desktop, install, folder, database_url)
+    setup, archive = _backups(desktop, install, folder, database_url, edition)
     return OwnServices(
-        installer=_installer(desktop, install, folder, restarter),
+        installer=_installer(desktop, install, folder, restarter, edition),
         backup_setup=setup,
         backup_archive=archive,
     )
 
 
 def _backups(
-    desktop: Desktop, install: Path, folder: Path, database_url: str
+    desktop: Desktop, install: Path, folder: Path, database_url: str, edition: Edition
 ) -> tuple[DesktopBackupSetup, CurrentArchive] | tuple[None, None]:
     """Back up with the bundled restic (ADR 0023); without it (a source tree) there is none."""
     restic = _restic(install)
@@ -292,7 +312,7 @@ def _backups(
         return ResticArchive(restic, pg_dump, target, key, database_url)
 
     def suggestions() -> list[FolderSuggestion]:
-        return cloud_folders(desktop.system, desktop.environ, desktop.home)
+        return cloud_folders(desktop.system, desktop.environ, desktop.home, edition.backup_folder)
 
     archive = CurrentArchive(config, archive_for, lambda: datetime.now(UTC))
     return DesktopBackupSetup(config, archive_for, suggestions), archive
@@ -366,7 +386,7 @@ def _backup_folder(given: Path | None) -> str | None:
 
 
 def _installer(
-    desktop: Desktop, install: Path, folder: Path, restarter: Restarter
+    desktop: Desktop, install: Path, folder: Path, restarter: Restarter, edition: Edition
 ) -> PackageInstaller | None:
     """Install updates when started by the boot of an installed runtime (ADR 0022)."""
     try:
@@ -375,7 +395,8 @@ def _installer(
         # Started from a source tree or a virtual environment: nothing to install into.
         return None
     platform = platform_name(desktop.system, desktop.machine)
-    return PackageInstaller(folder, platform, runtime, restarter.request)
+    setup = platform + edition.setup_suffix
+    return PackageInstaller(folder, platform, runtime, restarter.request, setup=setup)
 
 
 def _serve(  # noqa: PLR0913 - the parts of one start (keywords for the update's)

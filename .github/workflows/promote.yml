@@ -3,7 +3,8 @@ name: Promote release
 # Releases a tested candidate (ADR 0025): v0.7.4-rc.2 becomes v0.7.4 with exactly its files,
 # nothing is built again. The setups, the app packages and the Docker images are the ones
 # that were tested; only release.json is written anew, so that its links lead to the
-# release, and signed with the same key. Then the released commit goes to main (ADR 0026),
+# release, and signed with the same key. Rhinvoice Beta's setups stay with the candidate
+# (ADR 0030). Then the released commit goes to main (ADR 0026),
 # and rhinvoice.com and the demos follow.
 #
 # Started by the maintainer: Actions → Promote release → Run workflow. Without a candidate it
@@ -131,8 +132,14 @@ jobs:
           CANDIDATE: ${{ steps.candidate.outputs.name }}
         run: |
           mkdir -p build/release
+          # Rhinvoice's setups only: Rhinvoice Beta's are for testing the candidate (ADR 0030).
           gh release download "$CANDIDATE" --dir build/release \
-            --pattern 'Rhinvoice-*' --pattern 'rhinvoice-app-*'
+            --pattern 'Rhinvoice-Setup-Windows.exe' --pattern 'Rhinvoice-macOS.dmg' \
+            --pattern 'rhinvoice-app-*'
+          if compgen -G 'build/release/*Beta*' > /dev/null; then
+            echo "::error::A file of Rhinvoice Beta would be released"
+            exit 1
+          fi
           ls -l build/release
 
       - name: Write and sign release.json for the release (ADR 0022)

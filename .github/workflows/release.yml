@@ -2,7 +2,8 @@ name: Release
 
 # Builds a release candidate (ADR 0025, 0026, 0029): a tag vX.Y.Z-rc.N on dev becomes a public
 # pre-release with the setups, the app packages, a signed release.json and Docker images tagged
-# X.Y.Z-rc.N. The version comes from the tag; no commit changes it. The tag also starts the full
+# X.Y.Z-rc.N. Besides Rhinvoice's setups it carries Rhinvoice Beta's (ADR 0030): the candidate is
+# tested as a separate installation, and only Rhinvoice's setups are promoted. The version comes from the tag; no commit changes it. The tag also starts the full
 # CI run (every mutant, every browser test); the candidate is published only once it passed.
 # Nobody gets it by itself: GitHub's "latest", the update check, rhinvoice.com and the demos
 # stay on the last release. Once the candidate is tested, "Promote release" releases exactly
@@ -207,8 +208,10 @@ jobs:
       - name: Give the setups names without the version
         # releases/latest/download/<name> then always leads to the newest (rhinvoice.com).
         run: |
-          mv build/release/Rhinvoice-Setup-*.exe build/release/Rhinvoice-Setup-Windows.exe
-          mv build/release/Rhinvoice-*.dmg build/release/Rhinvoice-macOS.dmg
+          mv "build/release/Rhinvoice-Setup-$VERSION.exe" build/release/Rhinvoice-Setup-Windows.exe
+          mv "build/release/Rhinvoice-$VERSION.dmg" build/release/Rhinvoice-macOS.dmg
+          mv "build/release/Rhinvoice-Beta-Setup-$VERSION.exe" build/release/Rhinvoice-Beta-Setup-Windows.exe
+          mv "build/release/Rhinvoice-Beta-$VERSION.dmg" build/release/Rhinvoice-Beta-macOS.dmg
 
       - name: Write and sign release.json (ADR 0022)
         env:
@@ -226,6 +229,8 @@ jobs:
         run: |
           {
             echo "**Release candidate for testing.** Not offered as an update and not for production use; see [testing release candidates](https://rhinvoice.com/docs/operations/update/)."
+            echo
+            echo "To try it on Windows or a Mac, install **Rhinvoice Beta** (\`Rhinvoice-Beta-Setup-Windows.exe\`, \`Rhinvoice-Beta-macOS.dmg\`): a separate program with its own data, installed beside Rhinvoice, which it never touches. \`Rhinvoice-Setup-Windows.exe\` and \`Rhinvoice-macOS.dmg\` are the setups the release will carry; installed, they replace Rhinvoice."
             echo
           } > build/notes.md
           python3 - "$VERSION" <<'PY' >> build/notes.md

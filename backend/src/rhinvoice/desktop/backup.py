@@ -51,14 +51,19 @@ def new_recovery_key() -> str:
     return "-".join(groups)
 
 
-def cloud_folders(system: str, environ: Mapping[str, str], home: Path) -> list[FolderSuggestion]:
-    """Find the folders cloud services keep in sync on this computer, as backup folders."""
+def cloud_folders(
+    system: str, environ: Mapping[str, str], home: Path, folder_name: str = FOLDER_NAME
+) -> list[FolderSuggestion]:
+    """Find the folders cloud services keep in sync on this computer, as backup folders.
+
+    Each suggests ``folder_name`` inside it: Rhinvoice Beta's differs (ADR 0030).
+    """
     found: list[FolderSuggestion] = []
     seen: set[Path] = set()
     for name, folder in _candidates(system, environ, home):
         if folder.is_dir() and folder.resolve() not in seen:
             seen.add(folder.resolve())
-            found.append(FolderSuggestion(name=name, path=str(folder / FOLDER_NAME)))
+            found.append(FolderSuggestion(name=name, path=str(folder / folder_name)))
     return found
 
 

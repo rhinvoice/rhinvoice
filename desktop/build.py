@@ -64,8 +64,8 @@ PostgreSQL major version): packages built afterwards then need the new setup."""
 # Not needed to run the server; about a third of the PostgreSQL download.
 POSTGRES_UNUSED = ("include", "doc", "symbols", "pgAdmin 4", "StackBuilder")
 EDITIONS = {
-    "stable": {"name": "Rhinvoice", "identifier": "com.webberz.rhinvoice"},
-    "beta": {"name": "Rhinvoice Beta", "identifier": "com.webberz.rhinvoice.beta"},
+    "stable": {"name": "Rhinvoice", "identifier": "ch.webberz.rhinvoice"},
+    "beta": {"name": "Rhinvoice Beta", "identifier": "ch.webberz.rhinvoice.beta"},
 }
 """Rhinvoice, and Rhinvoice Beta for release candidates (ADR 0030): the name is that of the
 program, of its macOS bundle and of its folders (rhinvoice_boot.NAMES). Never change an

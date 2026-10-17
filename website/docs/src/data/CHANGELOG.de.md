@@ -13,6 +13,9 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   Testkandidat berührt die Daten von Rhinvoice nicht mehr. Rhinvoice Beta bekommt neuere
   Testkandidaten als Update angeboten, Rhinvoice nur freigegebene Versionen, auch mit
   `"update_channel": "test"` in `rhinvoice.json`, das nicht mehr gelesen wird.
+- Auf dem Mac heisst Rhinvoice für das System jetzt `ch.webberz.rhinvoice`. Nach der Installation
+  des nächsten Setups (nicht nach einem Update in der App) melden Sie sich einmal neu an; die
+  Daten bleiben.
 
 ## [0.8.0] – 2026-10-17
 

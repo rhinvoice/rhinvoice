@@ -236,7 +236,7 @@ jobs:
             codesign --verify --deep --strict "$app"
           done
           /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "build/macos/Rhinvoice Beta.app/Contents/Info.plist" |
-            grep -qx "com.webberz.rhinvoice.beta"
+            grep -qx "ch.webberz.rhinvoice.beta"
 
       - name: Pack the disk images
         run: |

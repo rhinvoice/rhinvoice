@@ -29,9 +29,13 @@ the released program refuses a database with a newer schema. The update channel 
     `%LOCALAPPDATA%\Programs\Rhinvoice Beta`, Start menu and desktop shortcuts and uninstall
     entry "Rhinvoice Beta"; the program file stays `Rhinvoice.exe`, its description says
     "Rhinvoice Beta";
-  - macOS: `Rhinvoice Beta.app`, bundle id `com.webberz.rhinvoice.beta` (the web view's storage
+  - macOS: `Rhinvoice Beta.app`, bundle id `ch.webberz.rhinvoice.beta` (the web view's storage
     and the system's preferences follow it), disk image volume "Rhinvoice Beta X.Y.Z";
   - its windows and start card are titled "Rhinvoice Beta". The icon is the same.
+- **Bundle ids under webberz.ch.** The maker's domain is `webberz.ch`, so the ids are
+  `ch.webberz.rhinvoice` and `ch.webberz.rhinvoice.beta`; the earlier `com.webberz.rhinvoice`
+  was a mistake. An in-app update keeps the installed bundle; a Mac installs the new id only
+  with a new setup. Its web view then starts with empty storage once: signing in again.
 - **Who reads the edition.** The boot (`rhinvoice_boot.edition`) picks the data and cache
   folders and passes the data folder to the app package as before. The app package reads
   `runtime.json` itself (`rhinvoice.desktop.edition`), never through a new function of the boot:

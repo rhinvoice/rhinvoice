@@ -21,6 +21,7 @@
 <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/css/main.css">
+<script src="/assets/js/main.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#content">Zum Inhalt springen</a>
@@ -30,10 +31,18 @@
   <div class="top-end">
     <nav aria-label="Hauptnavigation"><a href="/de/#features">Funktionen</a><a href="/de/#install">Installation</a><a href="/docs/de/">Doku</a><a href="https://github.com/rhinvoice/rhinvoice">GitHub</a></nav>
     <nav class="lang" aria-label="Sprache">
-      <a href="https://rhinvoice.com/privacy/" hreflang="en" lang="en">EN</a>
-      <a href="https://rhinvoice.com/de/datenschutz/" hreflang="de" lang="de" aria-current="true">DE</a>
-      <a href="https://rhinvoice.com/fr/protection-des-donnees/" hreflang="fr" lang="fr">FR</a>
-      <a href="https://rhinvoice.com/it/protezione-dei-dati/" hreflang="it" lang="it">IT</a>
+      <details>
+        <summary><svg class="lang-globe" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><span class="sr-only">Sprache: </span><span lang="de">Deutsch</span><svg class="lang-chevron" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="lang-menu">
+          <p aria-hidden="true">Sprache</p>
+          <ul>
+            <li><a href="https://rhinvoice.com/de/datenschutz/" hreflang="de" lang="de" aria-current="true">Deutsch</a></li>
+            <li><a href="https://rhinvoice.com/privacy/" hreflang="en" lang="en">English</a></li>
+            <li><a href="https://rhinvoice.com/fr/protection-des-donnees/" hreflang="fr" lang="fr">Français</a></li>
+            <li><a href="https://rhinvoice.com/it/protezione-dei-dati/" hreflang="it" lang="it">Italiano</a></li>
+          </ul>
+        </div>
+      </details>
     </nav>
   </div>
 </header>

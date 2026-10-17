@@ -532,3 +532,8 @@ def test_a_failure_before_the_close_still_closes() -> None:
     may_close = window.close_cleanly(destroyed.set, before=broken)
     assert may_close() is False
     assert destroyed.wait(5)
+    # The error leaves the timer's thread only after the close: wait for it here, or it is
+    # reported in the next test, where the warning filter above does not apply.
+    for thread in threading.enumerate():
+        if isinstance(thread, threading.Timer):
+            thread.join(5)

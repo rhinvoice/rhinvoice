@@ -41,3 +41,6 @@ to mutation testing every module (about 10 minutes), also for changes that touch
   candidate at the latest, before anyone can install it; it then needs a fix and a new candidate.
 - Between releases the program on `dev` names the last released version.
 - The version examples in the docs ("e.g. 0.8.0") age; they are examples, not instructions.
+- The workflow token may not create a tag or branch at a commit whose workflows differ from
+  `dev`'s. When `dev` changed its workflows after the candidate, Promote stops before publishing
+  anything and names the one `git push` the maintainer runs before starting it again.

@@ -102,6 +102,25 @@ jobs:
             echo "commit=$(git rev-list -n 1 "$CANDIDATE")"
           } >> "$GITHUB_OUTPUT"
 
+      # This token may not create a tag or branch at a commit whose workflows differ from the
+      # default branch's. That happens when dev changed its workflows after the candidate; the
+      # maintainer then creates both refs once, before anything is published.
+      - name: The release's tag and branch can be created
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          COMMIT: ${{ steps.version.outputs.commit }}
+        run: |
+          git fetch -q --depth 1 origin dev
+          git diff --quiet "$COMMIT" FETCH_HEAD -- .github/workflows && exit 0
+          missing=""
+          git ls-remote --exit-code origin "refs/tags/v$VERSION" >/dev/null \
+            || missing="$missing $COMMIT:refs/tags/v$VERSION"
+          git ls-remote --exit-code origin "refs/heads/release/v$VERSION" >/dev/null \
+            || missing="$missing $COMMIT:refs/heads/release/v$VERSION"
+          [ -z "$missing" ] && exit 0
+          echo "::error::dev changed its workflows since the candidate, so this workflow may not create v$VERSION. Run once, then run Promote again: git push origin$missing"
+          exit 1
+
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true

@@ -3,16 +3,19 @@ name: Promote release
 # Releases a tested candidate (ADR 0025): v0.7.4-rc.2 becomes v0.7.4 with exactly its files,
 # nothing is built again. The setups, the app packages and the Docker images are the ones
 # that were tested; only release.json is written anew, so that its links lead to the
-# release, and signed with the same key. Then rhinvoice.com and the demos follow.
+# release, and signed with the same key. Then the released commit goes to main (ADR 0026),
+# and rhinvoice.com and the demos follow.
 #
-# Started by the maintainer: Actions → Promote release → Run workflow, with the candidate.
+# Started by the maintainer: Actions → Promote release → Run workflow. Without a candidate it
+# takes the newest one that is not released yet (ADR 0029).
 
 on:
   workflow_dispatch:
     inputs:
       candidate:
-        description: "The tested candidate, e.g. v0.7.4-rc.2"
-        required: true
+        description: "The tested candidate, e.g. v0.7.4-rc.2; empty: the newest candidate"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -23,7 +26,7 @@ concurrency:
 
 jobs:
   promote:
-    name: Release ${{ inputs.candidate }}
+    name: Release ${{ inputs.candidate || 'the newest candidate' }}
     if: github.repository == 'rhinvoice/rhinvoice'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -32,35 +35,70 @@ jobs:
       packages: write
       # Starts the website build and the demo deployment.
       actions: write
+      # Brings the released commit to main.
+      pull-requests: write
     env:
       GH_TOKEN: ${{ github.token }}
-      CANDIDATE: ${{ inputs.candidate }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          # The candidate's own changelog and history.
-          ref: ${{ inputs.candidate }}
-          fetch-depth: 0
-
-      - name: The candidate exists and is not released yet
-        id: version
+      - name: Choose the candidate
+        id: candidate
+        env:
+          CANDIDATE: ${{ inputs.candidate }}
+        # Checked before the checkout, so a typo gets a clear message.
         run: |
-          if ! printf '%s' "$CANDIDATE" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$'; then
+          rc='^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$'
+          releases="$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq '.[].tagName')"
+          if [ -z "$CANDIDATE" ]; then
+            # Newest first: the first candidate whose version has no release yet.
+            for tag in $releases; do
+              printf '%s' "$tag" | grep -Eq "$rc" || continue
+              printf '%s\n' "$releases" | grep -qx "${tag%-rc.*}" && continue
+              CANDIDATE="$tag"
+              break
+            done
+            if [ -z "$CANDIDATE" ]; then
+              echo "::error::There is no candidate waiting for its release"
+              exit 1
+            fi
+          fi
+          if ! printf '%s' "$CANDIDATE" | grep -Eq "$rc"; then
             echo "::error::Name a candidate like v0.7.4-rc.2, not '$CANDIDATE'"
+            exit 1
+          fi
+          if ! printf '%s\n' "$releases" | grep -qx "$CANDIDATE"; then
+            echo "::error::There is no candidate $CANDIDATE; the newest ones: $(printf '%s\n' "$releases" | grep -E "$rc" | head -3 | tr '\n' ' ')"
+            exit 1
+          fi
+          if ! gh release view "$CANDIDATE" --repo "$GITHUB_REPOSITORY" --json isPrerelease --jq '.isPrerelease' | grep -q true; then
+            echo "::error::$CANDIDATE is no pre-release of the Release workflow"
             exit 1
           fi
           version="${CANDIDATE#v}"
           version="${version%-rc.*}"
-          if ! gh release view "$CANDIDATE" --json isPrerelease --jq '.isPrerelease' | grep -q true; then
-            echo "::error::$CANDIDATE is no pre-release of the Release workflow"
-            exit 1
-          fi
-          if git rev-parse -q --verify "refs/tags/v$version" > /dev/null; then
+          if printf '%s\n' "$releases" | grep -qx "v$version"; then
             echo "::error::v$version is released already"
             exit 1
           fi
+          echo "Candidate: $CANDIDATE" | tee -a "$GITHUB_STEP_SUMMARY"
           {
+            echo "name=$CANDIDATE"
             echo "version=$version"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          # The candidate's own changelog and history.
+          ref: ${{ steps.candidate.outputs.name }}
+          fetch-depth: 0
+
+      - name: The candidate's commit
+        id: version
+        env:
+          CANDIDATE: ${{ steps.candidate.outputs.name }}
+          VERSION: ${{ steps.candidate.outputs.version }}
+        run: |
+          {
+            echo "version=$VERSION"
             echo "commit=$(git rev-list -n 1 "$CANDIDATE")"
           } >> "$GITHUB_OUTPUT"
 
@@ -70,6 +108,8 @@ jobs:
           cache-dependency-glob: backend/uv.lock
 
       - name: Take the candidate's files
+        env:
+          CANDIDATE: ${{ steps.candidate.outputs.name }}
         run: |
           mkdir -p build/release
           gh release download "$CANDIDATE" --dir build/release \
@@ -111,6 +151,7 @@ jobs:
       - name: Tag the candidate's images as the release
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          CANDIDATE: ${{ steps.candidate.outputs.name }}
         run: |
           minor="${VERSION%.*}"
           for repository in rhinvoice rhinvoice-backup; do
@@ -134,16 +175,28 @@ jobs:
         # A release made with this token starts no workflow by itself.
         run: gh workflow run demo.yml --ref dev -f version="$VERSION"
 
-      - name: Offer the release to main
+      - name: Bring the release to main
         env:
           VERSION: ${{ steps.version.outputs.version }}
           COMMIT: ${{ steps.version.outputs.commit }}
-        # The released commit, not dev's newest one: dev may already hold the next changes.
+        # The released commit, not dev's newest one: dev may already hold the next changes. Its
+        # checks passed in the candidate's full CI run, so the pull request can merge at once.
+        # Merged with this token, main starts no workflow by itself: the website is started here.
+        # Should the merge not work (for instance without "Allow GitHub Actions to create and
+        # approve pull requests"), the summary links the pull request to merge by hand.
         run: |
-          git push origin "$COMMIT:refs/heads/release/v$VERSION"
-          url="https://github.com/${GITHUB_REPOSITORY}/compare/main...release/v$VERSION?expand=1"
-          {
-            echo "Released v$VERSION. Last step: bring it to main (rhinvoice.com and the README follow)."
-            echo
-            echo "[Open the pull request into main]($url)"
-          } >> "$GITHUB_STEP_SUMMARY"
+          branch="release/v$VERSION"
+          git push origin "$COMMIT:refs/heads/$branch"
+          url="https://github.com/${GITHUB_REPOSITORY}/compare/main...$branch?expand=1"
+          if gh pr create --base main --head "$branch" --title "Release $VERSION" \
+              --body "The released commit of v$VERSION (ADR 0026)." \
+            && gh pr merge "$branch" --merge --delete-branch; then
+            gh workflow run pages.yml --ref main
+            echo "Released v$VERSION; main and rhinvoice.com follow." >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "Released v$VERSION. Main could not take it by itself; last step:"
+              echo
+              echo "[Merge the pull request into main]($url)"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi

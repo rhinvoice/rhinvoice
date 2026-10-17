@@ -39,8 +39,8 @@ Rhinvoice tourne dans quatre conteneurs : `app` (interface web et API), `db` (Po
 
    ```bash
    mkdir rhinvoice && cd rhinvoice
-   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.8.0/deploy/compose.yml
-   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.8.0/.env.example -o .env
+   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/deploy/compose.yml
+   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/.env.example -o .env
    ```
 
 2. **Configurer** : modifiez `.env` (voir le tableau ci-dessous). Définissez au moins `POSTGRES_PASSWORD` et `RHINVOICE_VERSION`.

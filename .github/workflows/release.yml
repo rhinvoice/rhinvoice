@@ -1,7 +1,9 @@
 name: Release
 
-# Builds a release candidate (ADR 0025, 0026): a tag vX.Y.Z-rc.N on dev becomes a public pre-release with
-# the setups, the app packages, a signed release.json and Docker images tagged X.Y.Z-rc.N.
+# Builds a release candidate (ADR 0025, 0026, 0029): a tag vX.Y.Z-rc.N on dev becomes a public
+# pre-release with the setups, the app packages, a signed release.json and Docker images tagged
+# X.Y.Z-rc.N. The version comes from the tag; no commit changes it. The tag also starts the full
+# CI run (every mutant, every browser test); the candidate is published only once it passed.
 # Nobody gets it by itself: GitHub's "latest", the update check, rhinvoice.com and the demos
 # stay on the last release. Once the candidate is tested, "Promote release" releases exactly
 # these files as vX.Y.Z.
@@ -25,7 +27,7 @@ jobs:
         with:
           fetch-depth: 0
       - id: version
-        name: The tag names the version the program carries, on dev
+        name: The tag names a version the changelog describes, on dev
         run: |
           if ! printf '%s' "$GITHUB_REF_NAME" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$'; then
             echo "::error::A candidate's tag looks like v0.7.4-rc.1, not $GITHUB_REF_NAME"
@@ -33,9 +35,9 @@ jobs:
           fi
           version="${GITHUB_REF_NAME#v}"
           version="${version%-rc.*}"
-          program="$(sed -n 's/^version = "\(.*\)"$/\1/p' backend/pyproject.toml)"
-          if [ "$version" != "$program" ]; then
-            echo "::error::$GITHUB_REF_NAME is a candidate for $version, but the program is version $program"
+          # The release notes come from there (and the docs mark new features with it).
+          if ! grep -Eq "^## \[${version//./\\.}\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no section '## [$version]'; add it in the pull request"
             exit 1
           fi
           if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
@@ -67,6 +69,8 @@ jobs:
       IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image.repository }}
     steps:
       - uses: actions/checkout@v4
+      - name: Give the program the candidate's version
+        run: python3 desktop/set_version.py "${{ needs.candidate.outputs.version }}"
       - name: Name the platform for files (linux/arm64 -> linux-arm64)
         run: |
           platform="${{ matrix.platform }}"
@@ -104,9 +108,36 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  checks:
+    name: Full CI run of the candidate
+    # The tag starts CI with every mutant and every browser test (ci.yml); nothing is
+    # published before it passed.
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Wait for CI on the tagged commit
+        run: |
+          for _ in $(seq 1 30); do
+            run="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$GITHUB_SHA" \
+              --event push --json databaseId --jq '.[0].databaseId')"
+            [ -n "$run" ] && break
+            sleep 10
+          done
+          if [ -z "$run" ]; then
+            echo "::error::No CI run for $GITHUB_REF_NAME"
+            exit 1
+          fi
+          echo "CI run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run"
+          gh run watch "$run" --repo "$GITHUB_REPOSITORY" --interval 30 --exit-status > /dev/null
+
   images:
     name: Publish ${{ matrix.image.name }} image to GHCR
-    needs: image-build
+    needs: [image-build, checks]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
@@ -147,11 +178,13 @@ jobs:
     name: Desktop setups and app packages
     needs: candidate
     uses: ./.github/workflows/desktop.yml
+    with:
+      version: ${{ needs.candidate.outputs.version }}
 
   github-release:
     name: GitHub pre-release (setups, app packages, signed release.json)
     # The pre-release appears only when everything it announces exists: images and setups.
-    needs: [candidate, images, desktop]
+    needs: [candidate, checks, images, desktop]
     runs-on: ubuntu-24.04
     permissions:
       contents: write

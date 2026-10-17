@@ -67,5 +67,6 @@ services:
       CI: ${CI:-}
     volumes:
       - ./frontend:/work
-    command: ["npx", "playwright", "test"]
+    # E2E_SHARD=2/3 runs the second of three parts (CI runs them side by side); 1/1 is all.
+    command: ["npx", "playwright", "test", "--shard=${E2E_SHARD:-1/1}"]
     ipc: host

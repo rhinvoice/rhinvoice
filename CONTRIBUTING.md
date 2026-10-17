@@ -80,9 +80,12 @@ Nothing reaches users untested ([ADR 0025](docs/adr/0025-tested-releases.md), [A
 2. **Release candidate.** The maintainer tags `vX.Y.Z-rc.N` on `dev`. CI runs everything (every
    mutant), the builds take the version from the tag, and once both passed a public
    pre-release appears: setups, Docker images tagged `X.Y.Z-rc.N`, nothing users get by
-   themselves. You are welcome to test it.
+   themselves. You are welcome to test it. On Windows and macOS, install the candidate as
+   **Rhinvoice Beta** (`Rhinvoice-Beta-Setup-Windows.exe`, `Rhinvoice-Beta-macOS.dmg`): a separate
+   program with its own data, beside Rhinvoice, which it never touches; it is offered later
+   candidates as updates ([ADR 0030](docs/adr/0030-rhinvoice-beta-for-release-candidates.md)).
 3. **Promotion.** Once tested, the maintainer starts *Promote release*; the candidate's files
-   become release `vX.Y.Z`, the released commit goes to `main`, and rhinvoice.com and the
+   (without Rhinvoice Beta's setups) become release `vX.Y.Z`, the released commit goes to `main`, and rhinvoice.com and the
    README follow.
 
 ## Licence

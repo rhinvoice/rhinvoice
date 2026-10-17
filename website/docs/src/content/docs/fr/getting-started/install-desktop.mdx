@@ -91,6 +91,16 @@ Rhinvoice cherche lui-même les nouvelles versions. Un avis **Nouvelle version �
 
 Rarement, une nouvelle version demande un nouveau setup, par exemple pour une nouvelle version de la base de données intégrée. L’avis affiche alors **Télécharger le programme d’installation**. Installez-le par-dessus le programme existant; vos données restent.
 
+## Rhinvoice Beta pour les versions candidates
+
+Avant d’être publiée, une version paraît comme version candidate, pour les tests. Pour Windows et Mac, une version candidate arrive sous le nom de **Rhinvoice Beta**: un programme distinct, que vous installez à côté de Rhinvoice. Il a son propre nom, ses propres raccourcis, sa propre entrée de désinstallation et son propre dossier de données (`%LOCALAPPDATA%\Rhinvoice Beta`, sur un Mac `~/Library/Application Support/Rhinvoice Beta`). Il ne touche jamais aux données de Rhinvoice.
+
+Téléchargez `Rhinvoice-Beta-Setup-Windows.exe` ou `Rhinvoice-Beta-macOS.dmg` depuis la version candidate sur [GitHub releases](https://github.com/rhinvoice/rhinvoice/releases) et installez-le comme décrit plus haut; les mêmes avertissements apparaissent. Sur Windows, il s’installe dans `%LOCALAPPDATA%\Programs\Rhinvoice Beta`, sur un Mac il s’appelle `Rhinvoice Beta.app`. Rhinvoice Beta se voit proposer les versions candidates plus récentes comme mises à jour; Rhinvoice lui-même uniquement les versions publiées. Désinstallez-le comme Rhinvoice.
+
+<Aside type="caution">
+Les versions candidates servent aux tests. Utilisez Rhinvoice Beta avec des données de test ou une copie, pas pour les factures que vous envoyez.
+</Aside>
+
 ## Signaler un problème
 
 *À propos de Rhinvoice* (cliquez sur la version en bas de la navigation) contient le lien **Signaler un problème**. Il copie la version, votre système et la fin du journal, et ouvre un nouveau rapport de bug sur GitHub; vous pouvez aussi l’envoyer par e-mail à hello@rhinvoice.com. Rhinvoice n’envoie rien de lui-même. Le journal peut contenir des noms de clients : relisez ce que vous collez.

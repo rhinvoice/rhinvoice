@@ -5,6 +5,12 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Fixed
+- On a Mac, the window of the old version goes away when an update restarts Rhinvoice. Until
+  now it stayed on screen, frozen, beside the new version's window, with a second Rhinvoice
+  icon in the Dock, until Rhinvoice was quit. This applies to updates from this version on:
+  the update to it still leaves the frozen window once; closing the new window ends both.
+
 ## [0.8.0] – 2026-10-17
 
 ### Added

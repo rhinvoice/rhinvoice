@@ -8,7 +8,7 @@ name: Desktop
 on:
   workflow_call:
   push:
-    branches: [main]
+    branches: [dev]
     paths:
       - "backend/**"
       - "frontend/**"

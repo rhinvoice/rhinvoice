@@ -256,6 +256,10 @@ def cii(invoice: EInvoice) -> bytes:
         _ram(agreement, "BuyerReference", invoice.buyer_reference)
     _party(agreement, "SellerTradeParty", invoice.seller)
     _party(agreement, "BuyerTradeParty", invoice.buyer)
+    if invoice.order_reference is not None:
+        # BT-13 (EN 16931-3-3): after the parties, as the CII schema orders the agreement.
+        order = _ram(agreement, "BuyerOrderReferencedDocument")
+        _ram(order, "IssuerAssignedID", invoice.order_reference)
     delivery = _ram(transaction, "ApplicableHeaderTradeDelivery")
     if invoice.deliver_to is not None:
         name, address = invoice.deliver_to

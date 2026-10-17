@@ -7,6 +7,7 @@ language in the settings. Placeholders are those of the document texts
 (Swiss German writes "Grüsse").
 """
 
+# ruff: noqa: RUF001 - French and Italian elide with the typographic apostrophe.
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -91,6 +92,22 @@ _SUBJECTS: Mapping[Language, Mapping[MailKind, str]] = {
         MailKind.REMINDER_2: "Second reminder for invoice {nummer}",
         MailKind.REMINDER_3: "Final reminder for invoice {nummer}",
     },
+    Language.FR: {
+        MailKind.INVOICE: "Facture {nummer}",
+        MailKind.QUOTE: "Offre {nummer}",
+        MailKind.CANCELLATION: "Note de crédit {nummer}",
+        MailKind.REMINDER_1: "Rappel de paiement concernant la facture {nummer}",
+        MailKind.REMINDER_2: "1er rappel concernant la facture {nummer}",
+        MailKind.REMINDER_3: "2e rappel concernant la facture {nummer}",
+    },
+    Language.IT: {
+        MailKind.INVOICE: "Fattura {nummer}",
+        MailKind.QUOTE: "Offerta {nummer}",
+        MailKind.CANCELLATION: "Nota di credito {nummer}",
+        MailKind.REMINDER_1: "Promemoria di pagamento per la fattura {nummer}",
+        MailKind.REMINDER_2: "1° sollecito per la fattura {nummer}",
+        MailKind.REMINDER_3: "2° sollecito per la fattura {nummer}",
+    },
 }
 _TEXTS: Mapping[Language, Mapping[MailKind, str]] = {
     Language.DE: {
@@ -140,6 +157,59 @@ _TEXTS: Mapping[Language, Mapping[MailKind, str]] = {
         MailKind.REMINDER_3: (
             "Invoice {nummer} is still open despite our reminders. Please pay {waehrung} {betrag}"
             " by {faellig} at the latest. The final reminder is attached."
+        ),
+    },
+    Language.FR: {
+        MailKind.INVOICE: (
+            "Veuillez trouver ci-joint notre facture {nummer} d’un montant de {waehrung} {betrag},"
+            " payable jusqu’au {faellig}."
+        ),
+        MailKind.QUOTE: (
+            "Veuillez trouver ci-joint notre offre {nummer} d’un montant de {waehrung} {betrag}."
+            " Elle est valable jusqu’au {faellig}. Nous nous réjouissons de votre commande."
+        ),
+        MailKind.CANCELLATION: "Veuillez trouver ci-joint la note de crédit {nummer}.",
+        MailKind.REMINDER_1: (
+            "Notre facture {nummer} est encore ouverte. Elle vous a peut-être échappé."
+            " Nous vous prions de verser {waehrung} {betrag} d’ici au {faellig}. Le rappel de"
+            " paiement se trouve en annexe. Si vous avez déjà payé, veuillez ne pas tenir compte"
+            " de ce message."
+        ),
+        MailKind.REMINDER_2: (
+            "Malgré notre rappel de paiement, la facture {nummer} est encore ouverte. Nous vous"
+            " prions de verser {waehrung} {betrag} d’ici au {faellig}. Le rappel se trouve en"
+            " annexe."
+        ),
+        MailKind.REMINDER_3: (
+            "Malgré notre rappel, la facture {nummer} est encore ouverte. Nous vous prions de"
+            " verser {waehrung} {betrag} au plus tard le {faellig}. Le rappel se trouve en annexe."
+        ),
+    },
+    Language.IT: {
+        MailKind.INVOICE: (
+            "In allegato trovate la nostra fattura {nummer} di {waehrung} {betrag},"
+            " pagabile entro il {faellig}."
+        ),
+        MailKind.QUOTE: (
+            "In allegato trovate la nostra offerta {nummer} di {waehrung} {betrag}. È valida"
+            " fino al {faellig}. Saremo lieti di ricevere il vostro ordine."
+        ),
+        MailKind.CANCELLATION: "In allegato trovate la nota di credito {nummer}.",
+        MailKind.REMINDER_1: (
+            "La nostra fattura {nummer} risulta ancora aperta. Forse vi è sfuggita. Vi"
+            " preghiamo di versare {waehrung} {betrag} entro il {faellig}. In allegato trovate il"
+            " promemoria di pagamento. Se avete già pagato, vi preghiamo di non tenere conto di"
+            " questo messaggio."
+        ),
+        MailKind.REMINDER_2: (
+            "Nonostante il nostro promemoria, la fattura {nummer} risulta ancora aperta. Vi"
+            " preghiamo di versare {waehrung} {betrag} entro il {faellig}. In allegato trovate il"
+            " sollecito."
+        ),
+        MailKind.REMINDER_3: (
+            "Nonostante il nostro sollecito, la fattura {nummer} risulta ancora aperta. Vi"
+            " preghiamo di versare {waehrung} {betrag} al più tardi entro il {faellig}. In"
+            " allegato trovate il sollecito."
         ),
     },
 }

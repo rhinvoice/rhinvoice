@@ -320,6 +320,50 @@ def test_cancellations_quotes_gross_prices_and_english(printing: PrintHandlers) 
     assert "VAT no. CHE-123.456.788 MWST" in english
 
 
+def test_french_documents_as_written_in_switzerland(printing: PrintHandlers) -> None:
+    french = printing.preview_html(
+        DocumentType.INVOICE,
+        draft(language=Language.FR, lines=(HOURS,), service_from=date(2026, 3, 2)),
+    )
+    assert '<html lang="fr">' in french
+    assert "<title>Facture</title>" in french
+    assert '<dt>N° de facture</dt><dd class="pending">attribué à l’émission</dd>' in french
+    assert "<dt>Date</dt><dd>9 mars 2026</dd>" in french
+    assert "<dt>Échéance</dt><dd>8 avril 2026</dd>" in french
+    assert "<dt>Date de la prestation</dt><dd>2 mars 2026</dd>" in french
+    assert f'<td class="num">12.5{NBSP}h</td>' in french
+    assert '<td class="num">1’200.00</td>' in french
+    assert f">TVA 8.1{NBSP}% sur 13’500.00<" in french
+    assert "à l’att. de Anna Muster" in french
+    assert "N° TVA CHE-123.456.788 MWST" in french
+    assert "Coordonnées bancaires" in french
+
+
+def test_italian_documents_abroad(printing: PrintHandlers, store: Store) -> None:
+    store.customers[CUSTOMER] = replace(
+        store.customers[CUSTOMER],
+        address=factories.address(country=CountryCode("DE"), postal_code="10115", city="Berlin"),
+        vat_number=VatNumber.parse("DE123456789"),
+    )
+    piece = LineInput(kind=LineKind.ITEM, description="Libro", unit="C62", unit_price="20")
+    documents = printing.documents
+    quote = documents.create(
+        DocumentType.QUOTE, draft(language=Language.IT, lines=(piece,))
+    ).document
+    html = printing.html(quote.id)
+    assert '<html lang="it">' in html
+    assert "<title>Offerta</title>" in html
+    assert "<dt>N. offerta</dt>" in html
+    assert "<dt>Valida fino al</dt><dd>8 aprile 2026</dd>" in html
+    assert f'<td class="num">1{NBSP}pz.</td>' in html
+    assert "<div>Germania</div>" in html
+    assert "<dt>Vostro IDI</dt><dd>DE123456789</dd>" in html
+    assert (
+        '<p class="notice">Inversione contabile: l’imposta è dovuta dal destinatario della'
+        " prestazione.</p>"
+    ) in html
+
+
 def test_german_companies_and_people(store: Store) -> None:
     store.company = factories.company(
         address=factories.address(postal_code="10115", city="Berlin", country=CountryCode("DE")),

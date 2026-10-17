@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001 - French and Italian elide with the typographic apostrophe.
 """What every country profile must provide; a new country is complete when these pass.
 
 See docs/adding-a-country.md.
@@ -146,8 +147,47 @@ def test_the_write_off_hint_names_its_legal_basis(profile: CountryProfile) -> No
         Country.DE: "§ 17 Abs. 2 Nr. 1 UStG",
         Country.AT: "§ 16 Abs. 3 Z 1 UStG",
     }[profile.country]
-    for terms in profile.terms.values():
-        assert basis in terms.write_off_hint
+    # The Swiss law has a French (LTVA) and an Italian (LIVA) version of its own.
+    swiss = {Language.FR: "art. 41 LTVA", Language.IT: "art. 41 LIVA"}
+    for language, terms in profile.terms.items():
+        expected = swiss.get(language, basis) if profile.vat.system is VatSystem.SWISS else basis
+        assert expected in terms.write_off_hint
+
+
+@ALL
+def test_french_and_italian_name_the_tax_tva_and_iva(profile: CountryProfile) -> None:
+    assert profile.terms[Language.FR].tax_name == "TVA"
+    assert profile.terms[Language.IT].tax_name == "IVA"
+
+
+def test_swiss_notices_use_the_words_of_the_law_in_french_and_italian() -> None:
+    """LTVA / LIVA art. 10 (assujetti, assoggettato), art. 23 al. 2 ch. 1; EU art. 226 11a."""
+    for country in (Country.CH, Country.LI):
+        profile = profile_of(country)
+        french = profile.terms[Language.FR].notices
+        italian = profile.terms[Language.IT].notices
+        assert french[TaxTreatment.SMALL_BUSINESS] == "Non assujetti à la TVA."
+        assert italian[TaxTreatment.SMALL_BUSINESS] == "Non assoggettato all’IVA."
+        assert "art. 23, al. 2, ch. 1, LTVA" in french[TaxTreatment.GOODS_EXPORT]
+        assert "art. 23 cpv. 2 n. 1 LIVA" in italian[TaxTreatment.GOODS_EXPORT]
+        assert french[TaxTreatment.REVERSE_CHARGE].startswith("Autoliquidation")
+        assert italian[TaxTreatment.REVERSE_CHARGE].startswith("Inversione contabile")
+
+
+@pytest.mark.parametrize("country", [Country.DE, Country.AT])
+def test_eu_notices_use_the_mentions_of_the_vat_directive(country: Country) -> None:
+    """Art. 226 point 11a and the small business exemption of Art. 284 in French and Italian."""
+    terms = profile_of(country).terms
+    assert terms[Language.FR].notices[TaxTreatment.REVERSE_CHARGE] == "Autoliquidation."
+    assert terms[Language.IT].notices[TaxTreatment.REVERSE_CHARGE] == "Inversione contabile."
+    german_basis = "§ 19 UStG" if country is Country.DE else "§ 6 Abs. 1 Z 27 UStG"
+    for language, words in (
+        (Language.FR, "franchise pour les petites entreprises"),
+        (Language.IT, "franchigia per le piccole imprese"),
+    ):
+        small = terms[language].notices[TaxTreatment.SMALL_BUSINESS]
+        assert words in small
+        assert german_basis in small
 
 
 def test_the_countries_name_bad_debts_in_their_own_words() -> None:

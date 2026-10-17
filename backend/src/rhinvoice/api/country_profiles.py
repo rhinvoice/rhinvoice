@@ -32,8 +32,12 @@ class RatesResponse(ApiModel):
 
 
 class TermsResponse(ApiModel):
+    """The country's words per language of documents (and of the interface)."""
+
     de: CountryTermsResponse
     en: CountryTermsResponse
+    fr: CountryTermsResponse
+    it: CountryTermsResponse
 
 
 class CountryProfileResponse(ApiModel):
@@ -77,7 +81,12 @@ class CountryProfileResponse(ApiModel):
                 reduced=plain_number(rates.reduced),
                 special=None if rates.special is None else plain_number(rates.special),
             ),
-            terms=TermsResponse(de=terms[Language.DE], en=terms[Language.EN]),
+            terms=TermsResponse(
+                de=terms[Language.DE],
+                en=terms[Language.EN],
+                fr=terms[Language.FR],
+                it=terms[Language.IT],
+            ),
             number_style=profile.number_style,
             payment_codes=sorted(profile.payment_codes),
             default_currency=profile.default_currency,

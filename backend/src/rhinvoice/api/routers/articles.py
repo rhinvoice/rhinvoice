@@ -19,6 +19,7 @@ from rhinvoice.application.catalog.handlers import SaveArticle
 from rhinvoice.application.catalog.ports import ArticleQuery, ArticleSort
 from rhinvoice.domain.catalog.article import Article
 from rhinvoice.domain.catalog.unit import DEFAULT_UNIT_CODE
+from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.supply import Supply
@@ -62,6 +63,8 @@ class ArticleResponse(ApiModel):
     unit: str = Field(json_schema_extra={"enum": UNIT_CODES})
     unit_label_de: str
     unit_label_en: str
+    unit_label_fr: str
+    unit_label_it: str
     tax_category: TaxCategory
     supply: Supply
     prices: dict[Currency, str]
@@ -79,6 +82,8 @@ class ArticleResponse(ApiModel):
             unit=article.unit.code,
             unit_label_de=article.unit.label_de,
             unit_label_en=article.unit.label_en,
+            unit_label_fr=article.unit.label(Language.FR),
+            unit_label_it=article.unit.label(Language.IT),
             tax_category=article.tax_category,
             supply=article.supply,
             prices={currency: price_text(price) for currency, price in article.prices.items()},

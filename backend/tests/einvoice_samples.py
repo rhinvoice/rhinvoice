@@ -25,6 +25,7 @@ from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.country import CountryCode
 from rhinvoice.domain.shared.email import EmailAddress
 from rhinvoice.domain.shared.iban import Bic, Iban
+from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.supply import Supply
@@ -295,7 +296,8 @@ def samples() -> dict[str, Sample]:
             (berlin_account,),
             _draft((CONSULTING,)),
         ),
-        # A German authority: XRechnung with the Leitweg-ID as buyer reference.
+        # A German authority: XRechnung with the customer's Leitweg-ID as buyer reference,
+        # which wins over the reference of the invoice.
         "de-authority": Sample(
             german,
             replace(
@@ -303,9 +305,10 @@ def samples() -> dict[str, Sample]:
                 kind=CustomerKind.COMPANY,
                 company_name="Bezirksamt Beispiel",
                 contact_person="Frau Beispiel",
+                buyer_reference="04011000-12345-34",
             ),
             (berlin_account,),
-            _draft((CONSULTING, DISCOUNTED), reference="04011000-12345-34"),
+            _draft((CONSULTING, DISCOUNTED), reference="Bestellung 17"),
         ),
         # Gross prices in francs: net prices with four places, the 5-centime rounding.
         "ch-domestic-gross": Sample(
@@ -400,6 +403,25 @@ def samples() -> dict[str, Sample]:
             (berlin_account,),
             _draft((CONSULTING, PRINTER, LABELS), reference="Bestellung 2026-18"),
         ),
+        # The same in Italian: the notices in the words of the VAT Directive.
+        "de-intra-community-italian": Sample(
+            german,
+            factories.customer(
+                id=CUSTOMER,
+                company_name="Cliente Austria GmbH",
+                address=factories.address(
+                    street="Ringstraße",
+                    house_number="3",
+                    postal_code="1010",
+                    city="Wien",
+                    country=CountryCode("AT"),
+                ),
+                vat_number=VatNumber.parse("ATU12345675"),
+                default_language=Language.IT,
+            ),
+            (berlin_account,),
+            _draft((CONSULTING, PRINTER), language=Language.IT),
+        ),
         "de-intra-community-cancellation": Sample(
             german,
             factories.customer(
@@ -462,6 +484,24 @@ def samples() -> dict[str, Sample]:
             ),
             (_eur_account(DE_IBAN, swiss.name),),
             _draft((CONSULTING, PRINTER, LABELS), currency=Currency.EUR),
+        ),
+        # A French invoice to a customer outside Europe, in CHF with a QR reference.
+        "ch-export-french": Sample(
+            swiss,
+            factories.customer(
+                id=CUSTOMER,
+                company_name="Client Canada Inc.",
+                address=factories.address(
+                    street="Rue Sainte-Catherine",
+                    house_number="100",
+                    postal_code="H2X 1Z4",
+                    city="Montréal",
+                    country=CountryCode("CA"),
+                ),
+                default_language=Language.FR,
+            ),
+            (_chf_qr_account(),),
+            _draft((CONSULTING, PRINTER), language=Language.FR),
         ),
         "at-domestic": Sample(
             factories.company(

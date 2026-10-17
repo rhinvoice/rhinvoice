@@ -38,6 +38,11 @@ class CustomerRequest(ApiModel):
     email: str | None = Field(default=None, max_length=254, pattern=EMAIL_PATTERN)
     phone: str = text(50)
     vat_number: str | None = Field(default=None, max_length=40)
+    buyer_reference: str = Field(
+        default="",
+        max_length=100,
+        description="Leitweg-ID or fixed buyer reference for e-invoices (German customers)",
+    )
     group: str = text(50)
     default_currency: Currency | None = None
     default_language: Language | None = None
@@ -59,6 +64,7 @@ class CustomerRequest(ApiModel):
             email=self.email,
             phone=self.phone,
             vat_number=self.vat_number,
+            buyer_reference=self.buyer_reference,
             group=self.group,
             default_currency=self.default_currency,
             default_language=self.default_language,
@@ -87,6 +93,7 @@ class CustomerResponse(ApiModel):
     email: str | None
     phone: str
     vat_number: str | None
+    buyer_reference: str
     group: str
     default_currency: Currency | None
     default_language: Language | None
@@ -118,6 +125,7 @@ class CustomerResponse(ApiModel):
             email=None if customer.email is None else str(customer.email),
             phone=customer.phone,
             vat_number=None if customer.vat_number is None else str(customer.vat_number),
+            buyer_reference=customer.buyer_reference,
             group=customer.group,
             default_currency=customer.default_currency,
             default_language=customer.default_language,

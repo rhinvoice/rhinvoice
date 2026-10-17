@@ -1,0 +1,99 @@
+---
+title: Aggiornare Rhinvoice a una nuova versione
+description: Aggiornare Rhinvoice con Docker Compose. Impostare la nuova versione in .env, scaricare le immagini, riavviare. Prima fare un backup e leggere il changelog.
+faq:
+  - q: Come aggiorno Rhinvoice?
+    a: Imposti RHINVOICE_VERSION in .env sulla nuova versione, poi esegua docker compose pull e docker compose up -d. Le migrazioni del database vengono eseguite automaticamente all’avvio.
+  - q: Rhinvoice si aggiorna da solo?
+    a: Non con una versione fissata. Le versioni fissate cambiano solo quando cambia RHINVOICE_VERSION. Con latest, ogni docker compose pull scarica la release più recente.
+  - q: Le fatture emesse cambiano con un aggiornamento?
+    a: No. I documenti emessi mantengono il loro contenuto e il loro PDF archiviato. Sono immodificabili, anche nel database.
+  - q: Come vengo a sapere di una nuova versione?
+    a: "Rhinvoice controlla una volta al giorno e mostra allora una scheda in fondo alla navigazione con la nuova versione e i passi per il server. RHINVOICE_UPDATE_CHECK=false in .env disattiva il controllo; nel programma per Windows e Mac è \"update_check\": false in rhinvoice.json."
+  - q: Dove vedo quale versione sto usando?
+    a: In fondo alla navigazione, accanto a by webberz. Un clic apre Informazioni su Rhinvoice con un link a Novità.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Per aggiornare Rhinvoice, imposti la nuova versione in `.env`, scarichi le immagini e riavvii i container. Le migrazioni del database vengono eseguite automaticamente all’avvio. Prima legga il changelog e faccia un backup.
+
+## Prima dell’aggiornamento
+
+- **Legga il [changelog](https://github.com/rhinvoice/rhinvoice/blob/main/CHANGELOG.md).** Rhinvoice segue il Semantic Versioning; prima della 1.0 anche le versioni minori possono contenere modifiche incompatibili. Le versioni sono elencate nelle [release su GitHub](https://github.com/rhinvoice/rhinvoice/releases).
+- **Faccia un backup**, se ne ha configurato uno ([Backup e ripristino](/docs/it/operations/backup/)):
+
+  ```bash
+  docker compose exec backup rhinvoice-backup backup    # fare subito un backup
+  ```
+
+## Aggiornare
+
+<Steps>
+
+1. Nella cartella con `compose.yml` e `.env`, imposti `RHINVOICE_VERSION` in `.env` sulla nuova versione, p. es. `RHINVOICE_VERSION=0.8.0`.
+
+2. Scarichi le immagini e riavvii:
+
+   ```bash
+   # impostare RHINVOICE_VERSION in .env sulla nuova versione, poi
+   docker compose pull
+   docker compose up -d
+   ```
+
+3. Controlli che tutto funzioni: `docker compose ps` mostra «healthy» dopo pochi secondi.
+
+</Steps>
+
+Le migrazioni del database vengono eseguite automaticamente all’avvio (`RHINVOICE_RUN_MIGRATIONS=true` in `.env`).
+
+## Versione fissata o latest
+
+`.env` determina come Rhinvoice segue le nuove release:
+
+| `RHINVOICE_VERSION` | Comportamento |
+|---|---|
+| una versione, p. es. `0.8.0` | fissata: cambia solo quando la cambia Lei |
+| `latest` | segue ogni release al prossimo `docker compose pull` |
+
+Per le fatture vere una versione fissata è la scelta più sicura: decide Lei quando aggiornare e può leggere prima il changelog.
+
+<Aside type="note" title="Le fatture emesse restano come sono">
+Un aggiornamento non modifica mai i documenti emessi. Mantengono il loro contenuto e il loro PDF archiviato. Un layout di stampa modificato vale solo per i nuovi PDF.
+</Aside>
+
+## Avviso di una nuova versione
+
+Una volta al giorno Rhinvoice controlla se esiste una nuova versione. Compare allora in fondo alla navigazione una scheda con il numero della nuova versione, un link alle novità e i due passi per il server: la riga per `.env` e il comando, entrambi pronti da copiare. *Informazioni su Rhinvoice* mostra lo stesso, e se la Sua versione è aggiornata; **Cerca aggiornamenti** lì controlla subito invece di aspettare il giorno dopo.
+
+Per il controllo Rhinvoice scarica un piccolo file firmato dall’ultima release su GitHub. Come per ogni download, GitHub vede l’indirizzo del Suo server; nessun dato della Sua installazione viene inviato. Un file la cui firma non corrisponde viene scartato. Per disattivare il controllo, imposti in `.env`:
+
+```bash
+RHINVOICE_UPDATE_CHECK=false
+```
+
+Nel programma per Windows e Mac, aggiunga la riga `"update_check": false` a `rhinvoice.json` nella cartella dei dati (vedi [dove si trovano i Suoi dati](/docs/it/getting-started/install-desktop/#dove-si-trovano-i-suoi-dati)) e riavvii Rhinvoice. <Since version="0.8.0" />
+
+## Provare le release candidate
+
+Prima di essere rilasciata, una versione viene pubblicata su GitHub come release candidate (una pre-release con un tag come `v0.7.4-rc.1`). Normalmente Rhinvoice non ne propone mai. Per provare le candidate su un’installazione di prova, imposti in `.env`:
+
+```bash
+RHINVOICE_UPDATE_CHANNEL=test
+```
+
+Nel programma per Windows e Mac, aggiunga la riga `"update_channel": "test"` a `rhinvoice.json` nella cartella dei dati (vedi [dove si trovano i Suoi dati](/docs/it/getting-started/install-desktop/#dove-si-trovano-i-suoi-dati)) e riavvii Rhinvoice. Il controllo della firma è lo stesso delle release.
+
+<Aside type="caution">
+Le candidate servono per i test. Le usi con copie dei Suoi dati, non per le fatture che invia.
+</Aside>
+
+## Quale versione sto usando?
+
+La versione è indicata in fondo alla navigazione, accanto a «by webberz». Un clic apre *Informazioni su Rhinvoice*, con un link a *Novità*.
+
+## Domande frequenti
+
+<Faq />

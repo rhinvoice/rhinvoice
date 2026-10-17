@@ -1,0 +1,64 @@
+---
+title: Contribuire a Rhinvoice (per sviluppatori)
+description: Per chi sviluppa Rhinvoice. Codice su GitHub, guida ai contributi, CLA, decisioni di architettura, aggiungere un paese, stack tecnologico e il controllo make qa.
+faq:
+  - q: Dove si trova il codice sorgente di Rhinvoice?
+    a: Su GitHub, all’indirizzo github.com/rhinvoice/rhinvoice, secondo la GNU Affero General Public License v3.0 o successiva.
+  - q: Devo firmare qualcosa per contribuire?
+    a: Sì. Prima che la prima pull request venga integrata, accetta il Contributor License Agreement spuntando la relativa casella nella pull request. Mantiene il diritto d’autore sul Suo lavoro.
+  - q: Posso aggiungere un paese a Rhinvoice?
+    a: Sì. Tutto ciò che cambia da un paese all’altro si trova in un profilo per paese. La guida docs/adding-a-country.md La accompagna passo per passo, guidata dai test. Apra prima una segnalazione con le fonti ufficiali.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Per sviluppatori">
+Questa pagina è per chi vuole modificare Rhinvoice o contribuire. Per usare Rhinvoice non serve nulla di tutto ciò; cominci dall’[Installazione](/docs/it/getting-started/installation/).
+</Aside>
+
+Rhinvoice è open source su [GitHub](https://github.com/rhinvoice/rhinvoice) secondo la AGPL. Segnalazioni di errori, regole fiscali con la loro fonte ufficiale e pull request sono benvenute. Legga prima [CONTRIBUTING.md](https://github.com/rhinvoice/rhinvoice/blob/main/CONTRIBUTING.md) e apra una segnalazione prima di una modifica importante.
+
+## Da dove cominciare
+
+- [CONTRIBUTING.md](https://github.com/rhinvoice/rhinvoice/blob/main/CONTRIBUTING.md): modi per aiutare, ambiente di sviluppo, regole per le pull request
+- [Contributor License Agreement](https://github.com/rhinvoice/rhinvoice/blob/main/CLA.md): si accetta spuntando la relativa casella nella prima pull request; mantiene il diritto d’autore sul Suo lavoro
+- [Decisioni di architettura](https://github.com/rhinvoice/rhinvoice/tree/main/docs/adr) in `docs/adr`: legga l’ADR dell’ambito che modifica
+- [Adding a country](https://github.com/rhinvoice/rhinvoice/blob/main/docs/adding-a-country.md): un profilo per paese, guidato dai test (panoramica per tutti: [Altri paesi](/docs/it/countries/more-countries/))
+- [Changelog](https://github.com/rhinvoice/rhinvoice/blob/main/CHANGELOG.md)
+- Domande e idee: [discussioni su GitHub](https://github.com/rhinvoice/rhinvoice/discussions); errori: [issues](https://github.com/rhinvoice/rhinvoice/issues)
+- I problemi di sicurezza si segnalano in privato, mai in una segnalazione pubblica: [SECURITY.md](https://github.com/rhinvoice/rhinvoice/blob/main/SECURITY.md)
+
+## Stack tecnologico
+
+Il backend è in Python 3.13 con FastAPI, SQLAlchemy 2 e Alembic su PostgreSQL, a livelli (`api → infrastructure → application → domain`) controllati da import-linter. Il frontend è in React con TypeScript e Vite, TanStack Router e Query e Tailwind CSS, con un client API generato dallo schema OpenAPI. I PDF vengono prodotti da HTML con Gotenberg e trasformati in PDF/A-3b con `pypdf`, la fattura QR svizzera con `qrbill`, il codice QR EPC con `segno`, e i backup con restic in un container a sé.
+
+## Sviluppo
+
+Requisiti: Python 3.13 con uv, Node.js 22 con pnpm, Docker.
+
+```bash
+make install        # dependencies
+make dev-backend    # database on :5433 + API on :8000 (auto-reload)
+make dev-frontend   # Vite on :5173, proxies /api to the backend
+make demo           # demo customers, articles and documents
+make qa             # the full quality gate (also what CI runs)
+make help           # all targets
+```
+
+## Il controllo di qualità: make qa
+
+Rhinvoice gestisce denaro e documenti con valore legale, perciò ogni modifica deve superare `make qa`, che è anche ciò che esegue la CI. Una pull request con il controllo in rosso non viene esaminata.
+
+| Ambito | Strumenti |
+|---|---|
+| Backend | ruff (ALL), mypy --strict, pyright strict, import-linter, pytest con copertura del 100 % di righe e rami, hypothesis, PostgreSQL reale, schemathesis, mutmut (≥ 90 %), pip-audit |
+| Frontend | TypeScript strict, ESLint strict type-checked con jsx-a11y, dependency-cruiser, Vitest con copertura del 100 %, pnpm audit |
+| E2E | Playwright sull’immagine di produzione, axe-core (WCAG 2.2 AA) in ogni test, schermate chiaro/scuro × desktop/mobile |
+| Fatture elettroniche | Validatore KoSIT e Mustang su ogni esempio |
+
+Alcune regole da CONTRIBUTING.md: il denaro non è mai un float, l’ora viene dal `Clock`, i documenti emessi restano immodificabili, e tutto nel codice è in inglese.
+
+## Domande frequenti
+
+<Faq />

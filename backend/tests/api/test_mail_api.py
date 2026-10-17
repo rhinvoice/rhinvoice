@@ -101,7 +101,7 @@ def test_the_server_settings(user_client: TestClient, customer_id: str) -> None:
 def test_templates(user_client: TestClient, customer_id: str) -> None:
     del customer_id
     templates = user_client.get("/api/mail/templates").json()
-    assert len(templates) == 12
+    assert len(templates) == 24  # 6 kinds in 4 languages
     assert templates[0] == {
         "kind": "invoice",
         "language": "de",

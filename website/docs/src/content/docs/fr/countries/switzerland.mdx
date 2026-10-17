@@ -1,0 +1,118 @@
+---
+title: "Factures en Suisse : TVA, facture QR, mentions obligatoires"
+description: "Factures en Suisse avec Rhinvoice, le logiciel de facturation gratuit et open source. TVA suisse de 8,1 %, 2,6 % et 3,8 %, facture QR, IDE et arrondi à 5 centimes."
+faq:
+  - q: Quels taux de TVA s’appliquent en Suisse?
+    a: "Depuis le 1er janvier 2024, les taux sont de 8,1 % (taux normal), 2,6 % (taux réduit) et 3,8 % (hébergement). De 2018 à 2023, ils étaient de 7,7 %, 2,5 % et 3,7 %. Le taux à la date de la prestation s’applique."
+  - q: Que doit indiquer la facture d’une entreprise assujettie à la TVA?
+    a: "Entre autres son numéro TVA, soit l’IDE avec le suffixe TVA (en allemand MWST, en italien IVA), par exemple CHE-123.456.789 TVA (art. 26, al. 2, let. a LTVA). Rhinvoice n’émet pas de facture sans ce numéro, sauf si votre entreprise est réglée comme non assujettie à la TVA."
+  - q: Quand une facture QR a-t-elle besoin d’un QR-IBAN?
+    a: "Seulement si vous utilisez la référence QR. Avec un QR-IBAN, Rhinvoice imprime la référence QR à 27 chiffres, avec un IBAN ordinaire la référence créancier (SCOR, commençant par RF). Les deux fonctionnent en CHF et en EUR."
+  - q: Rhinvoice arrondit-il les totaux à 5 centimes?
+    a: "Oui, dès que vous activez l’arrondi sous Paramètres → Entreprise. Seul le total en CHF est arrondi à 0.05 et affiché sur une ligne séparée, « Arrondi ». La TVA reste exacte au centime."
+  - q: Puis-je établir des factures en français ou en italien?
+    a: "Oui. Les factures, offres, rappels, e-mails et la section paiement QR existent en français ou en italien tels qu’on les écrit en Suisse, avec TVA ou IVA et les termes de la loi sur la TVA dans sa version française (LTVA) et italienne (LIVA)."
+  - q: Combien de temps faut-il conserver les factures en Suisse?
+    a: "Dix ans (art. 958f CO). Rhinvoice verrouille les factures émises avec leur PDF; les corrections se font uniquement par une facture d’annulation."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Une facture suisse de Rhinvoice indique les **taux de TVA à la date de la prestation** (depuis le 1er janvier 2024 : 8,1 %, 2,6 %, 3,8 %), l’**IDE de votre entreprise avec le suffixe TVA**, la bonne **mention légale** et une **section paiement de la facture QR** en CHF ou en EUR. Avant l’émission, Rhinvoice vérifie que le numéro TVA est présent, puis verrouille la facture pour les dix ans pendant lesquels vous la conservez.
+
+<Aside type="note" title="Pas de conseil fiscal">
+État : octobre 2026. Les taux et les règles sont vérifiés auprès de l’Administration fédérale des contributions (AFC) et de la loi sur la TVA (LTVA), mais sans garantie. En cas de doute, demandez à votre fiduciaire ou à votre conseiller fiscal.
+</Aside>
+
+## Quel taux de TVA s’applique?
+
+| Validité | Taux normal | Taux réduit | Taux pour l’hébergement |
+|---|---|---|---|
+| depuis le 1er janvier 2024 | 8,1 % | 2,6 % | 3,8 % |
+| du 1er janvier 2018 au 31 décembre 2023 | 7,7 % | 2,5 % | 3,7 % |
+| du 1er janvier 2011 au 31 décembre 2017 <Since version="0.4.3" /> | 8 % | 2,5 % | 3,8 % |
+
+Source : AFC (ESTV), « MWST-Sätze ab 1. Januar 2024 » et « Entwicklung der MWST-Sätze ».
+
+Le taux à la **date de la prestation** s’applique : la fin de la période de prestation, sinon son début, sinon la date de la facture. Une facture établie en 2026 pour un travail effectué en décembre 2023 applique donc 7,7 %. À l’émission, Rhinvoice fige le taux de chaque ligne; les changements de taux ultérieurs ne modifient jamais les factures émises.
+
+Les anciens taux servent pour les factures dont la date de prestation est antérieure et pour les [anciennes factures que vous reprenez](/docs/fr/moving/old-invoices/).
+
+## Ce que la facture doit indiquer
+
+**Le numéro TVA de votre entreprise.** Une entreprise assujettie à la TVA indique le numéro sous lequel elle est inscrite : l’IDE avec le suffixe TVA (en allemand MWST, en italien IVA), par exemple `CHE-123.456.789 TVA` (art. 26, al. 2, let. a LTVA). Saisissez-le sous *Paramètres → Entreprise* dans le champ *IDE / numéro TVA*. Rhinvoice contrôle le chiffre de contrôle de l’IDE. Sans ce numéro, Rhinvoice n’émet pas la facture et vous indique où l’ajouter.
+
+**La date de la prestation.** Sans période de prestation, Rhinvoice imprime la date de la facture comme date de la prestation. La LTVA ne l’exige que si elle diffère de la date de la facture (art. 26, al. 2, let. d LTVA), mais cela ne nuit pas.
+
+Chaque facture indique aussi l’expéditeur et le destinataire, le numéro et la date, les lignes et la **TVA par taux** (« MWST 8.1 % auf CHF … » sur les documents en allemand). Rhinvoice n’attribue le numéro qu’à l’émission, sans trou.
+
+## Non assujetti à la TVA
+
+Avec un chiffre d’affaires inférieur à **CHF 100’000**, vous n’êtes en général pas assujetti à la TVA. Activez alors *Non assujetti à la TVA (chiffre d’affaires inférieur à 100 000 francs)* sous *Paramètres → Entreprise*. Vos factures ne contiennent pas de TVA et portent la mention :
+
+> Nicht mehrwertsteuerpflichtig.
+
+(Documents en anglais : « No VAT is charged (small business scheme). ») L’IDE n’est alors pas obligatoire. Vous pouvez modifier le texte de chaque mention sous *Paramètres → Textes → Mentions légales*; un champ vide rétablit le texte intégré.
+
+## Facture QR : référence QR ou SCOR
+
+Chaque facture d’une entreprise suisse reçoit la **section paiement de la facture QR** selon les SIX Implementation Guidelines QR-bill 2.3, sur une page séparée avec une ligne de découpe et ciseaux. Le compte doit avoir un IBAN suisse ou liechtensteinois; la monnaie est le CHF ou l’EUR.
+
+| Compte sous *Paramètres → Comptes bancaires* | Référence sur la facture QR |
+|---|---|
+| avec un **QR-IBAN** | référence QR (QRR), 27 chiffres |
+| avec seulement un **IBAN** | référence créancier (SCOR, ISO 11649), commençant par `RF` |
+
+Rhinvoice construit les deux références à partir du numéro de facture, vous pouvez donc rapprocher les paiements de votre relevé bancaire de la facture. Chaque monnaie a un compte par défaut : une facture en EUR utilise votre compte EUR. Les brouillons montrent un emplacement réservé au même endroit, car la référence n’existe qu’une fois le numéro attribué.
+
+Les **factures en euros à des clients de l’EEE** (UE, Islande, Norvège) reçoivent aussi le **code QR EPC** (GiroCode) : les applications bancaires de ces pays le lisent, mais la plupart ne lisent pas la facture QR. Pour un compte suisse, le code EPC demande le BIC; ajoutez-le au compte, sinon le code est omis.
+
+## Arrondi à 5 centimes
+
+Activez *Arrondi aux 5 centimes* sous *Paramètres → Entreprise*. Rhinvoice arrondit alors le **total en CHF à 0.05** et affiche la différence sur une ligne séparée, *Arrondi*. Les lignes et la TVA restent exactes au centime, et les factures en EUR ne sont pas arrondies à 5 cents.
+
+## Clients à l’étranger
+
+Rhinvoice détermine le traitement fiscal à partir du pays de votre entreprise, du pays du client et du fait que le client est une entreprise avec un numéro TVA. Les clients au Liechtenstein comptent comme clients nationaux, car le Liechtenstein applique la loi suisse sur la TVA en vertu du traité douanier.
+
+| Cas | TVA | Mention sur la facture (documents en allemand) |
+|---|---|---|
+| Client en Suisse ou au Liechtenstein | oui | aucune |
+| Prestation à une entreprise de l’UE avec numéro TVA | non | « Übergang der Steuerschuld auf den Leistungsempfänger (Steuerschuldnerschaft des Leistungsempfängers, Reverse Charge). » |
+| Prestation à tout autre client à l’étranger | non | « Ort der Leistung im Ausland, nicht der MWST unterstellt. » |
+| Marchandises quittant la Suisse | non | « Steuerbefreite Ausfuhrlieferung (Art. 23 Abs. 2 Ziff. 1 MWSTG). » |
+
+Les documents en anglais impriment « Reverse charge: the recipient is liable for the VAT. », « Place of supply abroad, not subject to domestic VAT. » et « VAT exempt export delivery. ». La mention d’autoliquidation suit le pays du client (art. 219 bis, par. 1 de la directive TVA de l’UE); les clients allemands, par exemple, ont besoin de la formulation du § 14a Abs. 5 UStG, c’est pourquoi elle figure entre parenthèses. Pour les marchandises, l’éditeur vous rappelle la preuve d’exportation (douane). Vous pouvez modifier le traitement fiscal à la main dans l’éditeur; Rhinvoice consigne le changement avec un motif dans l’historique.
+
+## Factures en français et en italien
+
+Pour les clients de Suisse romande et du Tessin, Rhinvoice établit aussi les documents en **français** et en **italien** tels qu’on les écrit en Suisse : « Facture » et « Fattura », « TVA 8.1 % sur … » et « IVA 8.1 % su … », les montants au format `1’234.50`, les dates comme « 9 mars 2026 » et « 9 marzo 2026 ». La section paiement QR suit la même langue. Choisissez la langue dans l’éditeur sous *Langue*, pour un client sous *Langue des documents*, ou par défaut sous *Paramètres → Entreprise*. Les modèles de texte, les modèles d’e-mail et les textes de rappel existent dans les deux langues. <Since version="0.8.0" />
+
+Les mentions légales reprennent les termes de la loi sur la TVA dans sa version française (LTVA) et italienne (LIVA) :
+
+| Cas | Français | Italien |
+|---|---|---|
+| Non assujetti à la TVA | « Non assujetti à la TVA. » | « Non assoggettato all’IVA. » |
+| Prestation à une entreprise de l’UE avec numéro TVA | « Autoliquidation : la TVA est due par le destinataire de la prestation. » | « Inversione contabile: l’imposta è dovuta dal destinatario della prestazione. » |
+| Prestation à tout autre client à l’étranger | « Prestation de services non soumise à la TVA (lieu de la prestation de services à l’étranger). » | « Prestazione di servizi non soggetta all’IVA (luogo della prestazione di servizi all’estero). » |
+| Marchandises quittant la Suisse | « Livraison à l’exportation exonérée de l’impôt (art. 23, al. 2, ch. 1, LTVA). » | « Fornitura all’esportazione esente dall’imposta (art. 23 cpv. 2 n. 1 LIVA). » |
+
+« Autoliquidation » et « inversione contabile » sont les mentions que la directive TVA de l’UE (art. 226, point 11 bis) exige dans ces langues. L’AFC écrit le numéro TVA `CHE-123.456.789 TVA` en français et `CHE-123.456.789 IVA` en italien; Rhinvoice l’imprime tel que vous l’avez saisi sous *Paramètres → Entreprise*. Modifiez le texte sous *Paramètres → Textes → Mentions légales*.
+
+## Facture électronique
+
+En Suisse, la facture électronique est facultative. Rhinvoice intègre néanmoins par défaut une **facture ZUGFeRD / Factur-X** (EN 16931) dans le PDF de chaque facture émise (vous pouvez la désactiver sous *Paramètres → Mise en page d’impression*), afin que les logiciels de comptabilité lisent directement les données, tandis que le PDF reste identique pour les personnes. S’il manque une donnée nécessaire à la facture électronique, le PDF est créé sans elle et la facture indique ce qui manquait. Votre IDE y identifie l’entreprise. Plus d’informations sous [facture électronique](/docs/fr/invoices/e-invoice/).
+
+## Conserver les factures
+
+Conservez les factures pendant **dix ans** (art. 958f CO). Dès l’émission, le contenu et le PDF sont verrouillés dans Rhinvoice, aussi dans la base de données. Les corrections se font uniquement par une [facture d’annulation](/docs/fr/invoices/issue-and-cancel/) avec son propre numéro. Protégez les données avec une [sauvegarde](/docs/fr/operations/backup/).
+
+Les entreprises du Liechtenstein utilisent les mêmes taux : voir [factures au Liechtenstein](/docs/fr/countries/liechtenstein/).
+
+Le pays de votre entreprise manque? Rhinvoice peut être étendu : [Ajouter d’autres pays](/docs/fr/countries/more-countries/).
+
+## Questions fréquentes
+
+<Faq />

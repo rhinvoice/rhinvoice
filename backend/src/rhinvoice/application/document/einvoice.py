@@ -20,6 +20,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Protocol
 
 from rhinvoice.domain.document.document import DocumentType
+from rhinvoice.domain.shared.country import Country
 from rhinvoice.domain.shared.errors import InvalidStateError
 from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.tax.vat_code import VatCode
@@ -55,7 +56,8 @@ class EInvoiceProblem(StrEnum):
     """Reverse charge and intra-Community supplies need the buyer's VAT ID with country
     prefix (BR-AE-02, BR-IC-02)."""
     BUYER_REFERENCE_MISSING = "buyer_reference_missing"
-    """XRechnung: the reference field carries the buyer reference / Leitweg-ID (BR-DE-15)."""
+    """XRechnung: a buyer reference / Leitweg-ID (BR-DE-15), the customer's fixed one or
+    the reference field of the invoice."""
     SELLER_EMAIL_MISSING = "seller_email_missing"
     """XRechnung: the company's e-mail (contact and electronic address, BR-DE-7)."""
     SELLER_PHONE_MISSING = "seller_phone_missing"
@@ -164,11 +166,40 @@ def customer_of(model: PrintModel) -> Customer:
     return customer
 
 
+def wants_xrechnung(customer: Customer) -> bool:
+    """XRechnung is the e-invoice of German authorities: only German customers ask for it."""
+    return customer.address.country.value == Country.DE.value
+
+
+def buyer_reference(model: PrintModel) -> str | None:
+    """BT-10: a German customer's fixed reference (Leitweg-ID), else the invoice's reference.
+
+    The customer is the one frozen when issuing, so later changes do not alter the invoice.
+    Elsewhere the customer's field is hidden; a value kept after a move abroad does nothing.
+    """
+    customer = customer_of(model)
+    fixed = customer.buyer_reference if wants_xrechnung(customer) else ""
+    return fixed or model.view.document.content.reference.strip() or None
+
+
+def order_reference(model: PrintModel) -> str | None:
+    """BT-13: the invoice's reference, when a German customer's fixed reference took BT-10.
+
+    EN 16931-1 names BT-13 "Purchase order reference" (0..1, any text); EN 16931-3-3 maps it
+    to ram:BuyerOrderReferencedDocument/ram:IssuerAssignedID in the header trade agreement.
+    XRechnung 3.0 (KoSIT, "Spezifikation XRechnung 3.0.x", BT-13) adds no rule to it. So
+    "Bestellung 4711" stays in the e-invoice next to the Leitweg-ID; a reference that already
+    is BT-10 is not repeated.
+    """
+    reference = model.view.document.content.reference.strip()
+    return reference if reference and reference != buyer_reference(model) else None
+
+
 def _xrechnung_problems(model: PrintModel) -> list[EInvoiceProblem]:
     """Name what XRechnung asks for beyond EN 16931 (BR-DE-1, -2, -5 to -7, -15, BT-49)."""
     company = model.company
     found: list[EInvoiceProblem] = []
-    if not model.view.document.content.reference.strip():
+    if buyer_reference(model) is None:
         found.append(EInvoiceProblem.BUYER_REFERENCE_MISSING)
     if company.email is None:
         found.append(EInvoiceProblem.SELLER_EMAIL_MISSING)

@@ -1,0 +1,104 @@
+---
+title: Che cos’è Rhinvoice? Fatturazione gratuita e open source
+description: Rhinvoice è un programma di fatturazione gratuito e open source per Svizzera, Liechtenstein, Germania e Austria, con fattura QR, codice QR EPC, fattura elettronica e IVA.
+faq:
+  - q: Rhinvoice è davvero gratuito?
+    a: Sì. Rhinvoice è distribuito secondo la GNU Affero General Public License v3.0 o successiva. Può usarlo, modificarlo e condividerlo senza pagare; non esiste una versione a pagamento.
+  - q: Esiste una versione in hosting di Rhinvoice?
+    a: No. Rhinvoice lo gestisce Lei stesso, come programma su Windows o su un Mac, oppure con Docker su un server, un NAS, un Raspberry Pi 4/5 o il Suo computer. I Suoi dati restano su quella macchina.
+  - q: Rhinvoice è un programma di contabilità?
+    a: No. Rhinvoice scrive offerte, fatture, fatture di storno e solleciti e segue i pagamenti. Non ha contabilità, né libro mastro, né rendiconti IVA, né gestione degli stipendi.
+  - q: Rhinvoice è pronto per fatture reali?
+    a: Rhinvoice è in beta (versione 0.x). Lo provi su un’installazione di prova prima di scrivere fatture reali.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Rhinvoice è un **programma di fatturazione gratuito e open source** per piccole imprese e liberi professionisti in Svizzera, Liechtenstein, Germania e Austria. Scrive offerte, fatture, fatture di storno e solleciti di pagamento con le aliquote IVA, le indicazioni legali, i codici QR di pagamento e i formati di fattura elettronica di ogni paese. Funziona come programma su Windows o su un Mac, oppure con Docker sul Suo server o computer.
+
+Il nome viene dal Reno (in tedesco Rhein) e da «invoice» (fattura in inglese): il Reno collega Svizzera, Liechtenstein, Austria e Germania.
+
+## Per chi è
+
+Rhinvoice è per aziende con sede in Svizzera, Liechtenstein, Germania o Austria: ditte individuali, liberi professionisti, piccole imprese e i loro fiduciari o contabili. I clienti possono essere ovunque. L’interfaccia è in tedesco (varianti svizzera, tedesca e austriaca), francese, italiano e inglese; i documenti vengono scritti in tedesco, inglese, francese o italiano. Francese e italiano sono tradotti automaticamente: le correzioni sono benvenute.
+
+## Che cosa fa Rhinvoice
+
+**Documenti**
+
+- Offerte, fatture e fatture di storno; trasformare un’offerta in fattura, duplicare, stornare
+- Editor con anteprima su carta dal vivo, sconti per posizione e sul documento, prezzi netti o lordi
+- Numeri assegnati all’emissione, senza lacune; i documenti emessi non possono essere modificati (GoBD, art. 958f CO, BAO) e il PDF viene conservato con la sua somma di controllo SHA-256
+- Pagamenti parziali, importi aperti e scaduti, ricerca a testo pieno e viste salvate
+- Solleciti di pagamento su tre livelli con nuovi termini, spese e testi per lingua
+- Fatture ricorrenti ogni mese, trimestre, semestre o anno: come bozza, emesse, oppure emesse e inviate per e-mail
+- Invio per e-mail tramite il proprio server di posta, con il PDF e facoltativamente la XRechnung
+
+**Imposte e paesi**
+
+- Aliquote IVA datate per CH, LI, DE e AT; vale l’aliquota della data della prestazione
+- Trattamento fiscale deciso automaticamente: nazionale, inversione contabile (reverse charge), cessione intracomunitaria di beni, esportazione, piccola impresa, esente; una modifica manuale viene registrata
+- Beni e servizi tenuti separati, anche nelle fatture miste, ognuno con la sua indicazione legale
+- Indicazioni obbligatorie della fattura controllate prima dell’emissione
+- Arrotondamento svizzero a 5 centesimi, formati numerici e terminologia per paese (IVA, MWST o USt., «Jänner» in Austria, «ss» in Svizzera)
+
+**Pagamento e fatture elettroniche**
+
+- Fattura QR svizzera con riferimento QR o Creditor Reference (CH, LI)
+- Codice QR EPC / GiroCode (DE, AT, e per fatture in euro verso lo SEE)
+- ZUGFeRD / Factur-X (EN 16931) integrato in ogni PDF, XRechnung 3.0 per le autorità pubbliche tedesche
+- Output PDF/A-3b, tre modelli di stampa con logo, carattere e piè di pagina
+
+**Lavoro quotidiano**
+
+- Clienti e articoli con archivio e storico dei documenti
+- Importazione da CSV, XLSX e XLS; le fatture precedenti vengono riprese con i loro PDF originali
+- Panoramica: fatturato rispetto all’anno precedente, importi aperti e scaduti, offerte aperte, migliori clienti, pagamenti attesi
+- Tavolozza dei comandi (⌘K / Ctrl+K), scorciatoie da tastiera, modalità chiara e scura; utilizzabile sul telefono
+
+**Gestione**
+
+- Backup cifrati e deduplicati con restic: ogni giorno e dopo ogni emissione, su S3, SFTP, una cartella, Dropbox, Google Drive e altri
+- Accesso con autenticazione a due fattori facoltativa
+- Procedura guidata al primo avvio e una lista di controllo per la configurazione
+- Immagini per `linux/amd64` e `linux/arm64` (anche Raspberry Pi 4/5)
+
+## I paesi in sintesi
+
+| | Svizzera | Liechtenstein | Germania | Austria |
+|---|---|---|---|---|
+| Aliquote IVA | 8.1 / 2.6 / 3.8 % | 8.1 / 2.6 / 3.8 % | 19 / 7 % | 20 / 10 / 13 % |
+| Piccola impresa | non assoggettata all’IVA | non assoggettata all’IVA | § 19 UStG | § 6 Abs. 1 Z 27 UStG |
+| Codice di pagamento | Fattura QR svizzera | Fattura QR svizzera | Codice QR EPC | Codice QR EPC |
+| Arrotondamento | 0.05 (facoltativo) | 0.05 (facoltativo) | 0.01 | 0.01 |
+| Fattura elettronica | ZUGFeRD / Factur-X | ZUGFeRD / Factur-X | ZUGFeRD, XRechnung | ZUGFeRD / Factur-X |
+
+Dettagli per paese: [Svizzera](/docs/it/countries/switzerland/), [Liechtenstein](/docs/it/countries/liechtenstein/), [Germania](/docs/it/countries/germany/), [Austria](/docs/it/countries/austria/).
+
+**Altri paesi:** Rhinvoice si può estendere. Tutto ciò che dipende dal paese si trova in un profilo per paese, quindi un nuovo paese come i Paesi Bassi è un nuovo profilo. Come: [Aggiungere altri paesi](/docs/it/countries/more-countries/).
+
+## Che cosa Rhinvoice non è
+
+- **Non è un servizio in hosting.** Ognuno gestisce Rhinvoice sul proprio server o computer; vedere [Installazione](/docs/it/getting-started/installation/).
+- **Non è un programma di contabilità.** Niente contabilità, libro mastro, rendiconti IVA o gestione degli stipendi.
+- **Non è un negozio online né un sistema di cassa.**
+- **Non è finito.** Rhinvoice è in beta (0.x). Lo provi su un’installazione di prova prima di scrivere fatture reali.
+
+<Aside type="caution" title="Nessuna consulenza fiscale">
+Rhinvoice La aiuta a scrivere fatture corrette, ma non fornisce consulenza fiscale o legale. Aliquote e regole sono verificate su fonti ufficiali (AFC, Amministrazione fiscale del Liechtenstein, ministeri delle finanze tedesco e austriaco) e fornite senza garanzia. In caso di dubbio chieda al Suo consulente fiscale.
+</Aside>
+
+## Licenza e autore
+
+Rhinvoice è distribuito secondo la [GNU Affero General Public License v3.0 o successiva](https://github.com/rhinvoice/rhinvoice/blob/main/LICENSE) (AGPL). Può usarlo, modificarlo e condividerlo liberamente; se offre a terzi una versione modificata come servizio, condivide le Sue modifiche con la stessa licenza. Il codice sorgente si trova su [GitHub](https://github.com/rhinvoice/rhinvoice).
+
+Rhinvoice è realizzato da [webberz](https://www.webberz.ch/), un’azienda di software di Balgach, nella valle svizzera del Reno.
+
+## Provarlo
+
+Le demo pubbliche si ripristinano ogni ora, una per paese: [Svizzera](https://ch.rhinvoice.com), [Germania](https://de.rhinvoice.com), [Austria](https://at.rhinvoice.com). Tutti i visitatori condividono un unico accesso per demo; la demo non invia e-mail e non accetta file.
+
+## Domande frequenti
+
+<Faq />

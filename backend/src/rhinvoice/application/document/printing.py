@@ -19,6 +19,7 @@ from rhinvoice.application.document.einvoice import (
     is_e_invoice,
     is_e_invoice_type,
     problems,
+    wants_xrechnung,
 )
 from rhinvoice.application.document.handlers import DraftInput, LineInput
 from rhinvoice.application.document.ports import DocumentQuery
@@ -283,6 +284,22 @@ class PrintHandlers:
         if not model.layout.e_invoice:
             return ()
         return problems(model, EInvoiceProfile.EN16931)
+
+    def draft_xrechnung_problems(self, view: DocumentView) -> tuple[EInvoiceProblem, ...]:
+        """Name what an invoice draft to a German customer, issued now, lacks for an XRechnung.
+
+        The XRechnung is a file of its own, so this holds also when the PDF embeds no
+        e-invoice. Nothing for other customers, who need no XRechnung, and for quotes.
+        """
+        customer = view.customer
+        if (
+            self.e_invoices is None
+            or customer is None
+            or not wants_xrechnung(customer)
+            or not is_e_invoice_type(view.document)
+        ):
+            return ()
+        return problems(self.model(view), EInvoiceProfile.XRECHNUNG)
 
     def e_invoice_status(self, document_id: UUID) -> EInvoiceStatus:
         """Tell an invoice's e-invoice; for drafts what it will be when issued now."""

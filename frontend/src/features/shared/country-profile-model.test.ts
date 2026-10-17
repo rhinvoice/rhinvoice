@@ -22,6 +22,19 @@ describe("country profile", () => {
     expect(termsFor(SWISS_PROFILE, "en").tax_name).toBe("VAT");
   });
 
+  it("uses the terms in the interface's language", () => {
+    expect(termsFor(SWISS_PROFILE, "fr-CH").tax_name).toBe("TVA");
+    expect(termsFor(SWISS_PROFILE, "it-CH").tax_name).toBe("IVA");
+    expect(termsFor(SWISS_PROFILE, "de-AT").tax_name).toBe("MWST");
+  });
+
+  it("falls back to English when the API names no terms in that language", () => {
+    const terms: Partial<typeof SWISS_PROFILE.terms> = { ...SWISS_PROFILE.terms };
+    delete terms.fr;
+    const withoutFrench = { ...SWISS_PROFILE, terms } as typeof SWISS_PROFILE;
+    expect(termsFor(withoutFrench, "fr-CH").tax_name).toBe("VAT");
+  });
+
   it("sums a country up for the first start", () => {
     expect(countrySummary(SWISS_PROFILE, "de-CH", de)).toBe(
       "MWST 8.1% / 2.6% / 3.8% · QR-Rechnung · Rappenrundung",

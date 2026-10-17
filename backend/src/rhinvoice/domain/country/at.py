@@ -11,10 +11,16 @@ Sources (checked 2026-10):
   (https://www.wko.at/steuern/umsatzsteuer-rechnung-faq).
 - Small business: § 6 Abs. 1 Z 27 UStG. Intra-Community supply: Art. 6 Abs. 1, Art. 7
   and Art. 11 Abs. 2 UStG (Binnenmarktregelung); export delivery: § 6 Abs. 1 Z 1, § 7 UStG.
+- French and Italian (ADR 0027): the mentions of the VAT Directive in its French and
+  Italian version: "Autoliquidation" / "inversione contabile" (Art. 226 point 11a),
+  "franchise pour les petites entreprises" / "franchigia per le piccole imprese"
+  (Art. 284, Directive (EU) 2020/285), exempt supplies "exonérée" / "esente"
+  (Art. 226 point 11); the national provision stays as the law cites it.
 
 Not tax advice.
 """
 
+# ruff: noqa: RUF001 - French and Italian elide with the typographic apostrophe.
 from __future__ import annotations
 
 from datetime import date
@@ -58,6 +64,37 @@ _NOTICES = {
         "Steuerfreie innergemeinschaftliche Lieferung (Art. 6 Abs. 1 i. V. m. Art. 7 UStG)."
     ),
     TaxTreatment.GOODS_EXPORT: ("Steuerfreie Ausfuhrlieferung (§ 6 Abs. 1 Z 1 i. V. m. § 7 UStG)."),
+}
+
+_FRENCH_NOTICES = {
+    TaxTreatment.REVERSE_CHARGE: "Autoliquidation.",
+    TaxTreatment.EXPORT: "Prestation non soumise à la TVA en Autriche.",
+    TaxTreatment.SMALL_BUSINESS: (
+        "Exonéré de la TVA en vertu de la franchise pour les petites entreprises "
+        "(§ 6 Abs. 1 Z 27 UStG)."
+    ),
+    TaxTreatment.EXEMPT: "Prestation exonérée.",
+    TaxTreatment.INTRA_COMMUNITY: (
+        "Livraison intracommunautaire exonérée (Art. 6 Abs. 1 i. V. m. Art. 7 UStG)."
+    ),
+    TaxTreatment.GOODS_EXPORT: (
+        "Livraison à l’exportation exonérée (§ 6 Abs. 1 Z 1 i. V. m. § 7 UStG)."
+    ),
+}
+
+_ITALIAN_NOTICES = {
+    TaxTreatment.REVERSE_CHARGE: "Inversione contabile.",
+    TaxTreatment.EXPORT: "Prestazione non soggetta all’IVA in Austria.",
+    TaxTreatment.SMALL_BUSINESS: (
+        "Esente da IVA in virtù della franchigia per le piccole imprese (§ 6 Abs. 1 Z 27 UStG)."
+    ),
+    TaxTreatment.EXEMPT: "Prestazione esente.",
+    TaxTreatment.INTRA_COMMUNITY: (
+        "Cessione intracomunitaria esente (Art. 6 Abs. 1 i. V. m. Art. 7 UStG)."
+    ),
+    TaxTreatment.GOODS_EXPORT: (
+        "Cessione all’esportazione esente (§ 6 Abs. 1 Z 1 i. V. m. § 7 UStG)."
+    ),
 }
 
 
@@ -132,6 +169,45 @@ PROFILE = CountryProfile(
             closing="Kind regards",
             notices=ENGLISH_NOTICES,
         ),
+        Language.FR: CountryTerms(
+            tax_name="TVA",
+            vat_number_label="N° TVA",
+            customer_vat_label="Votre N° TVA",
+            vat_number_field="Numéro TVA (UID)",
+            vat_number_hint="Obligatoire sur les factures de plus de 400 EUR, p. ex. ATU12345678.",
+            small_business="Petite entreprise (§ 6 Abs. 1 Z 27 UStG)",
+            bad_debts="Créances irrécouvrables",
+            write_off_hint=(
+                "Si vous déclarez la TVA à la facturation, corrigez-la dans la période où le "
+                "montant est devenu irrécouvrable, et à nouveau s’il est finalement payé "
+                "(§ 16 Abs. 3 Z 1 UStG). La date est le jour où il est devenu irrécouvrable. "
+                "Si vous déclarez la TVA à l’encaissement ou êtes une petite entreprise, "
+                "il n’y a rien à corriger."
+            ),
+            special_rate="Deuxième taux réduit",
+            salutation="Bonjour",
+            closing="Meilleures salutations",
+            notices=_FRENCH_NOTICES,
+        ),
+        Language.IT: CountryTerms(
+            tax_name="IVA",
+            vat_number_label="N. IVA",
+            customer_vat_label="Vostro N. IVA",
+            vat_number_field="Numero IVA (UID)",
+            vat_number_hint="Obbligatorio sulle fatture oltre 400 EUR, p. es. ATU12345678.",
+            small_business="Piccola impresa (§ 6 Abs. 1 Z 27 UStG)",
+            bad_debts="Crediti inesigibili",
+            write_off_hint=(
+                "Se versate l’IVA alla fatturazione, correggetela nel periodo in cui l’importo "
+                "è diventato inesigibile, e di nuovo se viene comunque pagato (§ 16 Abs. 3 "
+                "Z 1 UStG). La data è il giorno in cui è diventato inesigibile. Se versate "
+                "l’IVA all’incasso o siete una piccola impresa, non c’è nulla da correggere."
+            ),
+            special_rate="Seconda aliquota ridotta",
+            salutation="Buongiorno",
+            closing="Cordiali saluti",
+            notices=_ITALIAN_NOTICES,
+        ),
     },
     check_invoice=check_invoice,
     number_style=NumberStyle.DOT_COMMA,
@@ -142,5 +218,7 @@ PROFILE = CountryProfile(
     sources=(
         "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10004873",
         "https://www.wko.at/steuern/umsatzsteuer-rechnung-faq",
+        "https://eur-lex.europa.eu/eli/dir/2010/45/oj (art. 226, 11 bis, French and Italian)",
+        "https://eur-lex.europa.eu/eli/dir/2020/285/oj (art. 284, French and Italian)",
     ),
 )

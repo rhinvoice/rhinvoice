@@ -3,6 +3,19 @@
 Rules for every page under `src/content/docs/`. English pages live at `<slug>.mdx`, German pages at
 `de/<slug>.mdx`, with the same slug, so the language switch and `hreflang` pair them.
 
+## French and Italian
+
+Every page also exists in Swiss French (`fr/<slug>.mdx`) and Swiss Italian (`it/<slug>.mdx`).
+`scripts/check.py content` fails when a page is missing in one of the four languages.
+
+- The French and Italian texts were machine-translated. `src/components/Banner.astro` says so above
+  each of them and links to the *Translation* issue form; a new French or Italian page gets the
+  notice by itself.
+- When an English or German page changes, change its French and Italian twin too.
+- Link within a language: `/docs/fr/<slug>/`, `/docs/it/<slug>/`.
+- French: "vous", TVA, IDE, facture QR, no space before `?`, `!` and `;`. Italian: "Lei", IVA, IDI,
+  fattura QR. Amounts as in Switzerland: `CHF 1’234.50`.
+
 ## Who reads this
 
 Owners of small businesses, freelancers and their bookkeepers in Switzerland, Liechtenstein, Germany

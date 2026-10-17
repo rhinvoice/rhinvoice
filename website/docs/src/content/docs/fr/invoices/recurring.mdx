@@ -1,0 +1,83 @@
+---
+title: Factures récurrentes et facturation d’abonnements
+description: "Laisser Rhinvoice établir des factures récurrentes chaque mois, trimestre, semestre ou année, en brouillon, émises ou émises et envoyées par e-mail. Open source."
+faq:
+  - q: Rhinvoice peut-il établir des factures automatiquement chaque mois?
+    a: "Oui. Un plan sous « Factures récurrentes » établit la même facture chaque mois, trimestre, semestre ou année. Vous choisissez s’il crée un brouillon, émet la facture ou l’émet et l’envoie par e-mail."
+  - q: Que se passe-t-il si le serveur a été éteint un certain temps?
+    a: "Rhinvoice rattrape les dates manquées. Chaque période reçoit sa facture avec sa propre période de prestation, datée du jour où elle est établie, au plus 24 par plan et par passage."
+  - q: Que deviennent les dates pendant qu’un plan est en pause?
+    a: "Elles sont sautées. Lorsque vous reprenez le plan, Rhinvoice continue avec la date suivante et n’établit pas après coup les factures de la pause."
+  - q: Une facture peut-elle être établie deux fois?
+    a: "Non. Chaque période est établie exactement une fois, aussi avec plusieurs conteneurs app, après un redémarrage ou après un plantage."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Pour l’hébergement, la maintenance, les abonnements ou les forfaits, vous configurez un **plan** dans Rhinvoice. Il établit lui-même la même facture *Mensuel*, *Trimestriel*, *Semestriel* ou *Annuel* : en brouillon, émise, ou émise et envoyée au client par e-mail.
+
+## Configurer un plan
+
+<Steps>
+
+1. Ouvrez *Factures → Récurrente* et cliquez sur **Nouveau plan**. Ou, sur une facture existante, choisissez *Autres actions → Rendre récurrente*.
+2. Donnez un *Nom* au plan. Il ne sert qu’à vous, par exemple «Hosting Holzwerk».
+3. Choisissez le *Client*, l’*Intervalle* et le jour sous *Première facture le* (aujourd’hui ou plus tard). Sous *Dernière facture jusqu’au*, vous pouvez fixer une fin.
+4. Sous *À l’échéance*, choisissez ce qui doit se passer.
+5. En dessous, saisissez la facture comme dans l’éditeur habituel. L’aperçu montre la prochaine facture.
+6. Cliquez sur **Créer le plan**.
+
+</Steps>
+
+Chaque facture fixe elle-même sa date, son échéance et son traitement fiscal au moment où elle est établie; Rhinvoice détermine le traitement fiscal automatiquement. Les prix et les textes viennent du plan : si vous modifiez un article plus tard, le plan ne change pas.
+
+## Ce qui se passe à la date
+
+| *À l’échéance* | Résultat |
+|---|---|
+| *Créer un brouillon* | Le brouillon attend sous *Factures* que vous le vérifiiez et l’émettiez |
+| *Émettre* | La facture est émise avec un numéro; vous l’envoyez vous-même |
+| *Émettre et envoyer par e-mail* | La facture est émise et envoyée à l’adresse e-mail du client |
+
+L’envoi par e-mail nécessite un serveur de messagerie sous *Paramètres → E-mail*. L’e-mail contient le PDF de la facture. Une XRechnung séparée pour les autorités allemandes s’envoie à la main depuis la facture ([factures électroniques](/docs/fr/invoices/e-invoice/)).
+
+## Dates et période de prestation
+
+Toutes les dates sont comptées à partir du premier jour. Un plan mensuel qui commence le 31 facture le dernier jour des mois plus courts, puis de nouveau le 31.
+
+Avec *Indiquer la période de prestation*, chaque facture indique la période qu’elle couvre : de son propre jour à la veille de la suivante. Les périodes se suivent sans lacune ni chevauchement; la dernière se termine avec le plan.
+
+Si vous modifiez le premier jour ou l’intervalle lors d’une modification, le décompte recommence, et le nouveau premier jour doit être aujourd’hui ou plus tard.
+
+## Mettre en pause, reprendre, supprimer
+
+- **Mettre en pause** arrête le plan. Les dates pendant la pause sont sautées.
+- **Reprendre** continue avec la date suivante. Rhinvoice n’établit pas après coup les dates manquées pendant la pause.
+- **Supprimer le plan** met fin au plan. Les factures déjà établies restent telles quelles.
+
+Un plan avec une date de fin est *Terminé* après sa dernière facture. Si le client est archivé, le plan continue de le facturer; Rhinvoice le signale, et vous mettez le plan en pause si ce n’est plus correct.
+
+## Qui établit les factures
+
+L’app elle-même établit les factures dues en arrière-plan; aucun conteneur supplémentaire n’est nécessaire. Elle cherche les plans dus une minute après son démarrage, puis toutes les dix minutes.
+
+- **Chaque période est établie une fois**, aussi avec plusieurs conteneurs app, après un redémarrage ou après un plantage.
+- **Les dates manquées sont rattrapées** lorsque l’app a été éteinte un certain temps. Chaque période reçoit sa facture, datée du jour où elle est établie, avec sa propre période de prestation; au plus 24 par plan et par passage.
+- **Les problèmes sont affichés.** Une facture qui ne peut pas être émise (par exemple sans compte bancaire) reste un brouillon; une facture qui ne peut pas être envoyée (pas d’adresse e-mail pour le client, le serveur de messagerie refuse) reste émise. Sous *Factures établies*, le plan montre chaque passage avec son motif et sa facture, et la liste marque le plan comme *Problème*.
+
+Dans le fichier `.env`, `RHINVOICE_RECURRING_INTERVAL` fixe la fréquence de recherche de l’app, en secondes (au moins 60, préréglage 600), et `RHINVOICE_RECURRING=false` désactive l’établissement en arrière-plan.
+
+Lorsqu’il est désactivé, établissez vous-même les factures dues, par exemple depuis cron. La commande se termine avec le code 1 lorsqu’une facture demande votre attention :
+
+```bash
+docker compose exec app rhinvoice recurring
+```
+
+<Aside type="note" title="Dans la démo publique">
+La démo publique n’établit pas de factures récurrentes. Essayez les plans sur votre propre [installation](/docs/fr/getting-started/installation/).
+</Aside>
+
+## Questions fréquentes
+
+<Faq />

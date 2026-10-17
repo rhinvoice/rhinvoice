@@ -30,8 +30,10 @@ test("create, find, edit and archive a customer", async ({ page }, testInfo) => 
   await expect(page.getByLabel("Standard-Rabatt in %")).toHaveValue("2.5");
 
   await page.getByLabel("Ort").fill("Bern-Bümpliz");
+  await page.getByLabel("Dokumentsprache").selectOption({ label: "Französisch" });
   await page.keyboard.press("ControlOrMeta+Enter");
   await expect(page.getByText("Gespeichert", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Dokumentsprache")).toHaveValue("fr");
 
   await page.getByRole("link", { name: "Kunden" }).first().click();
   await page.getByRole("searchbox", { name: "Kunden durchsuchen" }).fill(`muller ${suffix}`);

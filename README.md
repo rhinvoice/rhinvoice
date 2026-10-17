@@ -15,7 +15,7 @@ Docker, or as an app on Windows and Mac: your data stays with you.
 
 Rhinvoice is in beta (0.x). Try it on a test installation before you write real invoices with it.
 
-**Documentation:** [rhinvoice.com/docs](https://rhinvoice.com/docs/) (English) · [rhinvoice.com/docs/de](https://rhinvoice.com/docs/de/) (Deutsch) · Demo: [ch.rhinvoice.com](https://ch.rhinvoice.com)
+**Documentation:** [rhinvoice.com/docs](https://rhinvoice.com/docs/) (English) · [rhinvoice.com/docs/de](https://rhinvoice.com/docs/de/) (Deutsch) · [français](https://rhinvoice.com/docs/fr/) · [italiano](https://rhinvoice.com/docs/it/) · Demo: [ch.rhinvoice.com](https://ch.rhinvoice.com)
 
 **Download:** [Windows 10/11](https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-Setup-Windows.exe) · [Mac (Apple silicon)](https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-macOS.dmg) (beta, no Docker needed) · or [with Docker](#quickstart-docker) on a server, a NAS or your own computer
 
@@ -40,6 +40,8 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 - Numbers assigned when issuing, without gaps; issued documents are immutable, also in the
   database (GoBD, OR 958f, BAO), the PDF is kept with its SHA-256
 - Partial payments, open and overdue amounts, full-text search and saved views
+- Documents in German, English, French and Italian (French and Italian as written in
+  Switzerland), with the QR-bill and the legal notices in the same language
 - Payment reminders in three levels with new deadlines, fees and texts per language
 - Recurring invoices every month, quarter, half-year or year: as a draft, issued, or issued and
   sent by e-mail
@@ -67,7 +69,7 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 - Dashboard: revenue against last year, open and overdue amounts, open quotes, best customers,
   expected payments
 - Command palette (⌘K / Ctrl+K), keyboard shortcuts, light and dark mode
-- German (CH, DE, AT) and English; usable on the phone
+- Interface in German (CH, DE, AT), French, Italian and English; usable on the phone
 
 **Operations**
 - Encrypted, deduplicated backups with restic: daily and after issuing, to S3, SFTP, a folder,
@@ -102,9 +104,9 @@ laptop with Docker Desktop (macOS, Windows, Linux).
 
 ```bash
 mkdir rhinvoice && cd rhinvoice
-curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.7.4/deploy/compose.yml
-curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.7.4/.env.example -o .env
-# edit .env: POSTGRES_PASSWORD and RHINVOICE_VERSION=0.7.4
+curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.8.0/deploy/compose.yml
+curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/v0.8.0/.env.example -o .env
+# edit .env: POSTGRES_PASSWORD and RHINVOICE_VERSION=0.8.0
 docker compose pull
 docker compose up -d
 ```

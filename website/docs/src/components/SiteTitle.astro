@@ -2,8 +2,10 @@
 // The logo, the name and "Docs" in the language of the page, as on the preview.
 import logo from "../assets/logo.svg";
 
+import { words } from "../lib/ui";
+
 const { siteTitleHref, lang } = Astro.locals.starlightRoute;
-const docs = lang === "de" ? "Dokumentation" : "Docs";
+const { docs } = words(lang);
 ---
 
 <a href={siteTitleHref} class="site-title">

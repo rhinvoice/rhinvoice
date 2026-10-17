@@ -5,6 +5,35 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.8.0] – 2026-10-17
+
+### Added
+- The programs for Windows and Mac can switch the update check off: `"update_check": false` in
+  `rhinvoice.json` (Docker: `RHINVOICE_UPDATE_CHECK=false`).
+- Customers in Germany have the field **Leitweg-ID or fixed buyer reference**. Entered once, it
+  is the buyer reference of every XRechnung to that customer; otherwise the invoice's
+  *Reference* is used, as before, and with a Leitweg-ID the *Reference* goes into the
+  e-invoice as the order reference (BT-13). Issued invoices keep the value of the day they
+  were issued.
+  The customer import recognises a "Leitweg-ID" column.
+- For customers in Germany, the dialog before issuing also names what the XRechnung lacks,
+  while the invoice can still be completed. The editor says below *Reference* whether the
+  customer's Leitweg-ID applies or a reference is needed for the XRechnung.
+- Documents in **French** and **Italian**, as written in Switzerland: invoices, quotes,
+  credit notes, payment reminders, e-mails, ready-made texts and the QR-bill payment part. Legal
+  notices of Swiss and Liechtenstein companies use the terms of the VAT Act in its French (LTVA)
+  and Italian (LIVA) version; German and Austrian companies get the mentions of the EU VAT
+  Directive ("Autoliquidation", "inversione contabile"). Choose the language per document, per
+  customer or as the company's default; the dunning settings have a French and an Italian text
+  per level.
+- The interface in **French** and **Italian** (Swiss variants): choose *Français* or *Italiano*
+  with the globe icon; a browser set to French or Italian opens in that language. Amounts and
+  dates keep the Swiss style (`CHF 1’234.50`, `05.01.2026`). Both are machine translated; the
+  language menu and *About Rhinvoice* say so and ask for corrections.
+- rhinvoice.com in French (`/fr/`) and Italian (`/it/`), with legal notice and privacy notice.
+  The docs are in French and Italian too, every page. These texts were machine-translated and say
+  so at the top, with a link to report a wrong translation.
+
 ## [0.7.4] – 2026-10-16
 
 ### Added

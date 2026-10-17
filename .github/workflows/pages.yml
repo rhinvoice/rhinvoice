@@ -1,6 +1,7 @@
 name: Website
 
-# The docs read CHANGELOG.md for their release notes. Pull requests are checked, not published.
+# The docs read CHANGELOG.md for their release notes. Only main is published: it holds what was
+# released (ADR 0026). Pull requests are checked, not published.
 on:
   push:
     branches: [main]

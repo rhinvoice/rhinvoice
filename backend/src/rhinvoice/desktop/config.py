@@ -43,6 +43,8 @@ class DesktopConfig:
     """When the backups were last pruned and checked (ISO 8601)."""
     update_channel: UpdateChannel = "stable"
     """"test" offers release candidates too, on the maintainer's test machines."""
+    update_check: bool = True
+    """false: the program never asks GitHub for a newer version."""
 
 
 def load_or_create(path: Path) -> DesktopConfig:
@@ -61,6 +63,7 @@ def load_or_create(path: Path) -> DesktopConfig:
             backup_key_confirmed=_flag(values, "backup_key_confirmed"),
             backup_verified_at=_optional_text(values, "backup_verified_at"),
             update_channel=_channel(values),
+            update_check=_update_check(values),
         )
     except (ValueError, TypeError) as error:
         msg = f"{path} is damaged: {error}"
@@ -130,3 +133,8 @@ def _flag(values: dict[str, object], key: str) -> bool:
 def _channel(values: dict[str, object]) -> UpdateChannel:
     """Read the update channel; a value written by hand that is no channel means stable."""
     return "test" if values.get("update_channel") == "test" else "stable"
+
+
+def _update_check(values: dict[str, object]) -> bool:
+    """Read whether to look for updates; only a written false switches it off."""
+    return values.get("update_check") is not False

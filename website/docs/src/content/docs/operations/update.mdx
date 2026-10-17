@@ -9,12 +9,13 @@ faq:
   - q: Do issued invoices change with an update?
     a: No. Issued documents keep their content and their archived PDF. They are immutable, also in the database.
   - q: How do I learn about a new version?
-    a: Rhinvoice checks once a day and then shows a card at the foot of the navigation with the new version and the steps for the server. RHINVOICE_UPDATE_CHECK=false in .env switches the check off.
+    a: "Rhinvoice checks once a day and then shows a card at the foot of the navigation with the new version and the steps for the server. RHINVOICE_UPDATE_CHECK=false in .env switches the check off; in the program for Windows and Mac it is \"update_check\": false in rhinvoice.json."
   - q: Where do I see which version I run?
     a: At the foot of the navigation, next to by webberz. A click opens About Rhinvoice with a link to What's new.
 ---
 
 import Faq from "../../../components/Faq.astro";
+import Since from "../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 To update Rhinvoice, set the new version in `.env`, pull the images and restart the containers. Database migrations run automatically on start. Before that, read the changelog and make a backup.
@@ -32,7 +33,7 @@ To update Rhinvoice, set the new version in `.env`, pull the images and restart 
 
 <Steps>
 
-1. In the folder with `compose.yml` and `.env`, set `RHINVOICE_VERSION` in `.env` to the new version, e.g. `RHINVOICE_VERSION=0.7.4`.
+1. In the folder with `compose.yml` and `.env`, set `RHINVOICE_VERSION` in `.env` to the new version, e.g. `RHINVOICE_VERSION=0.8.0`.
 
 2. Pull the images and restart:
 
@@ -54,7 +55,7 @@ Database migrations run automatically on start (`RHINVOICE_RUN_MIGRATIONS=true` 
 
 | `RHINVOICE_VERSION` | Behaviour |
 |---|---|
-| a version, e.g. `0.7.4` | pinned: changes only when you change it |
+| a version, e.g. `0.8.0` | pinned: changes only when you change it |
 | `latest` | follows every release on the next `docker compose pull` |
 
 A pinned version is the safer choice for real invoices: you decide when to update and can read the changelog first.
@@ -72,6 +73,8 @@ For the check Rhinvoice downloads a small, signed file from the latest release o
 ```bash
 RHINVOICE_UPDATE_CHECK=false
 ```
+
+In the program for Windows and Mac, add the line `"update_check": false` to `rhinvoice.json` in the data folder (see [where your data lives](/docs/getting-started/install-desktop/#where-your-data-lives)) and start Rhinvoice again. <Since version="0.8.0" />
 
 ## Testing release candidates
 

@@ -1,0 +1,118 @@
+---
+title: "Fatture in Svizzera: IVA, fattura QR, indicazioni obbligatorie"
+description: Fatture in Svizzera con Rhinvoice, il programma di fatturazione gratuito e open source. IVA 8.1 %, 2.6 % e 3.8 %, fattura QR, IDI e arrotondamento a 5 centesimi.
+faq:
+  - q: Quali aliquote IVA valgono in Svizzera?
+    a: Dal 1° gennaio 2024 le aliquote sono 8.1 % (normale), 2.6 % (ridotta) e 3.8 % (alloggio). Dal 2018 al 2023 erano 7.7 %, 2.5 % e 3.7 %. Vale l’aliquota in vigore alla data della prestazione.
+  - q: Che cosa deve indicare la fattura di un’azienda assoggettata all’IVA?
+    a: Tra l’altro il suo numero IVA, cioè l’IDI con il suffisso IVA, per esempio CHE-123.456.789 IVA (art. 26 cpv. 2 lett. a LIVA). Rhinvoice non emette una fattura senza questo numero, a meno che la Sua azienda sia impostata come non assoggettata all’IVA.
+  - q: Quando una fattura QR ha bisogno di un QR-IBAN?
+    a: Solo se usa il riferimento QR. Con un QR-IBAN Rhinvoice stampa il riferimento QR di 27 cifre, con un IBAN normale il Creditor Reference (SCOR, che inizia con RF). Entrambi funzionano in CHF e in EUR.
+  - q: Rhinvoice arrotonda i totali a 5 centesimi?
+    a: Sì, se attiva l’arrotondamento in Impostazioni → Azienda. Solo il totale in CHF viene arrotondato a 0.05 e mostrato in una riga a sé, «Arrotondamento». L’IVA resta esatta al centesimo.
+  - q: Posso scrivere fatture in francese o in italiano?
+    a: Sì. Fatture, offerte, solleciti, e-mail e la sezione pagamento QR esistono in francese o in italiano come si scrivono in Svizzera, con TVA o IVA e i termini della legge sull’IVA nella versione francese (LTVA) e italiana (LIVA).
+  - q: Per quanto tempo vanno conservate le fatture in Svizzera?
+    a: Dieci anni (art. 958f CO). Rhinvoice blocca le fatture emesse con il loro PDF; le correzioni si fanno solo con una fattura di storno.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Una fattura svizzera di Rhinvoice riporta le **aliquote IVA in vigore alla data della prestazione** (dal 1° gennaio 2024: 8.1 %, 2.6 %, 3.8 %), l’**IDI della Sua azienda con il suffisso IVA**, la giusta **indicazione legale** e una **sezione pagamento con fattura QR** in CHF o EUR. Prima dell’emissione Rhinvoice controlla che il numero IVA sia presente, e poi blocca la fattura per i dieci anni in cui la conserva.
+
+<Aside type="note" title="Nessuna consulenza fiscale">
+Stato: ottobre 2026. Aliquote e regole sono verificate presso l’Amministrazione federale delle contribuzioni (AFC) e nella legge sull’IVA (LIVA), ma senza garanzia. In caso di dubbio chieda al Suo fiduciario o consulente fiscale.
+</Aside>
+
+## Quale aliquota IVA si applica?
+
+| Validità | Aliquota normale | Aliquota ridotta | Aliquota speciale alloggio |
+|---|---|---|---|
+| dal 1° gennaio 2024 | 8.1 % | 2.6 % | 3.8 % |
+| dal 1° gennaio 2018 al 31 dicembre 2023 | 7.7 % | 2.5 % | 3.7 % |
+| dal 1° gennaio 2011 al 31 dicembre 2017 <Since version="0.4.3" /> | 8 % | 2.5 % | 3.8 % |
+
+Fonte: AFC, «MWST-Sätze ab 1. Januar 2024» e «Entwicklung der MWST-Sätze».
+
+Vale l’aliquota alla **data della prestazione**: la fine del periodo della prestazione, altrimenti il suo inizio, altrimenti la data della fattura. Una fattura scritta nel 2026 per un lavoro svolto nel dicembre 2023 applica quindi il 7.7 %. All’emissione Rhinvoice fissa l’aliquota di ogni posizione; i cambiamenti di aliquota successivi non modificano mai le fatture emesse.
+
+Le aliquote più vecchie servono per fatture con una data della prestazione anteriore e per le [vecchie fatture che riprende](/docs/it/moving/old-invoices/).
+
+## Che cosa deve indicare la fattura
+
+**Il numero IVA della Sua azienda.** Un’impresa assoggettata all’IVA indica il numero con cui è registrata: l’IDI con il suffisso IVA (in tedesco MWST, in francese TVA), per esempio `CHE-123.456.789 IVA` (art. 26 cpv. 2 lett. a LIVA). Lo inserisca in *Impostazioni → Azienda* nel campo *IDI / numero IVA*. Rhinvoice controlla la cifra di controllo dell’IDI. Senza il numero Rhinvoice non emette la fattura e Le indica dove aggiungerlo.
+
+**La data della prestazione.** Senza periodo della prestazione, Rhinvoice stampa la data della fattura come data della prestazione. La LIVA la richiede solo quando è diversa dalla data della fattura (art. 26 cpv. 2 lett. d LIVA), ma indicarla non nuoce.
+
+Ogni fattura stampa inoltre mittente e destinatario, numero e data, le posizioni e l’**IVA per aliquota** («MWST 8.1 % auf CHF …» nei documenti in tedesco). Rhinvoice assegna il numero solo all’emissione, senza lacune.
+
+## Non assoggettato all’IVA
+
+Con una cifra d’affari inferiore a **CHF 100’000** di regola non si è assoggettati all’IVA. In tal caso attivi *Non assoggettato all’IVA (cifra d’affari inferiore a 100 000 franchi)* in *Impostazioni → Azienda*. Le Sue fatture non contengono IVA e riportano l’indicazione:
+
+> Nicht mehrwertsteuerpflichtig.
+
+(Documenti in inglese: «No VAT is charged (small business scheme).») L’IDI non è allora obbligatorio. Può cambiare il testo di ogni indicazione in *Impostazioni → Testi → Indicazioni legali*; un campo vuoto ripristina il testo predefinito.
+
+## Fattura QR: riferimento QR o SCOR
+
+Ogni fattura di un’azienda svizzera riceve la **sezione pagamento della fattura QR** secondo le SIX Implementation Guidelines QR-bill 2.3, su una pagina a sé con la linea di taglio. Il conto deve avere un IBAN svizzero o del Liechtenstein; la valuta è CHF o EUR.
+
+| Conto in *Impostazioni → Conti bancari* | Riferimento sulla fattura QR |
+|---|---|
+| con un **QR-IBAN** | riferimento QR (QRR), 27 cifre |
+| solo con un **IBAN** | Creditor Reference (SCOR, ISO 11649), che inizia con `RF` |
+
+Rhinvoice costruisce entrambi i riferimenti dal numero della fattura, così può abbinare i pagamenti dell’estratto conto alla fattura. Ogni valuta ha un conto predefinito: una fattura in EUR usa il Suo conto in EUR. Le bozze mostrano un segnaposto nello stesso punto, perché il riferimento esiste solo quando esiste il numero.
+
+**Le fatture in euro a clienti nello SEE** (UE, Islanda, Norvegia) ricevono anche il **codice QR EPC** (GiroCode): le app bancarie di quei Paesi lo leggono, ma per lo più non leggono la fattura QR. Per un conto svizzero il codice EPC richiede il BIC; lo aggiunga al conto, altrimenti il codice viene omesso.
+
+## Arrotondamento a 5 centesimi
+
+Attivi *Arrotondamento* in *Impostazioni → Azienda*. Rhinvoice arrotonda allora il **totale in CHF a 0.05** e mostra la differenza in una riga a sé, *Arrotondamento*. Posizioni e IVA restano esatte al centesimo, e le fatture in EUR non vengono arrotondate a 5 centesimi.
+
+## Clienti all’estero
+
+Rhinvoice determina il trattamento fiscale dal Paese della Sua azienda, dal Paese del cliente e dal fatto che il cliente sia un’impresa con un numero IVA. I clienti nel Liechtenstein contano come nazionali, perché il Liechtenstein applica la legge svizzera sull’IVA in virtù del Trattato doganale.
+
+| Caso | IVA | Indicazione sulla fattura (documenti in tedesco) |
+|---|---|---|
+| Cliente in Svizzera o nel Liechtenstein | sì | nessuna |
+| Prestazione a un’impresa dell’UE con numero IVA | no | «Übergang der Steuerschuld auf den Leistungsempfänger (Steuerschuldnerschaft des Leistungsempfängers, Reverse Charge).» |
+| Prestazione a qualsiasi altro cliente all’estero | no | «Ort der Leistung im Ausland, nicht der MWST unterstellt.» |
+| Merci che lasciano la Svizzera | no | «Steuerbefreite Ausfuhrlieferung (Art. 23 Abs. 2 Ziff. 1 MWSTG).» |
+
+I documenti in inglese stampano «Reverse charge: the recipient is liable for the VAT.», «Place of supply abroad, not subject to domestic VAT.» e «VAT exempt export delivery.» L’indicazione di reverse charge segue il Paese del cliente (art. 219a(1) della direttiva IVA dell’UE); i clienti tedeschi, per esempio, richiedono la formulazione del § 14a Abs. 5 UStG, motivo per cui è tra parentesi. Per le merci l’editor ricorda la prova dell’esportazione (dogana). Può cambiare a mano il trattamento fiscale nell’editor; Rhinvoice registra la modifica con un motivo nella cronologia.
+
+## Fatture in francese e in italiano
+
+Per i clienti in Romandia e in Ticino, Rhinvoice scrive i documenti anche in **francese** e in **italiano** come si scrivono in Svizzera: «Facture» e «Fattura», «TVA 8.1 % sur …» e «IVA 8.1 % su …», importi come `1’234.50`, date come «9 mars 2026» e «9 marzo 2026». La sezione pagamento QR è nella stessa lingua. Scelga la lingua nell’editor in *Lingua*, per un cliente in *Lingua del documento*, oppure come predefinita in *Impostazioni → Azienda*. Modelli di testo, modelli di e-mail e testi dei solleciti esistono in entrambe le lingue. <Since version="0.8.0" />
+
+Le indicazioni legali usano i termini della legge sull’IVA nella versione francese (LTVA) e italiana (LIVA):
+
+| Caso | Francese | Italiano |
+|---|---|---|
+| Non assoggettato all’IVA | «Non assujetti à la TVA.» | «Non assoggettato all’IVA.» |
+| Prestazione a un’impresa dell’UE con numero IVA | «Autoliquidation : la TVA est due par le destinataire de la prestation.» | «Inversione contabile: l’imposta è dovuta dal destinatario della prestazione.» |
+| Prestazione a qualsiasi altro cliente all’estero | «Prestation de services non soumise à la TVA (lieu de la prestation de services à l’étranger).» | «Prestazione di servizi non soggetta all’IVA (luogo della prestazione di servizi all’estero).» |
+| Merci che lasciano la Svizzera | «Livraison à l’exportation exonérée de l’impôt (art. 23, al. 2, ch. 1, LTVA).» | «Fornitura all’esportazione esente dall’imposta (art. 23 cpv. 2 n. 1 LIVA).» |
+
+«Autoliquidation» e «inversione contabile» sono le menzioni che la direttiva IVA dell’UE (art. 226 punto 11 bis) richiede in queste lingue. L’AFC scrive il numero IVA `CHE-123.456.789 TVA` in francese e `CHE-123.456.789 IVA` in italiano; Rhinvoice lo stampa come lo ha inserito in *Impostazioni → Azienda*. Può cambiare il testo in *Impostazioni → Testi → Indicazioni legali*.
+
+## Fattura elettronica
+
+In Svizzera le fatture elettroniche sono facoltative. Rhinvoice incorpora comunque per impostazione predefinita una **fattura ZUGFeRD / Factur-X** (EN 16931) nel PDF di ogni fattura emessa (può disattivarla in *Impostazioni → Layout di stampa*), così i programmi di contabilità leggono i dati direttamente, mentre il PDF appare uguale per le persone. Se manca un dato necessario alla fattura elettronica, il PDF viene creato senza di essa e la fattura indica che cosa mancava. Il Suo IDI identifica l’azienda al suo interno. Altro in [fattura elettronica](/docs/it/invoices/e-invoice/).
+
+## Conservare le fatture
+
+Conservi le fatture per **dieci anni** (art. 958f CO). Dall’emissione in poi, in Rhinvoice contenuto e PDF sono bloccati, anche nel database. Le correzioni si fanno solo con una [fattura di storno](/docs/it/invoices/issue-and-cancel/) con un proprio numero. Protegga i dati con un [backup](/docs/it/operations/backup/).
+
+Le aziende nel Liechtenstein usano le stesse aliquote: vedi [fatture nel Liechtenstein](/docs/it/countries/liechtenstein/).
+
+Il Paese della Sua azienda manca? Rhinvoice si può estendere: [Aggiungere altri Paesi](/docs/it/countries/more-countries/).
+
+## Domande frequenti
+
+<Faq />

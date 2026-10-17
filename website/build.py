@@ -255,6 +255,39 @@ def fill_release(text, release):
     return text.replace(VERSION, f" {version}" if version else "")
 
 
+# French and Italian pages were machine-translated. Each says so at the top, in its own
+# language, with a way to report a wrong translation: one text here instead of a copy per page.
+# A page asks for it with <div data-machine-translated></div> right after the skip link.
+NOTICE = "<div data-machine-translated></div>"
+MACHINE_TRANSLATED = {
+    "fr": ("Cette page a été traduite automatiquement. Vos remarques sont les bienvenues :",
+           "signaler une erreur de traduction sur GitHub", "ou écrire à", "French"),
+    "it": ("Questa pagina è stata tradotta automaticamente. Le segnalazioni sono benvenute:",
+           "segnalare un errore di traduzione su GitHub", "oppure scrivere a", "Italian"),
+}
+
+
+def fill_machine_translated(text):
+    """Put the machine translation notice where the page asks for it, or fail the build."""
+    if NOTICE not in text:
+        return text
+    from html import escape
+    from urllib.parse import urlencode
+
+    lang = re.search(r'<html lang="([a-z]+)"', text).group(1)
+    page = re.search(r'<link rel="canonical" href="([^"]+)">', text).group(1)
+    if lang not in MACHINE_TRANSLATED:
+        sys.exit(f"no machine translation notice for language {lang!r} ({page})")
+    lead, link, mail, language = MACHINE_TRANSLATED[lang]
+    query = urlencode({"template": "translation.yml", "language": language, "page": page})
+    href = escape(f"https://github.com/rhinvoice/rhinvoice/issues/new?{query}")
+    notice = (
+        f'<div class="mt-notice"><p class="wrap">{lead} <a href="{href}">{link}</a> {mail} '
+        f'<span class="tabular">hello@rhinvoice.com</span>.</p></div>'
+    )
+    return text.replace(NOTICE, notice)
+
+
 def main():
     if not SOURCE.is_dir():
         sys.exit(f"site/ not found at {SOURCE}")
@@ -283,7 +316,7 @@ def main():
         elif src.suffix == ".js":
             dst.write_text(js_minify(src), encoding="utf-8")
         elif src.suffix == ".html":
-            text = fill_release(src.read_text(encoding="utf-8"), release)
+            text = fill_machine_translated(fill_release(src.read_text(encoding="utf-8"), release))
             dst.write_text(html_minify(text), encoding="utf-8")
         else:
             shutil.copy2(src, dst)

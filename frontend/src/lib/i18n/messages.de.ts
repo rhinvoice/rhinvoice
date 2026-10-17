@@ -32,6 +32,7 @@ export const de = {
   "theme.dark": "Dunkel",
   "theme.system": "System",
   "language.label": "Sprache",
+  "language.machineTranslated": "Maschinell übersetzt – Rückmeldungen sind willkommen",
   "demo.title": "Demo",
   "demo.loginHint":
     "Probieren Sie Rhinvoice mit Beispieldaten aus. Alle Besucher teilen sich diese Demo; sie wird alle {minutes} Minuten zurückgesetzt, E-Mails werden nicht versendet.",
@@ -63,6 +64,9 @@ export const de = {
   "support.github": "Auf GitHub melden",
   "about.changelog": "Neuerungen",
   "about.noAdvice": "Keine Steuerberatung, Steuersätze ohne Gewähr.",
+  "about.machineTranslated":
+    "Diese Übersetzung wurde maschinell erstellt. Hinweise auf Fehler sind willkommen:",
+  "about.reportTranslation": "Übersetzungsfehler melden",
 
   "updates.title": "Aktualisierung",
   "updates.newVersion": "Neue Version {version}",
@@ -381,6 +385,9 @@ export const de = {
   "customers.phone": "Telefon",
   "customers.vatNumber": "UID / USt-IdNr.",
   "customers.vatNumberHint": "Pflicht für Reverse Charge bei Firmenkunden in der EU.",
+  "customers.buyerReference": "Leitweg-ID oder feste Käuferreferenz",
+  "customers.buyerReferenceHint":
+    "Für die XRechnung. Behörden: ihre Leitweg-ID. Firmen: nur eintragen, wenn sie immer dieselbe Referenz wünschen. Wechselt die Referenz pro Auftrag (z. B. Bestellnummer), lassen Sie dieses Feld leer und tragen sie in der Rechnung unter «Weitere Angaben → Referenz» ein.",
   "customers.defaultCurrency": "Standardwährung",
   "customers.defaultLanguage": "Dokumentsprache",
   "customers.taxExempt": "Steuerbefreit",
@@ -526,6 +533,8 @@ export const de = {
   "company.logoTooLarge": "Das Logo darf höchstens 1 MB groß sein.",
   "language.de": "Deutsch",
   "language.en": "Englisch",
+  "language.fr": "Französisch",
+  "language.it": "Italienisch",
   "bank.title": "Bankkonten",
   "bank.description":
     "Konten für Zahlungsangaben und QR-Codes. Pro Währung ist ein Konto das Standardkonto.",
@@ -841,6 +850,8 @@ export const de = {
   "documents.subjectHint": "z. B. «Website-Relaunch, Phase 2»",
   "documents.reference": "Referenz",
   "documents.referenceHint": "z. B. Bestellnummer des Kunden",
+  "documents.referenceHintXRechnung": "Bestellnummer o. ä. – nötig für die XRechnung",
+  "documents.referenceHintFixed": "Für die XRechnung gilt die Leitweg-ID des Kunden: {value}",
   "documents.currency": "Währung",
   "documents.language": "Sprache",
   "documents.sectionDates": "Daten",
@@ -1173,6 +1184,7 @@ export const de = {
   "import.field.email": "E-Mail",
   "import.field.phone": "Telefon",
   "import.field.vat_number": "UID / USt-IdNr.",
+  "import.field.buyer_reference": "Leitweg-ID / Käuferreferenz",
   "import.field.group": "Gruppe",
   "import.field.default_currency": "Währung",
   "import.field.default_language": "Sprache",
@@ -1222,7 +1234,8 @@ export const de = {
   "import.problem.unknown_unit": "unbekannte Einheit",
   "import.problem.unknown_tax_rate": "unbekannter Steuersatz",
   "import.problem.unknown_supply": "weder Ware noch Dienstleistung",
-  "import.problem.unknown_language": "Sprache nicht unterstützt (Deutsch oder Englisch)",
+  "import.problem.unknown_language":
+    "Sprache nicht unterstützt (Deutsch, Englisch, Französisch oder Italienisch)",
   "import.problem.unknown_currency": "Währung nicht unterstützt (CHF oder EUR)",
   "import.doneTitle": "Import abgeschlossen",
   "import.show.customers": "Zu den Kunden",
@@ -1444,6 +1457,7 @@ export const de = {
   "dunning.problem.text": "Höchstens 2000 Zeichen",
   "eInvoice.beforeEInvoices": "Das PDF wurde erstellt, bevor Rhinvoice E-Rechnungen einbettete.",
   "eInvoice.issueWarning": "Diese Rechnung wird ohne E-Rechnung ausgestellt. Es fehlt:",
+  "eInvoice.issueXRechnungWarning": "Für die XRechnung (deutsche Behörden) fehlt:",
   "eInvoice.xrechnungSummary": "XRechnung für deutsche Behörden",
   "eInvoice.title": "E-Rechnung",
   "eInvoice.embedded":
@@ -1453,7 +1467,8 @@ export const de = {
   "eInvoice.disabled": "Beim Ausstellen war die E-Rechnung in der Druckvorlage ausgeschaltet.",
   "eInvoice.missing": "Für eine E-Rechnung fehlte beim Ausstellen:",
   "eInvoice.xrechnung": "XRechnung (XML)",
-  "eInvoice.xrechnungHint": "Für deutsche Behörden; die Referenz der Rechnung ist die Leitweg-ID.",
+  "eInvoice.xrechnungHint":
+    "Für deutsche Behörden; die Leitweg-ID kommt vom Kunden oder aus der Referenz der Rechnung.",
   "eInvoice.xrechnungMissing": "Für eine XRechnung fehlte beim Ausstellen:",
   "eInvoice.nextTime":
     "Ausgestellte Rechnungen bleiben unverändert. Ergänzen Sie die Angaben für künftige Rechnungen.",
@@ -1463,8 +1478,7 @@ export const de = {
   "eInvoice.problem.seller_tax_id_missing":
     "MWST-Nummer, USt-IdNr. oder Steuernummer (Einstellungen → Firma)",
   "eInvoice.problem.buyer_vat_id_missing": "UID bzw. USt-IdNr. mit Länderkürzel beim Kunden",
-  "eInvoice.problem.buyer_reference_missing":
-    "Referenz der Rechnung (Leitweg-ID oder Käuferreferenz)",
+  "eInvoice.problem.buyer_reference_missing": "Leitweg-ID beim Kunden oder Referenz der Rechnung",
   "eInvoice.problem.seller_email_missing": "E-Mail (Einstellungen → Firma)",
   "eInvoice.problem.seller_phone_missing": "Telefon (Einstellungen → Firma)",
   "eInvoice.problem.buyer_email_missing": "E-Mail beim Kunden",
@@ -1487,6 +1501,8 @@ export const de = {
     "In der Währung der Rechnung, ohne MWST/USt. Nur mit Vereinbarung oder belegten Kosten; 0 für keine.",
   "dunning.textDe": "Text (Deutsch)",
   "dunning.textEn": "Text (Englisch)",
+  "dunning.textFr": "Text (Französisch)",
+  "dunning.textIt": "Text (Italienisch)",
   "dunning.textHint":
     "Platzhalter: {faellig} (neue Frist), {betrag}, {waehrung}, {nummer}, {kunde}.",
   "error.not_remindable": "Diese Rechnung ist nicht überfällig oder hat schon alle Mahnungen.",

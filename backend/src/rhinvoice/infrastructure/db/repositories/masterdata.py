@@ -279,6 +279,7 @@ def _customer_from_row(row: RowMapping) -> Customer:
         email=_optional(row["email"], EmailAddress),
         phone=row["phone"],
         vat_number=_optional(row["vat_number"], VatNumber),
+        buyer_reference=row["buyer_reference"],
         group=row["customer_group"],
         default_currency=_optional(row["default_currency"], Currency),
         default_language=_optional(row["default_language"], Language),
@@ -306,6 +307,7 @@ def _customer_values(customer: Customer) -> dict[str, Any]:
         "email": None if customer.email is None else customer.email.value,
         "phone": customer.phone,
         "vat_number": None if customer.vat_number is None else customer.vat_number.value,
+        "buyer_reference": customer.buyer_reference,
         "customer_group": customer.group,
         "default_currency": None
         if customer.default_currency is None

@@ -115,7 +115,7 @@ p, ul, figure { margin: 0; }
 
 a { color: var(--accent); }
 
-a:focus-visible, button:focus-visible {
+a:focus-visible, button:focus-visible, .table-wrap:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
   border-radius: 6px;
@@ -183,6 +183,11 @@ code { font-family: var(--mono); font-size: 0.9em; }
   border-color: var(--accent);
   color: var(--accent-fg);
 }
+
+/* Above a machine-translated page (French, Italian): a quiet line, not a warning. */
+.mt-notice { border-bottom: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 14px; }
+.mt-notice p { margin-block: 0; padding-block: 8px; }
+.mt-notice a { color: var(--accent); }
 
 /* ---------- Shared pieces -------------------------------------------------- */
 
@@ -254,8 +259,8 @@ section.river { padding-block: 8px 24px; }
 .hero .copy { display: grid; gap: 16px; }
 .hero h1 { font-size: clamp(34px, 4.3vw, 52px); }
 .hero .lead { font-size: 18px; }
-/* The German title is longer: a little smaller keeps it on four lines. */
-:lang(de) .hero h1 { font-size: clamp(34px, 3.75vw, 48px); }
+/* The German, French and Italian titles are longer: a little smaller keeps them on four lines. */
+:is(:lang(de), :lang(fr), :lang(it)) .hero h1 { font-size: clamp(34px, 3.75vw, 48px); }
 
 .proof { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); font-size: 14px; }
 .proof { padding: 0; }
@@ -439,7 +444,7 @@ footer a { color: var(--muted); }
 
 @media (max-width: 560px) {
   .hero h1 { font-size: 31px; }
-  :lang(de) .hero h1 { font-size: 28px; }
+  :is(:lang(de), :lang(fr), :lang(it)) .hero h1 { font-size: 28px; }
   .hero .lead { font-size: 16px; }
   .hero .copy { gap: 14px; }
 }

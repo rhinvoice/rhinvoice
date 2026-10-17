@@ -1,7 +1,7 @@
 /*
   Renders the images of rhinvoice.com that are made, not drawn:
 
-    assets/img/og.png, og-de.png            social previews, 1200 x 630
+    assets/img/og.png, og-{de,fr,it}.png    social previews, 1200 x 630
     assets/img/icon-192.png, icon-512.png    app icons from favicon.svg
     assets/img/icon-512-maskable.png         with the safe zone Android needs
     assets/img/apple-touch-icon.png          180 x 180
@@ -38,7 +38,9 @@ async function render(url, width, height, path) {
 
 const og = pathToFileURL(join(tools, "og.html")).href;
 await render(og, 1200, 630, join(img, "og.png"));
-await render(`${og}?lang=de`, 1200, 630, join(img, "og-de.png"));
+for (const lang of ["de", "fr", "it"]) {
+  await render(`${og}?lang=${lang}`, 1200, 630, join(img, `og-${lang}.png`));
+}
 
 // App icons are full-bleed squares (the system rounds the corners); the maskable one
 // keeps the mark inside the safe zone Android crops to.

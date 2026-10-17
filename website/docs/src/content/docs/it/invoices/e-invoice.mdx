@@ -1,0 +1,123 @@
+---
+title: "Creare fatture elettroniche: ZUGFeRD e XRechnung gratis"
+description: Creare gratis fatture elettroniche XRechnung e ZUGFeRD con Rhinvoice, open source. EN 16931 in PDF/A-3b, XRechnung 3.0 con Leitweg-ID, convalidate con KoSIT e Mustang.
+faq:
+  - q: Posso creare gratis una XRechnung con Rhinvoice?
+    a: Sì. Rhinvoice è gratuito e open source (AGPL). Per ogni fattura emessa e ogni fattura di storno scarica la XRechnung 3.0 come file XML. La Leitweg-ID dell’autorità si inserisce una sola volta sul cliente, nel campo Leitweg-ID o riferimento fisso dell’acquirente.
+  - q: Ogni fattura PDF di Rhinvoice è una fattura ZUGFeRD?
+    a: Sì, ogni fattura emessa e ogni fattura di storno, purché ci siano i dati richiesti. Il PDF è un PDF/A-3b con una fattura ZUGFeRD / Factur-X incorporata nel profilo EN 16931. Rhinvoice indica sulla fattura se la fattura elettronica è incorporata.
+  - q: Che cos’altro serve a una XRechnung?
+    a: Un riferimento dell’acquirente (la Leitweg-ID del cliente o il riferimento della fattura), e-mail e telefono della Sua azienda, l’e-mail del cliente e un conto bancario. Se manca qualcosa per un cliente in Germania, Rhinvoice lo indica prima dell’emissione.
+  - q: Come controlla Rhinvoice le sue fatture elettroniche?
+    a: A ogni modifica del programma, fatture di esempio per ogni trattamento fiscale passano dal validatore KoSIT (EN 16931 e XRechnung) e, come PDF, da Mustang (ZUGFeRD, PDF/A-3 con veraPDF). Gli avvisi contano come errori.
+  - q: Per quali Paesi Rhinvoice crea fatture elettroniche?
+    a: Per aziende in Svizzera, Liechtenstein, Germania e Austria, ZUGFeRD è in ogni PDF. La XRechnung è destinata alle autorità pubbliche tedesche. UBL, Peppol e l’ebInterface austriaco non sono supportati.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Rhinvoice crea fatture elettroniche gratis: il PDF di ogni fattura emessa è un **PDF/A-3b con una fattura ZUGFeRD / Factur-X incorporata** (profilo EN 16931), e per le autorità pubbliche tedesche scarica inoltre la **XRechnung 3.0** (CII) come XML. Rhinvoice controlla entrambe con i validatori ufficiali, KoSIT e Mustang.
+
+## Due formati, un contenuto
+
+| | ZUGFeRD / Factur-X | XRechnung |
+|---|---|---|
+| Forma | incorporata nel PDF (PDF/A-3b) | un file XML separato |
+| Standard | EN 16931, sintassi CII | XRechnung 3.0, sintassi CII |
+| Per | clienti aziendali in tutti e quattro i Paesi | autorità pubbliche tedesche |
+| Dove | automaticamente in ogni PDF | aprire la fattura, sezione *Fattura elettronica* → *XRechnung per le autorità tedesche* → *XRechnung (XML)* |
+
+**Ciò che è stampato è ciò che dice la fattura elettronica.** Ogni importo della fattura elettronica è un importo del PDF; Rhinvoice non ricalcola nulla, anche con prezzi lordi, sconti e arrotondamento ai 5 centesimi. Il PDF appare uguale ai Suoi clienti, e il loro software contabile legge i dati direttamente.
+
+Le fatture di storno sono note di credito (tipo 381) nella fattura elettronica, con riferimento alla fattura stornata. Offerte, bozze e [vecchie fatture importate](/docs/it/moving/old-invoices/) non sono fatture elettroniche.
+
+## ZUGFeRD in ogni PDF
+
+La fattura elettronica è attiva di base. L’interruttore si trova in *Impostazioni → Layout di stampa → Fattura elettronica nel PDF (ZUGFeRD)*. Sulla fattura emessa, la sezione *Fattura elettronica* indica se il PDF archiviato la contiene:
+
+> Il PDF contiene la fattura elettronica (ZUGFeRD, EN 16931): il software contabile legge i dati direttamente.
+
+Rhinvoice salva l’XML incorporato insieme al PDF e non modifica più né l’uno né l’altro. Tutti i PDF di Rhinvoice sono PDF/A-3b, offerte e solleciti compresi.
+
+## XRechnung per le autorità tedesche
+
+Le autorità pubbliche in Germania richiedono la XRechnung. Per crearla:
+
+1. Sul cliente, inserisca la **Leitweg-ID** dell’autorità nel campo *Leitweg-ID o riferimento fisso dell’acquirente*. Il campo compare per i clienti in Germania. <Since version="0.8.0" />
+2. Emetta la fattura.
+3. Apra la sezione *Fattura elettronica* → *XRechnung per le autorità tedesche* e clicchi su *XRechnung (XML)*.
+
+Quando invia la fattura per e-mail, può scegliere *Allega anche la XRechnung (XML)*.
+
+### Leitweg-ID e riferimento dell’acquirente
+
+La XRechnung richiede un riferimento dell’acquirente (BT-10). Rhinvoice lo prende così:
+
+- Se il cliente ha una **Leitweg-ID o un riferimento fisso dell’acquirente**, vale sempre quello. Il riferimento della fattura figura allora nella fattura elettronica come riferimento dell’ordine (BT-13), quindi un numero d’ordine come «Bestellung 4711» non va perso.
+- Altrimenti vale il **riferimento della fattura** (*Altri dati → Riferimento*), per esempio il numero d’ordine.
+- Se entrambi sono vuoti, alla XRechnung manca il riferimento dell’acquirente.
+
+Per le aziende, compili il campo sul cliente solo se desiderano sempre lo stesso riferimento. Se il riferimento cambia a ogni ordine, lasci vuoto il campo sul cliente e inserisca il riferimento nella fattura. Sotto il campo *Riferimento*, l’editor mostra per i clienti in Germania quale Leitweg-ID vale o che il riferimento è necessario per la XRechnung.
+
+Quando emette una fattura, Rhinvoice conserva il cliente com’era insieme alla fattura. Se in seguito cambia la Leitweg-ID sul cliente, la XRechnung delle fatture già emesse resta invariata.
+
+## Che cosa serve a una fattura elettronica
+
+Rhinvoice crea solo fatture elettroniche complete. Se manca qualcosa, la finestra di dialogo La avvisa prima dell’emissione («Questa fattura viene emessa senza fattura elettronica. Manca: …»). Il PDF viene creato comunque, solo senza la fattura elettronica. Per i clienti in Germania la finestra indica anche che cosa manca alla XRechnung («Manca per la XRechnung (autorità tedesche): …»). Può comunque emettere la fattura.
+
+**Ogni fattura elettronica (EN 16931):**
+
+| Dato | Quando | Dove inserirlo |
+|---|---|---|
+| IDI, numero di partita IVA o iscrizione nel registro di commercio | sempre | *Impostazioni → Azienda* |
+| Numero IVA o numero fiscale | fatture imponibili o esenti | *Impostazioni → Azienda* |
+| Numero IVA della Sua azienda | reverse charge, fornitura intracomunitaria, esportazione | *Impostazioni → Azienda* |
+| Numero IVA del cliente con prefisso del Paese | reverse charge, fornitura intracomunitaria | sul cliente |
+
+**In più per la XRechnung:**
+
+| Dato | Dove inserirlo |
+|---|---|
+| Leitweg-ID o riferimento dell’acquirente | sul cliente (*Leitweg-ID o riferimento fisso dell’acquirente*) o sulla fattura (*Altri dati → Riferimento*) |
+| L’e-mail della Sua azienda | *Impostazioni → Azienda* |
+| Il telefono della Sua azienda | *Impostazioni → Azienda* |
+| L’e-mail del cliente | sul cliente |
+| Un conto bancario | *Impostazioni → Conti bancari* |
+
+<Aside type="caution" title="Emessa è emessa">
+Una fattura emessa non cambia mai, né la sua fattura elettronica. Ciò che mancava al momento dell’emissione, lo aggiunga per le fatture successive.
+</Aside>
+
+## L’obbligo di fattura elettronica in Germania
+
+Dal 2025 le imprese in Germania devono poter ricevere fatture elettroniche (§ 14 UStG). Devono emetterle per le fatture B2B nazionali dal 2027 se il loro fatturato dell’anno precedente superava EUR 800’000, e dal 2028 tutte (§ 27 Abs. 38 UStG). Le piccole imprese sono esentate (§ 34a UStDV). La fattura ZUGFeRD nel PDF soddisfa questo obbligo quando è incorporata. Altro sulle fatture tedesche: [fatture in Germania](/docs/it/countries/germany/).
+
+Le aziende in [Svizzera](/docs/it/countries/switzerland/), nel [Liechtenstein](/docs/it/countries/liechtenstein/) e in [Austria](/docs/it/countries/austria/) ricevono la stessa fattura ZUGFeRD in ogni PDF. In Austria e in Svizzera i programmi di contabilità leggono sempre più spesso i PDF ZUGFeRD direttamente.
+
+## Trattamenti fiscali nella fattura elettronica
+
+Rhinvoice assegna a ogni gruppo d’imposta una categoria secondo UNCL 5305:
+
+| Categoria | Trattamento fiscale |
+|---|---|
+| S | imposizione normale |
+| Z | aliquota 0 % |
+| E | esente; piccole imprese in Germania e in Austria, con la loro avvertenza come motivo |
+| AE | reverse charge, anche dalla Svizzera e dal Liechtenstein verso imprese dell’UE |
+| K | fornitura intracomunitaria di beni, con l’indirizzo di consegna |
+| G | esportazione e fornitura all’esportazione |
+| O | non soggetto all’IVA: piccole imprese senza numero IVA e numero fiscale (Svizzera, Liechtenstein) |
+
+Un IDI svizzero identifica l’azienda nella fattura elettronica (schema 0183) e, per le aziende assoggettate all’IVA, è allo stesso tempo il suo numero IVA. I numeri fiscali tedeschi hanno un campo proprio.
+
+## Convalidate con KoSIT e Mustang
+
+A ogni modifica di Rhinvoice, fatture di esempio per ogni trattamento fiscale passano dai validatori ufficiali: il **validatore KoSIT** per EN 16931 e XRechnung e, come PDF, **Mustang** per ZUGFeRD e PDF/A-3 (con veraPDF). Gli avvisi contano come errori.
+
+Non supportati: UBL, l’invio tramite Peppol e l’ebInterface austriaco.
+
+## Domande frequenti
+
+<Faq />

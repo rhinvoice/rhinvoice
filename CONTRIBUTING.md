@@ -58,7 +58,8 @@ The architecture and its reasons are in [`docs/adr`](docs/adr), the design syste
 - **Issued documents stay immutable.** Nothing may change an issued invoice; corrections are
   cancellations.
 - **Everything in code is English**: names, comments, commit messages. User-facing texts live in
-  the message catalogues (`frontend/src/lib/i18n`) in German and English.
+  the message catalogues (`frontend/src/lib/i18n`) in German, English, French and Italian;
+  new texts need all four (the type check and the tests insist).
 - **Tax rules name their source** in a comment (law, article, official page).
 - **Commit messages** follow [Conventional Commits](https://www.conventionalcommits.org/)
   (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`).
@@ -68,15 +69,18 @@ The architecture and its reasons are in [`docs/adr`](docs/adr), the design syste
 
 ## How a change is released
 
-Nothing reaches users untested ([ADR 0025](docs/adr/0025-tested-releases.md)):
+Nothing reaches users untested ([ADR 0025](docs/adr/0025-tested-releases.md), [ADR 0026](docs/adr/0026-dev-and-main.md)).
+Work happens on `dev`; `main` only holds what was released.
 
-1. **Pull request** into `main`. CI must be green; changes to the program also build the
+1. **Pull request** into `dev`. CI must be green; changes to the program also build the
    Windows setup and the macOS disk image as a preview, attached to the run.
-2. **Release candidate.** The maintainer tags `vX.Y.Z-rc.N`. That builds a public
+2. **Release candidate.** The maintainer tags `vX.Y.Z-rc.N` on `dev`. That builds a public
    pre-release: setups, Docker images tagged `X.Y.Z-rc.N`, nothing users get by themselves.
    You are welcome to test it.
 3. **Promotion.** Once tested, the maintainer starts *Promote release*; the candidate's files
    become release `vX.Y.Z`.
+4. **Into main.** A pull request from `release/vX.Y.Z` into `main` brings the release there;
+   rhinvoice.com and the README follow.
 
 ## Licence
 

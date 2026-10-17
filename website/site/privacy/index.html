@@ -10,6 +10,8 @@
 <link rel="canonical" href="https://rhinvoice.com/privacy/">
 <link rel="alternate" hreflang="en" href="https://rhinvoice.com/privacy/">
 <link rel="alternate" hreflang="de" href="https://rhinvoice.com/de/datenschutz/">
+<link rel="alternate" hreflang="fr" href="https://rhinvoice.com/fr/protection-des-donnees/">
+<link rel="alternate" hreflang="it" href="https://rhinvoice.com/it/protezione-dei-dati/">
 <link rel="alternate" hreflang="x-default" href="https://rhinvoice.com/privacy/">
 <!-- Legal pages are for visitors, not for search results. -->
 <meta name="robots" content="noindex, follow">
@@ -30,6 +32,8 @@
     <nav class="lang" aria-label="Language">
       <a href="https://rhinvoice.com/privacy/" hreflang="en" lang="en" aria-current="true">EN</a>
       <a href="https://rhinvoice.com/de/datenschutz/" hreflang="de" lang="de">DE</a>
+      <a href="https://rhinvoice.com/fr/protection-des-donnees/" hreflang="fr" lang="fr">FR</a>
+      <a href="https://rhinvoice.com/it/protezione-dei-dati/" hreflang="it" lang="it">IT</a>
     </nav>
   </div>
 </header>
@@ -46,7 +50,8 @@
 
   <h2>2. What this notice covers, and what not</h2>
   <p>It covers the website rhinvoice.com with the documentation at rhinvoice.com/docs, the public demos at ch.rhinvoice.com, de.rhinvoice.com and at.rhinvoice.com, and e-mails to addresses at rhinvoice.com.</p>
-  <p><strong>It does not cover installations of Rhinvoice.</strong> Whoever installs Rhinvoice runs it on their own machines and is responsible for the data in it. An installation sends no data to webberz: it contains no statistics, no outgoing error reports and no update check. It only connects to the services its operator sets up, such as a mail server or a backup target.</p>
+  <p><strong>It does not cover installations of Rhinvoice.</strong> Whoever installs Rhinvoice runs it on their own machines and is responsible for the data in it. An installation sends no data to webberz: it contains no statistics and no outgoing error reports. It only connects to the services its operator sets up, such as a mail server or a backup target, and to GitHub for the update check.</p>
+  <p><strong>Update check.</strong> Unless it is switched off, an installation asks GitHub, Inc. in the USA whether a newer version of Rhinvoice exists: about 30 seconds after it starts, then once a day, and when someone clicks <em>Check for updates</em>. It downloads two small files of the latest release on GitHub: <code>release.json</code> and its signature <code>release.json.sig</code>; an installation set to the test channel also asks the GitHub API for the newest release. As with any download, GitHub receives the usual connection data, such as the IP address and the name of the program library making the request. No invoice, customer or account data and no identifier of the installation are sent, and webberz receives nothing. A file whose signature does not match is discarded. <em>Update now</em> in the program for Windows and Mac downloads the new version from GitHub as well. The setting <code>RHINVOICE_UPDATE_CHECK=false</code> switches the check off (with Docker in the file <code>.env</code>); in the program for Windows and Mac, <code>"update_check": false</code> in the file <code>rhinvoice.json</code> does the same.</p>
 
   <h2>3. Applicable law</h2>
   <p>We follow the Swiss Federal Act on Data Protection (FADP) and its ordinance. Where the General Data Protection Regulation of the European Union (GDPR) applies because we address people in the EEA, we meet its requirements as well.</p>
@@ -70,7 +75,7 @@
   <p>The source code, bug reports and discussions of Rhinvoice are on GitHub. When you open an issue or join a discussion there, GitHub's privacy statement applies, and your contributions are public.</p>
 
   <h2>5. Purposes and legal bases</h2>
-  <div class="table-wrap">
+  <div class="table-wrap" role="region" tabindex="0" aria-label="Purposes and legal bases">
   <table>
     <thead><tr><th scope="col">Processing</th><th scope="col">Purpose</th><th scope="col">Basis under the GDPR</th></tr></thead>
     <tbody>
@@ -85,7 +90,7 @@
 
   <h2>6. Processors and disclosure to third parties</h2>
   <p>We do not pass personal data on to third parties to sell them or for advertising. For operation we use these providers:</p>
-  <div class="table-wrap">
+  <div class="table-wrap" role="region" tabindex="0" aria-label="Processors and disclosure to third parties">
   <table>
     <thead><tr><th scope="col">Service</th><th scope="col">Provider</th><th scope="col">Location</th></tr></thead>
     <tbody>

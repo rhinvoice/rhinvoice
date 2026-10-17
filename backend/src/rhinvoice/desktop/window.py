@@ -13,9 +13,12 @@ from __future__ import annotations
 
 import contextlib
 import html
+import importlib
 import importlib.util
 import json
+import platform
 import threading
+import time
 from dataclasses import asdict, dataclass, replace
 from typing import TYPE_CHECKING, Protocol
 
@@ -38,6 +41,13 @@ GEOMETRY_FILE = "geometry.json"
 """Where the program window was and how large, in the window folder."""
 FAILED = 1
 """The exit code when the start ended without one (it failed before it could say)."""
+SETTLE_SECONDS = 0.5
+"""How long macOS gets to take closed windows off the screen once the window loop ended."""
+LOOP_SLICE_SECONDS = 0.05
+LOOP_PAUSE_SECONDS = 0.01
+"""Between two turns of the run loop: it returns at once when it has nothing to wait for."""
+NO_DOCK_ICON = 2
+"""NSApplicationActivationPolicyProhibited: no Dock icon, no windows."""
 
 
 class Card(Protocol):
@@ -109,10 +119,35 @@ def run_with_splash(
         # Also when asked to end (Ctrl+C, Windows' CTRL_BREAK reach this thread only):
         # the start leaves its window and stops the server and the database first.
         splash.end()
+        wait_for_start(worker, platform.system())
+    return codes[0] if codes else FAILED
+
+
+def wait_for_start(worker: threading.Thread, system: str, settle: float = SETTLE_SECONDS) -> None:
+    """Wait for the start to end; on macOS, let the windows go meanwhile.
+
+    When pywebview's window loop on macOS returns, the closed windows are still on the
+    screen and their pages still run: macOS takes them away only as the main thread's run
+    loop turns. Without that, a window would stay, frozen, with its page asking the server,
+    as long as this process lives; after an update that is as long as the new version runs,
+    since the boot waits for it (rhinvoice_boot.restart). So the run loop turns here until
+    the start has ended (the closes it asks pywebview for need it too), and at least
+    ``settle`` seconds; then the process leaves the Dock: the new version has its own icon.
+    """
+    if system != "Darwin":
         # Not started when the window loop could not start: then there is nothing to wait for.
         with contextlib.suppress(RuntimeError):
             worker.join()
-    return codes[0] if codes else FAILED
+        return
+    # pyobjc, which pywebview brings on macOS.
+    foundation = importlib.import_module("Foundation")
+    loop = foundation.NSRunLoop.currentRunLoop()
+    until = time.monotonic() + settle
+    while worker.is_alive() or time.monotonic() < until:
+        loop.runUntilDate_(foundation.NSDate.dateWithTimeIntervalSinceNow_(LOOP_SLICE_SECONDS))
+        time.sleep(LOOP_PAUSE_SECONDS)
+    application = importlib.import_module("AppKit").NSApplication.sharedApplication()
+    application.setActivationPolicy_(NO_DOCK_ICON)
 
 
 class Placed(Protocol):

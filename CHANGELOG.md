@@ -15,6 +15,12 @@ before 1.0, minor versions may contain breaking changes.
 - On a Mac, Rhinvoice is now `ch.webberz.rhinvoice` for the system. After installing the next
   setup (not after an in-app update) you sign in once more; the data stays.
 
+### Fixed
+- On a Mac, the window of the old version goes away when an update restarts Rhinvoice. Until
+  now it stayed on screen, frozen, beside the new version's window, with a second Rhinvoice
+  icon in the Dock, until Rhinvoice was quit. This applies to updates from this version on:
+  the update to it still leaves the frozen window once; closing the new window ends both.
+
 ## [0.8.0] – 2026-10-17
 
 ### Added

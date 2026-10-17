@@ -17,6 +17,12 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   des nächsten Setups (nicht nach einem Update in der App) melden Sie sich einmal neu an; die
   Daten bleiben.
 
+### Behoben
+- Auf dem Mac verschwindet das Fenster der alten Version, wenn ein Update Rhinvoice neu startet.
+  Bisher blieb es eingefroren neben dem Fenster der neuen Version stehen, mit einem zweiten
+  Rhinvoice-Symbol im Dock. Das gilt für Updates ab dieser Version: Beim Update auf sie bleibt
+  das eingefrorene Fenster noch einmal stehen; das Schliessen des neuen Fensters beendet beide.
+
 ## [0.8.0] – 2026-10-17
 
 ### Neu

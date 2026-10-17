@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import platform
 import sys
 import threading
 import time
@@ -156,6 +157,57 @@ class FakeWebview(types.ModuleType):
 def webview(monkeypatch: pytest.MonkeyPatch) -> FakeWebview:
     fake = FakeWebview()
     monkeypatch.setitem(sys.modules, "webview", fake)
+    # Not macOS: the tests that are say so (cocoa).
+    monkeypatch.setattr(platform, "system", lambda: "Linux")
+    return fake
+
+
+class RunLoop:
+    """The main thread's NSRunLoop: counts its turns and what happened during them."""
+
+    def __init__(self) -> None:
+        self.turns: list[float] = []
+        self.during: Callable[[int], None] = lambda _turn: None
+
+    def runUntilDate_(self, date: float) -> None:  # noqa: N802 - pyobjc's name
+        self.turns.append(date)
+        self.during(len(self.turns))
+
+
+class Application:
+    def __init__(self) -> None:
+        self.policies: list[int] = []
+
+    def setActivationPolicy_(self, policy: int) -> None:  # noqa: N802 - pyobjc's name
+        self.policies.append(policy)
+
+
+def in_seconds(seconds: float) -> float:
+    """NSDate.dateWithTimeIntervalSinceNow_: the date is told by its distance from now."""
+    return seconds
+
+
+class Cocoa:
+    """Stand-ins for pyobjc's Foundation and AppKit, as far as the program uses them."""
+
+    def __init__(self) -> None:
+        self.loop = RunLoop()
+        self.application = Application()
+        self.foundation = types.SimpleNamespace(
+            NSRunLoop=types.SimpleNamespace(currentRunLoop=lambda: self.loop),
+            NSDate=types.SimpleNamespace(dateWithTimeIntervalSinceNow_=in_seconds),
+        )
+        self.appkit = types.SimpleNamespace(
+            NSApplication=types.SimpleNamespace(sharedApplication=lambda: self.application)
+        )
+
+
+@pytest.fixture
+def cocoa(monkeypatch: pytest.MonkeyPatch) -> Cocoa:
+    fake = Cocoa()
+    monkeypatch.setitem(sys.modules, "Foundation", fake.foundation)
+    monkeypatch.setitem(sys.modules, "AppKit", fake.appkit)
+    monkeypatch.setattr(platform, "system", lambda: "Darwin")
     return fake
 
 
@@ -259,6 +311,52 @@ def test_a_window_loop_that_does_not_start_runs_nothing(
 def test_without_a_card_the_start_runs_all_the_same(tmp_path: Path, webview: FakeWebview) -> None:
     webview.without_window = True
     assert window.run_with_splash(lambda _splash: 3, tmp_path / "window", "0.7.3") == 3
+
+
+def test_on_macos_the_closed_windows_go_before_the_program_waits(
+    tmp_path: Path, webview: FakeWebview, cocoa: Cocoa
+) -> None:
+    """After an update the boot waits for the new version: no window may stay meanwhile."""
+    webview.on_program_window = loads_and_closes
+
+    def start(splash: Splash) -> int:
+        splash.show(ADDRESS, tmp_path / "window")
+        return 75
+
+    assert window.run_with_splash(start, tmp_path / "window", "0.8.1") == 75
+    # The run loop turned (it takes the windows off the screen), then the Dock icon went.
+    assert cocoa.loop.turns
+    assert set(cocoa.loop.turns) == {window.LOOP_SLICE_SECONDS}
+    assert cocoa.application.policies == [window.NO_DOCK_ICON]
+
+
+def test_on_macos_the_run_loop_turns_until_the_start_has_ended(cocoa: Cocoa) -> None:
+    """The start closes its windows and stops the database meanwhile."""
+    ended = threading.Event()
+    cocoa.loop.during = lambda turn: ended.set() if turn == 3 else None
+    worker = threading.Thread(target=ended.wait)
+    worker.start()
+    window.wait_for_start(worker, "Darwin", settle=0)
+    assert not worker.is_alive()
+    assert len(cocoa.loop.turns) >= 3
+    assert cocoa.application.policies == [window.NO_DOCK_ICON]
+
+
+def test_on_macos_the_run_loop_turns_a_while_after_a_quick_end(cocoa: Cocoa) -> None:
+    worker = threading.Thread(target=lambda: None)
+    worker.start()
+    worker.join()
+    began = time.monotonic()
+    window.wait_for_start(worker, "Darwin", settle=0.05)
+    assert time.monotonic() - began >= 0.05
+    assert cocoa.loop.turns
+
+
+def test_elsewhere_the_program_only_waits_for_the_start() -> None:
+    worker = threading.Thread(target=lambda: None)
+    worker.start()
+    window.wait_for_start(worker, "Windows")  # no pyobjc needed
+    assert not worker.is_alive()
 
 
 def test_only_the_program_closes_the_card() -> None:

@@ -80,6 +80,8 @@ def installer(
     ("system", "machine", "name"),
     [
         ("Windows", "AMD64", "windows-x64"),
+        # As sysconfig names the bundled interpreter, also on Windows on ARM (x64 emulated).
+        ("Windows", "amd64", "windows-x64"),
         ("Darwin", "arm64", "macos-arm64"),
         ("Darwin", "x86_64", "macos-x64"),
         ("Linux", "aarch64", "linux-arm64"),

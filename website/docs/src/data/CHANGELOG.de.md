@@ -31,6 +31,12 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 - `.env.example` enthält kein Platzhalter-Passwort für die Datenbank mehr: Docker Compose
   startet erst, wenn Sie eines setzen.
 
+### Behoben
+- Windows auf ARM (z. B. in Parallels auf einem Mac) erhält Updates jetzt im Programm statt
+  eines Links auf die Release-Seite: Das Programm fragt nach dem Paket seiner eigenen
+  x64-Laufzeit, nicht nach dem des Prozessors. Installationen bis 0.8.2 brauchen einmal das
+  neue Setup.
+
 ## [0.8.2] – 2026-10-18
 
 ### Hinzugefügt

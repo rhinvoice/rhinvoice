@@ -30,6 +30,11 @@ before 1.0, minor versions may contain breaking changes.
 - `.env.example` no longer contains a placeholder database password: Docker Compose does not
   start until you set one.
 
+### Fixed
+- Windows on ARM (e.g. in Parallels on a Mac) now gets updates from within the program,
+  instead of a link to the releases page: the program asks for the package of its own x64
+  runtime, not of the processor. Installations up to 0.8.2 need the new setup once.
+
 ## [0.8.2] – 2026-10-18
 
 ### Added

@@ -7,8 +7,9 @@ name: CI
 # split over four runners.
 on:
   # Every pull request, also one that only changes docs: dev and main require these checks, and a
-  # check that never runs would block the merge (ADR 0025). For docs alone they are skipped,
-  # which counts as passed; the Website workflow checks the docs.
+  # check that never runs would block the merge (ADR 0025). For docs alone, or for workflows that
+  # no pull request runs, they are skipped, which counts as passed; the Website workflow checks
+  # the docs, zizmor the workflows.
   pull_request:
   push:
     tags: ["v*.*.*-rc.*"]
@@ -34,13 +35,14 @@ jobs:
           persist-credentials: false
           fetch-depth: 2
       - id: scope
-        # Only a pull request that provably touches nothing but docs skips the checks; any
-        # doubt (a tag, a failed diff) runs them.
+        # Only a pull request that provably touches nothing but docs, or workflows that never run
+        # on a pull request (release, promote, website, demo), skips the checks; any doubt (a tag,
+        # a failed diff) runs them. The job "Workflows and secrets" always runs (zizmor).
         run: |
           code=true
           # A pull request is checked out as its merge into the base: HEAD^1 is the base.
           if [ "$GITHUB_EVENT_NAME" = pull_request ] && files="$(git diff --name-only HEAD^1 HEAD)"; then
-            if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -Evq '^(website/|docs/)|\.md$'; then
+            if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -Evq '^(website/|docs/|\.github/workflows/(release|promote|pages|demo)\.yml$)|\.md$'; then
               code=false
             fi
           fi

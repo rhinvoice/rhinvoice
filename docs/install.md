@@ -21,7 +21,7 @@ Edit `.env`:
 
 | Setting | Value |
 |---|---|
-| `POSTGRES_PASSWORD` | a long random value, letters and digits only (e.g. `openssl rand -hex 24`) |
+| `POSTGRES_PASSWORD` | a long random value, letters and digits only (e.g. `openssl rand -hex 24`); Docker Compose does not start while it is empty |
 | `RHINVOICE_VERSION` | the version to run, e.g. `0.8.0` – pinned versions only change when you change them |
 | `RHINVOICE_PORT` | port on this machine, default `8000` |
 | `RHINVOICE_COOKIE_SECURE` | keep `true`; use `false` only for plain HTTP in a trusted network (not needed for `localhost`) |
@@ -176,8 +176,18 @@ button.
   `Strict-Transport-Security`.
 - Session cookies are `Secure` by default; set `RHINVOICE_COOKIE_SECURE=false` only when you
   deliberately use plain HTTP in a trusted network.
-- Login attempts are limited per account; add per-IP rate limiting in the proxy when the instance
-  is reachable from the internet, and turn on two-factor authentication for every user.
+- Create the first user account before the server is reachable from the internet: until then the
+  setup form is open to the first visitor.
+- Login attempts are limited per account (a lock after five failed logins) and, together with
+  password resets, to 10 per minute per IP address. Rhinvoice only sees the visitors' addresses
+  when `RHINVOICE_FORWARDED_ALLOW_IPS` names the proxy; otherwise all of them share one limit.
+  For a proxy on the same machine that is usually the gateway of the Docker network
+  (`docker network inspect rhinvoice_default`). Do not use `*` behind a proxy that adds to
+  `X-Forwarded-For`: visitors could then choose their address.
+  Turn on two-factor authentication for every user.
+- Limit the size of requests in the proxy too. The largest upload is an invoice import with its
+  PDF files (200 MB), so 210 MB fits everything: `request_body { max_size 210MB }` in Caddy,
+  `client_max_body_size 210m;` in nginx. Rhinvoice refuses larger requests itself as well.
 - Set up backups: [backup.md](backup.md).
 
 ## Several installations on one computer

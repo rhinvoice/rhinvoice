@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.8.2] – 2026-10-18
+
 ### Hinzugefügt
 - Ein neues Setup für Windows oder Mac installiert sich jetzt aus dem Programm heraus:
   **Jetzt aktualisieren** lädt es im Hintergrund mit Fortschrittsanzeige, prüft es wie ein

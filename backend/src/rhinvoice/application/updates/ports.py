@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import StrEnum
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
@@ -28,6 +29,9 @@ class Release:
     """App packages by platform, e.g. "windows-x64"."""
     setups: Mapping[str, str] = field(default_factory=dict[str, str])
     """Setup downloads by platform, for runtimes too old for the packages."""
+    setup_files: Mapping[str, PackageFile] = field(default_factory=dict[str, PackageFile])
+    """The same setups with size and SHA-256, so the program can download and check one
+    itself (ADR 0031); releases before ADR 0031 have none."""
 
 
 class ReleaseFeed(Protocol):
@@ -52,4 +56,38 @@ class UpdateInstaller(Protocol):
 
     def failed(self, version: str) -> bool:
         """Tell whether ``version`` was installed here, did not start and was taken back."""
+        ...
+
+
+class SetupState(StrEnum):
+    IDLE = "idle"
+    DOWNLOADING = "downloading"
+    READY = "ready"
+    """Downloaded and checked: it can be run."""
+    FAILED = "failed"
+
+
+@dataclass(frozen=True, slots=True)
+class SetupProgress:
+    state: SetupState = SetupState.IDLE
+    version: str | None = None
+    """The release whose setup it is."""
+    received: int = 0
+    total: int = 0
+    """Bytes."""
+
+
+class SetupInstaller(Protocol):
+    """The installation without Docker: it can download a new setup and hand over to it."""
+
+    def download(self, version: str, setup: PackageFile) -> None:
+        """Start downloading and checking the setup in the background; return at once."""
+        ...
+
+    def progress(self) -> SetupProgress:
+        """Tell how far the download is."""
+        ...
+
+    def run(self) -> None:
+        """Start the downloaded setup and close the program, which the setup then replaces."""
         ...

@@ -24,6 +24,7 @@ import { applyServerErrors } from "@/features/shared/server-errors";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import type { T } from "@/lib/i18n";
 import { patternProblem } from "@/lib/validation/number-pattern";
+import { useUnsavedChanges } from "@/features/shared/use-unsaved-changes";
 
 const MAX_COUNTER = 999_999_999_999;
 
@@ -103,6 +104,7 @@ function SequenceCard({ sequence }: { readonly sequence: Sequence }) {
     },
   });
   const { errors, isDirty, isSubmitting } = form.formState;
+  useUnsavedChanges(isDirty);
   const watched = useWatch({ control: form.control });
   // Debounce a string: a fresh object on every render would restart the timer forever.
   const snapshot = useDebouncedValue(

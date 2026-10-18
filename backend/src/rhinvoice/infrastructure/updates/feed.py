@@ -131,12 +131,18 @@ def read_release(values: object) -> Release:
     setups = {
         platform: _text_value(url) for platform, url in _object(fields.get("setups", {})).items()
     }
+    # Since ADR 0031: the setups with size and SHA-256, for the program to check.
+    setup_files = {
+        platform: _package(item)
+        for platform, item in _object(fields.get("setup_files", {})).items()
+    }
     return Release(
         version=_text(fields, "version"),
         notes_url=_text(fields, "notes_url"),
         runtime=_number(fields, "runtime"),
         packages=packages,
         setups=setups,
+        setup_files=setup_files,
     )
 
 

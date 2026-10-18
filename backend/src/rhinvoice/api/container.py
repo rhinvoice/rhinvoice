@@ -46,7 +46,7 @@ if TYPE_CHECKING:
     from rhinvoice.api.settings import Settings
     from rhinvoice.application.backup.ports import BackupArchive, BackupSetup
     from rhinvoice.application.document.printing import PdfRenderer
-    from rhinvoice.application.updates.ports import UpdateInstaller
+    from rhinvoice.application.updates.ports import SetupInstaller, UpdateInstaller
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,6 +83,8 @@ class OwnServices:
 
     installer: UpdateInstaller | None = None
     """Installs updates (ADR 0022)."""
+    setup_installer: SetupInstaller | None = None
+    """Downloads a new setup and hands over to it (ADR 0031)."""
     backup_setup: BackupSetup | None = None
     """Folder and recovery key of the backups (ADR 0023)."""
     backup_archive: BackupArchive | None = None
@@ -150,7 +152,9 @@ def build_container(
         else None
     )
     return Container(
-        updates=UpdateHandlers(feed, installed_version(), effective_clock, own.installer),
+        updates=UpdateHandlers(
+            feed, installed_version(), effective_clock, own.installer, own.setup_installer
+        ),
         support=SupportHandlers(
             installed_version(),
             system_name(

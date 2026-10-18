@@ -88,9 +88,11 @@ La vue d’ensemble de Rhinvoice contient une liste de contrôle avec le point *
 
 ## Mises à jour
 
-Rhinvoice cherche lui-même les nouvelles versions. Un avis **Nouvelle version …** apparaît alors avec le bouton **Mettre à jour maintenant**. La mise à jour prend environ une demi-minute : Rhinvoice copie d’abord la base de données, télécharge la nouvelle version, vérifie qu’elle est arrivée intacte et redémarre. Si la nouvelle version ne démarre pas, la précédente revient automatiquement, avec vos données inchangées. *À propos de Rhinvoice* indique aussi l’état; **Rechercher des mises à jour** y lance la vérification tout de suite.
+Rhinvoice cherche lui-même les nouvelles versions. Un avis **Nouvelle version …** apparaît alors avec le bouton **Mettre à jour maintenant**. Rhinvoice demande d’abord s’il peut redémarrer : enregistrez avant ce sur quoi vous travaillez. S’il reste des modifications non enregistrées, la question le signale, et **Plus tard** vous ramène en arrière. La mise à jour prend environ une demi-minute : Rhinvoice copie d’abord la base de données, télécharge la nouvelle version, vérifie qu’elle est arrivée intacte et redémarre. Si la nouvelle version ne démarre pas, la précédente revient automatiquement, avec vos données inchangées. *À propos de Rhinvoice* indique aussi l’état; **Rechercher des mises à jour** y lance la vérification tout de suite.
 
-Rarement, une nouvelle version demande un nouveau setup, par exemple pour une nouvelle version de la base de données intégrée. L’avis affiche alors **Télécharger le programme d’installation**. Installez-le par-dessus le programme existant; vos données restent.
+Rarement, une nouvelle version demande un nouveau programme d’installation, par exemple pour une nouvelle version de la base de données intégrée. L’avis indique alors **… nécessite un nouveau programme d’installation**. **Mettre à jour maintenant** s’en charge aussi : Rhinvoice télécharge le programme d’installation en arrière-plan, le vérifie comme une mise à jour, puis demande s’il peut se fermer. Le programme d’installation installe ensuite la nouvelle version et redémarre Rhinvoice; vos données restent. Sur un Mac, Rhinvoice remplace l’app dans le dossier Applications; si cela échoue, le programme d’installation s’ouvre et vous glissez vous-même Rhinvoice dans *Applications*. Si le téléchargement échoue, **Télécharger vous-même le programme d’installation** mène au fichier. <Since version="0.8.2" />
+
+Si vous lancez vous-même un programme d’installation pendant que Rhinvoice fonctionne, il vous demande sous Windows de fermer d’abord Rhinvoice.
 
 ## Rhinvoice Beta pour les versions candidates
 

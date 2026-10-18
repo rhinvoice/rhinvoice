@@ -5,6 +5,26 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.8.2] – 2026-10-18
+
+### Added
+- A new setup for Windows or Mac now installs from within the program: **Update now**
+  downloads it in the background with its progress, checks it like an update, and after
+  asking closes Rhinvoice, installs the new version and starts it again. On a Mac the app is
+  replaced in place; if that fails, the disk image opens. **Download the setup yourself**
+  stays for a failed download (ADR 0031).
+
+### Changed
+- Before Rhinvoice closes or restarts for an update, it asks first and says when a form
+  still holds unsaved changes; **Later** leaves everything as it is.
+
+### Fixed
+- Running a Windows setup while Rhinvoice ran stopped at files in use ("DeleteFile failed; code
+  5"). The setup now asks to close Rhinvoice and checks again until it is closed, also closes
+  what keeps Python modules open and stops a database left running before it replaces files.
+- The error summary at the top of a form now names the field of each message
+  ("Postcode: Please fill in."), not only the message.
+
 ## [0.8.1] – 2026-10-18
 
 ### Changed

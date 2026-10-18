@@ -53,6 +53,10 @@ class Restarter:
 
     def request(self) -> None:
         self.requested.set()
+        self.close()
+
+    def close(self) -> None:
+        """End the program without a restart (a setup takes over, ADR 0031)."""
         if self._close_window is not None:
             self._close_window()
         else:

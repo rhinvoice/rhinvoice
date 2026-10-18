@@ -24,6 +24,7 @@ import urllib.request
 import webbrowser
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
@@ -38,6 +39,7 @@ from rhinvoice.desktop.config import ConfigError, DesktopConfig, load_or_create,
 from rhinvoice.desktop.edition import Edition, installed_edition
 from rhinvoice.desktop.ports import free_port, listening
 from rhinvoice.desktop.postgres import BundledPostgres, PostgresError
+from rhinvoice.desktop.setup import SetupDownloader, helper_command, mark_running
 from rhinvoice.desktop.updates import PackageInstaller, Restarter, platform_name
 from rhinvoice.infrastructure.backup.restic import ResticArchive
 from rhinvoice.infrastructure.updates.feed import installed_version
@@ -207,6 +209,8 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
         return _attach(args, desktop, folder)
     try:
         log_without_console(folder)
+        # Held until the program ends: a setup started meanwhile waits for it (ADR 0031).
+        mark_running(edition.mutex)
         config = load_or_create(folder / "rhinvoice.json")
         database = BundledPostgres(
             install / "postgresql" / "bin",
@@ -254,7 +258,8 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
     finally:
         try:
             database.stop()
-        except PostgresError as error:
+        # OSError: its tools are gone, e.g. removed by a setup run beside the program.
+        except (PostgresError, OSError) as error:
             _failed(error)
 
 
@@ -291,11 +296,25 @@ def _own_services(  # noqa: PLR0913 - the parts of one start (keyword for the ed
 ) -> OwnServices:
     """Bring updates and backups, when the installed program has what they need."""
     setup, archive = _backups(desktop, install, folder, database_url, edition)
+    installer = _installer(desktop, install, folder, restarter, edition)
     return OwnServices(
-        installer=_installer(desktop, install, folder, restarter, edition),
+        installer=installer,
+        setup_installer=None
+        if installer is None
+        else _setup_installer(desktop, install, folder, restarter),
         backup_setup=setup,
         backup_archive=archive,
     )
+
+
+def _setup_installer(
+    desktop: Desktop, install: Path, folder: Path, restarter: Restarter
+) -> SetupDownloader | None:
+    """Download and run a new setup itself, where it knows how to (ADR 0031)."""
+    if desktop.system not in {"Windows", "Darwin"}:
+        return None
+    command = partial(helper_command, system=desktop.system, data=folder, install=install)
+    return SetupDownloader(folder, installed_version(), command, restarter.close)
 
 
 def _backups(

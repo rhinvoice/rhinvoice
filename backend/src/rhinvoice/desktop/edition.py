@@ -37,6 +37,11 @@ class Edition:
         return "-beta" if self.beta else ""
 
     @property
+    def mutex(self) -> str:
+        """Held on Windows while it runs; its setup waits for it (desktop/windows/rhinvoice.iss)."""
+        return f"{self.name.replace(' ', '')}Running"
+
+    @property
     def backup_folder(self) -> str:
         """The folder suggested for backups inside a cloud folder: never the other edition's."""
         return f"{self.name.replace(' ', '-')}-Backup"

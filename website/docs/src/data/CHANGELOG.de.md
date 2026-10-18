@@ -5,6 +5,28 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.8.2] – 2026-10-18
+
+### Hinzugefügt
+- Ein neues Setup für Windows oder Mac installiert sich jetzt aus dem Programm heraus:
+  **Jetzt aktualisieren** lädt es im Hintergrund mit Fortschrittsanzeige, prüft es wie ein
+  Update, schliesst Rhinvoice nach einer Rückfrage, installiert die neue Version und startet
+  sie wieder. Auf dem Mac wird die App an Ort und Stelle ersetzt; klappt das nicht, öffnet
+  sich das Setup. **Setup selbst herunterladen** bleibt für einen gescheiterten Download
+  (ADR 0031).
+
+### Geändert
+- Bevor Rhinvoice für ein Update schliesst oder neu startet, fragt es nach und sagt, wenn ein
+  Formular noch ungespeicherte Änderungen hat; **Später** lässt alles, wie es ist.
+
+### Behoben
+- Ein Windows-Setup, das lief, während Rhinvoice offen war, brach bei Dateien in Gebrauch ab
+  („DeleteFile schlug fehl; Code 5“). Das Setup bittet jetzt darum, Rhinvoice zu schliessen, und
+  prüft nach jedem OK erneut, ob es zu ist, schliesst auch, was Python-Module offen hält, und
+  hält eine noch laufende Datenbank an, bevor es Dateien ersetzt.
+- Die Fehlerübersicht oben in einem Formular nennt jetzt zu jeder Meldung das Feld
+  („PLZ: Bitte ausfüllen.“), nicht nur die Meldung.
+
 ## [0.8.1] – 2026-10-18
 
 ### Geändert

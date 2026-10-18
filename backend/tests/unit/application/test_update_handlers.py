@@ -11,7 +11,12 @@ from rhinvoice.application.updates.handlers import (
     UpdateStatus,
     is_newer,
 )
-from rhinvoice.application.updates.ports import PackageFile, Release
+from rhinvoice.application.updates.ports import (
+    PackageFile,
+    Release,
+    SetupProgress,
+    SetupState,
+)
 from rhinvoice.domain.shared.clock import FixedClock
 from tests.helpers import raises_exactly
 from tests.unit.application.conftest import NOW
@@ -233,3 +238,106 @@ def test_a_server_installation_never_counts_a_release_as_failed() -> None:
     updates = handlers(RELEASE)
     updates.refresh()
     assert not updates.status().failed
+
+
+SETUP = PackageFile(url="https://example.org/Rhinvoice-Setup-Windows.exe", sha256="cd" * 32, size=9)
+NEEDS_SETUP = replace(RELEASE, runtime=2, setup_files={"windows-x64": SETUP})
+
+
+class SetupInstaller:
+    def __init__(self, progress: SetupProgress | None = None) -> None:
+        self.downloads: list[tuple[str, PackageFile]] = []
+        self.runs = 0
+        self.current = progress or SetupProgress()
+
+    def download(self, version: str, setup: PackageFile) -> None:
+        self.downloads.append((version, setup))
+
+    def progress(self) -> SetupProgress:
+        return self.current
+
+    def run(self) -> None:
+        self.runs += 1
+
+
+def setup_handlers(
+    release: Release = NEEDS_SETUP,
+    setup_installer: SetupInstaller | None = None,
+    installer: Installer | None = None,
+) -> UpdateHandlers:
+    updates = UpdateHandlers(
+        Feed(release), "0.6.2", FixedClock(NOW), installer or Installer(), setup_installer
+    )
+    updates.refresh()
+    return updates
+
+
+def test_the_program_downloads_the_setup_it_needs_and_runs_it() -> None:
+    """ADR 0031: no browser, no download folder, the setup checked like a package."""
+    setup_installer = SetupInstaller()
+    updates = setup_handlers(setup_installer=setup_installer)
+    assert updates.status().action is UpdateAction.SETUP
+    assert updates.status().setup == SetupProgress()
+    updates.download_setup()
+    assert setup_installer.downloads == [("0.7.0", SETUP)]
+    setup_installer.current = SetupProgress(SetupState.DOWNLOADING, "0.7.0", 4, 9)
+    assert updates.status().setup == SetupProgress(SetupState.DOWNLOADING, "0.7.0", 4, 9)
+    with raises_exactly(ConflictError, "the setup is not downloaded yet") as refused:
+        updates.run_setup()
+    assert refused.value.code == "setup_not_ready"
+    setup_installer.current = SetupProgress(SetupState.READY, "0.7.0", 9, 9)
+    updates.run_setup()
+    assert setup_installer.runs == 1
+
+
+def test_the_setup_of_an_older_release_is_not_this_ones() -> None:
+    setup_installer = SetupInstaller(SetupProgress(SetupState.READY, "0.6.9", 9, 9))
+    updates = setup_handlers(setup_installer=setup_installer)
+    assert updates.status().setup == SetupProgress()
+    with raises_exactly(ConflictError, "the setup is not downloaded yet"):
+        updates.run_setup()
+    assert setup_installer.runs == 0
+
+
+def failed_installer() -> Installer:
+    return Installer("0.7.0")
+
+
+def beta_installer() -> Installer:
+    installer = Installer()
+    installer.setup = "windows-x64-beta"
+    return installer
+
+
+@pytest.mark.parametrize(
+    ("release", "setup_installer", "installer"),
+    [
+        (replace(NEEDS_SETUP, setup_files={}), SetupInstaller(), None),  # before 0.8.2
+        (NEEDS_SETUP, None, None),  # a server installation, or no helper for this system
+        (replace(NEEDS_SETUP, runtime=1), SetupInstaller(), None),  # the package does
+        (replace(NEEDS_SETUP, version="0.6.2"), SetupInstaller(), None),  # nothing newer
+        (NEEDS_SETUP, SetupInstaller(), failed_installer()),  # taken back
+        (NEEDS_SETUP, SetupInstaller(), beta_installer()),  # Rhinvoice's, not Beta's
+    ],
+)
+def test_a_setup_is_only_downloaded_when_it_is_needed_and_known(
+    release: Release, setup_installer: SetupInstaller | None, installer: Installer | None
+) -> None:
+    updates = setup_handlers(release, setup_installer, installer)
+    assert updates.status().setup is None
+    with raises_exactly(ConflictError, "there is no setup to download here") as refused:
+        updates.download_setup()
+    assert refused.value.code == "no_setup"
+    with raises_exactly(ConflictError, "the setup is not downloaded yet"):
+        updates.run_setup()
+    assert setup_installer is None or (setup_installer.downloads, setup_installer.runs) == ([], 0)
+
+
+def test_nothing_is_downloaded_before_the_first_check() -> None:
+    setup_installer = SetupInstaller()
+    updates = UpdateHandlers(
+        Feed(NEEDS_SETUP), "0.6.2", FixedClock(NOW), Installer(), setup_installer
+    )
+    with raises_exactly(ConflictError, "there is no setup to download here"):
+        updates.download_setup()
+    assert setup_installer.downloads == []

@@ -4,6 +4,14 @@ import { useEffect, useRef } from "react";
 export interface ErrorSummaryItem {
   readonly fieldId: string;
   readonly message: string;
+  /** The message alone does not name the field ("Bitte ausfüllen."): put its label first. */
+  readonly named?: boolean;
+}
+
+/** The visible name of a field, from its label (components/ui/field.tsx); null without one. */
+function fieldLabel(fieldId: string): string | null {
+  const label = document.querySelector<HTMLElement>(`label[for="${CSS.escape(fieldId)}"]`);
+  return label?.dataset["fieldLabel"] ?? null;
 }
 
 interface ErrorSummaryProps {
@@ -42,13 +50,17 @@ export function ErrorSummary({ title, items, submitCount }: ErrorSummaryProps) {
         {title}
       </p>
       <ul className="mt-2 list-disc space-y-1 pl-10 text-sm">
-        {items.map((item) => (
-          <li key={item.fieldId}>
-            <a className="underline underline-offset-2" href={`#${item.fieldId}`}>
-              {item.message}
-            </a>
-          </li>
-        ))}
+        {items.map((item) => {
+          // The form's fields are on the page whenever it shows errors.
+          const label = item.named === true ? fieldLabel(item.fieldId) : null;
+          return (
+            <li key={item.fieldId}>
+              <a className="underline underline-offset-2" href={`#${item.fieldId}`}>
+                {label === null ? item.message : `${label}: ${item.message}`}
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

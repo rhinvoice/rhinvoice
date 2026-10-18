@@ -30,6 +30,10 @@ before 1.0, minor versions may contain breaking changes.
 - `.env.example` no longer contains a placeholder database password: Docker Compose does not
   start until you set one.
 
+### Changed
+- Rhinvoice Beta has its own icon: Rhinvoice's with a striped edge at the bottom, so the two
+  apps are easy to tell apart in the Dock, the taskbar and the Start menu.
+
 ### Fixed
 - Windows on ARM (e.g. in Parallels on a Mac) now gets updates from within the program,
   instead of a link to the releases page: the program asks for the package of its own x64

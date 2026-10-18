@@ -24,12 +24,14 @@
   #define SetupName "Rhinvoice-Beta-Setup"
   #define InstallFolder "install-beta"
   #define RunningMutex "RhinvoiceBetaRunning"
+  #define SetupIcon "Rhinvoice-Beta.ico"
 #elif Edition == "stable"
   #define AppIdentity "{{6F0C7E59-3B7B-4E43-9A57-2C2F7D0B8B1E}"
   #define AppTitle "Rhinvoice"
   #define SetupName "Rhinvoice-Setup"
   #define InstallFolder "install"
   #define RunningMutex "RhinvoiceRunning"
+  #define SetupIcon "Rhinvoice.ico"
 #else
   #error Edition is "stable" or "beta"
 #endif
@@ -52,7 +54,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\..\build\windows
 OutputBaseFilename={#SetupName}-{#AppVersion}
-SetupIconFile=..\icons\Rhinvoice.ico
+SetupIconFile=..\icons\{#SetupIcon}
 UninstallDisplayIcon={app}\Rhinvoice.ico
 UninstallDisplayName={#AppTitle}
 LicenseFile=..\..\LICENSE

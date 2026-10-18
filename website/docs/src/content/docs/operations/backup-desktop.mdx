@@ -41,8 +41,8 @@ Restoring **replaces all data** with the state of a backup, in a single transact
 **Windows** (PowerShell):
 
 ```powershell
-& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -m rhinvoice_boot --list-backups
-& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -m rhinvoice_boot --restore latest
+& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -P -m rhinvoice_boot --list-backups
+& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -P -m rhinvoice_boot --restore latest
 ```
 
 **Mac** (Terminal):

@@ -49,6 +49,8 @@ Pour mettre à jour Rhinvoice, indiquez la nouvelle version dans `.env`, récup�
 
 Les migrations de la base de données s’exécutent automatiquement au démarrage (`RHINVOICE_RUN_MIGRATIONS=true` dans `.env`).
 
+`compose.yml` fixe exactement les images de la base de données et de Gotenberg ; leurs correctifs de sécurité arrivent avec les versions de Rhinvoice. À chaque mise à jour, téléchargez donc aussi la `compose.yml` actuelle (`curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/deploy/compose.yml`) ; vos réglages restent dans `.env`.
+
 ## Version fixée ou latest
 
 `.env` détermine comment Rhinvoice suit les nouvelles publications :

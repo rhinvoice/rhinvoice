@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.8.2] – 2026-10-18
+
 ### Added
 - A new setup for Windows or Mac now installs from within the program: **Update now**
   downloads it in the background with its progress, checks it like an update, and after

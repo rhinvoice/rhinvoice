@@ -121,29 +121,30 @@ begin
       Result := True;
 end;
 
-function InitializeSetup: Boolean;
+{ Whether a Rhinvoice of this installation runs: one since ADR 0031 holds the mutex; any
+  version is a process of this installation's Python, which Windows reports with its path. }
+function ProgramRunning: Boolean;
 var
-  Waited: Integer;
+  Folder: String;
+  Locator, Service, Processes: Variant;
 begin
-  Result := True;
-  if FromRhinvoice then
-  begin
-    { The program stops its server and database before it ends: wait for that. }
-    Waited := 0;
-    while CheckForMutexes('{#RunningMutex}') and (Waited < 120000) do
-    begin
-      Sleep(500);
-      Waited := Waited + 500;
-    end;
-    { The boot that started it ends just after. }
-    Sleep(1500);
+  Result := CheckForMutexes('{#RunningMutex}');
+  if Result then
+    Exit;
+  { WQL: a backslash and a quote are escaped with a backslash. }
+  Folder := ExpandConstant('{app}\python\');
+  StringChangeEx(Folder, '\', '\\', True);
+  StringChangeEx(Folder, '''', '\''', True);
+  try
+    Locator := CreateOleObject('WbemScripting.SWbemLocator');
+    Service := Locator.ConnectServer('.', 'root\CIMV2');
+    Processes := Service.ExecQuery(
+      'SELECT ProcessId FROM Win32_Process WHERE ExecutablePath LIKE ''' + Folder + '%''');
+    Result := Processes.Count > 0;
+  except
+    { Without an answer the Restart Manager still finds the files in use. }
+    Result := False;
   end;
-  while CheckForMutexes('{#RunningMutex}') do
-    if MsgBox(CustomMessage('RhinvoiceRunning'), mbError, MB_OKCANCEL) <> IDOK then
-    begin
-      Result := False;
-      Exit;
-    end;
 end;
 
 { Whether the edition's database runs: its program runs, or was ended and left it on. }
@@ -158,23 +159,34 @@ begin
       Result := Code = 0;
 end;
 
-{ Before any file is removed: a running Rhinvoice (also one before ADR 0031, which holds no
-  mutex) is asked to be closed, and a database left running is stopped the way the program
-  would, while its pg_ctl is still there. }
+{ Before any file is removed ([InstallDelete] runs first), Rhinvoice must have ended. Started
+  by the program, the setup waits for it to close itself; otherwise it asks until Rhinvoice
+  is closed, checking again after every OK. Only then a database left running (a program
+  that was ended by force) is stopped the way the program would, while pg_ctl is there. }
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   PgCtl, Database: String;
-  Code: Integer;
+  Code, Waited: Integer;
 begin
   Result := '';
-  PgCtl := ExpandConstant('{app}\postgresql\bin\pg_ctl.exe');
-  Database := ExpandConstant('{localappdata}\{#AppTitle}\database');
-  if DatabaseRunning(PgCtl, Database) and not FromRhinvoice then
+  if FromRhinvoice then
+  begin
+    { It stops its server and database first; the boot that started it ends just after. }
+    Waited := 0;
+    while ProgramRunning and (Waited < 120000) do
+    begin
+      Sleep(500);
+      Waited := Waited + 500;
+    end;
+  end;
+  while ProgramRunning do
     if MsgBox(CustomMessage('RhinvoiceRunning'), mbError, MB_OKCANCEL) <> IDOK then
     begin
       Result := CustomMessage('RhinvoiceStillRunning');
       Exit;
     end;
+  PgCtl := ExpandConstant('{app}\postgresql\bin\pg_ctl.exe');
+  Database := ExpandConstant('{localappdata}\{#AppTitle}\database');
   if DatabaseRunning(PgCtl, Database) then
     Exec(PgCtl, 'stop --wait --mode=fast --pgdata="' + Database + '"', '', SW_HIDE,
       ewWaitUntilTerminated, Code);

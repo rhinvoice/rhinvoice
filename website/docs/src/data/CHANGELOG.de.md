@@ -21,9 +21,9 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ### Behoben
 - Ein Windows-Setup, das lief, während Rhinvoice offen war, brach bei Dateien in Gebrauch ab
-  („DeleteFile schlug fehl; Code 5“). Das Setup bittet jetzt darum, Rhinvoice zu schliessen,
-  schliesst auch, was Python-Module offen hält, und hält eine noch laufende Datenbank an,
-  bevor es Dateien ersetzt.
+  („DeleteFile schlug fehl; Code 5“). Das Setup bittet jetzt darum, Rhinvoice zu schliessen, und
+  prüft nach jedem OK erneut, ob es zu ist, schliesst auch, was Python-Module offen hält, und
+  hält eine noch laufende Datenbank an, bevor es Dateien ersetzt.
 - Die Fehlerübersicht oben in einem Formular nennt jetzt zu jeder Meldung das Feld
   („PLZ: Bitte ausfüllen.“), nicht nur die Meldung.
 

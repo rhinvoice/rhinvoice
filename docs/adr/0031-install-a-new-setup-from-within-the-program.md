@@ -39,10 +39,12 @@ program without asking, so an unsaved form was lost.
     the SHA-256 of the signed `release.json` stands in for Gatekeeper's check.
 - **The Windows setup protects itself** when run by hand, before it removes any file
   (`[InstallDelete]` runs first and once removed `pg_ctl.exe` from under a running program):
-  - it asks to close a Rhinvoice that holds the mutex ("Rhinvoice läuft noch …", OK / Cancel);
-  - it asks the same when the edition's database runs (`pg_ctl status`), which also finds a
-    Rhinvoice from before this decision, then stops a database still left running with
-    `pg_ctl stop --mode=fast`, as the program would;
+  - it asks to close Rhinvoice while one of this installation runs, and checks again after
+    every OK until it has ended (Cancel ends the setup): a program since this decision holds
+    the mutex, and any version is a process whose executable lies in `{app}\python\`
+    (WMI `Win32_Process`), which also finds programs from before this decision;
+  - only then it stops a database still left running on the edition's data folder
+    (`pg_ctl status`, then `pg_ctl stop --mode=fast`), as the program would;
   - it reports `.pyd` files to the Restart Manager besides `.exe` and `.dll`.
 - **The program survives missing database tools** when it closes: it reports the error
   instead of ending the thread with a traceback.

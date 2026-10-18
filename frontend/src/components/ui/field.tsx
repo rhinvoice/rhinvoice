@@ -42,7 +42,7 @@ export function Field({
   });
   return (
     <div className={cn("flex flex-col gap-1.5", className)} data-slot="field">
-      <Label htmlFor={id}>
+      <Label htmlFor={id} data-field-label={label}>
         {label}
         {optionalLabel === undefined ? null : (
           <span className="ml-1 font-normal text-muted-foreground">{optionalLabel}</span>

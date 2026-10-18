@@ -7,7 +7,12 @@ from fastapi.testclient import TestClient
 from rhinvoice.api.app import create_app
 from rhinvoice.api.container import Container
 from rhinvoice.application.updates.handlers import UpdateHandlers
-from rhinvoice.application.updates.ports import PackageFile, Release
+from rhinvoice.application.updates.ports import (
+    PackageFile,
+    Release,
+    SetupProgress,
+    SetupState,
+)
 from tests.api.conftest import CLIENT_HEADERS, EMAIL, PASSWORD
 
 RELEASE = Release(
@@ -66,6 +71,8 @@ def test_endpoints_require_login(client: TestClient) -> None:
     assert client.get("/api/updates").status_code == 401
     assert client.post("/api/updates/install").status_code == 401
     assert client.post("/api/updates/check").status_code == 401
+    assert client.post("/api/updates/setup/download").status_code == 401
+    assert client.post("/api/updates/setup/run").status_code == 401
 
 
 def test_before_the_first_check_nothing_is_known(user_client: TestClient) -> None:
@@ -86,6 +93,7 @@ def test_a_server_installation_is_told_the_release(clients: ClientFactory) -> No
         "checked_at": "2026-01-15T09:00:00Z",
         "failed": False,
         "can_check": True,
+        "setup": None,
     }
     refused = client.post("/api/updates/install")
     assert refused.status_code == 409
@@ -118,3 +126,57 @@ def test_a_check_is_refused_when_it_is_switched_off(container: Container) -> Non
         refused = client.post("/api/updates/check")
     assert refused.status_code == 503
     assert refused.json()["error"]["code"] == "update_check_off"
+
+
+SETUP = PackageFile("https://example.org/Rhinvoice-Setup-Windows.exe", "cd" * 32, 9)
+
+
+class SetupInstaller:
+    def __init__(self) -> None:
+        self.state = SetupProgress()
+        self.runs = 0
+
+    def download(self, version: str, setup: PackageFile) -> None:
+        self.state = SetupProgress(SetupState.READY, version, setup.size, setup.size)
+
+    def progress(self) -> SetupProgress:
+        return self.state
+
+    def run(self) -> None:
+        self.runs += 1
+
+
+def test_the_program_downloads_and_runs_the_setup_itself(container: Container) -> None:
+    """ADR 0031."""
+    needs_setup = replace(RELEASE, runtime=2, setup_files={"windows-x64": SETUP})
+
+    class SetupFeed:
+        def latest(self) -> Release:
+            return needs_setup
+
+    setup_installer = SetupInstaller()
+    updates = UpdateHandlers(SetupFeed(), "0.6.2", container.clock, Installer(), setup_installer)
+    updates.refresh()
+    with TestClient(
+        create_app(replace(container, updates=updates)), headers=CLIENT_HEADERS
+    ) as client:
+        setup = {"email": EMAIL, "display_name": "Anna Muster", "password": PASSWORD}
+        assert client.post("/api/auth/setup", json=setup).status_code == 201
+        body = client.get("/api/updates").json()
+        assert (body["action"], body["setup"]) == (
+            "setup",
+            {"state": "idle", "received": 0, "total": 0},
+        )
+        early = client.post("/api/updates/setup/run")
+        assert (early.status_code, early.json()["error"]["code"]) == (409, "setup_not_ready")
+        downloading = client.post("/api/updates/setup/download")
+        assert downloading.status_code == 202
+        assert downloading.json()["setup"] == {"state": "ready", "received": 9, "total": 9}
+        assert client.post("/api/updates/setup/run").status_code == 202
+    assert setup_installer.runs == 1
+
+
+def test_without_a_setup_to_download_none_is_started(clients: ClientFactory) -> None:
+    client = clients(Installer())
+    refused = client.post("/api/updates/setup/download")
+    assert (refused.status_code, refused.json()["error"]["code"]) == (409, "no_setup")

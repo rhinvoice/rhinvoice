@@ -32,3 +32,21 @@ export function useInstallUpdate() {
     },
   });
 }
+
+/** Starts downloading the new setup; the status then tells the progress (ADR 0031). */
+export function useDownloadSetup() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => unwrap(api.POST("/api/updates/setup/download")),
+    onSuccess: (update) => {
+      client.setQueryData(UPDATES_KEY, update);
+    },
+  });
+}
+
+/** Starts the downloaded setup; the program closes right after. */
+export function useRunSetup() {
+  return useMutation({
+    mutationFn: () => unwrap(api.POST("/api/updates/setup/run")),
+  });
+}

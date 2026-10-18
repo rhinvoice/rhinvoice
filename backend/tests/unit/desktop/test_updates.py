@@ -172,6 +172,19 @@ def test_a_restart_closes_the_window(monkeypatch: pytest.MonkeyPatch) -> None:
     assert signals == []
 
 
+def test_a_setup_closes_the_program_without_a_restart(monkeypatch: pytest.MonkeyPatch) -> None:
+    """ADR 0031: the setup takes over; the boot must not start the old version again."""
+    closed: list[str] = []
+    signals: list[int] = []
+    monkeypatch.setattr(signal, "raise_signal", signals.append)
+    restarter = Restarter()
+    restarter.close()
+    restarter.use_window(lambda: closed.append("window"))
+    restarter.close()
+    assert not restarter.requested.is_set()
+    assert (signals, closed) == ([signal.SIGINT], ["window"])
+
+
 def test_without_a_window_a_restart_stops_the_server_like_ctrl_c(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

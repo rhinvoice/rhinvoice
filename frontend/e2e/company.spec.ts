@@ -13,7 +13,9 @@ test("company details can be saved", async ({ page }) => {
   // Earlier projects may already have saved the company: start from an invalid state.
   await page.getByLabel("Firmenname").fill("");
   await page.getByRole("button", { name: "Speichern" }).click();
-  await expect(page.getByRole("alert").filter({ hasText: "korrigiert werden" })).toBeVisible();
+  const summary = page.getByRole("alert").filter({ hasText: "korrigiert werden" });
+  // Each entry names its field: "Bitte ausfüllen." alone does not say which one.
+  await expect(summary.getByRole("link", { name: "Firmenname: Bitte ausfüllen." })).toBeVisible();
 
   await page.getByLabel("Firmenname").fill("Muster GmbH");
   await page.getByLabel("Strasse").fill("Bahnhofstrasse");

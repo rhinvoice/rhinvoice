@@ -248,6 +248,28 @@ def test_a_database_that_does_not_stop_is_reported(
     assert capsys.readouterr().err == "error: pg_ctl stop failed (1): boom\n"
 
 
+def test_database_tools_removed_while_it_runs_are_reported(
+    install: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A setup run beside the program removed pg_ctl: closing reports it, never crashes."""
+
+    def serve_while_a_setup_runs(
+        settings: Settings,
+        host: str,
+        port: int,
+        *,
+        own: OwnServices = NO_OWN_SERVICES,
+        stop: threading.Event | None = None,
+    ) -> int:
+        del settings, host, port, own, stop
+        (install / "postgresql" / "bin").unlink()
+        return 0
+
+    surroundings = replace(desktop(install, tmp_path, Recorder()), serve=serve_while_a_setup_runs)
+    assert run(build_parser().parse_args(["--no-browser"]), surroundings) == 0
+    assert capsys.readouterr().err.startswith("error: ")
+
+
 def test_the_browser_opens_the_interface(
     install: Path, tmp_path: Path, data: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

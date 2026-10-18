@@ -72,6 +72,8 @@ Name: "en"; MessagesFile: "compiler:Default.isl"
 [CustomMessages]
 de.RhinvoiceRunning={#AppTitle} läuft noch.%n%nBitte speichern Sie Ihre Arbeit, schließen Sie {#AppTitle} und klicken Sie dann auf OK.
 en.RhinvoiceRunning={#AppTitle} is still running.%n%nPlease save your work, close {#AppTitle} and then click OK.
+de.RhinvoiceStillRunning={#AppTitle} läuft noch. Schließen Sie {#AppTitle} und starten Sie das Setup erneut.
+en.RhinvoiceStillRunning={#AppTitle} is still running. Close {#AppTitle} and start the setup again.
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
@@ -144,8 +146,21 @@ begin
     end;
 end;
 
-{ A database left running (a program that was ended by force) keeps its files open:
-  stop it the way the program would, before the Restart Manager would kill it. }
+{ Whether the edition's database runs: its program runs, or was ended and left it on. }
+function DatabaseRunning(PgCtl, Database: String): Boolean;
+var
+  Code: Integer;
+begin
+  Result := False;
+  if FileExists(PgCtl) and FileExists(Database + '\postmaster.pid') then
+    if Exec(PgCtl, 'status --pgdata="' + Database + '"', '', SW_HIDE,
+      ewWaitUntilTerminated, Code) then
+      Result := Code = 0;
+end;
+
+{ Before any file is removed: a running Rhinvoice (also one before ADR 0031, which holds no
+  mutex) is asked to be closed, and a database left running is stopped the way the program
+  would, while its pg_ctl is still there. }
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   PgCtl, Database: String;
@@ -154,7 +169,13 @@ begin
   Result := '';
   PgCtl := ExpandConstant('{app}\postgresql\bin\pg_ctl.exe');
   Database := ExpandConstant('{localappdata}\{#AppTitle}\database');
-  if FileExists(PgCtl) and DirExists(Database) then
+  if DatabaseRunning(PgCtl, Database) and not FromRhinvoice then
+    if MsgBox(CustomMessage('RhinvoiceRunning'), mbError, MB_OKCANCEL) <> IDOK then
+    begin
+      Result := CustomMessage('RhinvoiceStillRunning');
+      Exit;
+    end;
+  if DatabaseRunning(PgCtl, Database) then
     Exec(PgCtl, 'stop --wait --mode=fast --pgdata="' + Database + '"', '', SW_HIDE,
       ewWaitUntilTerminated, Code);
 end;

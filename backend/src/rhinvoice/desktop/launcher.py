@@ -258,7 +258,8 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
     finally:
         try:
             database.stop()
-        except PostgresError as error:
+        # OSError: its tools are gone, e.g. removed by a setup run beside the program.
+        except (PostgresError, OSError) as error:
             _failed(error)
 
 

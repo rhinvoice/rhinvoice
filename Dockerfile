@@ -1,7 +1,7 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
 
 # --- Frontend build -----------------------------------------------------------
-FROM node:22-alpine AS frontend
+FROM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS frontend
 WORKDIR /build/frontend
 RUN corepack enable
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
@@ -10,8 +10,8 @@ COPY frontend/ ./
 RUN pnpm run build
 
 # --- Python dependencies --------------------------------------------------------
-FROM python:3.13-slim AS backend
-COPY --from=ghcr.io/astral-sh/uv:0.10 /uv /usr/local/bin/uv
+FROM python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f AS backend
+COPY --from=ghcr.io/astral-sh/uv:0.10@sha256:72ab0aeb448090480ccabb99fb5f52b0dc3c71923bffb5e2e26517a1c27b7fec /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PYTHON_DOWNLOADS=never \
@@ -23,7 +23,7 @@ COPY backend/src ./src
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev --no-editable
 
 # --- Runtime --------------------------------------------------------------------
-FROM python:3.13-slim AS runtime
+FROM python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f AS runtime
 LABEL org.opencontainers.image.title="Rhinvoice" \
       org.opencontainers.image.description="Self-hosted invoicing for CH, LI, DE and AT" \
       org.opencontainers.image.source="https://github.com/rhinvoice/rhinvoice"

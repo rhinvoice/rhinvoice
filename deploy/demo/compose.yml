@@ -71,7 +71,7 @@ services:
       RHINVOICE_DATABASE_URL: postgresql+psycopg://demo_at:${POSTGRES_PASSWORD}@db:5432/demo_at
 
   caddy:
-    image: caddy:2.10-alpine
+    image: caddy:2.10-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
     logging: *logging
     restart: unless-stopped
     depends_on: [app-ch, app-de, app-at]
@@ -100,7 +100,7 @@ services:
     networks: [internet, internal]
 
   gotenberg:
-    image: gotenberg/gotenberg:8.37.0
+    image: gotenberg/gotenberg:8.37.0@sha256:f29984bd1e226bf1b93ba90af06000afa8b315853e99d27b9aaa41b93f15c769
     logging: *logging
     restart: unless-stopped
     command:
@@ -121,7 +121,7 @@ services:
 
   # One server, one database and one role per country (created by init-databases.sh).
   db:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
     logging: *logging
     restart: unless-stopped
     environment:

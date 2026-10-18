@@ -14,7 +14,12 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from rhinvoice.infrastructure.updates.feed import PUBLIC_KEY, read_release
 
-SCRIPT = Path(__file__).parents[3] / "desktop" / "release_manifest.py"
+# The nearest one upwards: mutmut runs the tests from a copy inside backend/mutants.
+SCRIPT = next(
+    folder / "desktop" / "release_manifest.py"
+    for folder in Path(__file__).parents
+    if (folder / "desktop" / "release_manifest.py").exists()
+)
 TAG = "v0.9.0-rc.2"
 
 

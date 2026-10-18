@@ -10,7 +10,8 @@
     "dev": "astro dev --host 127.0.0.1",
     "build": "astro build",
     "check": "astro check && python3 scripts/check.py content",
-    "check:links": "python3 scripts/check.py links"
+    "check:links": "python3 scripts/check.py links",
+    "check:csp": "python3 scripts/check.py csp"
   },
   "dependencies": {
     "@astrojs/starlight": "0.42.6",

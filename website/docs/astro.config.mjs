@@ -1,8 +1,21 @@
 // rhinvoice.com/docs: the user documentation, in English (/docs/), German (/docs/de/), French
 // (/docs/fr/) and Italian (/docs/it/). Every page exists in all four (scripts/check.py).
 // Built into ../dist/docs after website/build.py has built the landing page into ../dist.
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
+
+// Astro hashes the inline scripts it knows of for the Content-Security-Policy; the one in
+// Starlight's search button (the shortcut label) it misses, so its hash is taken from the
+// component itself. `scripts/check.py csp` fails if any inline script of a page lacks one.
+const searchComponent = readFileSync(
+  new URL("./node_modules/@astrojs/starlight/dist/components/Search.astro", import.meta.url),
+  "utf8",
+);
+const inlineScriptHashes = [...searchComponent.matchAll(/<script is:inline>([\s\S]*?)<\/script>/g)].map(
+  ([, script]) => `sha256-${createHash("sha256").update(script).digest("base64")}`,
+);
 
 // Labels as [English, German, French, Italian].
 const translations = ([, de, fr, it]) => ({ de, fr, it });
@@ -14,6 +27,27 @@ export default defineConfig({
   base: "/docs",
   outDir: "../dist/docs",
   trailingSlash: "always",
+  // A Content-Security-Policy <meta> on every page, like the landing page's (ADR 0033). Astro
+  // adds the hashes of its inline scripts; the search (Pagefind) runs WebAssembly. Styles allow
+  // 'unsafe-inline': the code blocks colour their tokens with style attributes. frame-ancestors
+  // cannot be set in a <meta>.
+  security: {
+    csp: {
+      directives: [
+        "default-src 'self'",
+        "img-src 'self' data:",
+        "font-src 'self'",
+        "connect-src 'self'",
+        "form-action 'self'",
+        "base-uri 'self'",
+        "object-src 'none'",
+        "manifest-src 'self'",
+        "upgrade-insecure-requests",
+      ],
+      scriptDirective: { resources: ["'self'", "'wasm-unsafe-eval'"], hashes: inlineScriptHashes },
+      styleDirective: { resources: ["'self'", "'unsafe-inline'"] },
+    },
+  },
   integrations: [
     starlight({
       // Page titles read "Old invoices | Rhinvoice"; the header adds "Docs" itself.

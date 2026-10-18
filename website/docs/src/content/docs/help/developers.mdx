@@ -56,6 +56,7 @@ Rhinvoice handles money and legal documents, so every change passes `make qa`, w
 | Frontend | TypeScript strict, ESLint strict type-checked with jsx-a11y, dependency-cruiser, Vitest with 100 % coverage, pnpm audit |
 | E2E | Playwright against the production image, axe-core (WCAG 2.2 AA) in every test, screenshots light/dark × desktop/mobile |
 | E-invoices | KoSIT validator and Mustang on every sample |
+| Workflows and secrets | zizmor over the GitHub workflows, gitleaks over the whole git history (`make security`) |
 
 A few rules from CONTRIBUTING.md: money is never a float, time comes from the `Clock`, issued documents stay immutable, and everything in code is English.
 

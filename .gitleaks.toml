@@ -1,0 +1,23 @@
+# gitleaks (ADR 0033): the default rules, without the findings checked to be no secrets.
+# Each exception names the file and the exact text, so a real key beside it is still found.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "The alphabet of the backup recovery keys, a public constant"
+condition = "AND"
+paths = ['''^backend/src/rhinvoice/desktop/backup\.py$''']
+regexes = ['''^ABCDEFGHJKLMNPQRSTUVWXYZ23456789$''']
+
+[[allowlists]]
+description = "The class name Ed25519PrivateKey in a type annotation; the test generates its key"
+condition = "AND"
+paths = ['''^backend/tests/unit/test_release_feed\.py$''']
+regexes = ['''^Ed25519PrivateKey$''']
+
+[[allowlists]]
+description = "A made-up recovery key the browser test types in"
+condition = "AND"
+paths = ['''^frontend/e2e/settings\.spec\.ts$''']
+regexes = ['''^K7QM-2XWP-9DTA-F4NR-H8JC-3VLS-B6YE-Q5ZU$''']

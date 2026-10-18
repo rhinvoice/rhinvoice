@@ -41,7 +41,7 @@ services:
 
   # Turns the document pages into PDFs (headless Chromium). Only the app talks to it.
   gotenberg:
-    image: gotenberg/gotenberg:8.37.0
+    image: gotenberg/gotenberg:8.37.0@sha256:f29984bd1e226bf1b93ba90af06000afa8b315853e99d27b9aaa41b93f15c769
     restart: unless-stopped
     command:
       - gotenberg
@@ -59,7 +59,7 @@ services:
       - no-new-privileges:true
 
   db:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-rhinvoice}

@@ -13,9 +13,9 @@ on:
   push:
     tags: ["v*.*.*-rc.*"]
 
+# Each job is granted only what it needs (ADR 0033).
 permissions:
   contents: read
-  packages: write
 
 jobs:
   candidate:
@@ -24,8 +24,9 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          persist-credentials: false
           fetch-depth: 0
       - id: version
         name: The tag names a version the changelog describes, on dev
@@ -60,6 +61,10 @@ jobs:
     runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     # A build normally takes under ten minutes; a stuck one fails instead of running for hours.
     timeout-minutes: 30
+    permissions:
+      contents: read
+      # Pushes the platform's image by digest.
+      packages: write
     strategy:
       matrix:
         platform: [linux/amd64, linux/arm64]
@@ -69,26 +74,32 @@ jobs:
     env:
       IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image.repository }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Give the program the candidate's version
-        run: python3 desktop/set_version.py "${{ needs.candidate.outputs.version }}"
+        env:
+          VERSION: ${{ needs.candidate.outputs.version }}
+        run: python3 desktop/set_version.py "$VERSION"
       - name: Name the platform for files (linux/arm64 -> linux-arm64)
+        env:
+          PLATFORM: ${{ matrix.platform }}
         run: |
-          platform="${{ matrix.platform }}"
+          platform="$PLATFORM"
           echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
         with:
           images: ${{ env.IMAGE }}
       # Pushed without a tag; the publish job below joins both platforms under the tags.
       - id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: ${{ matrix.image.file }}
@@ -98,11 +109,13 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.image.name }}-${{ env.PLATFORM_PAIR }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image.name }}-${{ env.PLATFORM_PAIR }}
       - name: Keep the digest for the publish job
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           mkdir -p "$RUNNER_TEMP/digests"
-          digest="${{ steps.build.outputs.digest }}"
+          digest="$DIGEST"
           touch "$RUNNER_TEMP/digests/${digest#sha256:}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: digests-${{ matrix.image.name }}-${{ env.PLATFORM_PAIR }}
           path: ${{ runner.temp }}/digests/*
@@ -117,6 +130,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
+      # Reads the CI run of the tagged commit.
       actions: read
     env:
       GH_TOKEN: ${{ github.token }}
@@ -141,6 +155,10 @@ jobs:
     needs: [image-build, checks]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      contents: read
+      # Joins both platforms under the candidate's tag.
+      packages: write
     strategy:
       matrix:
         image:
@@ -149,19 +167,19 @@ jobs:
     env:
       IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image.repository }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: ${{ runner.temp }}/digests
           pattern: digests-${{ matrix.image.name }}-*
           merge-multiple: true
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
         with:
           images: ${{ env.IMAGE }}
           # The candidate's tag only (0.7.4-rc.1); 0.7.4, 0.7 and latest follow at the promotion.
@@ -173,7 +191,9 @@ jobs:
             $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf "$IMAGE@sha256:%s " *)
       - name: Show the published image
-        run: docker buildx imagetools inspect "$IMAGE:${{ steps.meta.outputs.version }}"
+        env:
+          TAG: ${{ steps.meta.outputs.version }}
+        run: docker buildx imagetools inspect "$IMAGE:$TAG"
 
   desktop:
     name: Desktop setups and app packages
@@ -188,16 +208,19 @@ jobs:
     needs: [candidate, checks, images, desktop]
     runs-on: ubuntu-24.04
     permissions:
+      # Creates the pre-release with its files.
       contents: write
     env:
       VERSION: ${{ needs.candidate.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          enable-cache: true
-          cache-dependency-glob: backend/uv.lock
-      - uses: actions/download-artifact@v4
+          persist-credentials: false
+      # No cache in a job that holds the signing key (ADR 0033).
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          enable-cache: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           # Only the setups and app packages: the image builds leave records (*.dockerbuild)
           # that this action cannot extract.
@@ -213,6 +236,8 @@ jobs:
           mv "build/release/Rhinvoice-Beta-Setup-$VERSION.exe" build/release/Rhinvoice-Beta-Setup-Windows.exe
           mv "build/release/Rhinvoice-Beta-$VERSION.dmg" build/release/Rhinvoice-Beta-macOS.dmg
 
+      # The key is in this step only, and only cryptography runs beside it: desktop/signing
+      # holds nothing else, locked with hashes (ADR 0033).
       - name: Write and sign release.json (ADR 0022)
         env:
           RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
@@ -221,8 +246,8 @@ jobs:
             echo "::error::The secret RELEASE_SIGNING_KEY is missing: without a signed release.json no installation learns of this release."
             exit 1
           fi
-          uv run --project backend python desktop/release_manifest.py "$VERSION" build/release \
-            --tag "$GITHUB_REF_NAME"
+          uv run --project desktop/signing --frozen python desktop/release_manifest.py \
+            "$VERSION" build/release --tag "$GITHUB_REF_NAME"
           ls -l build/release
 
       - name: Release notes from the changelog

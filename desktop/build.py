@@ -3,21 +3,30 @@
     python desktop/build.py windows     (on Windows)
     python desktop/build.py macos       (on a Mac with Apple silicon)
 
-writes the two parts of ADR 0022 into ``build/<target>``. On Windows:
+writes the two parts of ADR 0022 into ``build/<target>``. Afterwards
+
+    python desktop/build.py windows-beta
+    python desktop/build.py macos-beta
+
+derive Rhinvoice Beta from it (ADR 0030): the same runtime and app package under another
+name, with its own identity and data folder, for release candidates. On Windows:
 
     install/                  what the setup installs (Inno Setup packs it)
       python/                 the runtime: a standalone CPython with rhinvoice_boot only
       postgresql/             the PostgreSQL distribution (with ICU)
       restic/                 restic for the backups (ADR 0023)
       runtime.json           {"generation": N}: what app packages may expect of it
+                              (Rhinvoice Beta: {"generation": N, "edition": "beta"})
       app/                    the app package of this release (see below)
       Rhinvoice.ico
     rhinvoice-app-<version>-windows-x64.zip   the same app package, for updates
+    install-beta/             the same as install/, as Rhinvoice Beta (windows-beta)
 
 On macOS the same parts sit in ``Rhinvoice.app/Contents/Resources``; the bundle starts
 ``Contents/MacOS/Rhinvoice``, a script that runs a copy of the interpreter from
 ``Contents/MacOS`` (so that macOS shows Rhinvoice's name and icon) with PYTHONHOME set to
 the bundled Python, plus a headless Chromium for the PDFs (macOS has no Edge).
+``Rhinvoice Beta.app`` beside it is the copy that macos-beta renames and signs again.
 
 An app package holds ``site-packages/`` (Rhinvoice and its locked dependencies),
 ``static/`` (the built web interface: build frontend/dist first) and ``manifest.json``.
@@ -54,6 +63,21 @@ RUNTIME_GENERATION = 1
 PostgreSQL major version): packages built afterwards then need the new setup."""
 # Not needed to run the server; about a third of the PostgreSQL download.
 POSTGRES_UNUSED = ("include", "doc", "symbols", "pgAdmin 4", "StackBuilder")
+EDITIONS = {
+    "stable": {"name": "Rhinvoice", "identifier": "ch.webberz.rhinvoice"},
+    "beta": {"name": "Rhinvoice Beta", "identifier": "ch.webberz.rhinvoice.beta"},
+}
+"""Rhinvoice, and Rhinvoice Beta for release candidates (ADR 0030): the name is that of the
+program, of its macOS bundle and of its folders (rhinvoice_boot.NAMES). Never change an
+identifier: macOS knows an app by it."""
+
+
+def write_runtime(install: Path, edition: str) -> None:
+    """Describe the runtime for the boot and the app packages; "stable" names no edition."""
+    runtime: dict[str, object] = {"generation": RUNTIME_GENERATION}
+    if edition != "stable":
+        runtime["edition"] = edition
+    (install / "runtime.json").write_text(json.dumps(runtime) + "\n", encoding="utf-8")
 
 
 def version() -> str:
@@ -112,9 +136,7 @@ def install_runtime_python(sources: dict[str, dict[str, str]], install: Path) ->
         site_packages / "rhinvoice_boot",
         ignore=shutil.ignore_patterns("__pycache__"),
     )
-    (install / "runtime.json").write_text(
-        json.dumps({"generation": RUNTIME_GENERATION}) + "\n", encoding="utf-8"
-    )
+    write_runtime(install, "stable")
     return interpreter
 
 
@@ -296,15 +318,18 @@ def install_static(package: Path) -> None:
     shutil.copytree(dist, package / "static")
 
 
-def brand_windows_program(sources: dict[str, dict[str, str]], install: Path) -> None:
+def brand_windows_program(
+    sources: dict[str, dict[str, str]], install: Path, edition: str = "stable"
+) -> None:
     """Start as Rhinvoice.exe, so that the taskbar shows Rhinvoice's icon and name."""
     program = install / "python" / "Rhinvoice.exe"
     shutil.copy2(install / "python" / "pythonw.exe", program)
+    name = EDITIONS[edition]["name"]
     run(
         fetch(sources["rcedit"]), program,
         "--set-icon", install / "Rhinvoice.ico",
-        "--set-version-string", "FileDescription", "Rhinvoice",
-        "--set-version-string", "ProductName", "Rhinvoice",
+        "--set-version-string", "FileDescription", name,
+        "--set-version-string", "ProductName", name,
         "--set-version-string", "CompanyName", "Webberz",
         "--set-file-version", version(),
         "--set-product-version", version(),
@@ -328,13 +353,30 @@ def build_windows(out: Path) -> None:
     print(f"Rhinvoice {version()} (runtime {RUNTIME_GENERATION}) assembled in {out}")
 
 
+def build_windows_beta(out: Path) -> None:
+    """Copy the assembled program folder as Rhinvoice Beta (install-beta, ADR 0030).
+
+    The setup gets its own AppId, folder and shortcuts from rhinvoice.iss (/DEdition=beta).
+    """
+    sources = json.loads((ROOT / "desktop" / "sources.json").read_text(encoding="utf-8"))["windows"]
+    install, beta = out / "install", out / "install-beta"
+    if not (install / "runtime.json").exists():
+        msg = f"{install} is missing: assemble the program first (build.py windows)"
+        raise SystemExit(msg)
+    shutil.rmtree(beta, ignore_errors=True)
+    shutil.copytree(install, beta)
+    write_runtime(beta, "beta")
+    brand_windows_program(sources, beta, "beta")
+    print(f"Rhinvoice Beta {version()} assembled in {beta}")
+
+
 INFO_PLIST = """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>Rhinvoice</string>
-  <key>CFBundleDisplayName</key><string>Rhinvoice</string>
-  <key>CFBundleIdentifier</key><string>com.webberz.rhinvoice</string>
+  <key>CFBundleName</key><string>{name}</string>
+  <key>CFBundleDisplayName</key><string>{name}</string>
+  <key>CFBundleIdentifier</key><string>{identifier}</string>
   <key>CFBundleExecutable</key><string>Rhinvoice</string>
   <key>CFBundleIconFile</key><string>Rhinvoice</string>
   <key>CFBundlePackageType</key><string>APPL</string>
@@ -348,17 +390,18 @@ INFO_PLIST = """<?xml version="1.0" encoding="UTF-8"?>
 </plist>
 """
 MACOS_START = """#!/bin/sh
-# Rhinvoice: start the boot with the bundled Python (ADR 0021, 0022). The interpreter
-# lies in Contents/MacOS, so that macOS shows the app's name and icon.
+# __NAME__: start the boot with the bundled Python (ADR 0021, 0022). The interpreter
+# lies in Contents/MacOS, so that macOS shows the app's name and icon. Caches and logs
+# go to folders named after the edition, as the data folder does (ADR 0030).
 contents="$(cd "$(dirname "$0")/.." && pwd)"
 export PYTHONHOME="$contents/Resources/python"
 # The bundle is signed: compiled files go to the user's cache, never into it. Set here,
 # before Python imports anything; the boot passes it on (rhinvoice_boot.use_bytecode_cache).
-export PYTHONPYCACHEPREFIX="$HOME/Library/Caches/Rhinvoice/pycache"
+export PYTHONPYCACHEPREFIX="$HOME/Library/Caches/__NAME__/pycache"
 # Started from the Finder, the output would be lost: keep it where Console.app finds it.
 if [ ! -t 1 ]; then
-    mkdir -p "$HOME/Library/Logs/Rhinvoice"
-    exec >>"$HOME/Library/Logs/Rhinvoice/rhinvoice.log" 2>&1
+    mkdir -p "$HOME/Library/Logs/__NAME__"
+    exec >>"$HOME/Library/Logs/__NAME__/rhinvoice.log" 2>&1
 fi
 exec "$contents/MacOS/python3" -m rhinvoice_boot "$@"
 """
@@ -475,13 +518,10 @@ def build_macos(out: Path) -> None:
     shutil.rmtree(out, ignore_errors=True)
     install.mkdir(parents=True)
     (contents / "MacOS").mkdir()
-    (contents / "Info.plist").write_text(INFO_PLIST.format(version=version()), encoding="utf-8")
     shutil.copy2(ROOT / "desktop" / "icons" / "Rhinvoice.icns", install / "Rhinvoice.icns")
     python = install_runtime_python(sources, install)
     shutil.copy2(python.resolve(), contents / "MacOS" / "python3")
-    start = contents / "MacOS" / "Rhinvoice"
-    start.write_text(MACOS_START, encoding="utf-8")
-    start.chmod(0o755)
+    brand_macos(bundle, "stable")
     install_postgres_from_app(sources, install)
     install_chromium(sources, install)
     install_restic(sources, install)
@@ -491,6 +531,31 @@ def build_macos(out: Path) -> None:
     zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-macos-arm64.zip")
     sign_ad_hoc(bundle)
     print(f"Rhinvoice {version()} (runtime {RUNTIME_GENERATION}) assembled in {bundle}")
+
+
+def brand_macos(bundle: Path, edition: str) -> None:
+    """Give the bundle the edition's name and identifier, start script and runtime.json."""
+    contents = bundle / "Contents"
+    names = EDITIONS[edition]
+    plist = INFO_PLIST.format(version=version(), **names)
+    (contents / "Info.plist").write_text(plist, encoding="utf-8")
+    start = contents / "MacOS" / "Rhinvoice"
+    start.write_text(MACOS_START.replace("__NAME__", names["name"]), encoding="utf-8")
+    start.chmod(0o755)
+    write_runtime(contents / "Resources", edition)
+
+
+def build_macos_beta(out: Path) -> None:
+    """Copy the assembled Rhinvoice.app as Rhinvoice Beta.app and sign it (ADR 0030)."""
+    stable, beta = out / "Rhinvoice.app", out / "Rhinvoice Beta.app"
+    if not (stable / "Contents" / "Info.plist").exists():
+        msg = f"{stable} is missing: assemble the app first (build.py macos)"
+        raise SystemExit(msg)
+    shutil.rmtree(beta, ignore_errors=True)
+    shutil.copytree(stable, beta, symlinks=True)
+    brand_macos(beta, "beta")
+    sign_ad_hoc(beta)
+    print(f"Rhinvoice Beta {version()} assembled in {beta}")
 
 
 def sign_ad_hoc(bundle: Path) -> None:
@@ -505,19 +570,25 @@ def sign_ad_hoc(bundle: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("target", choices=["windows", "macos", "version"])
-    parser.add_argument("--out", type=Path, help="default: build/<target>")
+    builds = {
+        "windows": build_windows,
+        "macos": build_macos,
+        "windows-beta": build_windows_beta,
+        "macos-beta": build_macos_beta,
+    }
+    parser.add_argument("target", choices=[*builds, "version"])
+    parser.add_argument("--out", type=Path, help="default: build/<windows or macos>")
     args = parser.parse_args()
     if args.target == "version":
         print(version())
         return
+    system = args.target.removesuffix("-beta")
     # The bundled interpreter installs the packages: it must run on this computer.
-    needed = {"windows": "win32", "macos": "darwin"}[args.target]
+    needed = {"windows": "win32", "macos": "darwin"}[system]
     if sys.platform != needed:
-        msg = f"the {args.target} program is assembled on {args.target}"
+        msg = f"the {system} program is assembled on {system}"
         raise SystemExit(msg)
-    out = args.out or ROOT / "build" / args.target
-    (build_windows if args.target == "windows" else build_macos)(out)
+    builds[args.target](args.out or ROOT / "build" / system)
 
 
 if __name__ == "__main__":

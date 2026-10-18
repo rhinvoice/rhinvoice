@@ -14,6 +14,7 @@ since: 0.7.0
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Rhinvoice gibt es auch als **normales Programm für Windows und Mac**: herunterladen, installieren, starten. Docker, Python oder einen Server brauchen Sie nicht. Die Datenbank ist eingebaut, Rhinvoice öffnet sich in einem eigenen Fenster und ist nur von diesem Computer aus erreichbar. Für einen Server, ein NAS oder mehrere Benutzer an verschiedenen Rechnern nehmen Sie die [Installation mit Docker](/docs/de/getting-started/installation/).
@@ -90,6 +91,16 @@ Die Übersicht von Rhinvoice hat eine Checkliste mit dem Punkt **Backup einricht
 Rhinvoice prüft selbst, ob es eine neue Version gibt. Dann erscheint ein Hinweis **Neue Version …** mit der Schaltfläche **Jetzt aktualisieren**. Das Update dauert etwa eine halbe Minute: Rhinvoice kopiert vorher die Datenbank, lädt die neue Version, prüft, dass sie unverändert angekommen ist, und startet neu. Startet die neue Version nicht, kommt automatisch die vorherige zurück, mit unveränderten Daten. Den Stand sehen Sie auch unter **Über Rhinvoice**; dort fragt **Nach Updates suchen** sofort nach.
 
 Selten braucht eine neue Version ein neues Setup, etwa für eine neue Version der eingebauten Datenbank. Dann zeigt der Hinweis **Setup herunterladen**. Installieren Sie es über das bestehende Programm, Ihre Daten bleiben erhalten.
+
+## Rhinvoice Beta für Testkandidaten
+
+Bevor eine Version freigegeben wird, erscheint sie als Testkandidat. Für Windows und Mac kommt ein Testkandidat als **Rhinvoice Beta**: ein eigenes Programm, das Sie neben Rhinvoice installieren. Es hat einen eigenen Namen, eigene Verknüpfungen, einen eigenen Eintrag zum Deinstallieren und einen eigenen Datenordner (`%LOCALAPPDATA%\Rhinvoice Beta`, auf dem Mac `~/Library/Application Support/Rhinvoice Beta`). Die Daten von Rhinvoice berührt es nie. <Since version="0.8.1" />
+
+Laden Sie `Rhinvoice-Beta-Setup-Windows.exe` oder `Rhinvoice-Beta-macOS.dmg` beim Testkandidaten unter [GitHub Releases](https://github.com/rhinvoice/rhinvoice/releases) herunter und installieren Sie es wie oben beschrieben; es erscheinen dieselben Warnungen. Unter Windows landet es in `%LOCALAPPDATA%\Programs\Rhinvoice Beta`, auf dem Mac heisst es `Rhinvoice Beta.app`. Rhinvoice Beta bekommt neuere Testkandidaten als Update angeboten, Rhinvoice selbst nur freigegebene Versionen. Deinstallieren Sie es wie Rhinvoice.
+
+<Aside type="caution">
+Testkandidaten sind zum Testen da. Verwenden Sie Rhinvoice Beta mit Testdaten oder einer Kopie, nicht für die Rechnungen, die Sie verschicken.
+</Aside>
 
 ## Ein Problem melden
 

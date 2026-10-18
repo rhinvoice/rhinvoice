@@ -7,7 +7,8 @@ user and the company, fills in the demo data, prints an invoice as PDF, sets up 
 folder and waits for the first backup (ADR 0023), kills the program
 and starts it again (the database left running must be taken over), installs an update and
 a broken update (taken back, ADR 0022), ends it the way Windows asks a program to close, and
-restores the backup with ``--restore latest``.
+restores the backup with ``--restore latest``. For Rhinvoice Beta (ADR 0030) it checks
+the same on Rhinvoice Beta's own data folder, and that the program uses no other.
 Only the standard library: it runs beside the installation, not inside it.
 """
 
@@ -54,6 +55,11 @@ class Api:
         return json.loads(self.call(method, path, body)[1])
 
 
+def smoke_log(data: Path) -> Path:
+    """Name the log of the program's output, beside its data folder (one per edition)."""
+    return data.parent / f"{data.name.lower().replace(' ', '-')}-smoke-test.log"
+
+
 class Program:
     def __init__(self, install: Path, data: Path) -> None:
         self.install = install
@@ -64,7 +70,7 @@ class Program:
         """Start the program; return its port once the web interface answers."""
         python = self.install / "python" / "python.exe"
         flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-        output = (self.data.parent / "rhinvoice-smoke-test.log").open("ab")
+        output = smoke_log(self.data).open("ab")
         self.process = subprocess.Popen(  # noqa: S603 - the installed program
             [python, "-m", "rhinvoice_boot", "--no-browser"],
             creationflags=flags,
@@ -283,7 +289,7 @@ def print_directly(install: Path) -> None:
 def check_backup(program: Program, api: Api) -> None:
     """Set up a backup folder as on the settings page; the first backup must succeed (ADR 0023)."""
     step("a backup folder is set up; the first backup runs with the bundled restic")
-    folder = program.data.parent / "Rhinvoice-Backup"
+    folder = program.data.parent / f"{program.data.name.replace(' ', '-')}-Backup"
     key = api.json("PUT", "/backup/setup", {"folder": str(folder)})["key"]
     if api.json("GET", "/backup/key")["key"] != key:
         msg = "the recovery key shown later is not the one shown at the setup"
@@ -347,7 +353,7 @@ def report(error: BaseException, data: Path) -> None:
     """Show why it failed as a GitHub annotation, readable without the run's log."""
     lines = [f"{type(error).__name__}: {error}"]
     logs = (
-        data.parent / "rhinvoice-smoke-test.log",
+        smoke_log(data),
         data / "rhinvoice.log",
         data / "postgresql.log",
     )
@@ -365,15 +371,32 @@ def main() -> None:
     parser.add_argument("install", type=Path)
     args = parser.parse_args()
     # The folder the program uses for this user, as on a real computer (a fresh one in CI).
-    data = Path(os.environ["LOCALAPPDATA"]) / "Rhinvoice"
+    data = Path(os.environ["LOCALAPPDATA"]) / edition_name(args.install)
     if data.exists():
-        msg = f"{data} exists: the smoke test needs a computer without Rhinvoice data"
+        msg = f"{data} exists: the smoke test needs a computer without {data.name} data"
         raise SystemExit(msg)
+    others = {path: path.stat().st_mtime_ns for path in data.parent.glob("Rhinvoice*/*.json")}
     try:
         check(args.install, data)
+        left_alone(others, data.name)
     except BaseException as error:
         report(error, data)
         raise
+
+
+def left_alone(others: dict[Path, int], name: str) -> None:
+    """Check that the files of other installations (Rhinvoice beside Rhinvoice Beta) stayed."""
+    step("the data folders of other installations are left alone")
+    touched = [p for p, t in others.items() if not p.exists() or p.stat().st_mtime_ns != t]
+    if touched:
+        msg = f"{name} changed the files of another installation: {touched}"
+        raise SystemExit(msg)
+
+
+def edition_name(install: Path) -> str:
+    """Name the installed edition as its data folder is named (rhinvoice_boot.NAMES)."""
+    runtime = json.loads((install / "runtime.json").read_text(encoding="utf-8"))
+    return "Rhinvoice Beta" if runtime.get("edition") == "beta" else "Rhinvoice"
 
 
 if __name__ == "__main__":

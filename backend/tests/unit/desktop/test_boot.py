@@ -3,6 +3,7 @@
 import importlib
 import json
 import os
+import platform
 import shutil
 import signal
 import subprocess
@@ -426,6 +427,81 @@ def test_main_starts_from_the_interpreter_of_the_runtime(
     [(_version, arguments)] = program.started
     assert arguments[:3] == ["--no-browser", "--install-dir", str(runtime_folder)]
     assert os.environ["PYTHONPYCACHEPREFIX"] == sys.pycache_prefix
+
+
+@pytest.mark.parametrize(
+    ("written", "built_as"),
+    [
+        ('{"generation": 1, "edition": "beta"}', "beta"),
+        ('{"generation": 1}', "stable"),
+        ('{"generation": 1, "edition": "stable"}', "stable"),
+        ('{"generation": 1, "edition": "nightly"}', "stable"),
+        ('{"generation": 1, "edition": true}', "stable"),
+        ("[1]", "stable"),
+        ("{", "stable"),
+        (None, "stable"),
+    ],
+)
+def test_only_a_runtime_built_as_beta_is_rhinvoice_beta(
+    tmp_path: Path, written: str | None, built_as: str
+) -> None:
+    """Runtimes of earlier setups name no edition: they stay the released Rhinvoice."""
+    if written is not None:
+        (tmp_path / "runtime.json").write_text(written)
+    assert boot.edition(tmp_path) == built_as
+
+
+@pytest.mark.parametrize(
+    ("system", "environ", "data", "cache"),
+    [
+        (
+            "Windows",
+            {"LOCALAPPDATA": "C:/Users/anna/AppData/Local"},
+            Path("C:/Users/anna/AppData/Local/Rhinvoice Beta"),
+            Path("C:/Users/anna/AppData/Local/Rhinvoice Beta/cache/pycache"),
+        ),
+        (
+            "Darwin",
+            {},
+            Path("/home/anna/Library/Application Support/Rhinvoice Beta"),
+            Path("/home/anna/Library/Caches/Rhinvoice Beta/pycache"),
+        ),
+        (
+            "Linux",
+            {},
+            Path("/home/anna/.local/share/rhinvoice-beta"),
+            Path("/home/anna/.cache/rhinvoice-beta/pycache"),
+        ),
+    ],
+)
+def test_rhinvoice_beta_keeps_its_data_and_cache_apart(
+    system: str, environ: dict[str, str], data: Path, cache: Path
+) -> None:
+    home = Path("/home/anna")
+    assert boot.data_folder(system, environ, home, boot.BETA) == data
+    assert boot.bytecode_cache(system, environ, home, boot.BETA) == cache
+    assert boot.data_folder(system, environ, home) != data
+    assert boot.bytecode_cache(system, environ, home, boot.STABLE) != cache
+
+
+@pytest.mark.usefixtures("bytecode")
+def test_main_of_rhinvoice_beta_uses_the_beta_folders(
+    runtime_folder: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (runtime_folder / "runtime.json").write_text(json.dumps({"generation": 1, "edition": "beta"}))
+    home = tmp_path / "home"
+    monkeypatch.setattr(sys, "prefix", str(runtime_folder / "python"))
+    monkeypatch.setattr(platform, "system", lambda: "Linux")
+    monkeypatch.setenv("XDG_DATA_HOME", str(home / "share"))
+    monkeypatch.setenv("XDG_CACHE_HOME", str(home / "cache"))
+    beta = home / "share" / "rhinvoice-beta"
+    program = Program(beta)
+    monkeypatch.setattr(boot, "launch", program.launch)
+    assert boot.main(["--no-browser"]) == 0
+    [(_version, arguments)] = program.started
+    assert arguments[-2:] == ["--data-dir", str(beta)]
+    assert sys.pycache_prefix == str(home / "cache" / "rhinvoice-beta" / "pycache")
+    assert not (home / "share" / "rhinvoice").exists()
 
 
 @pytest.mark.usefixtures("bytecode")

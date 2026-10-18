@@ -13,9 +13,12 @@ from __future__ import annotations
 
 import contextlib
 import html
+import importlib
 import importlib.util
 import json
+import platform
 import threading
+import time
 from dataclasses import asdict, dataclass, replace
 from typing import TYPE_CHECKING, Protocol
 
@@ -38,6 +41,13 @@ GEOMETRY_FILE = "geometry.json"
 """Where the program window was and how large, in the window folder."""
 FAILED = 1
 """The exit code when the start ended without one (it failed before it could say)."""
+SETTLE_SECONDS = 0.5
+"""How long macOS gets to take closed windows off the screen once the window loop ended."""
+LOOP_SLICE_SECONDS = 0.05
+LOOP_PAUSE_SECONDS = 0.01
+"""Between two turns of the run loop: it returns at once when it has nothing to wait for."""
+NO_DOCK_ICON = 2
+"""NSApplicationActivationPolicyProhibited: no Dock icon, no windows."""
 
 
 class Card(Protocol):
@@ -59,13 +69,16 @@ def close() -> None:
         shown.destroy()
 
 
-def run_with_splash(start: Callable[[Splash], int], storage: Path, version: str) -> int:
+def run_with_splash(
+    start: Callable[[Splash], int], storage: Path, version: str, title: str = TITLE
+) -> int:
     """Show the start card, run ``start`` beside it and return its exit code.
 
     The windows need the main thread (macOS): ``start`` runs in a thread of its own, starts
     the database and the server and shows the program window (Splash.show) until it is
     closed. Whatever window is left when it ends is closed, which ends the window loop.
-    The window keeps its cookies in ``storage``: the login survives a restart.
+    The window keeps its cookies in ``storage``: the login survives a restart. ``title``
+    names the program in its windows (Rhinvoice Beta, ADR 0030).
     """
     import webview  # noqa: PLC0415 - only in the installers
 
@@ -74,8 +87,8 @@ def run_with_splash(start: Callable[[Splash], int], storage: Path, version: str)
     webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
     steps = StartSteps()
     card = webview.create_window(  # pyright: ignore[reportUnknownMemberType]
-        TITLE,
-        html=splash_html(version),
+        title,
+        html=splash_html(version, title),
         js_api=steps,
         width=SPLASH_SIZE[0],
         height=SPLASH_SIZE[1],
@@ -85,7 +98,7 @@ def run_with_splash(start: Callable[[Splash], int], storage: Path, version: str)
         # pywebview types screens as its module_property; it reads as the list of screens.
         screen=main_screen(webview.screens),  # pyright: ignore[reportArgumentType]
     )
-    splash = Splash(card, steps)
+    splash = Splash(card, steps, title)
     if card is not None:
         # Quitting while it starts would end the process before the database stops.
         card.events.closing += splash.may_close
@@ -106,10 +119,35 @@ def run_with_splash(start: Callable[[Splash], int], storage: Path, version: str)
         # Also when asked to end (Ctrl+C, Windows' CTRL_BREAK reach this thread only):
         # the start leaves its window and stops the server and the database first.
         splash.end()
+        wait_for_start(worker, platform.system())
+    return codes[0] if codes else FAILED
+
+
+def wait_for_start(worker: threading.Thread, system: str, settle: float = SETTLE_SECONDS) -> None:
+    """Wait for the start to end; on macOS, let the windows go meanwhile.
+
+    When pywebview's window loop on macOS returns, the closed windows are still on the
+    screen and their pages still run: macOS takes them away only as the main thread's run
+    loop turns. Without that, a window would stay, frozen, with its page asking the server,
+    as long as this process lives; after an update that is as long as the new version runs,
+    since the boot waits for it (rhinvoice_boot.restart). So the run loop turns here until
+    the start has ended (the closes it asks pywebview for need it too), and at least
+    ``settle`` seconds; then the process leaves the Dock: the new version has its own icon.
+    """
+    if system != "Darwin":
         # Not started when the window loop could not start: then there is nothing to wait for.
         with contextlib.suppress(RuntimeError):
             worker.join()
-    return codes[0] if codes else FAILED
+        return
+    # pyobjc, which pywebview brings on macOS.
+    foundation = importlib.import_module("Foundation")
+    loop = foundation.NSRunLoop.currentRunLoop()
+    until = time.monotonic() + settle
+    while worker.is_alive() or time.monotonic() < until:
+        loop.runUntilDate_(foundation.NSDate.dateWithTimeIntervalSinceNow_(LOOP_SLICE_SECONDS))
+        time.sleep(LOOP_PAUSE_SECONDS)
+    application = importlib.import_module("AppKit").NSApplication.sharedApplication()
+    application.setActivationPolicy_(NO_DOCK_ICON)
 
 
 class Placed(Protocol):
@@ -149,9 +187,10 @@ class StartSteps:
 class Splash:
     """The start card: says what the start is doing, and gives way to the program window."""
 
-    def __init__(self, card: Card | None, steps: StartSteps) -> None:
+    def __init__(self, card: Card | None, steps: StartSteps, title: str = TITLE) -> None:
         self._card = card
         self._steps = steps
+        self._title = title
         self._done = threading.Event()
         self._ended = threading.Event()
 
@@ -161,7 +200,7 @@ class Splash:
 
     def show(self, address: str, storage: Path) -> None:
         """Show the program window in place of the card until it is closed."""
-        show(address, storage, loaded=self.close, ended=self._ended)
+        show(address, storage, loaded=self.close, ended=self._ended, title=self._title)
 
     def end(self) -> None:
         """Leave the program window as if it were closed (the program is asked to end)."""
@@ -186,6 +225,7 @@ def show(
     storage: Path,
     loaded: Callable[[], None] | None = None,
     ended: threading.Event | None = None,
+    title: str = TITLE,
 ) -> None:
     """Show the web interface in a program window until it is closed, or ``ended`` is set.
 
@@ -205,7 +245,7 @@ def show(
     # WebKit then ignores scrolling on a page with overscroll-behavior (no rubber band,
     # index.css). Zooming also helps reading (WCAG 1.4.4).
     window = webview.create_window(  # pyright: ignore[reportUnknownMemberType]
-        TITLE,
+        title,
         address,
         width=place.width,
         height=place.height,
@@ -436,7 +476,7 @@ LOGO = (
 """The logo of frontend/public/favicon.svg: the card loads nothing from elsewhere."""
 
 SPLASH_PAGE = """<!doctype html>
-<html><head><meta charset="utf-8"><title>Rhinvoice</title><style>
+<html><head><meta charset="utf-8"><title>__NAME__</title><style>
 html,body{margin:0;height:100%;overflow:hidden;cursor:default;user-select:none}
 body{background:linear-gradient(135deg,#1d4f80,#123a62);color:#fff;
 font:13px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;
@@ -451,7 +491,7 @@ animation:flow 1.6s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.river::after{animation:none;width:100%;opacity:.5}}
 .bottom{display:flex;justify-content:space-between;gap:12px;opacity:.85;font-size:12px}
 </style></head><body>
-<div class="top">__LOGO__<div><div class="name">Rhinvoice</div>
+<div class="top">__LOGO__<div><div class="name">__NAME__</div>
 <div class="version">Version __VERSION__ · Beta</div></div></div>
 <div><div class="river"></div><div class="bottom"><span id="step" role="status"></span>
 <span>by Webberz</span></div></div>
@@ -468,10 +508,11 @@ window.addEventListener("pywebviewready", () => {
 </script></body></html>"""
 
 
-def splash_html(version: str) -> str:
+def splash_html(version: str, name: str = TITLE) -> str:
     """Write the start card's page: logo, name, version and the step of the start."""
     return (
         SPLASH_PAGE.replace("__LOGO__", LOGO)
+        .replace("__NAME__", html.escape(name))
         .replace("__VERSION__", html.escape(version))
         .replace("__TEXTS__", json.dumps(SPLASH_TEXTS, ensure_ascii=False))
     )

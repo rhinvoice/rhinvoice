@@ -15,8 +15,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
-    from rhinvoice.api.settings import UpdateChannel
-
 DEFAULT_PORT = 8000
 _CHANGING = threading.Lock()
 """The API's threads and the backup job change the file at the same time."""
@@ -41,10 +39,10 @@ class DesktopConfig:
     """The person confirmed that the key is kept elsewhere."""
     backup_verified_at: str | None = None
     """When the backups were last pruned and checked (ISO 8601)."""
-    update_channel: UpdateChannel = "stable"
-    """"test" offers release candidates too, on the maintainer's test machines."""
     update_check: bool = True
-    """false: the program never asks GitHub for a newer version."""
+    """false: the program never asks GitHub for a newer version. Which versions it is
+    offered follows the edition, not this file (ADR 0030): an "update_channel" written
+    here by hand is no longer read."""
 
 
 def load_or_create(path: Path) -> DesktopConfig:
@@ -62,7 +60,6 @@ def load_or_create(path: Path) -> DesktopConfig:
             backup_key=_optional_text(values, "backup_key"),
             backup_key_confirmed=_flag(values, "backup_key_confirmed"),
             backup_verified_at=_optional_text(values, "backup_verified_at"),
-            update_channel=_channel(values),
             update_check=_update_check(values),
         )
     except (ValueError, TypeError) as error:
@@ -128,11 +125,6 @@ def _flag(values: dict[str, object], key: str) -> bool:
         msg = f"'{key}' is not true or false"
         raise TypeError(msg)
     return value
-
-
-def _channel(values: dict[str, object]) -> UpdateChannel:
-    """Read the update channel; a value written by hand that is no channel means stable."""
-    return "test" if values.get("update_channel") == "test" else "stable"
 
 
 def _update_check(values: dict[str, object]) -> bool:

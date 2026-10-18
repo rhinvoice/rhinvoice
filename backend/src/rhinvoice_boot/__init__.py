@@ -5,7 +5,7 @@ kept small and stable: it changes only with a new setup, while the app packages 
 change with every update. It knows nothing of Rhinvoice but the launcher's name and the
 files described here; it uses the standard library only.
 
-    <install>/runtime.json            {"generation": 1}
+    <install>/runtime.json            {"generation": 1, "edition": "beta"}
     <install>/app/                    the app package the setup brought
     <data>/app/versions/<version>/    app packages of updates
     <data>/app/state.json             which one runs, and whether it still has to prove itself
@@ -13,6 +13,10 @@ files described here; it uses the standard library only.
 
 An app package holds ``site-packages/``, ``static/`` and ``manifest.json``
 ({"version": "0.7.0", "runtime": 1}: the runtime generation it needs at least).
+
+The edition is fixed when the setup is built (ADR 0030): "beta" is Rhinvoice Beta, the
+release candidates' separate installation, with data, caches and logs of its own; without
+"edition" the runtime is the released Rhinvoice. The app packages are the same for both.
 """
 
 from __future__ import annotations
@@ -55,30 +59,64 @@ class BootError(Exception):
     """No app package can be started."""
 
 
-def data_folder(system: str, environ: Mapping[str, str], home: Path) -> Path:
+STABLE = "stable"
+BETA = "beta"
+NAMES = {STABLE: "Rhinvoice", BETA: "Rhinvoice Beta"}
+"""The name of each edition: its folders on Windows and macOS are named after it."""
+
+
+def edition(install: Path) -> str:
+    """Return the edition the setup built this runtime as: BETA or STABLE (ADR 0030).
+
+    Only an "edition" of "beta" makes Rhinvoice Beta: runtimes of earlier setups have none.
+    A missing or damaged runtime.json is reported when the packages are chosen.
+    """
+    try:
+        values = json.loads((install / "runtime.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return STABLE
+    if isinstance(values, dict) and cast("dict[str, object]", values).get("edition") == BETA:
+        return BETA
+    return STABLE
+
+
+def folder_name(system: str, built_as: str) -> str:
+    """Name the folders of an edition: "Rhinvoice Beta" on Windows and macOS, else in lower case."""
+    name = NAMES[built_as]
+    return name if system in {"Windows", "Darwin"} else name.lower().replace(" ", "-")
+
+
+def data_folder(
+    system: str, environ: Mapping[str, str], home: Path, built_as: str = STABLE
+) -> Path:
     """Return the folder for the database, the configuration and the logs of this user.
 
-    ``system`` is ``platform.system()``. Backups must include this folder.
+    ``system`` is ``platform.system()``. Backups must include this folder. Each edition has
+    its own: Rhinvoice Beta never touches the data of Rhinvoice.
     """
+    name = folder_name(system, built_as)
     if system == "Windows":
-        return Path(environ.get("LOCALAPPDATA") or home / "AppData" / "Local") / "Rhinvoice"
+        return Path(environ.get("LOCALAPPDATA") or home / "AppData" / "Local") / name
     if system == "Darwin":
-        return home / "Library" / "Application Support" / "Rhinvoice"
-    return Path(environ.get("XDG_DATA_HOME") or home / ".local" / "share") / "rhinvoice"
+        return home / "Library" / "Application Support" / name
+    return Path(environ.get("XDG_DATA_HOME") or home / ".local" / "share") / name
 
 
-def bytecode_cache(system: str, environ: Mapping[str, str], home: Path) -> Path:
-    """Return the folder for the compiled Python files of this user.
+def bytecode_cache(
+    system: str, environ: Mapping[str, str], home: Path, built_as: str = STABLE
+) -> Path:
+    """Return the folder for the compiled Python files of this user, for this edition.
 
     Never the program folder: on macOS it is signed, and a file written into it would break
     the seal; the setups ship no compiled files, Python writes them on first use.
     """
+    name = folder_name(system, built_as)
     if system == "Windows":
         local = Path(environ.get("LOCALAPPDATA") or home / "AppData" / "Local")
-        return local / "Rhinvoice" / "cache" / "pycache"
+        return local / name / "cache" / "pycache"
     if system == "Darwin":
-        return home / "Library" / "Caches" / "Rhinvoice" / "pycache"
-    return Path(environ.get("XDG_CACHE_HOME") or home / ".cache") / "rhinvoice" / "pycache"
+        return home / "Library" / "Caches" / name / "pycache"
+    return Path(environ.get("XDG_CACHE_HOME") or home / ".cache") / name / "pycache"
 
 
 def use_bytecode_cache(environ: MutableMapping[str, str], folder: Path) -> None:
@@ -511,12 +549,15 @@ def log_without_console(data: Path) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = list(sys.argv[1:] if argv is None else argv)
-    given = option(arguments, "--data-dir")
-    data = Path(given) if given else data_folder(platform.system(), os.environ, Path.home())
-    log_without_console(data)
-    use_bytecode_cache(os.environ, bytecode_cache(platform.system(), os.environ, Path.home()))
     # The bundled interpreter lives in <install>/python.
-    runtime = Runtime(Path(sys.prefix).parent, data, launch, restart)
+    install = Path(sys.prefix).parent
+    built_as = edition(install)
+    system, home = platform.system(), Path.home()
+    given = option(arguments, "--data-dir")
+    data = Path(given) if given else data_folder(system, os.environ, home, built_as)
+    log_without_console(data)
+    use_bytecode_cache(os.environ, bytecode_cache(system, os.environ, home, built_as))
+    runtime = Runtime(install, data, launch, restart)
     try:
         return run(without_option(arguments, "--data-dir"), runtime)
     except BootError as error:

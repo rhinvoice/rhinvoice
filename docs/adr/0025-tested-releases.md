@@ -1,6 +1,6 @@
 # 0025 – Nothing reaches users untested
 
-- Status: accepted, branches amended by [0026](0026-dev-and-main.md)
+- Status: accepted, branches amended by [0026](0026-dev-and-main.md), checks by [0029](0029-version-from-the-tag-and-quick-pull-requests.md), testing on Windows and macOS by [0030](0030-rhinvoice-beta-for-release-candidates.md)
 - Date: 2026-10-16
 
 ## Context

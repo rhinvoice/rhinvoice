@@ -5,6 +5,26 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.8.1] – 2026-10-18
+
+### Geändert
+- Testkandidaten für Windows und Mac kommen als **Rhinvoice Beta**, ein eigenes Programm, das
+  neben Rhinvoice installiert wird: mit eigenem Namen, eigenen Verknüpfungen, eigenem Eintrag
+  zum Deinstallieren, eigenem Datenordner (`%LOCALAPPDATA%\Rhinvoice Beta`,
+  `~/Library/Application Support/Rhinvoice Beta`), eigenen Logs und eigenem Backup-Ordner. Ein
+  Testkandidat berührt die Daten von Rhinvoice nicht mehr. Rhinvoice Beta bekommt neuere
+  Testkandidaten als Update angeboten, Rhinvoice nur freigegebene Versionen, auch mit
+  `"update_channel": "test"` in `rhinvoice.json`, das nicht mehr gelesen wird.
+- Auf dem Mac heisst Rhinvoice für das System jetzt `ch.webberz.rhinvoice`. Nach der Installation
+  des nächsten Setups (nicht nach einem Update in der App) melden Sie sich einmal neu an; die
+  Daten bleiben.
+
+### Behoben
+- Auf dem Mac verschwindet das Fenster der alten Version, wenn ein Update Rhinvoice neu startet.
+  Bisher blieb es eingefroren neben dem Fenster der neuen Version stehen, mit einem zweiten
+  Rhinvoice-Symbol im Dock. Das gilt für Updates ab dieser Version: Beim Update auf sie bleibt
+  das eingefrorene Fenster noch einmal stehen; das Schliessen des neuen Fensters beendet beide.
+
 ## [0.8.0] – 2026-10-17
 
 ### Neu

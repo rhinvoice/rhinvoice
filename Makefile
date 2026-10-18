@@ -55,11 +55,8 @@ backend-test: ## pytest incl. PostgreSQL integration and schemathesis, 100 % cov
 	cd backend && uv run pytest --cov --cov-report=term-missing:skip-covered
 
 .PHONY: backend-mutation
-backend-mutation: ## mutmut on domain + application, score >= 90 %
-	@# mutmut exits non-zero when mutants survive; the score script is the gate.
-	cd backend && rm -rf mutants && (uv run mutmut run > mutmut.log 2>&1 || true)
-	cd backend && uv run mutmut export-cicd-stats > /dev/null || (tail -40 mutmut.log; exit 1)
-	cd backend && uv run python scripts/check_mutation_score.py || (uv run mutmut results; exit 1)
+backend-mutation: ## mutmut on domain + application, score >= 90 % (CHANGED=origin/dev: only changed modules)
+	cd backend && uv run python scripts/mutation.py $(if $(CHANGED),--changed $(CHANGED))
 
 .PHONY: backend-audit
 backend-audit: ## pip-audit of the runtime dependencies
@@ -88,8 +85,8 @@ api-check: api ## Fail if the generated API files are out of date
 	git diff --exit-code -- backend/openapi.json frontend/src/api/schema.d.ts
 
 .PHONY: e2e
-e2e: ## Playwright E2E (incl. axe + visual regression) against the Docker stack
-	$(COMPOSE_E2E) up --build --exit-code-from e2e; status=$$?; \
+e2e: ## Playwright E2E (incl. axe + visual regression) against the Docker stack (SHARD=2/3: one part)
+	E2E_SHARD=$(or $(SHARD),1/1) $(COMPOSE_E2E) up --build --exit-code-from e2e; status=$$?; \
 	$(COMPOSE_E2E) down -v --remove-orphans > /dev/null 2>&1; exit $$status
 
 .PHONY: backup-qa

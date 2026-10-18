@@ -2,6 +2,7 @@ import { expect, test as setup, type Page } from "@playwright/test";
 
 import {
   ADMIN,
+  AUTH_FILE,
   createCustomer,
   expectAccessible,
   HEADERS,
@@ -10,7 +11,7 @@ import {
   post,
 } from "./fixtures";
 
-const authFile = "e2e/.auth/user.json";
+const authFile = AUTH_FILE;
 
 setup("create the first user or log in", async ({ page }) => {
   await page.goto("/");

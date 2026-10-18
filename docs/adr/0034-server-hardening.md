@@ -24,15 +24,17 @@ browser of a desktop user:
 ## Decision
 - **Bodies are counted as they arrive.** `BodyLimitMiddleware` wraps `receive`, adds up the
   bytes and stops at the path's limit with the usual 413 `too_large`, whatever the app made
-  of the broken body; an app that caught the refusal gets no more of the body, and an
-  answer it had already started is left alone. The `Content-Length` check stays, so a
+  of the broken body; an app that caught the refusal gets no more of the body. An answer
+  the app had already started cannot become a 413: the error is raised again, and the
+  server closes the connection. The `Content-Length` check stays, so a
   declared size is refused before anything is read.
 - **Only uploads get the larger limits.** The import, invoice import and file limits apply
   to `multipart/form-data` only, whose files Starlette writes to temporary files; any other
   body on those paths (JSON, urlencoded, held in memory as a whole) gets 2 MB.
 - **The desktop server answers only itself.** With `local_port` set (the launcher sets it,
   `RHINVOICE_LOCAL_PORT` would too) a request needs `Host` `127.0.0.1:<port>` or
-  `localhost:<port>`, else 421 `host_rejected`. A change (not GET, HEAD, OPTIONS) with an
+  `localhost:<port>` (on port 80 also without the port, as browsers send it), else 421
+  `host_rejected`. A change (not GET, HEAD, OPTIONS) with an
   `Origin` other than these two is refused with 403 `origin_rejected`; one without `Origin`
   (not from a browser) passes, as the custom header of
   [ADR 0003](0003-session-cookies-and-csrf.md) already covers browsers. With Docker nothing
@@ -40,7 +42,10 @@ browser of a desktop user:
 - **Sign-ins are limited per address in every installation**: `POST /api/auth/login`,
   `/api/auth/password` (it checks the current password) and `/api/auth/password-reset*`
   together 10 per minute per client (the `RateLimiter` of the demo), answered with 429
-  `rate_limited`, which the OpenAPI schema documents and the interface translates. The demo keeps its 60 changes per minute on top. The client is the address uvicorn
+  `rate_limited`, which the OpenAPI schema documents and the interface translates. Only
+  requests that passed the Host, Origin and custom header checks are counted: a form that
+  any web page posts to the login (403 `csrf_rejected`) must not use up the sign-ins of
+  everyone behind the same proxy address. The demo keeps its 60 changes per minute on top. The client is the address uvicorn
   reports: behind a proxy the visitor's own only when `RHINVOICE_FORWARDED_ALLOW_IPS` names
   the proxy, otherwise all visitors share the proxy's limit. The docs say so, name the
   Docker network's gateway for a proxy on the same machine and warn against `*` behind a
@@ -68,5 +73,7 @@ browser of a desktop user:
 - Behind a proxy that is not named in `RHINVOICE_FORWARDED_ALLOW_IPS`, a flood of wrong
   sign-ins blocks everyone's sign-in for a minute; the account locks stay as they were.
   IPv6 clients are counted per address, not per /64 network.
+- The end-to-end tests run all projects from one address: only the test of the login signs
+  in for real; the others around a sign-in reuse the session of the global setup.
 - The local Chromium still reads `file://` URLs, as Gotenberg reads `/tmp`; the pages come
   from our templates with escaped content.

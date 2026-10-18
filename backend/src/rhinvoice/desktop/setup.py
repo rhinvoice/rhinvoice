@@ -53,15 +53,23 @@ then start it again (desktop/windows/rhinvoice.iss)."""
 
 MACOS_SCRIPT = r"""
 lock="$1" image="$2" bundle="$3" sha256="$4"
-show_image() { /usr/bin/open "$image"; exit 0; }
+# Before anything mounts or shows the disk image, on every path: one changed since the
+# download (or that cannot be checked) is removed, and the installed app opens again, so
+# that the program offers the setup anew.
+check_image() {
+    digest="$(/usr/bin/shasum -a 256 < "$image" 2>/dev/null)" \
+        || digest="$(/usr/bin/openssl dgst -sha256 -r < "$image" 2>/dev/null)" \
+        || digest=""
+    if [ -z "$sha256" ] || [ "${digest%% *}" != "$sha256" ]; then
+        /bin/rm -f "$image"
+        case "$bundle" in *.app) /usr/bin/open "$bundle" ;; esac
+        exit 1
+    fi
+}
+show_image() { check_image; /usr/bin/open "$image"; exit 0; }
 # The program has ended once its boot's session lock is free (rhinvoice_boot.session).
 /usr/bin/lockf -k -t 600 "$lock" /usr/bin/true || show_image
-# Checked again after the wait: a disk image changed meanwhile is neither mounted nor shown.
-digest="$(/usr/bin/shasum -a 256 < "$image")" || exit 1
-if [ "${digest%% *}" != "$sha256" ]; then
-    /bin/rm -f "$image"
-    exit 1
-fi
+check_image
 case "$bundle" in *.app) ;; *) show_image ;; esac
 mount="$(/usr/bin/mktemp -d)" || show_image
 /usr/bin/hdiutil attach -nobrowse -noautoopen -readonly -mountpoint "$mount" "$image" \
@@ -207,7 +215,8 @@ class SetupDownloader:
     def _fetch(self, version: str, setup: PackageFile) -> None:
         try:
             path = self._save(version, setup)
-        except (httpx.HTTPError, OSError, ValueError):
+        except Exception:  # noqa: BLE001 - any failure (e.g. httpx.StreamError) must end the download
+            # _save removed the partial file; another setup can be downloaded now.
             with self._lock:
                 self._progress = replace(self._progress, state=SetupState.FAILED)
             return

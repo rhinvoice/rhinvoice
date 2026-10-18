@@ -201,6 +201,26 @@ def test_anything_but_the_released_setup_fails_and_is_never_run(
     assert not folder.exists() or [path.name for path in folder.iterdir()] == []
 
 
+def test_any_error_of_a_download_ends_it_and_another_can_start(tmp_path: Path) -> None:
+    answers = [None, httpx.Response(200, content=CONTENT)]
+
+    def handle(_request: httpx.Request) -> httpx.Response:
+        answer = answers.pop(0)
+        if answer is None:
+            # A RuntimeError, not an httpx.HTTPError.
+            raise httpx.StreamConsumed
+        return answer
+
+    setup = downloader(tmp_path, handle, Surroundings())
+    setup.download("0.9.0", setup_file())
+    assert wait_until_done(setup).state is SetupState.FAILED
+    assert list((tmp_path / "app" / "setup" / "0.9.0").iterdir()) == []
+    setup.download("0.9.1", setup_file())
+    assert wait_until_done(setup) == SetupProgress(
+        SetupState.READY, "0.9.1", len(CONTENT), len(CONTENT)
+    )
+
+
 def test_a_failed_download_can_be_tried_again(tmp_path: Path) -> None:
     answers = [httpx.Response(503), httpx.Response(200, content=CONTENT)]
     setup = downloader(tmp_path, lambda _request: answers.pop(0), Surroundings())
@@ -275,18 +295,26 @@ def test_on_a_mac_a_script_replaces_the_app_once_the_session_lock_is_free(tmp_pa
 
 
 @pytest.mark.skipif(sys.platform != "darwin", reason="the script uses macOS' lockf and shasum")
-def test_on_a_mac_a_disk_image_changed_meanwhile_is_removed_not_opened(tmp_path: Path) -> None:
+@pytest.mark.parametrize("lock_free", [True, False])
+def test_on_a_mac_a_disk_image_changed_meanwhile_is_removed_and_the_app_opens_again(
+    tmp_path: Path, *, lock_free: bool
+) -> None:
+    """Also when the wait for the program fails, which otherwise shows the disk image."""
     image = tmp_path / "Rhinvoice-macOS.dmg"
     image.write_bytes(b"changed")
-    install = tmp_path / "Rhinvoice.app" / "Contents" / "Resources"
+    bundle = tmp_path / "Rhinvoice.app"
+    # Without its folder, the lock cannot be taken: lockf fails at once.
+    data = tmp_path if lock_free else tmp_path / "missing"
     command = helper_command(
-        image, hashlib.sha256(b"released").hexdigest(), system="Darwin", data=tmp_path,
-        install=install,
+        image, hashlib.sha256(b"released").hexdigest(), system="Darwin", data=data,
+        install=bundle / "Contents" / "Resources",
     )  # fmt: skip
     (tmp_path / "app").mkdir()
     finished = subprocess.run(command, capture_output=True, check=False, timeout=30)  # noqa: S603 - the script under test
     assert finished.returncode == 1
     assert not image.exists()
+    # The installed app is opened again (here it does not exist, which open reports).
+    assert str(bundle) in finished.stderr.decode()
 
 
 def test_the_helper_outlives_the_program(monkeypatch: pytest.MonkeyPatch) -> None:

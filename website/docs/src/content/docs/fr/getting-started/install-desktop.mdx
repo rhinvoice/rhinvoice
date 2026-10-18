@@ -14,6 +14,7 @@ since: 0.7.0
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Rhinvoice existe aussi comme **programme ordinaire pour Windows et Mac** : télécharger, installer, démarrer. Vous n’avez besoin ni de Docker, ni de Python, ni d’un serveur. La base de données est intégrée, Rhinvoice s’ouvre dans sa propre fenêtre et n’est accessible que depuis cet ordinateur. Pour un serveur, un NAS ou plusieurs personnes sur des ordinateurs différents, utilisez l’[installation avec Docker](/docs/fr/getting-started/installation/).
@@ -93,7 +94,7 @@ Rarement, une nouvelle version demande un nouveau setup, par exemple pour une no
 
 ## Rhinvoice Beta pour les versions candidates
 
-Avant d’être publiée, une version paraît comme version candidate, pour les tests. Pour Windows et Mac, une version candidate arrive sous le nom de **Rhinvoice Beta**: un programme distinct, que vous installez à côté de Rhinvoice. Il a son propre nom, ses propres raccourcis, sa propre entrée de désinstallation et son propre dossier de données (`%LOCALAPPDATA%\Rhinvoice Beta`, sur un Mac `~/Library/Application Support/Rhinvoice Beta`). Il ne touche jamais aux données de Rhinvoice.
+Avant d’être publiée, une version paraît comme version candidate, pour les tests. Pour Windows et Mac, une version candidate arrive sous le nom de **Rhinvoice Beta**: un programme distinct, que vous installez à côté de Rhinvoice. Il a son propre nom, ses propres raccourcis, sa propre entrée de désinstallation et son propre dossier de données (`%LOCALAPPDATA%\Rhinvoice Beta`, sur un Mac `~/Library/Application Support/Rhinvoice Beta`). Il ne touche jamais aux données de Rhinvoice. <Since version="0.8.1" />
 
 Téléchargez `Rhinvoice-Beta-Setup-Windows.exe` ou `Rhinvoice-Beta-macOS.dmg` depuis la version candidate sur [GitHub releases](https://github.com/rhinvoice/rhinvoice/releases) et installez-le comme décrit plus haut; les mêmes avertissements apparaissent. Sur Windows, il s’installe dans `%LOCALAPPDATA%\Programs\Rhinvoice Beta`, sur un Mac il s’appelle `Rhinvoice Beta.app`. Rhinvoice Beta se voit proposer les versions candidates plus récentes comme mises à jour; Rhinvoice lui-même uniquement les versions publiées. Désinstallez-le comme Rhinvoice.
 

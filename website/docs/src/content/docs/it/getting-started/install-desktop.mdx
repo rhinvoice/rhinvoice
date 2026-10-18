@@ -14,6 +14,7 @@ since: 0.7.0
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Rhinvoice esiste anche come **programma normale per Windows e Mac**: scaricare, installare, avviare. Non servono né Docker, né Python, né un server. Il database è integrato, Rhinvoice si apre in una propria finestra ed è raggiungibile solo da questo computer. Per un server, un NAS o più persone su computer diversi usi l’[installazione con Docker](/docs/it/getting-started/installation/).
@@ -93,7 +94,7 @@ Raramente una nuova versione richiede un nuovo setup, per esempio per una nuova 
 
 ## Rhinvoice Beta per le candidate
 
-Prima di essere pubblicata, una versione esce come candidata per i test. Per Windows e Mac una candidata arriva come **Rhinvoice Beta**: un programma separato, che installa accanto a Rhinvoice. Ha un nome proprio, collegamenti propri, una propria voce di disinstallazione e una propria cartella dei dati (`%LOCALAPPDATA%\Rhinvoice Beta`, su un Mac `~/Library/Application Support/Rhinvoice Beta`). Non tocca mai i dati di Rhinvoice.
+Prima di essere pubblicata, una versione esce come candidata per i test. Per Windows e Mac una candidata arriva come **Rhinvoice Beta**: un programma separato, che installa accanto a Rhinvoice. Ha un nome proprio, collegamenti propri, una propria voce di disinstallazione e una propria cartella dei dati (`%LOCALAPPDATA%\Rhinvoice Beta`, su un Mac `~/Library/Application Support/Rhinvoice Beta`). Non tocca mai i dati di Rhinvoice. <Since version="0.8.1" />
 
 Scarichi `Rhinvoice-Beta-Setup-Windows.exe` o `Rhinvoice-Beta-macOS.dmg` dalla candidata su [GitHub releases](https://github.com/rhinvoice/rhinvoice/releases) e lo installi come descritto sopra; compaiono gli stessi avvisi. Su Windows finisce in `%LOCALAPPDATA%\Programs\Rhinvoice Beta`, su un Mac si chiama `Rhinvoice Beta.app`. A Rhinvoice Beta vengono proposte come aggiornamento le candidate più recenti, a Rhinvoice solo le versioni pubblicate. Lo disinstalli come Rhinvoice.
 

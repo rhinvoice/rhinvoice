@@ -14,6 +14,7 @@ since: 0.7.0
 ---
 
 import Faq from "../../../components/Faq.astro";
+import Since from "../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Rhinvoice also comes as a **regular program for Windows and Mac**: download, install, start. You need neither Docker, Python nor a server. The database is built in, Rhinvoice opens in a window of its own and can only be reached from this computer. For a server, a NAS or several people on different computers, use the [installation with Docker](/docs/getting-started/installation/).
@@ -93,7 +94,7 @@ Rarely a new version needs a new setup, for example for a new version of the bui
 
 ## Rhinvoice Beta for release candidates
 
-Before a version is released, it is published as a release candidate for testing. For Windows and Mac a candidate comes as **Rhinvoice Beta**: a separate program that you install beside Rhinvoice. It has its own name, shortcuts and uninstall entry, and its own data folder (`%LOCALAPPDATA%\Rhinvoice Beta`, on a Mac `~/Library/Application Support/Rhinvoice Beta`). It never touches the data of Rhinvoice.
+Before a version is released, it is published as a release candidate for testing. For Windows and Mac a candidate comes as **Rhinvoice Beta**: a separate program that you install beside Rhinvoice. It has its own name, shortcuts and uninstall entry, and its own data folder (`%LOCALAPPDATA%\Rhinvoice Beta`, on a Mac `~/Library/Application Support/Rhinvoice Beta`). It never touches the data of Rhinvoice. <Since version="0.8.1" />
 
 Download `Rhinvoice-Beta-Setup-Windows.exe` or `Rhinvoice-Beta-macOS.dmg` from the candidate on [GitHub releases](https://github.com/rhinvoice/rhinvoice/releases) and install it as described above; the same warnings appear. On Windows it goes to `%LOCALAPPDATA%\Programs\Rhinvoice Beta`, on a Mac it is `Rhinvoice Beta.app`. Rhinvoice Beta is offered newer candidates as updates; Rhinvoice itself is only offered released versions. Uninstall it like Rhinvoice.
 

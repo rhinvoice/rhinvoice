@@ -19,9 +19,9 @@ before 1.0, minor versions may contain breaking changes.
   still holds unsaved changes; **Later** leaves everything as it is.
 
 ### Fixed
-- Running a Windows setup while Rhinvoice ran stopped at files in use ("DeleteFile failed;
-  code 5"). The setup now asks to close Rhinvoice, also closes what keeps Python modules open
-  and stops a database left running before it replaces files.
+- Running a Windows setup while Rhinvoice ran stopped at files in use ("DeleteFile failed; code
+  5"). The setup now asks to close Rhinvoice and checks again until it is closed, also closes
+  what keeps Python modules open and stops a database left running before it replaces files.
 - The error summary at the top of a form now names the field of each message
   ("Postcode: Please fill in."), not only the message.
 

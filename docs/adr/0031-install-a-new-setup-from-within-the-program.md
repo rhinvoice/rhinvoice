@@ -37,11 +37,15 @@ program without asking, so an unsaved form was lost.
     started from the Downloads folder) the old app stays and the disk image opens, to drag
     the app into the Applications folder by hand. The download carries no quarantine flag;
     the SHA-256 of the signed `release.json` stands in for Gatekeeper's check.
-- **The Windows setup protects itself** when run by hand: it asks to close a Rhinvoice that
-  holds the mutex ("Rhinvoice läuft noch …", OK / Cancel); it reports `.pyd` files to the
-  Restart Manager besides `.exe` and `.dll`; and before it replaces files it stops a database
-  left running on the edition's data folder with `pg_ctl stop --mode=fast`, as the program
-  would.
+- **The Windows setup protects itself** when run by hand, before it removes any file
+  (`[InstallDelete]` runs first and once removed `pg_ctl.exe` from under a running program):
+  - it asks to close a Rhinvoice that holds the mutex ("Rhinvoice läuft noch …", OK / Cancel);
+  - it asks the same when the edition's database runs (`pg_ctl status`), which also finds a
+    Rhinvoice from before this decision, then stops a database still left running with
+    `pg_ctl stop --mode=fast`, as the program would;
+  - it reports `.pyd` files to the Restart Manager besides `.exe` and `.dll`.
+- **The program survives missing database tools** when it closes: it reports the error
+  instead of ending the thread with a traceback.
 
 ## Consequences
 - A setup update is one click and one question, like an app package update; an

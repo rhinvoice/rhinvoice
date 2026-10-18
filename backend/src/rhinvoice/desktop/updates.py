@@ -3,6 +3,9 @@
 The package is downloaded with the size and SHA-256 of the signed release.json, unpacked
 next to the others as ``<version>.partial`` and renamed when complete. Then the program
 restarts; the boot copies the database and lets the new version prove itself.
+
+A complete package holds ``package.sha256``, the SHA-256 of the archive it came from: a
+folder of that version without it, or of another archive, is installed afresh, never trusted.
 """
 
 from __future__ import annotations
@@ -31,6 +34,8 @@ TIMEOUT_SECONDS = 60.0
 CHUNK_BYTES = 1024 * 1024
 RESTART_DELAY_SECONDS = 1.0
 """Long enough for the answer to the request to reach the browser."""
+VERIFIED = "package.sha256"
+"""Written into a package once it was downloaded, checked and unpacked completely."""
 
 
 def platform_name(system: str, machine: str) -> str:
@@ -94,8 +99,9 @@ class PackageInstaller:
             raise ConflictError("an update is being installed", code="update_running")
         try:
             target = self._versions / release.version
-            if not target.is_dir():
-                self._put_in_place(release, release.packages[self.platform], target)
+            package = release.packages[self.platform]
+            if not verified(target, package):
+                self._put_in_place(release, package, target)
         except BaseException:
             self._installing.release()
             raise
@@ -117,6 +123,10 @@ class PackageInstaller:
                 self._download(package, archive)
                 unpack(archive, partial)
             check_manifest(partial, release)
+            (partial / VERIFIED).write_text(package.sha256 + "\n", encoding="ascii")
+            if target.exists():
+                # Not put in place by this program, or of another archive: replaced.
+                _remove(target)
             partial.rename(target)
         except Exception:
             shutil.rmtree(partial, ignore_errors=True)
@@ -140,6 +150,22 @@ class PackageInstaller:
         if size != package.size or digest.hexdigest() != package.sha256:
             msg = "the downloaded update is not the released one"
             raise UnavailableError(msg)
+
+
+def _remove(folder: Path) -> None:
+    try:
+        shutil.rmtree(folder)
+    except OSError as error:
+        msg = f"{folder} could not be replaced: {error}"
+        raise UnavailableError(msg) from error
+
+
+def verified(folder: Path, package: PackageFile) -> bool:
+    """Tell whether ``folder`` holds ``package``, completely put in place by this program."""
+    try:
+        return (folder / VERIFIED).read_text(encoding="ascii").strip() == package.sha256
+    except (OSError, ValueError):
+        return False
 
 
 def unpack(archive: Path, target: Path) -> None:

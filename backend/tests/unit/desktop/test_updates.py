@@ -14,7 +14,13 @@ import pytest
 
 from rhinvoice.application.errors import ConflictError, UnavailableError
 from rhinvoice.application.updates.ports import PackageFile, Release
-from rhinvoice.desktop.updates import PackageInstaller, Restarter, platform_name
+from rhinvoice.desktop.updates import (
+    VERIFIED,
+    PackageInstaller,
+    Restarter,
+    platform_name,
+    verified,
+)
 from rhinvoice_boot import State, save_state
 from tests.helpers import raises_exactly
 
@@ -93,7 +99,9 @@ def test_the_package_is_put_in_place_and_the_program_restarts(tmp_path: Path) ->
 
 
 def test_a_package_already_in_place_is_not_downloaded_again(tmp_path: Path) -> None:
-    (tmp_path / "app" / "versions" / "0.7.0").mkdir(parents=True)
+    installer(tmp_path, github(PACKAGE), Restarts()).install(release())
+    package = tmp_path / "app" / "versions" / "0.7.0"
+    assert (package / VERIFIED).read_text() == hashlib.sha256(PACKAGE).hexdigest() + "\n"
 
     def nothing(request: httpx.Request) -> httpx.Response:
         raise AssertionError(request)
@@ -101,6 +109,45 @@ def test_a_package_already_in_place_is_not_downloaded_again(tmp_path: Path) -> N
     restarts = Restarts()
     installer(tmp_path, nothing, restarts).install(release())
     assert restarts.done.wait(5)
+
+
+@pytest.mark.parametrize(
+    "marker",
+    [
+        None,  # put there by someone else, or by a program before the marker
+        "00" * 32 + "\n",  # of another archive
+        b"\xff\xfe",
+    ],
+)
+def test_a_folder_of_the_version_that_was_not_verified_is_installed_afresh(
+    tmp_path: Path, marker: str | bytes | None
+) -> None:
+    package = tmp_path / "app" / "versions" / "0.7.0"
+    (package / "site-packages").mkdir(parents=True)
+    (package / "site-packages" / "planted.pth").write_text("import planted")
+    if isinstance(marker, str):
+        (package / VERIFIED).write_text(marker)
+    elif marker is not None:
+        (package / VERIFIED).write_bytes(marker)
+    restarts = Restarts()
+    installer(tmp_path, github(PACKAGE), restarts).install(release())
+    assert not (package / "site-packages" / "planted.pth").exists()
+    assert (package / "static" / "index.html").read_text() == "<!doctype html>"
+    assert verified(package, release().packages["windows-x64"])
+    assert restarts.done.wait(5)
+
+
+def test_a_folder_that_cannot_be_replaced_stops_the_update(tmp_path: Path) -> None:
+    # A file where the package's folder belongs: shutil.rmtree refuses it.
+    package = tmp_path / "app" / "versions" / "0.7.0"
+    package.parent.mkdir(parents=True)
+    package.write_text("in the way")
+    restarts = Restarts()
+    with pytest.raises(UnavailableError, match="could not be replaced"):
+        installer(tmp_path, github(PACKAGE), restarts).install(release())
+    assert package.read_text() == "in the way"
+    assert sorted(path.name for path in package.parent.iterdir()) == ["0.7.0"]
+    assert not restarts.done.is_set()
 
 
 @pytest.mark.parametrize(

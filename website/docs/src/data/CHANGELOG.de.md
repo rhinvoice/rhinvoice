@@ -15,6 +15,19 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 - Die Programme für Windows und Mac suchen keine Python-Module mehr im Ordner, aus dem sie
   gestartet wurden (`python -P`). Das gilt für Installationen ab dem nächsten Setup; der Befehl
   zum Wiederherstellen eines Backups unter Windows enthält jetzt `-P`.
+- Rhinvoice zählt die Grösse einer Anfrage jetzt, während sie ankommt: Eine Anfrage in
+  Stücken wird bei derselben Grenze abgelehnt wie jede andere (ADR 0034).
+- Die grösseren Grenzen für Importe und Dateien gelten nur für Datei-Uploads; jede andere
+  Anfrage ist auf 2 MB begrenzt.
+- Das Programm für Windows und Mac antwortet nur noch auf Anfragen an seine eigene Adresse
+  (127.0.0.1 oder localhost); eine Webseite erreicht es nicht unter einem anderen Namen.
+- Jede Installation begrenzt Anmeldungen sowie das Ändern und Zurücksetzen von Passwörtern auf 10 pro
+  Minute und Adresse.
+- Der PDF-Drucker des Programms für Windows und Mac führt keine Skripte aus und lädt nichts
+  aus dem Netz, wie das Docker-Setup.
+- Dateinamen von Anhängen verlieren Steuerzeichen, bevor sie zurückgesendet werden.
+- `.env.example` enthält kein Platzhalter-Passwort für die Datenbank mehr: Docker Compose
+  startet erst, wenn Sie eines setzen.
 
 ## [0.8.2] – 2026-10-18
 

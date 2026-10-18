@@ -4,10 +4,13 @@ Uses RHINVOICE_TEST_CHROMIUM, else the headless shell that Playwright installs f
 end-to-end tests; skipped when neither is there.
 """
 
+import http.server
 import io
 import os
+import threading
 from collections.abc import Iterator
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 from pypdf import PdfReader
@@ -58,3 +61,40 @@ def test_a_swiss_invoice_with_its_qr_bill_and_e_invoice(chromium: LocalChromiumP
     assert number in reader.pages[0].extract_text()
     assert "Zahlteil" in reader.pages[1].extract_text()
     assert list(reader.attachments) == ["factur-x.xml"]
+
+
+class _Recorder(http.server.BaseHTTPRequestHandler):
+    """Counts every request that reaches it."""
+
+    paths: ClassVar[list[str]] = []
+
+    def do_GET(self) -> None:
+        self.paths.append(self.path)
+        self.send_response(200)
+        self.end_headers()
+
+    def log_message(self, format: str, *args: object) -> None:  # noqa: A002 - as the base
+        """Keep the test output quiet."""
+        del format, args
+
+
+def test_pages_run_no_script_and_load_nothing(chromium: LocalChromiumPrinter) -> None:
+    """As Gotenberg: no script runs, no request leaves the page (ADR 0034)."""
+    server = http.server.HTTPServer(("127.0.0.1", 0), _Recorder)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    port = server.server_address[1]
+    address = f"http://127.0.0.1:{port}"
+    page = (
+        f'<html><head><link rel="stylesheet" href="{address}/style.css"></head><body>'
+        f'<p id="text">Static text</p><img src="{address}/logo.png">'
+        f'<iframe src="http://localhost:{port}/frame"></iframe>'
+        '<script>document.getElementById("text").textContent = "Script ran";'
+        f'fetch("{address}/fetch")</script></body></html>'
+    )
+    try:
+        content = chromium.print_pdf(page)
+    finally:
+        server.shutdown()
+        server.server_close()
+    assert "Static text" in PdfReader(io.BytesIO(content)).pages[0].extract_text()
+    assert _Recorder.paths == []

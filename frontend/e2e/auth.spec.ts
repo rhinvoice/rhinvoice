@@ -1,4 +1,4 @@
-import { ADMIN, expect, expectAccessible, openApp, test } from "./fixtures";
+import { ADMIN, expect, expectAccessible, openApp, signInWithSetupSession, test } from "./fixtures";
 
 test.describe("authentication", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
@@ -86,6 +86,7 @@ test.describe("authentication", () => {
   });
 
   test("ignores external redirect targets", async ({ page }) => {
+    await signInWithSetupSession(page);
     await page.goto("/login?redirect=https%3A%2F%2Fevil.example");
     await page.getByLabel("E-Mail-Adresse").fill(ADMIN.email);
     await page.getByLabel("Passwort").fill(ADMIN.password);
@@ -112,6 +113,7 @@ test("a session that ends while the app is open leads to the login, which says w
   // Not the message of a wrong password.
   await expect(page.getByText("E-Mail-Adresse oder Passwort ist falsch.")).toHaveCount(0);
   await expectAccessible(page);
+  await signInWithSetupSession(page);
   await page.getByLabel("E-Mail-Adresse").fill(ADMIN.email);
   await page.getByLabel("Passwort").fill(ADMIN.password);
   await page.getByRole("button", { name: "Anmelden" }).click();

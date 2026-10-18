@@ -1,7 +1,8 @@
-"""Requests per client in a fixed time window, for the public demo.
+"""Requests per client in a fixed time window.
 
-A normal installation sits behind its owner's proxy and needs none; a public demo is
-open to anyone, and its shared login must not be flooded.
+Every installation limits sign-ins and password resets per client, so that passwords
+cannot be tried in a flood (ADR 0034). A public demo is open to anyone: it also limits
+changes, and its shared login must not be flooded.
 """
 
 from __future__ import annotations
@@ -55,12 +56,17 @@ class RateLimiter:
 
 
 @dataclass(frozen=True, slots=True)
-class DemoLimits:
-    """Limits of the public demo, per client address."""
+class ClientLimits:
+    """Limits per client address: sign-ins everywhere, changes on a public demo."""
 
     logins: RateLimiter
-    changes: RateLimiter
+    """Sign-ins and password resets."""
+    changes: RateLimiter | None = None
+    """Every other change; only on a public demo."""
 
     @classmethod
-    def default(cls) -> DemoLimits:
-        return cls(logins=RateLimiter(10, 60), changes=RateLimiter(60, 60))
+    def default(cls, *, demo: bool = False) -> ClientLimits:
+        return cls(
+            logins=RateLimiter(10, 60),
+            changes=RateLimiter(60, 60) if demo else None,
+        )

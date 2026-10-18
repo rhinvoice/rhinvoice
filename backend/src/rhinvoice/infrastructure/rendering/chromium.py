@@ -42,6 +42,14 @@ ARGUMENTS = (
     "--disable-background-networking",
     "--disable-sync",
     "--mute-audio",
+    # As Gotenberg in the Docker setup (deploy/compose.yml): the pages are self-contained
+    # (fonts and logo inline), so no script runs and nothing is loaded from a network
+    # (ADR 0034). Every http(s) request goes to a proxy that is not there, the ones to
+    # 127.0.0.1 too ("<-loopback>"); the DevTools connection does not use it. The fonts are
+    # still awaited below: the DevTools protocol evaluates without the page's scripts.
+    "--blink-settings=scriptEnabled=false",
+    "--proxy-server=127.0.0.1:9",
+    "--proxy-bypass-list=<-loopback>",
 )
 # A4 in inches; the page has its own margins (see document.css). As for Gotenberg (pdf.py).
 PRINT_OPTIONS: dict[str, object] = {

@@ -61,7 +61,7 @@ Rhinvoice funziona con quattro container: `app` (interfaccia web e API), `db` (P
 
 | Impostazione | Valore |
 |---|---|
-| `POSTGRES_PASSWORD` | un valore casuale lungo, solo lettere e cifre (p. es. `openssl rand -hex 24`) |
+| `POSTGRES_PASSWORD` | un valore casuale lungo, solo lettere e cifre (p. es. `openssl rand -hex 24`); se è vuoto, Docker Compose non si avvia |
 | `RHINVOICE_VERSION` | la versione da usare, p. es. `0.8.0`; una versione fissata cambia solo quando la cambia Lei, `latest` segue ogni release |
 | `RHINVOICE_PORT` | porta su questo computer, predefinita `8000` |
 | `RHINVOICE_BIND` | `127.0.0.1` (predefinito) = solo questo computer; `0.0.0.0` = tutta la rete |
@@ -110,7 +110,9 @@ Il comando funziona solo su un’installazione senza clienti e documenti, quindi
 - Metta davanti un reverse proxy TLS (Caddy, Traefik, nginx) e lasci `RHINVOICE_BIND=127.0.0.1`.
 - Imposti `RHINVOICE_FORWARDED_ALLOW_IPS` sull’indirizzo del proxy e lasci che il proxy invii `Strict-Transport-Security`.
 - I cookie di sessione sono `Secure` per impostazione predefinita; imposti `RHINVOICE_COOKIE_SECURE=false` solo se usa volutamente HTTP semplice in una rete fidata.
-- I tentativi di accesso sono limitati per account; aggiunga un limite per indirizzo IP nel proxy quando l’istanza è raggiungibile da Internet, e attivi l’autenticazione a due fattori per ogni utente.
+- Crei il primo account utente prima che il server sia raggiungibile da Internet: fino ad allora il modulo di configurazione è aperto al primo visitatore.
+- I tentativi di accesso sono limitati per account (blocco dopo cinque tentativi falliti) e, insieme al ripristino delle password, a 10 al minuto per indirizzo IP. Rhinvoice vede gli indirizzi dei visitatori solo se `RHINVOICE_FORWARDED_ALLOW_IPS` indica il proxy; altrimenti condividono tutti un unico limite. Per un proxy sullo stesso computer è di solito il gateway della rete Docker (`docker network inspect rhinvoice_default`). Non usi `*` dietro un proxy che aggiunge a `X-Forwarded-For`: i visitatori potrebbero altrimenti scegliere il proprio indirizzo. Attivi l’autenticazione a due fattori per ogni utente.
+- Limiti anche nel proxy la dimensione delle richieste. Il caricamento più grande è un’importazione di fatture con i relativi file PDF (200 MB), quindi 210 MB bastano per tutto: `request_body { max_size 210MB }` in Caddy, `client_max_body_size 210m;` in nginx. Rhinvoice rifiuta comunque da sé le richieste più grandi.
 - Configuri i [backup](/docs/it/operations/backup/).
 
 ## Più installazioni sullo stesso computer

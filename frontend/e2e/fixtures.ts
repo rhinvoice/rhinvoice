@@ -1,5 +1,7 @@
+import { readFile } from "node:fs/promises";
+
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test as base, type Page } from "@playwright/test";
+import { expect, test as base, type BrowserContext, type Page } from "@playwright/test";
 
 export const ADMIN = {
   email: "admin@example.com",
@@ -93,6 +95,26 @@ export function unique(projectName: string): string {
 }
 
 export const HEADERS = { "X-Rhinvoice-Client": "e2e" };
+
+/** The session that the global setup saved (playwright.config.ts). */
+export const AUTH_FILE = "e2e/.auth/user.json";
+
+type Cookies = Parameters<BrowserContext["addCookies"]>[0];
+
+/**
+ * Answer this page's sign-ins with the session of the global setup.
+ *
+ * The server allows 10 sign-ins per minute and address (ADR 0034), and all projects
+ * run from one address: only the test of the login itself signs in for real. Tests
+ * of what happens around a sign-in (redirects, an ended session) use this instead.
+ */
+export async function signInWithSetupSession(page: Page): Promise<void> {
+  const saved = JSON.parse(await readFile(AUTH_FILE, "utf-8")) as { cookies: Cookies };
+  await page.route("**/api/auth/login", async (route) => {
+    await page.context().addCookies(saved.cookies);
+    await route.fulfill({ response: await page.request.get("/api/auth/me") });
+  });
+}
 
 export async function post<T>(page: Page, path: string, data: unknown): Promise<T> {
   const response = await page.request.post(path, { data, headers: HEADERS });

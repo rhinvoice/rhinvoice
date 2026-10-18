@@ -117,6 +117,7 @@ def test_the_server_runs_on_the_bundled_database(install: Path, tmp_path: Path, 
     assert settings.static_dir == install / "static"
     assert settings.chromium_path == install / "chromium" / "chrome-headless-shell"
     assert not settings.cookie_secure
+    assert settings.local_port == port
     assert settings.reset_code_dir == data
     assert settings.log_file == data / "rhinvoice.log"
     assert settings.update_channel == "stable"

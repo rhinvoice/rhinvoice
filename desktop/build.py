@@ -403,7 +403,8 @@ if [ ! -t 1 ]; then
     mkdir -p "$HOME/Library/Logs/__NAME__"
     exec >>"$HOME/Library/Logs/__NAME__/rhinvoice.log" 2>&1
 fi
-exec "$contents/MacOS/python3" -m rhinvoice_boot "$@"
+# -P: the working folder is not searched for modules (rhinvoice_boot.START).
+exec "$contents/MacOS/python3" -P -m rhinvoice_boot "$@"
 """
 
 

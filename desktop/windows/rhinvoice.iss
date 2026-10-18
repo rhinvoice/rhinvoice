@@ -101,13 +101,13 @@ Type: filesandordirs; Name: "{app}\restic"
 Type: dirifempty; Name: "{app}"
 
 [Icons]
-Name: "{autoprograms}\{#AppTitle}"; Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice_boot"; WorkingDir: "{app}"; IconFilename: "{app}\Rhinvoice.ico"
-Name: "{autodesktop}\{#AppTitle}"; Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice_boot"; WorkingDir: "{app}"; IconFilename: "{app}\Rhinvoice.ico"; Tasks: desktopicon
+Name: "{autoprograms}\{#AppTitle}"; Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-P -m rhinvoice_boot"; WorkingDir: "{app}"; IconFilename: "{app}\Rhinvoice.ico"
+Name: "{autodesktop}\{#AppTitle}"; Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-P -m rhinvoice_boot"; WorkingDir: "{app}"; IconFilename: "{app}\Rhinvoice.ico"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice_boot"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#AppTitle}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-P -m rhinvoice_boot"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#AppTitle}}"; Flags: nowait postinstall skipifsilent
 ; Started by the program (ADR 0031): it closed itself for the setup and comes back.
-Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice_boot"; WorkingDir: "{app}"; Flags: nowait; Check: FromRhinvoice
+Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-P -m rhinvoice_boot"; WorkingDir: "{app}"; Flags: nowait; Check: FromRhinvoice
 
 [Code]
 { Rhinvoice starts its setup with /FROMRHINVOICE and closes itself (ADR 0031). }

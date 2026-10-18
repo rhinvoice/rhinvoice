@@ -207,7 +207,7 @@ jobs:
               sleep 1
             done
             curl -fsS "http://127.0.0.1:$port/api/health" || { cat "$log"; exit 1; }
-            pkill -INT -f "MacOS/python3 -m rhinvoice_boot"
+            pkill -INT -f "MacOS/python3 -P -m rhinvoice_boot"
             sleep 5
             if pgrep -f "$name/database" >/dev/null; then
               echo "the database still runs after the program ended" >&2

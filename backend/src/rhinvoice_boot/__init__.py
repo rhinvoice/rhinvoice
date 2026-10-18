@@ -48,6 +48,9 @@ SESSION = "RHINVOICE_BOOT_SESSION"
 RESTART = 75
 """Exit code with which the program asks to be started again (after an update)."""
 LAUNCHER = "rhinvoice.desktop.launcher"
+START = ("-P", "-m", "rhinvoice_boot")
+"""How the interpreter starts the boot; ``-P`` keeps the working folder off ``sys.path``, so
+that no module lying there is imported instead of Python's or Rhinvoice's own."""
 NO_WINDOW: int = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 """Windows opens a console window for every command-line tool a program without a console
 starts (Rhinvoice.exe); this flag keeps them hidden. 0 elsewhere."""
@@ -494,7 +497,7 @@ def restart() -> int:
     ignored = [s for s in (signal.SIGINT, getattr(signal, "SIGBREAK", None)) if s is not None]
     previous = {number: signal.signal(number, signal.SIG_IGN) for number in ignored}
     try:
-        return subprocess.call([sys.executable, "-m", "rhinvoice_boot", *sys.argv[1:]])  # noqa: S603 - this program
+        return subprocess.call([sys.executable, *START, *sys.argv[1:]])  # noqa: S603 - this program
     finally:
         for number, handler in previous.items():
             signal.signal(number, handler)

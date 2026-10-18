@@ -207,6 +207,8 @@ jobs:
     # The pre-release appears only when everything it announces exists: images and setups.
     needs: [candidate, checks, images, desktop]
     runs-on: ubuntu-24.04
+    # Holds the signing key: runs only for a v* tag and after the maintainer's approval (ADR 0033).
+    environment: release
     permissions:
       # Creates the pre-release with its files.
       contents: write

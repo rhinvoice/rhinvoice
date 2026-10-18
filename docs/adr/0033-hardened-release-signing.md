@@ -52,18 +52,12 @@ installation. A security audit of the workflows found:
   styles with `'unsafe-inline'` (the code blocks colour tokens with style attributes), images
   also as `data:`. `make docs-qa` checks that every inline script of every page has its hash.
 
-## Follow-up for the maintainer
-The key is still a repository secret: a workflow run on any branch of the repository could read it. To bind it to
-releases, in the repository settings:
-1. **Environments → New environment** `release`; deployment branches and tags: **Selected**,
-   the tag rule `v*`; **Required reviewers**: the maintainer.
-2. Add `RELEASE_SIGNING_KEY` as a secret of that environment, then delete the repository
-   secret.
-3. Add `environment: release` to the jobs `github-release` (release.yml) and `promote`
-   (promote.yml) in a pull request.
-
-The workflows do not reference the environment yet: GitHub would create it on the first run
-without protection and without the secret, and the release would fail.
+## The signing key in a protected environment
+`RELEASE_SIGNING_KEY` is a secret of the environment `release`, no longer of the repository,
+and only the jobs `github-release` (release.yml) and `promote` (promote.yml) use that
+environment. The environment admits only the tags `v*` (the candidate's run) and the branch
+`dev` (Promote is started there), and each run waits for the maintainer's approval, without a
+bypass for administrators. A workflow run on any other branch cannot read the key.
 
 ## Consequences
 - A compromised backend dependency, test tool or cache can no longer read the signing key; a

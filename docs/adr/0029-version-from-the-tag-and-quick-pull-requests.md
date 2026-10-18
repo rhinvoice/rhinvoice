@@ -21,7 +21,8 @@ to mutation testing every module (about 10 minutes), also for changes that touch
 - **Pull requests get the quick run.** Mutation testing covers the domain and application
   modules the pull request changes, with the same threshold of 90 %. A pull request that only
   changes docs, the website or Markdown skips the checks; skipped checks count as passed and
-  the Website workflow checks the docs. The Windows and macOS builds run for changes to what
+  the Website workflow checks the docs. The same holds for changes to the workflows no pull
+  request runs (release, promote, website, demo): the tests cannot try them, zizmor checks them. The Windows and macOS builds run for changes to what
   the programs consist of beyond the web application.
 - **The candidate gets the full run.** The tag `vX.Y.Z-rc.N` starts CI with every mutant and
   every browser test. The Release workflow publishes the candidate only after that run passed,

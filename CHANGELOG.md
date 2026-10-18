@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.8.3] – 2026-10-18
+
 ### Security
 - The desktop updater checks more strictly: a downloaded setup is checked again right before
   it runs (on a Mac also before the disk image is opened) and removed if it changed; only one

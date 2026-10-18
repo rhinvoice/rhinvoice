@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.8.3] – 2026-10-18
+
 ### Sicherheit
 - Die Updates der Desktop-Programme prüfen strenger: Ein heruntergeladenes Setup wird direkt
   vor dem Start nochmals geprüft (auf dem Mac auch, bevor das Disk-Image geöffnet wird) und

@@ -52,10 +52,16 @@ WINDOWS_ARGUMENTS = ("/SILENT", "/SP-", "/NORESTART", "/FROMRHINVOICE")
 then start it again (desktop/windows/rhinvoice.iss)."""
 
 MACOS_SCRIPT = r"""
-lock="$1" image="$2" bundle="$3"
+lock="$1" image="$2" bundle="$3" sha256="$4"
 show_image() { /usr/bin/open "$image"; exit 0; }
 # The program has ended once its boot's session lock is free (rhinvoice_boot.session).
 /usr/bin/lockf -k -t 600 "$lock" /usr/bin/true || show_image
+# Checked again after the wait: a disk image changed meanwhile is neither mounted nor shown.
+digest="$(/usr/bin/shasum -a 256 < "$image")" || exit 1
+if [ "${digest%% *}" != "$sha256" ]; then
+    /bin/rm -f "$image"
+    exit 1
+fi
 case "$bundle" in *.app) ;; *) show_image ;; esac
 mount="$(/usr/bin/mktemp -d)" || show_image
 /usr/bin/hdiutil attach -nobrowse -noautoopen -readonly -mountpoint "$mount" "$image" \
@@ -78,14 +84,30 @@ show_image
 """Run by /bin/sh after the program has closed: replace the app, or show the disk image."""
 
 
-def helper_command(setup: Path, *, system: str, data: Path, install: Path) -> list[str]:
-    """Return what installs ``setup`` once the program has ended."""
+def helper_command(
+    setup: Path, sha256: str, *, system: str, data: Path, install: Path
+) -> list[str]:
+    """Return what installs ``setup`` (whose SHA-256 is ``sha256``) once the program has ended."""
     if system == "Windows":
         return [str(setup), *WINDOWS_ARGUMENTS]
     # The runtime lies in Rhinvoice.app/Contents/Resources (desktop/build.py).
     bundle = install.parent.parent
     lock = data / "app" / "session.lock"
-    return ["/bin/sh", "-c", MACOS_SCRIPT, "rhinvoice-setup", str(lock), str(setup), str(bundle)]
+    return [
+        "/bin/sh", "-c", MACOS_SCRIPT, "rhinvoice-setup",
+        str(lock), str(setup), str(bundle), sha256,
+    ]  # fmt: skip
+
+
+def sha256_of(path: Path) -> tuple[int, str]:
+    """Return the size and SHA-256 of a file."""
+    digest = hashlib.sha256()
+    size = 0
+    with path.open("rb") as file:
+        while chunk := file.read(CHUNK_BYTES):
+            size += len(chunk)
+            digest.update(chunk)
+    return size, digest.hexdigest()
 
 
 def start_detached(command: Sequence[str]) -> None:
@@ -122,14 +144,14 @@ class SetupDownloader:
         self,
         data: Path,
         current: str,
-        command: Callable[[Path], list[str]],
+        command: Callable[[Path, str], list[str]],
         close: Callable[[], None],
         *,
         client: httpx.Client | None = None,
         start: Callable[[Sequence[str]], None] = start_detached,
         close_delay: float = CLOSE_DELAY_SECONDS,
     ) -> None:
-        """``command`` installs a downloaded setup; ``close`` ends the program."""
+        """``command`` installs a downloaded setup (path, SHA-256); ``close`` ends the program."""
         self._folder = data / "app" / "setup"
         self._command = command
         self._close = close
@@ -138,16 +160,19 @@ class SetupDownloader:
         self._close_delay = close_delay
         self._lock = threading.Lock()
         self._progress = SetupProgress()
-        self._file: Path | None = None
+        self._file: tuple[Path, PackageFile] | None = None
         self._forget_installed(current)
 
     def download(self, version: str, setup: PackageFile) -> None:
         with self._lock:
-            if self._progress.version == version and self._progress.state in {
-                SetupState.DOWNLOADING,
-                SetupState.READY,
-            }:
+            # One download at a time: each worker owns the folder and the progress until it
+            # has ended, so none can remove another's file or report for another version. A
+            # newer release's setup is downloaded once this one has ended.
+            if self._progress.state is SetupState.DOWNLOADING or (
+                self._progress.version == version and self._progress.state is SetupState.READY
+            ):
                 return
+            self._file = None
             self._progress = SetupProgress(SetupState.DOWNLOADING, version, 0, setup.size)
         worker = threading.Thread(target=self._fetch, args=(version, setup), daemon=True)
         worker.start()
@@ -158,10 +183,23 @@ class SetupDownloader:
 
     def run(self) -> None:
         with self._lock:
-            setup = self._file
-            if self._progress.state is not SetupState.READY or setup is None:
+            ready = self._file
+            if self._progress.state is not SetupState.READY or ready is None:
                 raise ConflictError("the setup is not downloaded yet", code="setup_not_ready")
-        self._start(self._command(setup))
+            path, setup = ready
+            # Checked again right before it runs: the file may have changed since the download.
+            try:
+                unchanged = sha256_of(path) == (setup.size, setup.sha256)
+            except OSError:
+                unchanged = False
+            if not unchanged:
+                path.unlink(missing_ok=True)
+                self._file = None
+                self._progress = replace(self._progress, state=SetupState.FAILED)
+                raise ConflictError(
+                    "the downloaded setup has changed since it was checked", code="setup_not_ready"
+                )
+        self._start(self._command(path, setup.sha256))
         timer = threading.Timer(self._close_delay, self._close)
         timer.daemon = True
         timer.start()
@@ -174,7 +212,7 @@ class SetupDownloader:
                 self._progress = replace(self._progress, state=SetupState.FAILED)
             return
         with self._lock:
-            self._file = path
+            self._file = (path, setup)
             self._progress = replace(self._progress, state=SetupState.READY)
 
     def _save(self, version: str, setup: PackageFile) -> Path:

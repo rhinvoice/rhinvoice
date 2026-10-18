@@ -234,8 +234,12 @@ def test_only_windows_needs_a_mutex() -> None:
 def test_each_edition_has_its_own_mutex() -> None:
     """The names desktop/windows/rhinvoice.iss waits for."""
     assert (STABLE.mutex, BETA.mutex) == ("RhinvoiceRunning", "RhinvoiceBetaRunning")
-    iss = (Path(__file__).parents[4] / "desktop" / "windows" / "rhinvoice.iss").read_text(
-        "utf-8-sig"
+    # The nearest one upwards: mutmut runs the tests from a copy inside backend/mutants.
+    iss_file = next(
+        folder / "desktop" / "windows" / "rhinvoice.iss"
+        for folder in Path(__file__).parents
+        if (folder / "desktop" / "windows" / "rhinvoice.iss").exists()
     )
+    iss = iss_file.read_text("utf-8-sig")
     assert '#define RunningMutex "RhinvoiceRunning"' in iss
     assert '#define RunningMutex "RhinvoiceBetaRunning"' in iss

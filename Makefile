@@ -8,6 +8,11 @@ COMPOSE_DEV := docker compose -f compose.yml -f compose.dev.yml
 # read at all; the test database has its own. Without it a fresh checkout (CI) stops at once.
 COMPOSE_E2E := POSTGRES_PASSWORD=e2e docker compose -f compose.e2e.yml
 DEV_DATABASE_URL := postgresql+psycopg://rhinvoice:rhinvoice-dev@127.0.0.1:5433/rhinvoice
+# The security scanners (ADR 0033), pinned; Renovate updates them.
+# renovate: datasource=pypi depName=zizmor
+ZIZMOR_VERSION := 1.31.1
+# renovate: datasource=docker depName=ghcr.io/gitleaks/gitleaks
+GITLEAKS_IMAGE := ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
 
 .PHONY: help
 help: ## Show this help
@@ -23,14 +28,15 @@ install: ## Install backend and frontend dependencies
 # --- Quality gate ------------------------------------------------------------------
 
 .PHONY: qa
-qa: backend-qa frontend-qa api-check e2e backup-qa einvoice-qa docs-qa ## Run every check (backend, frontend, contract, E2E, backup, e-invoices, docs)
+qa: backend-qa frontend-qa api-check e2e backup-qa einvoice-qa docs-qa workflow-audit ## Run every check (backend, frontend, contract, E2E, backup, e-invoices, docs, workflows)
 	@echo "✔ make qa passed"
 
 .PHONY: docs-qa
-docs-qa: ## Docs: types, content rules (WRITING.md), build, links, audit
+docs-qa: ## Docs: types, content rules (WRITING.md), build, links, CSP, audit
 	cd website/docs && pnpm run check
 	cd website/docs && pnpm run build
 	cd website/docs && pnpm run check:links
+	cd website/docs && pnpm run check:csp
 	cd website/docs && pnpm audit --prod --audit-level high
 
 .PHONY: backend-qa
@@ -103,6 +109,20 @@ einvoice-qa: ## Validate sample e-invoices: KoSIT (EN 16931, XRechnung), Mustang
 e2e-update: ## Re-create all visual regression screenshots
 	rm -rf frontend/e2e/__screenshots__
 	$(MAKE) e2e
+
+.PHONY: security
+security: workflow-audit secret-scan ## zizmor over the workflows, gitleaks over the whole git history
+
+.PHONY: workflow-audit
+workflow-audit: ## zizmor: the GitHub workflows, findings of medium and above (online checks too with GH_TOKEN)
+	uvx zizmor==$(ZIZMOR_VERSION) --min-severity medium .github/workflows
+
+# The repository is mounted at its own path, and the shared .git of a worktree beside it.
+.PHONY: secret-scan
+secret-scan: ## gitleaks: every commit (Docker), with the exceptions in .gitleaks.toml
+	git_dir="$$(cd "$$(git rev-parse --git-common-dir)" && pwd)"; \
+	docker run --rm -v "$(CURDIR):$(CURDIR):ro" -v "$$git_dir:$$git_dir:ro" -w "$(CURDIR)" \
+		$(GITLEAKS_IMAGE) git --redact --no-banner --config .gitleaks.toml .
 
 # --- Development ---------------------------------------------------------------------
 

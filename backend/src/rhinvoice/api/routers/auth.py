@@ -14,7 +14,7 @@ from rhinvoice.api.dependencies import (
     SessionToken,
     get_current_user,
 )
-from rhinvoice.api.schemas import ERROR_RESPONSES, NOT_BLANK_PATTERN, ApiModel
+from rhinvoice.api.schemas import ERROR_RESPONSES, NOT_BLANK_PATTERN, ApiModel, ErrorResponse
 from rhinvoice.application.identity.handlers import (
     ChangePassword,
     CreateUser,
@@ -32,6 +32,13 @@ if TYPE_CHECKING:
 
 
 router = APIRouter(prefix="/api/auth", tags=["auth"], responses=ERROR_RESPONSES)
+# Sign-ins and password resets per client address (api.middleware, ADR 0034).
+RATE_LIMITED: dict[int | str, dict[str, object]] = {
+    status.HTTP_429_TOO_MANY_REQUESTS: {
+        "model": ErrorResponse,
+        "description": "Too many sign-ins or password resets from this address",
+    },
+}
 
 
 class LoginRequest(ApiModel):
@@ -131,7 +138,7 @@ def setup(body: SetupRequest, container: ContainerDep, response: Response) -> Us
     return UserResponse.of(user)
 
 
-@router.post("/login")
+@router.post("/login", responses=RATE_LIMITED)
 def login(body: LoginRequest, container: ContainerDep, response: Response) -> UserResponse:
     result = container.identity.login(
         Login(email=body.email, password=body.password, totp_code=body.totp_code),
@@ -164,14 +171,22 @@ def password_reset_info(container: ContainerDep) -> PasswordResetInfo:
     return PasswordResetInfo(method=reset.method, location=location)
 
 
-@router.post("/password-reset", status_code=status.HTTP_204_NO_CONTENT, dependencies=[NOT_IN_DEMO])
+@router.post(
+    "/password-reset",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[NOT_IN_DEMO],
+    responses=RATE_LIMITED,
+)
 def request_password_reset(container: ContainerDep) -> None:
     """Write a new one-time code where only this computer's user reads it."""
     container.password_reset.request()
 
 
 @router.post(
-    "/password-reset/confirm", status_code=status.HTTP_204_NO_CONTENT, dependencies=[NOT_IN_DEMO]
+    "/password-reset/confirm",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[NOT_IN_DEMO],
+    responses=RATE_LIMITED,
 )
 def confirm_password_reset(body: ConfirmResetRequest, container: ContainerDep) -> None:
     container.password_reset.confirm(
@@ -179,7 +194,12 @@ def confirm_password_reset(body: ConfirmResetRequest, container: ContainerDep) -
     )
 
 
-@router.post("/password", status_code=status.HTTP_204_NO_CONTENT, dependencies=[NOT_IN_DEMO])
+@router.post(
+    "/password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[NOT_IN_DEMO],
+    responses=RATE_LIMITED,
+)
 def change_password(
     body: ChangePasswordRequest,
     user: CurrentUser,

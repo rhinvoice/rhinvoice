@@ -10,8 +10,8 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 
 from rhinvoice.api.errors import register_error_handlers
-from rhinvoice.api.middleware import SecurityMiddleware
-from rhinvoice.api.rate_limit import DemoLimits
+from rhinvoice.api.middleware import BodyLimitMiddleware, SecurityMiddleware
+from rhinvoice.api.rate_limit import ClientLimits
 from rhinvoice.api.routers import (
     articles,
     auth,
@@ -88,11 +88,15 @@ def create_app(container: Container) -> FastAPI:
         generate_unique_id_function=operation_id,
     )
     app.state.container = container
+    settings = container.settings
+    # Inside SecurityMiddleware (added later), so that its 413 carries the security headers.
+    app.add_middleware(BodyLimitMiddleware, demo=settings.demo)
     app.add_middleware(
         SecurityMiddleware,
-        noindex=container.settings.demo,
+        demo=settings.demo,
         resetting=container.demo_reset.is_set,
-        limits=DemoLimits.default() if container.settings.demo else None,
+        limits=ClientLimits.default(demo=settings.demo),
+        local_port=settings.local_port,
     )
     register_error_handlers(app)
 
@@ -117,7 +121,7 @@ def create_app(container: Container) -> FastAPI:
     for router in API_ROUTERS:
         app.include_router(router)
 
-    static_dir = container.settings.static_dir
+    static_dir = settings.static_dir
     if static_dir is not None:
         _mount_frontend(app, static_dir)
     return app

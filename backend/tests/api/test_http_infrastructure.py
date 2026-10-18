@@ -231,13 +231,13 @@ def test_import_files_may_be_larger(client: TestClient) -> None:
     larger = client.post(
         "/api/imports/customers/preview",
         content=b"x" * (MAX_BODY_BYTES + 1),
-        headers={"Content-Type": "application/octet-stream"},
+        headers={"Content-Type": "multipart/form-data; boundary=x"},
     )
-    # Not refused for its size; the request is not logged in.
-    assert larger.status_code == 401
+    # Not refused for its size, but as a broken form (read before the login is checked).
+    assert larger.status_code == 400
     too_large = client.post(
         "/api/imports/customers/preview",
         content=b"x" * (MAX_IMPORT_BODY_BYTES + 1),
-        headers={"Content-Type": "application/octet-stream"},
+        headers={"Content-Type": "multipart/form-data; boundary=x"},
     )
     assert too_large.status_code == 413

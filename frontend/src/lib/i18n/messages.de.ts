@@ -199,6 +199,7 @@ export const de = {
     "Die E-Mail-Adresse oder der Code stimmt nicht, oder der Code ist abgelaufen. Nach fünf Fehlversuchen braucht es einen neuen Code.",
   "error.reset_by_administrator":
     "Hier setzt ein Administrator das Passwort auf dem Server zurück.",
+  "error.rate_limited": "Zu viele Versuche von dieser Adresse. Bitte warten Sie eine Minute.",
   "error.account_locked": "Zu viele Fehlversuche. Das Konto ist für 15 Minuten gesperrt.",
   "error.totp_required": "Bitte geben Sie den Bestätigungscode ein.",
   "error.retry": "Erneut versuchen",

@@ -243,6 +243,8 @@ def run(args: argparse.Namespace, desktop: Desktop) -> int:
             # Only this computer reaches the server, over http; Safari refuses secure
             # cookies there.
             cookie_secure=False,
+            # Only requests to this address: no other site's page gets in (ADR 0034).
+            local_port=config.port,
         )
         if not config.update_check:
             # Off in rhinvoice.json; RHINVOICE_UPDATE_CHECK=false switches it off as well.

@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     )
     timezone: str = "Europe/Zurich"
     cookie_secure: bool = True
+    local_port: int | None = None
+    """The port of a server on 127.0.0.1 only (the installation without Docker): requests
+    must then be addressed to 127.0.0.1 or localhost on this port, and changes must not come
+    from another site's page (DNS rebinding, ADR 0034). None, as with Docker: any address,
+    the reverse proxy decides which ones reach the server."""
     run_migrations: bool = True
     static_dir: Path | None = None
     theme_dir: Path | None = None

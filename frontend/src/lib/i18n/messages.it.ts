@@ -204,6 +204,7 @@ export const it: Catalog<MessageKey> = {
     "L’indirizzo e-mail o il codice non è corretto, oppure il codice è scaduto. Dopo cinque tentativi falliti serve un nuovo codice.",
   "error.reset_by_administrator":
     "Qui la password viene reimpostata da un amministratore sul server.",
+  "error.rate_limited": "Troppi tentativi da questo indirizzo. Attenda un minuto.",
   "error.account_locked": "Troppi tentativi falliti. L’account è bloccato per 15 minuti.",
   "error.totp_required": "Inserisca il codice di verifica.",
   "error.retry": "Riprova",

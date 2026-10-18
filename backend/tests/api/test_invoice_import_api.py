@@ -4,14 +4,13 @@ import io
 import zipfile
 
 from fastapi.testclient import TestClient
-from starlette.requests import Request
 
 from rhinvoice.api.middleware import (
     MAX_BODY_BYTES,
     MAX_FILE_BODY_BYTES,
     MAX_IMPORT_BODY_BYTES,
     MAX_INVOICE_IMPORT_BODY_BYTES,
-    _body_limit,  # pyright: ignore[reportPrivateUsage]
+    body_limit,
 )
 from rhinvoice.api.routers import imports
 from tests.api.test_imports_api import set_up_company
@@ -145,17 +144,21 @@ def test_too_many_upload_bytes_are_refused(user_client: TestClient, monkeypatch:
     assert refused.json()["error"]["code"] == "file_too_large"
 
 
-def request(path: str) -> Request:
-    return Request({"type": "http", "method": "POST", "path": path, "headers": []})
+FORM = "multipart/form-data; boundary=x"
 
 
 def test_imports_and_files_may_be_larger_than_other_requests() -> None:
-    assert _body_limit(request("/api/customers")) == MAX_BODY_BYTES
-    assert _body_limit(request("/api/imports/customers/preview")) == MAX_IMPORT_BODY_BYTES
-    assert _body_limit(request("/api/imports/invoices/preview")) == MAX_INVOICE_IMPORT_BODY_BYTES
-    assert _body_limit(request("/api/imports/invoices")) == MAX_INVOICE_IMPORT_BODY_BYTES
-    assert _body_limit(request("/api/documents/1/files")) == MAX_FILE_BODY_BYTES
-    assert _body_limit(request("/api/documents/1/pdf")) == MAX_BODY_BYTES
+    assert body_limit("/api/customers", FORM) == MAX_BODY_BYTES
+    assert body_limit("/api/imports/customers/preview", FORM) == MAX_IMPORT_BODY_BYTES
+    assert body_limit("/api/imports/invoices/preview", FORM) == MAX_INVOICE_IMPORT_BODY_BYTES
+    assert body_limit("/api/imports/invoices", FORM) == MAX_INVOICE_IMPORT_BODY_BYTES
+    assert body_limit("/api/documents/1/files", FORM) == MAX_FILE_BODY_BYTES
+    assert body_limit("/api/documents/1/pdf", FORM) == MAX_BODY_BYTES
     # The public demo takes no uploads at all; it never reads large bodies.
     for path in ("/api/imports/invoices", "/api/imports/customers", "/api/documents/1/files"):
-        assert _body_limit(request(path), demo=True) == MAX_BODY_BYTES
+        assert body_limit(path, FORM, demo=True) == MAX_BODY_BYTES
+    # Only uploads: anything else would be read into memory as a whole.
+    assert body_limit("/api/imports/invoices", "application/x-www-form-urlencoded") == (
+        MAX_BODY_BYTES
+    )
+    assert body_limit("/api/documents/1/files") == MAX_BODY_BYTES

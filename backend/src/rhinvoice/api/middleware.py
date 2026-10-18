@@ -49,6 +49,7 @@ LOGIN_PATH = "/api/auth/login"
 SIGN_IN_PATHS = frozenset({LOGIN_PATH, "/api/auth/password"})
 """Requests that try a password: the login and the change of one's own password."""
 PASSWORD_RESET_PATH = "/api/auth/password-reset"  # noqa: S105 - a path, no password
+DEFAULT_HTTP_PORT = 80
 SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 
 SECURITY_HEADERS = {
@@ -107,13 +108,6 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 "the demo is being reset, please try again in a minute",
                 headers={"Retry-After": "60"},
             )
-        elif self._limited(request):
-            response = error_response(
-                status.HTTP_429_TOO_MANY_REQUESTS,
-                "rate_limited",
-                "too many requests, please slow down",
-                headers={"Retry-After": "60"},
-            )
         elif (
             request.url.path.startswith("/api/")
             and request.method not in SAFE_METHODS
@@ -123,6 +117,15 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 status.HTTP_403_FORBIDDEN,
                 "csrf_rejected",
                 f"missing {CLIENT_HEADER} header",
+            )
+        # Counted only after the checks above: a request they refuse (e.g. a form
+        # another site posts) must not use up the sign-ins of everyone behind a proxy.
+        elif self._limited(request):
+            response = error_response(
+                status.HTTP_429_TOO_MANY_REQUESTS,
+                "rate_limited",
+                "too many requests, please slow down",
+                headers={"Retry-After": "60"},
             )
         elif _declared_size(request) > body_limit(
             request.url.path, request.headers.get("content-type", ""), demo=self._demo
@@ -158,7 +161,12 @@ class _LocalAddresses:
     """The addresses of a server on 127.0.0.1 (the installation without Docker)."""
 
     def __init__(self, port: int) -> None:
-        self._hosts = frozenset({f"127.0.0.1:{port}", f"localhost:{port}"})
+        names = ("127.0.0.1", "localhost")
+        hosts = {f"{name}:{port}" for name in names}
+        if port == DEFAULT_HTTP_PORT:
+            # Browsers leave the default port out of Host and Origin.
+            hosts.update(names)
+        self._hosts = frozenset(hosts)
         self._origins = frozenset(f"http://{host}" for host in self._hosts)
 
     def host_allowed(self, request: Request) -> bool:
@@ -199,8 +207,13 @@ class BodyLimitMiddleware:
             # Whatever the app made of the refused body; the answer is a 413.
             if not body.exceeded:
                 raise
-        if body.exceeded and not body.answered:
-            await _too_large()(scope, receive, send)
+        if not body.exceeded:
+            return
+        if body.answered:
+            # Half an answer cannot become a 413: raised, the server closes the connection
+            # instead of leaving the client waiting for the rest.
+            raise BodyTooLargeError
+        await _too_large()(scope, receive, send)
 
 
 class _CountedBody:

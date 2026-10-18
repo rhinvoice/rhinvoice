@@ -113,9 +113,21 @@ def test_the_body_limit_answers_413_when_the_app_lets_the_refusal_pass() -> None
     assert sent[0]["status"] == 413
 
 
-def test_the_body_limit_keeps_quiet_after_the_app_has_answered() -> None:
-    sent = asyncio.run(_call(BodyLimitMiddleware(_answering_first), b"x" * (MAX_BODY_BYTES + 1)))
-    # Only the start the app sent before; nothing after the refusal, no second answer.
+def test_the_body_limit_ends_an_answer_the_app_had_started() -> None:
+    sent: list[Message] = []
+
+    async def send(message: Message) -> None:
+        sent.append(message)
+
+    parts = [b"x" * (MAX_BODY_BYTES + 1)]
+
+    async def receive() -> Message:
+        return {"type": "http.request", "body": parts.pop(), "more_body": False}
+
+    scope: Scope = {"type": "http", "path": "/api/customers", "method": "POST", "headers": []}
+    with pytest.raises(BodyTooLargeError):
+        asyncio.run(BodyLimitMiddleware(_answering_first)(scope, receive, send))
+    # Only the start the app sent before; no second answer: the server ends the connection.
     assert [message["type"] for message in sent] == ["http.response.start"]
 
 
@@ -199,6 +211,41 @@ def test_the_desktop_server_refuses_changes_from_other_sites(local_app: FastAPI)
         # Reading needs no Origin check: the Host check already keeps other sites out.
         read = client.get("/api/health", headers={"Origin": "http://rebound.example:8123"})
         assert read.status_code == 200
+
+
+@pytest.mark.parametrize(
+    ("base_url", "status"),
+    [
+        ("http://127.0.0.1", 200),
+        ("http://localhost", 200),
+        ("http://127.0.0.1:80", 200),
+        ("http://127.0.0.1:8123", 421),
+    ],
+)
+def test_on_port_80_the_host_comes_without_a_port(
+    app_factory: AppFactory, base_url: str, status: int
+) -> None:
+    with TestClient(app_factory(local_port=80), base_url=base_url) as client:
+        assert client.get("/api/health").status_code == status
+
+
+def test_on_port_80_the_origin_comes_without_a_port(app_factory: AppFactory) -> None:
+    app = app_factory(local_port=80)
+    with TestClient(app, base_url="http://127.0.0.1", headers=CLIENT_HEADERS) as client:
+        wrong = {"email": EMAIL, "password": "x" * 12}
+        own = client.post("/api/auth/login", json=wrong, headers={"Origin": "http://127.0.0.1"})
+        assert own.status_code == 401
+
+
+def test_refused_requests_do_not_use_up_the_sign_ins(client: TestClient) -> None:
+    """A form another site posts gets no further than the missing header, and is not counted."""
+    wrong = {"email": EMAIL, "password": "x" * 12}
+    statuses = {
+        client.post("/api/auth/login", json=wrong, headers={"X-Rhinvoice-Client": ""}).status_code
+        for _ in range(20)
+    }
+    assert statuses == {403}
+    assert client.post("/api/auth/login", json=wrong).status_code == 401
 
 
 def test_a_server_answers_any_address(client: TestClient) -> None:

@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.8.1] – 2026-10-18
+
 ### Geändert
 - Testkandidaten für Windows und Mac kommen als **Rhinvoice Beta**, ein eigenes Programm, das
   neben Rhinvoice installiert wird: mit eigenem Namen, eigenen Verknüpfungen, eigenem Eintrag

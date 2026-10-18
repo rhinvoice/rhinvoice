@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.8.1] – 2026-10-18
+
 ### Changed
 - Release candidates for Windows and Mac come as **Rhinvoice Beta**, a separate program
   installed beside Rhinvoice: its own name, shortcuts, uninstall entry, data folder

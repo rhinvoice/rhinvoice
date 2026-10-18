@@ -379,6 +379,22 @@ def test_the_card_asks_for_the_current_step() -> None:
     assert steps.current() == "ready"
 
 
+def test_rhinvoice_beta_names_itself_in_its_windows(tmp_path: Path, webview: FakeWebview) -> None:
+    """ADR 0030: beside Rhinvoice, its windows must not be mistaken for the released one."""
+    webview.on_program_window = loads_and_closes
+
+    def start(splash: Splash) -> int:
+        splash.show(ADDRESS, tmp_path / "window")
+        return 0
+
+    assert window.run_with_splash(start, tmp_path / "window", "0.9.0", "Rhinvoice Beta") == 0
+    [(card_args, card), (program_args, _program)] = webview.created
+    assert card_args == ("Rhinvoice Beta",)
+    assert '<div class="name">Rhinvoice Beta</div>' in str(card["html"])
+    assert "<title>Rhinvoice Beta</title>" in str(card["html"])
+    assert program_args == ("Rhinvoice Beta", ADDRESS)
+
+
 def test_the_card_needs_nothing_from_elsewhere() -> None:
     page = window.splash_html("1<2")
     assert "Version 1&lt;2 · Beta" in page
@@ -614,3 +630,8 @@ def test_a_failure_before_the_close_still_closes() -> None:
     may_close = window.close_cleanly(destroyed.set, before=broken)
     assert may_close() is False
     assert destroyed.wait(5)
+    # The error leaves the timer's thread only after the close: wait for it here, or it is
+    # reported in the next test, where the warning filter above does not apply.
+    for thread in threading.enumerate():
+        if isinstance(thread, threading.Timer):
+            thread.join(5)

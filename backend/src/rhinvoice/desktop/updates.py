@@ -72,8 +72,10 @@ class PackageInstaller:
         *,
         client: httpx.Client | None = None,
         restart_delay: float = RESTART_DELAY_SECONDS,
+        setup: str | None = None,
     ) -> None:
         self.platform = platform
+        self.setup = setup or platform
         self.runtime = runtime
         self._versions = data / "app" / "versions"
         self._restart = restart

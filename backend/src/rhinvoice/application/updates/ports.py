@@ -40,6 +40,9 @@ class UpdateInstaller(Protocol):
     """The installation without Docker: it can put a newer app package in place."""
 
     platform: str
+    """Its app packages in release.json, e.g. "windows-x64"."""
+    setup: str
+    """Its setup in release.json: the platform, "-beta" added for Rhinvoice Beta (ADR 0030)."""
     runtime: int
     """The generation of the installed runtime."""
 

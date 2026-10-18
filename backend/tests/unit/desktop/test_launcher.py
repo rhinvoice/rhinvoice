@@ -21,6 +21,7 @@ from rhinvoice.application.updates.ports import Release
 from rhinvoice.desktop import launcher
 from rhinvoice.desktop import window as program_window
 from rhinvoice.desktop.backup import FOLDER_NAME, CurrentArchive, DesktopBackupSetup
+from rhinvoice.desktop.edition import BETA, STABLE
 from rhinvoice.desktop.launcher import (
     Desktop,
     build_parser,
@@ -568,6 +569,7 @@ class Card:
 
     def __init__(self) -> None:
         self.storage: list[Path] = []
+        self.titles: list[str] = []
 
     def show(self, address: str, storage: Path) -> None:
         """Show the program window (not called here)."""
@@ -575,9 +577,12 @@ class Card:
     def status(self, step: str) -> None:
         """Show the step (not called here)."""
 
-    def run_with_splash(self, start: Callable[["Card"], int], storage: Path, version: str) -> int:
+    def run_with_splash(
+        self, start: Callable[["Card"], int], storage: Path, version: str, title: str
+    ) -> int:
         assert version
         self.storage.append(storage)
+        self.titles.append(title)
         return start(self)
 
 
@@ -597,6 +602,7 @@ def test_main_shows_the_start_card_for_a_window(
     monkeypatch.setattr(launcher, "end_on_break", lambda: None)
     assert launcher.main(["--data-dir", str(data), "--install-dir", str(install)]) == 7
     assert card.storage == [data / "window"]
+    assert card.titles == ["Rhinvoice"]
     [surroundings] = started
     assert surroundings.show_window == card.show
     assert surroundings.status == card.status
@@ -851,10 +857,13 @@ def test_the_backup_folder_of_a_restore_is_kept_as_a_full_path(
 
 def test_a_mac_keeps_its_log_where_console_app_finds_it(tmp_path: Path) -> None:
     folder = tmp_path / "data"
-    assert program_log("Darwin", tmp_path, folder) == (
+    assert program_log("Darwin", tmp_path, folder, STABLE) == (
         tmp_path / "Library" / "Logs" / "Rhinvoice" / "rhinvoice.log"
     )
-    assert program_log("Windows", tmp_path, folder) == folder / "rhinvoice.log"
+    assert program_log("Darwin", tmp_path, folder, BETA) == (
+        tmp_path / "Library" / "Logs" / "Rhinvoice Beta" / "rhinvoice.log"
+    )
+    assert program_log("Windows", tmp_path, folder, BETA) == folder / "rhinvoice.log"
 
 
 def test_the_update_check_can_be_switched_off_in_the_configuration(
@@ -870,9 +879,11 @@ def test_the_update_check_can_be_switched_off_in_the_configuration(
     assert settings.update_check is False
 
 
-def test_a_test_machine_is_offered_release_candidates(
+def test_rhinvoice_is_never_offered_release_candidates(
     install: Path, tmp_path: Path, data: Path
 ) -> None:
+    """ADR 0030: candidates go to Rhinvoice Beta; "update_channel" in the file is not read."""
+    (install / "runtime.json").write_text('{"generation": 1}')
     config = json.loads((data / "rhinvoice.json").read_text())
     (data / "rhinvoice.json").write_text(json.dumps(config | {"update_channel": "test"}))
     recorder = Recorder()
@@ -880,4 +891,32 @@ def test_a_test_machine_is_offered_release_candidates(
         run(build_parser().parse_args(["--no-browser"]), desktop(install, tmp_path, recorder)) == 0
     )
     [(settings, _host, _port)] = recorder.calls
+    assert settings.update_channel == "stable"
+    [own] = recorder.owns
+    assert isinstance(own.installer, PackageInstaller)
+    assert own.installer.setup == "linux-x64"
+
+
+def test_rhinvoice_beta_is_a_separate_installation(install: Path, tmp_path: Path) -> None:
+    """ADR 0030: its own data, backup folder and setup, and it is offered release candidates."""
+    (install / "runtime.json").write_text('{"generation": 1, "edition": "beta"}')
+    (install / "restic").mkdir()
+    (install / "restic" / "restic").write_text("")
+    (tmp_path / "Dropbox").mkdir()
+    recorder = Recorder()
+    assert (
+        run(build_parser().parse_args(["--no-browser"]), desktop(install, tmp_path, recorder)) == 0
+    )
+    [(settings, _host, _port)] = recorder.calls
+    beta = tmp_path / "home" / "rhinvoice-beta"
+    assert settings.reset_code_dir == beta
+    assert (beta / "rhinvoice.json").exists()
+    assert not (tmp_path / "home" / "rhinvoice").exists()
     assert settings.update_channel == "test"
+    [own] = recorder.owns
+    assert isinstance(own.installer, PackageInstaller)
+    assert (own.installer.platform, own.installer.setup) == ("linux-x64", "linux-x64-beta")
+    assert isinstance(own.backup_setup, DesktopBackupSetup)
+    assert own.backup_setup.target().suggestions == [
+        FolderSuggestion("Dropbox", str(tmp_path / "Dropbox" / "Rhinvoice-Beta-Backup"))
+    ]

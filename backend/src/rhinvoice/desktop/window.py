@@ -69,13 +69,16 @@ def close() -> None:
         shown.destroy()
 
 
-def run_with_splash(start: Callable[[Splash], int], storage: Path, version: str) -> int:
+def run_with_splash(
+    start: Callable[[Splash], int], storage: Path, version: str, title: str = TITLE
+) -> int:
     """Show the start card, run ``start`` beside it and return its exit code.
 
     The windows need the main thread (macOS): ``start`` runs in a thread of its own, starts
     the database and the server and shows the program window (Splash.show) until it is
     closed. Whatever window is left when it ends is closed, which ends the window loop.
-    The window keeps its cookies in ``storage``: the login survives a restart.
+    The window keeps its cookies in ``storage``: the login survives a restart. ``title``
+    names the program in its windows (Rhinvoice Beta, ADR 0030).
     """
     import webview  # noqa: PLC0415 - only in the installers
 
@@ -84,8 +87,8 @@ def run_with_splash(start: Callable[[Splash], int], storage: Path, version: str)
     webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
     steps = StartSteps()
     card = webview.create_window(  # pyright: ignore[reportUnknownMemberType]
-        TITLE,
-        html=splash_html(version),
+        title,
+        html=splash_html(version, title),
         js_api=steps,
         width=SPLASH_SIZE[0],
         height=SPLASH_SIZE[1],
@@ -95,7 +98,7 @@ def run_with_splash(start: Callable[[Splash], int], storage: Path, version: str)
         # pywebview types screens as its module_property; it reads as the list of screens.
         screen=main_screen(webview.screens),  # pyright: ignore[reportArgumentType]
     )
-    splash = Splash(card, steps)
+    splash = Splash(card, steps, title)
     if card is not None:
         # Quitting while it starts would end the process before the database stops.
         card.events.closing += splash.may_close
@@ -184,9 +187,10 @@ class StartSteps:
 class Splash:
     """The start card: says what the start is doing, and gives way to the program window."""
 
-    def __init__(self, card: Card | None, steps: StartSteps) -> None:
+    def __init__(self, card: Card | None, steps: StartSteps, title: str = TITLE) -> None:
         self._card = card
         self._steps = steps
+        self._title = title
         self._done = threading.Event()
         self._ended = threading.Event()
 
@@ -196,7 +200,7 @@ class Splash:
 
     def show(self, address: str, storage: Path) -> None:
         """Show the program window in place of the card until it is closed."""
-        show(address, storage, loaded=self.close, ended=self._ended)
+        show(address, storage, loaded=self.close, ended=self._ended, title=self._title)
 
     def end(self) -> None:
         """Leave the program window as if it were closed (the program is asked to end)."""
@@ -221,6 +225,7 @@ def show(
     storage: Path,
     loaded: Callable[[], None] | None = None,
     ended: threading.Event | None = None,
+    title: str = TITLE,
 ) -> None:
     """Show the web interface in a program window until it is closed, or ``ended`` is set.
 
@@ -240,7 +245,7 @@ def show(
     # WebKit then ignores scrolling on a page with overscroll-behavior (no rubber band,
     # index.css). Zooming also helps reading (WCAG 1.4.4).
     window = webview.create_window(  # pyright: ignore[reportUnknownMemberType]
-        TITLE,
+        title,
         address,
         width=place.width,
         height=place.height,
@@ -471,7 +476,7 @@ LOGO = (
 """The logo of frontend/public/favicon.svg: the card loads nothing from elsewhere."""
 
 SPLASH_PAGE = """<!doctype html>
-<html><head><meta charset="utf-8"><title>Rhinvoice</title><style>
+<html><head><meta charset="utf-8"><title>__NAME__</title><style>
 html,body{margin:0;height:100%;overflow:hidden;cursor:default;user-select:none}
 body{background:linear-gradient(135deg,#1d4f80,#123a62);color:#fff;
 font:13px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;
@@ -486,7 +491,7 @@ animation:flow 1.6s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.river::after{animation:none;width:100%;opacity:.5}}
 .bottom{display:flex;justify-content:space-between;gap:12px;opacity:.85;font-size:12px}
 </style></head><body>
-<div class="top">__LOGO__<div><div class="name">Rhinvoice</div>
+<div class="top">__LOGO__<div><div class="name">__NAME__</div>
 <div class="version">Version __VERSION__ · Beta</div></div></div>
 <div><div class="river"></div><div class="bottom"><span id="step" role="status"></span>
 <span>by Webberz</span></div></div>
@@ -503,10 +508,11 @@ window.addEventListener("pywebviewready", () => {
 </script></body></html>"""
 
 
-def splash_html(version: str) -> str:
+def splash_html(version: str, name: str = TITLE) -> str:
     """Write the start card's page: logo, name, version and the step of the start."""
     return (
         SPLASH_PAGE.replace("__LOGO__", LOGO)
+        .replace("__NAME__", html.escape(name))
         .replace("__VERSION__", html.escape(version))
         .replace("__TEXTS__", json.dumps(SPLASH_TEXTS, ensure_ascii=False))
     )

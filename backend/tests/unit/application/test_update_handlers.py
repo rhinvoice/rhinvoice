@@ -38,6 +38,7 @@ class Feed:
 
 class Installer:
     platform = "windows-x64"
+    setup = "windows-x64"
     runtime = 1
 
     def __init__(self, *failures: str) -> None:
@@ -123,11 +124,28 @@ def test_a_package_that_needs_a_newer_runtime_needs_the_setup() -> None:
 def test_a_release_without_a_package_for_this_platform_needs_the_setup() -> None:
     installer = Installer()
     installer.platform = "macos-arm64"
+    installer.setup = "macos-arm64"
     updates = handlers(RELEASE, installer=installer)
     updates.refresh()
     status = updates.status()
     assert status.action is UpdateAction.SETUP
     assert status.setup_url is None
+
+
+def test_rhinvoice_beta_is_led_to_its_own_setup_only() -> None:
+    """ADR 0030: the released setup would install Rhinvoice, not a second Rhinvoice Beta."""
+    installer = Installer()
+    installer.setup = "windows-x64-beta"
+    beta_setup = "https://example.org/Rhinvoice-Beta-Setup-Windows.exe"
+    with_beta = replace(
+        RELEASE, runtime=2, setups={**RELEASE.setups, "windows-x64-beta": beta_setup}
+    )
+    updates = handlers(with_beta, installer=installer)
+    updates.refresh()
+    assert updates.status().setup_url == beta_setup
+    updates = handlers(replace(RELEASE, runtime=2), installer=installer)
+    updates.refresh()
+    assert updates.status().setup_url is None
 
 
 def test_the_running_version_or_an_older_one_offers_nothing() -> None:

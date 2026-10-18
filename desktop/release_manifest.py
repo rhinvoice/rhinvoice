@@ -35,6 +35,9 @@ REPOSITORY = "https://github.com/rhinvoice/rhinvoice"
 SETUPS = {
     "Rhinvoice-Setup-Windows.exe": "windows-x64",
     "Rhinvoice-macOS.dmg": "macos-arm64",
+    # Rhinvoice Beta's, only in a candidate (ADR 0030): its runtime needs its own setup.
+    "Rhinvoice-Beta-Setup-Windows.exe": "windows-x64-beta",
+    "Rhinvoice-Beta-macOS.dmg": "macos-arm64-beta",
 }
 
 

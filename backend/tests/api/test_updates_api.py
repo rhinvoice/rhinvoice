@@ -25,6 +25,7 @@ class Feed:
 
 class Installer:
     platform = "windows-x64"
+    setup = "windows-x64"
     runtime = 1
 
     def __init__(self) -> None:

@@ -5,6 +5,16 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Changed
+- Release candidates for Windows and Mac come as **Rhinvoice Beta**, a separate program
+  installed beside Rhinvoice: its own name, shortcuts, uninstall entry, data folder
+  (`%LOCALAPPDATA%\Rhinvoice Beta`, `~/Library/Application Support/Rhinvoice Beta`), logs and
+  backup folder. Installing a candidate no longer touches the data of Rhinvoice. Rhinvoice Beta
+  is offered newer candidates as updates; Rhinvoice only released versions, also with
+  `"update_channel": "test"` in `rhinvoice.json`, which is no longer read.
+- On a Mac, Rhinvoice is now `ch.webberz.rhinvoice` for the system. After installing the next
+  setup (not after an in-app update) you sign in once more; the data stays.
+
 ### Fixed
 - On a Mac, the window of the old version goes away when an update restarts Rhinvoice. Until
   now it stayed on screen, frozen, beside the new version's window, with a second Rhinvoice

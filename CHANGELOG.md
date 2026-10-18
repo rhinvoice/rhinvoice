@@ -5,6 +5,16 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Security
+- The desktop updater checks more strictly: a downloaded setup is checked again right before
+  it runs (on a Mac also before the disk image is opened) and removed if it changed; only one
+  setup downloads at a time; release information with an unexpected version, address or
+  checksum is ignored; an update folder that this program did not download and check
+  completely is downloaded again instead of started.
+- The Windows and Mac programs no longer look for Python modules in the folder they were
+  started from (`python -P`). This applies to installations from the next setup on; the
+  command for restoring a backup on Windows now includes `-P`.
+
 ## [0.8.2] – 2026-10-18
 
 ### Added

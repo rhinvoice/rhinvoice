@@ -5,6 +5,17 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Sicherheit
+- Die Updates der Desktop-Programme prüfen strenger: Ein heruntergeladenes Setup wird direkt
+  vor dem Start nochmals geprüft (auf dem Mac auch, bevor das Disk-Image geöffnet wird) und
+  gelöscht, wenn es sich verändert hat; es lädt nur noch ein Setup aufs Mal; Release-Angaben
+  mit unerwarteter Version, Adresse oder Prüfsumme werden ignoriert; ein Update-Ordner, den das
+  Programm nicht selbst vollständig heruntergeladen und geprüft hat, wird neu geladen statt
+  gestartet.
+- Die Programme für Windows und Mac suchen keine Python-Module mehr im Ordner, aus dem sie
+  gestartet wurden (`python -P`). Das gilt für Installationen ab dem nächsten Setup; der Befehl
+  zum Wiederherstellen eines Backups unter Windows enthält jetzt `-P`.
+
 ## [0.8.2] – 2026-10-18
 
 ### Hinzugefügt

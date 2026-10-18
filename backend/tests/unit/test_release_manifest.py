@@ -189,6 +189,22 @@ def test_refuses_a_file_the_candidate_does_not_list(tmp_path: Path) -> None:
         tool.verify_candidate("0.9.0", taken, built, TAG)
 
 
+def test_refuses_when_a_file_of_the_candidate_is_missing(tmp_path: Path) -> None:
+    built, taken = candidate(tmp_path)
+    # E.g. a setup the download pattern did not match: it would drop out of the release.
+    (taken / "Rhinvoice-Setup-Windows.exe").unlink()
+
+    with pytest.raises(SystemExit, match=r"candidate's Rhinvoice-Setup-Windows\.exe is missing"):
+        tool.verify_candidate("0.9.0", taken, built, TAG)
+
+
+def test_does_not_expect_the_beta_setups(tmp_path: Path) -> None:
+    built, taken = candidate(tmp_path)
+
+    assert "Rhinvoice-Beta-macOS.dmg" in (built / "release.json").read_text()
+    assert "Rhinvoice-Beta-macOS.dmg" not in tool.verify_candidate("0.9.0", taken, built, TAG)
+
+
 def test_refuses_a_changed_release_json(tmp_path: Path) -> None:
     built, taken = candidate(tmp_path)
     manifest = built / "release.json"

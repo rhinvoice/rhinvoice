@@ -136,16 +136,16 @@ def check_signature(content: bytes, signature: bytes) -> None:
         raise SystemExit(msg) from error
 
 
-def listed_files(release: dict[str, object], tag: str) -> dict[str, tuple[str, int]]:
-    """Name, SHA-256 and size of every file a signed release.json describes."""
+def listed_files(release: dict[str, object], tag: str) -> dict[str, tuple[str, int, str]]:
+    """Name, SHA-256, size and platform of every file a signed release.json describes."""
     prefix = f"{REPOSITORY}/releases/download/{tag}/"
-    files: dict[str, tuple[str, int]] = {}
+    files: dict[str, tuple[str, int, str]] = {}
     for section in ("packages", "setup_files"):
         entries = release.get(section, {})
         if not isinstance(entries, dict):
             msg = f"release.json: '{section}' is not an object"
             raise SystemExit(msg)
-        for entry in cast("dict[str, object]", entries).values():
+        for platform, entry in cast("dict[str, object]", entries).items():
             if not isinstance(entry, dict):
                 msg = f"release.json: an entry of '{section}' is not an object"
                 raise SystemExit(msg)
@@ -157,15 +157,17 @@ def listed_files(release: dict[str, object], tag: str) -> dict[str, tuple[str, i
             if not isinstance(size, int) or isinstance(size, bool):
                 msg = f"release.json: {url} has no size"
                 raise SystemExit(msg)
-            files[url.removeprefix(prefix)] = (digest, size)
+            files[url.removeprefix(prefix)] = (digest, size, platform)
     return files
 
 
 def verify_candidate(version: str, folder: Path, candidate: Path, tag: str) -> list[str]:
-    """Check that every file in the folder is the candidate's; return their names.
+    """Check that the folder holds exactly the candidate's files to release; return their names.
 
     The candidate's release.json (in ``candidate``, with its signature) must be signed with
-    the program's key, be for this version and list each file with its size and SHA-256.
+    the program's key, be for this version and list each file with its size and SHA-256. Every
+    file it lists must be there, except Rhinvoice Beta's setups, which are never released
+    (ADR 0030): a file the download missed would otherwise drop out of the release.
     """
     content = (candidate / MANIFEST).read_bytes()
     check_signature(content, (candidate / SIGNATURE).read_bytes())
@@ -182,12 +184,16 @@ def verify_candidate(version: str, folder: Path, candidate: Path, tag: str) -> l
     if not names:
         msg = f"{folder} holds no files to check"
         raise SystemExit(msg)
+    expected = {name for name, (_, _, platform) in listed.items() if not platform.endswith("-beta")}
+    if missing := sorted(expected.difference(names)):
+        msg = f"the candidate's {', '.join(missing)} is missing"
+        raise SystemExit(msg)
     for name in names:
         if name not in listed:
             msg = f"{name} is not in the candidate's release.json"
             raise SystemExit(msg)
         path = folder / name
-        expected_digest, expected_size = listed[name]
+        expected_digest, expected_size, _ = listed[name]
         if path.stat().st_size != expected_size or sha256(path) != expected_digest:
             msg = f"{name} differs from the file the candidate's release.json describes"
             raise SystemExit(msg)

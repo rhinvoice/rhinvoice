@@ -2,6 +2,8 @@ import type { components } from "@/api/client";
 import { REPOSITORY_URL } from "@/lib/about";
 
 export type Update = components["schemas"]["UpdateResponse"];
+/** The new setup as the program downloads it itself (ADR 0031). */
+export type SetupDownload = components["schemas"]["SetupResponse"];
 
 /** What the notice at the foot of the navigation says (ADR 0022); null: nothing. */
 export type UpdateNotice =
@@ -18,6 +20,8 @@ export type UpdateNotice =
       readonly version: string;
       readonly notesUrl: string | null;
       readonly setupUrl: string;
+      /** null: the setup is downloaded by hand from setupUrl (releases before ADR 0031). */
+      readonly download: SetupDownload | null;
     }
   | { readonly kind: "failed"; readonly version: string; readonly current: string };
 
@@ -32,6 +36,8 @@ export const RESTART_POLL_MS = 2_000;
  * again this often, but only for the first answers (with the check off it never comes). */
 export const FIRST_CHECK_POLL_MS = 15_000;
 export const FIRST_CHECK_POLLS = 20;
+/** While the program downloads a setup, for its progress. */
+export const SETUP_POLL_MS = 1_000;
 
 /** The line in .env that pins the version of a Docker installation. */
 export function envLine(version: string): string {
@@ -63,6 +69,7 @@ export function updateNotice(update: Update | undefined): UpdateNotice | null {
         version,
         notesUrl: update.notes_url,
         setupUrl: update.setup_url ?? RELEASES_URL,
+        download: update.setup,
       };
     case "none":
       return null;
@@ -71,6 +78,9 @@ export function updateNotice(update: Update | undefined): UpdateNotice | null {
 
 /** How long the page waits before it asks the server again. */
 export function checkInterval(update: Update | undefined, answers: number): number {
+  if (update?.setup?.state === "downloading") {
+    return SETUP_POLL_MS;
+  }
   const unchecked = (update?.checked_at ?? null) === null;
   return unchecked && answers < FIRST_CHECK_POLLS ? FIRST_CHECK_POLL_MS : CHECK_INTERVAL_MS;
 }
@@ -78,4 +88,14 @@ export function checkInterval(update: Update | undefined, answers: number): numb
 /** Whether the program answers with another version than before the update. */
 export function restartedInto(before: string, update: Update | undefined): boolean {
   return update !== undefined && update.current !== before;
+}
+
+/** How much of the setup has come, in whole percent. */
+export function downloadPercent(download: SetupDownload): number {
+  return download.total === 0 ? 0 : Math.floor((download.received / download.total) * 100);
+}
+
+/** Bytes as whole megabytes, for "38 of 58 MB". */
+export function megabytes(bytes: number): number {
+  return Math.round(bytes / 1_000_000);
 }

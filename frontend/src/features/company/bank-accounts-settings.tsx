@@ -51,6 +51,7 @@ import { applyServerErrors } from "@/features/shared/server-errors";
 import { offersQrIban, type CountryProfile } from "@/features/shared/country-profile-model";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { formatIban } from "@/lib/validation/iban";
+import { useUnsavedChanges } from "@/features/shared/use-unsaved-changes";
 
 type Editing = { readonly account: BankAccount | null } | null;
 
@@ -229,7 +230,8 @@ function BankAccountDialog({
     mode: "onTouched",
     defaultValues: account === null ? defaults : bankAccountToForm(account),
   });
-  const { errors, isSubmitting } = form.formState;
+  const { errors, isSubmitting, isDirty } = form.formState;
+  useUnsavedChanges(isDirty);
   const error = (name: keyof BankAccountFormValues) => errors[name]?.message;
   const submit = form.handleSubmit(async (values) => {
     try {

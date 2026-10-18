@@ -76,6 +76,7 @@ import { formatMoney, formatRelative } from "@/lib/format";
 import { modifierLabel } from "@/lib/shortcuts";
 import { referenceHint, xrechnungOnly } from "@/lib/xrechnung";
 import { termsFor } from "@/features/shared/country-profile-model";
+import { useUnsavedChanges } from "@/features/shared/use-unsaved-changes";
 
 export type EditableType = "invoice" | "quote";
 
@@ -199,6 +200,8 @@ export function DocumentEditor<Saved = DocumentDetail>({
     shouldBlockFn: () => unsaved() && !window.confirm(t("documents.leaveConfirm")),
     enableBeforeUnload: unsaved,
   });
+  // Closing the program for an update asks about them as well (ADR 0031).
+  useUnsavedChanges(form.formState.isDirty || plan?.dirty === true);
 
   // The autosave in flight, if any: a manual save waits for it, so the older
   // content can never arrive at the server after the newer one.

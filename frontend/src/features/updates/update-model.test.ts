@@ -6,7 +6,10 @@ import {
   FIRST_CHECK_POLLS,
   FIRST_CHECK_POLL_MS,
   RELEASES_URL,
+  SETUP_POLL_MS,
   checkInterval,
+  downloadPercent,
+  megabytes,
   envLine,
   restartedInto,
   updateNotice,
@@ -25,6 +28,7 @@ function update(overrides: Partial<Update> = {}): Update {
     checked_at: "2026-10-14T09:00:00Z",
     failed: false,
     can_check: true,
+    setup: null,
     ...overrides,
   };
 }
@@ -58,9 +62,18 @@ describe("updateNotice", () => {
       version: "0.9.0",
       notesUrl: NOTES,
       setupUrl: setup,
+      download: null,
     });
     // Without a setup for this platform: the releases page.
     expect(updateNotice(update({ action: "setup" }))).toMatchObject({ setupUrl: RELEASES_URL });
+  });
+
+  it("lets the program download the setup itself when it can (ADR 0031)", () => {
+    const download = { state: "downloading" as const, received: 5, total: 10 };
+    expect(updateNotice(update({ action: "setup", setup: download }))).toMatchObject({
+      kind: "setup",
+      download,
+    });
   });
 
   it("says that an update did not work and which version runs again", () => {
@@ -91,6 +104,29 @@ describe("checkInterval", () => {
       FIRST_CHECK_POLL_MS,
     );
     expect(checkInterval(update({ checked_at: null }), FIRST_CHECK_POLLS)).toBe(CHECK_INTERVAL_MS);
+  });
+});
+
+describe("checkInterval while a setup downloads", () => {
+  it("asks every second for the progress", () => {
+    const downloading = update({
+      action: "setup",
+      setup: { state: "downloading", received: 1, total: 2 },
+    });
+    expect(checkInterval(downloading, 99)).toBe(SETUP_POLL_MS);
+    const ready = update({ action: "setup", setup: { state: "ready", received: 2, total: 2 } });
+    expect(checkInterval(ready, 99)).toBe(CHECK_INTERVAL_MS);
+  });
+});
+
+describe("downloadPercent and megabytes", () => {
+  it("tell the progress in whole numbers", () => {
+    expect(downloadPercent({ state: "downloading", received: 38_500_000, total: 58_000_000 })).toBe(
+      66,
+    );
+    expect(downloadPercent({ state: "idle", received: 0, total: 0 })).toBe(0);
+    expect(megabytes(58_080_402)).toBe(58);
+    expect(megabytes(499_999)).toBe(0);
   });
 });
 

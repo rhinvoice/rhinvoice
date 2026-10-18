@@ -14,6 +14,7 @@ import logging
 import re
 from importlib.metadata import PackageNotFoundError, version
 from typing import TYPE_CHECKING, Protocol, cast
+from urllib.parse import urlsplit
 
 import httpx
 from cryptography.exceptions import InvalidSignature
@@ -28,7 +29,10 @@ RELEASE_URL = "https://github.com/rhinvoice/rhinvoice/releases/latest/download/r
 RELEASES_URL = "https://api.github.com/repos/rhinvoice/rhinvoice/releases?per_page=1"
 """The newest release first, pre-releases (release candidates) included."""
 DOWNLOAD_URL = "https://github.com/rhinvoice/rhinvoice/releases/download/{tag}/release.json"
-TAG = re.compile(r"v\d+\.\d+\.\d+(-rc\.\d+)?")
+TAG = re.compile(r"v\d+\.\d+\.\d+(-rc\.\d+)?", re.ASCII)
+VERSION = re.compile(r"\d+\.\d+\.\d+", re.ASCII)
+"""A released version: it names folders in the data folder (updates, setups)."""
+SHA256 = re.compile(r"[0-9a-f]{64}")
 PUBLIC_KEY = "F9FfvPZ4GxQ4qsItTuEIZPX/gcah6DYPhU0pUFkw8eI="
 """Of the key in the release workflow's secret RELEASE_SIGNING_KEY."""
 TIMEOUT_SECONDS = 10.0
@@ -129,16 +133,18 @@ def read_release(values: object) -> Release:
         platform: _package(item) for platform, item in _object(fields.get("packages", {})).items()
     }
     setups = {
-        platform: _text_value(url) for platform, url in _object(fields.get("setups", {})).items()
+        platform: _url(url, "setups") for platform, url in _object(fields.get("setups", {})).items()
     }
     # Since ADR 0031: the setups with size and SHA-256, for the program to check.
     setup_files = {
         platform: _package(item)
         for platform, item in _object(fields.get("setup_files", {})).items()
     }
+    # Even a signed release.json is read strictly: its version names folders, its
+    # addresses are downloaded or shown as links.
     return Release(
-        version=_text(fields, "version"),
-        notes_url=_text(fields, "notes_url"),
+        version=_version(fields),
+        notes_url=_url(fields.get("notes_url"), "notes_url"),
         runtime=_number(fields, "runtime"),
         packages=packages,
         setups=setups,
@@ -148,9 +154,30 @@ def read_release(values: object) -> Release:
 
 def _package(value: object) -> PackageFile:
     fields = _object(value)
+    sha256 = _text(fields, "sha256")
+    if not SHA256.fullmatch(sha256):
+        msg = "'sha256' is not a SHA-256 in hexadecimal"
+        raise ValueError(msg)
     return PackageFile(
-        url=_text(fields, "url"), sha256=_text(fields, "sha256"), size=_number(fields, "size")
+        url=_url(fields.get("url"), "url"), sha256=sha256, size=_number(fields, "size")
     )
+
+
+def _version(fields: Mapping[str, object]) -> str:
+    version = _text(fields, "version")
+    if not VERSION.fullmatch(version):
+        msg = f"{version!r} is not a version"
+        raise ValueError(msg)
+    return version
+
+
+def _url(value: object, key: str) -> str:
+    url = _text_value(value, key)
+    parts = urlsplit(url)
+    if parts.scheme != "https" or not parts.hostname or not url.isprintable() or " " in url:
+        msg = f"'{key}' is not an https address"
+        raise ValueError(msg)
+    return url
 
 
 def _object(value: object) -> Mapping[str, object]:
@@ -165,7 +192,7 @@ def _text(fields: Mapping[str, object], key: str) -> str:
     return _text_value(fields.get(key), key)
 
 
-def _text_value(value: object, key: str = "value") -> str:
+def _text_value(value: object, key: str) -> str:
     if not isinstance(value, str):
         msg = f"'{key}' is not text"
         raise TypeError(msg)

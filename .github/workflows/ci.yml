@@ -29,8 +29,9 @@ jobs:
     outputs:
       code: ${{ steps.scope.outputs.code }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          persist-credentials: false
           fetch-depth: 2
       - id: scope
         # Only a pull request that provably touches nothing but docs skips the checks; any
@@ -52,8 +53,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
         with:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
@@ -70,15 +73,18 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          persist-credentials: false
           fetch-depth: 2
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
         with:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
       - run: cd backend && uv sync --frozen
-      - run: make backend-mutation CHANGED=${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
+      - run: make backend-mutation CHANGED="$CHANGED"
+        env:
+          CHANGED: ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
 
   # The name dev and main require; it passes when both backend jobs passed.
   backend:
@@ -89,8 +95,11 @@ jobs:
     timeout-minutes: 5
     steps:
       - run: |
-          test "${{ needs.backend-checks.result }}" = success
-          test "${{ needs.backend-mutation.result }}" = success
+          test "$CHECKS" = success
+          test "$MUTATION" = success
+        env:
+          CHECKS: ${{ needs.backend-checks.result }}
+          MUTATION: ${{ needs.backend-mutation.result }}
 
   frontend:
     name: Frontend (format, lint, types, layers, unit tests, audit, build)
@@ -99,11 +108,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         with:
           package_json_file: frontend/package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: pnpm
@@ -118,12 +129,14 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         with:
           package_json_file: frontend/package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: pnpm
@@ -143,20 +156,23 @@ jobs:
       matrix:
         part: [1, 2, 3, 4]
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         with:
           package_json_file: frontend/package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: cd frontend && pnpm install --frozen-lockfile
-      - run: make e2e SHARD=${{ matrix.part }}/4
+      - run: make e2e SHARD="$PART/4"
         env:
           CI: "true"
-      - uses: actions/upload-artifact@v4
+          PART: ${{ matrix.part }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: failure()
         with:
           name: playwright-report-${{ matrix.part }}
@@ -173,7 +189,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - run: test "${{ needs.e2e-part.result }}" = success
+      - run: test "$PARTS" = success
+        env:
+          PARTS: ${{ needs.e2e-part.result }}
 
   backup:
     name: Backup and restore (shellcheck, restic, pg_dump)
@@ -182,7 +200,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - run: make backup-qa
 
   einvoice:
@@ -192,13 +212,34 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
         with:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
       - run: cd backend && uv sync --frozen
       - run: make einvoice-qa
+
+  # Every run, also for docs: a secret can hide anywhere (ADR 0033).
+  security:
+    name: Workflows and secrets (zizmor, gitleaks)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          # gitleaks reads every commit; the whole history takes seconds.
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          enable-cache: false
+      - run: make security
+        env:
+          # zizmor's online checks: impostor commits, known vulnerable actions.
+          GH_TOKEN: ${{ github.token }}
 
   docker:
     name: Docker image builds
@@ -207,15 +248,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: backup/Dockerfile

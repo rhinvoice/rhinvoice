@@ -1,8 +1,24 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":semanticCommits", ":dependencyDashboard"],
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":dependencyDashboard",
+    "helpers:pinGitHubActionDigests",
+    "docker:pinDigests"
+  ],
   "schedule": ["before 6am on monday"],
   "timezone": "Europe/Zurich",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "The pinned security scanners in the Makefile (ADR 0033)",
+      "managerFilePatterns": ["/^Makefile$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n[A-Z_]+ := (?:[^:\\s]+:)?(?<currentValue>[^@\\s]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?"
+      ]
+    }
+  ],
   "packageRules": [
     {
       "matchManagers": ["github-actions"],

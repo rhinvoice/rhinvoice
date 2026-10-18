@@ -27,6 +27,7 @@ from pathlib import Path
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
+
 from rhinvoice.infrastructure.updates.feed import PUBLIC_KEY, read_release
 
 REPOSITORY = "https://github.com/rhinvoice/rhinvoice"
@@ -41,6 +42,19 @@ SETUPS = {
 }
 
 
+def file_entry(path: Path, tag: str) -> dict[str, object]:
+    """Where a file of the release is, with what the program checks after the download."""
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return {
+        "url": f"{REPOSITORY}/releases/download/{tag}/{path.name}",
+        "sha256": digest.hexdigest(),
+        "size": path.stat().st_size,
+    }
+
+
 def package_entry(path: Path, version: str, tag: str) -> tuple[dict[str, object], int]:
     """Describe an app package; return it with the runtime generation it needs."""
     with zipfile.ZipFile(path) as package:
@@ -48,12 +62,7 @@ def package_entry(path: Path, version: str, tag: str) -> tuple[dict[str, object]
     if manifest["version"] != version:
         msg = f"{path.name} holds version {manifest['version']}, not {version}"
         raise SystemExit(msg)
-    entry: dict[str, object] = {
-        "url": f"{REPOSITORY}/releases/download/{tag}/{path.name}",
-        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-        "size": path.stat().st_size,
-    }
-    return entry, int(manifest["runtime"])
+    return file_entry(path, tag), int(manifest["runtime"])
 
 
 def manifest(version: str, folder: Path, tag: str) -> dict[str, object]:
@@ -69,17 +78,22 @@ def manifest(version: str, folder: Path, tag: str) -> dict[str, object]:
     if len(runtimes) > 1:
         msg = f"the app packages need different runtimes: {sorted(runtimes)}"
         raise SystemExit(msg)
+    present = {platform: folder / name for name, platform in SETUPS.items()}
+    present = {platform: path for platform, path in present.items() if path.exists()}
+    # "setups" for the programs before ADR 0031, which only read the links; "setup_files"
+    # lets a program download and check the setup itself (ADR 0031).
     setups = {
-        platform: f"{REPOSITORY}/releases/download/{tag}/{name.format(version=version)}"
-        for name, platform in SETUPS.items()
-        if (folder / name.format(version=version)).exists()
+        platform: f"{REPOSITORY}/releases/download/{tag}/{path.name}"
+        for platform, path in present.items()
     }
+    setup_files = {platform: file_entry(path, tag) for platform, path in present.items()}
     return {
         "version": version,
         "notes_url": f"{REPOSITORY}/releases/tag/{tag}",
         "runtime": runtimes.pop() if runtimes else 1,
         "packages": packages,
         "setups": setups,
+        "setup_files": setup_files,
     }
 
 

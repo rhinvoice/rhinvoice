@@ -40,6 +40,13 @@ MANIFEST: dict[str, object] = {
     "setups": {
         "windows-x64": "https://github.com/rhinvoice/rhinvoice/releases/download/v0.7.0/Setup.exe"
     },
+    "setup_files": {
+        "windows-x64": {
+            "url": "https://github.com/rhinvoice/rhinvoice/releases/download/v0.7.0/Setup.exe",
+            "sha256": "cd" * 32,
+            "size": 58_000_000,
+        }
+    },
 }
 
 
@@ -81,6 +88,13 @@ def test_a_signed_release_is_read() -> None:
         setups={
             "windows-x64": "https://github.com/rhinvoice/rhinvoice/releases/download/v0.7.0/Setup.exe"
         },
+        setup_files={
+            "windows-x64": PackageFile(
+                url="https://github.com/rhinvoice/rhinvoice/releases/download/v0.7.0/Setup.exe",
+                sha256="cd" * 32,
+                size=58_000_000,
+            )
+        },
     )
 
 
@@ -88,7 +102,7 @@ def test_a_release_without_packages_or_setups_is_a_server_release() -> None:
     content = json.dumps({"version": "0.7.0", "notes_url": "https://x", "runtime": 1}).encode()
     release = feed(github(content, signed(content))).latest()
     assert release is not None
-    assert (release.packages, release.setups) == ({}, {})
+    assert (release.packages, release.setups, release.setup_files) == ({}, {}, {})
 
 
 def altered(content: bytes) -> bytes:
@@ -113,6 +127,7 @@ def altered(content: bytes) -> bytes:
         (json.dumps({**MANIFEST, "packages": {"windows-x64": {"url": "x"}}}).encode(), None),
         (json.dumps({**MANIFEST, "packages": {"windows-x64": []}}).encode(), None),
         (json.dumps({**MANIFEST, "setups": {"windows-x64": 1}}).encode(), None),
+        (json.dumps({**MANIFEST, "setup_files": {"windows-x64": "x"}}).encode(), None),
         (b" " * (MAX_BYTES + 1), None),
     ],
 )

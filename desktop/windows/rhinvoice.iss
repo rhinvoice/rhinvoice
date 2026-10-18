@@ -1,4 +1,4 @@
-; Rhinvoice for Windows: installs the runtime and app package of desktop/build.py
+﻿; Rhinvoice for Windows: installs the runtime and app package of desktop/build.py
 ; (ADR 0021, 0022). Later app packages come as updates inside the program.
 ; Built in CI: iscc /DAppVersion=x.y.z desktop\windows\rhinvoice.iss
 ;
@@ -23,11 +23,13 @@
   #define AppTitle "Rhinvoice Beta"
   #define SetupName "Rhinvoice-Beta-Setup"
   #define InstallFolder "install-beta"
+  #define RunningMutex "RhinvoiceBetaRunning"
 #elif Edition == "stable"
   #define AppIdentity "{{6F0C7E59-3B7B-4E43-9A57-2C2F7D0B8B1E}"
   #define AppTitle "Rhinvoice"
   #define SetupName "Rhinvoice-Setup"
   #define InstallFolder "install"
+  #define RunningMutex "RhinvoiceRunning"
 #else
   #error Edition is "stable" or "beta"
 #endif
@@ -57,12 +59,19 @@ LicenseFile=..\..\LICENSE
 WizardStyle=modern
 Compression=lzma2/max
 SolidCompression=yes
-; Closes a running Rhinvoice of this installation before files are replaced.
+; Closes a running Rhinvoice of this installation before files are replaced: also the
+; Python modules (.pyd) the program keeps open, which Windows does not report otherwise.
+; A Rhinvoice since ADR 0031 holds RunningMutex and is asked to close first ([Code]).
 CloseApplications=yes
+CloseApplicationsFilter=*.exe,*.dll,*.pyd,*.chm
 
 [Languages]
 Name: "de"; MessagesFile: "compiler:Languages\German.isl"
 Name: "en"; MessagesFile: "compiler:Default.isl"
+
+[CustomMessages]
+de.RhinvoiceRunning={#AppTitle} läuft noch.%n%nBitte speichern Sie Ihre Arbeit, schließen Sie {#AppTitle} und klicken Sie dann auf OK.
+en.RhinvoiceRunning={#AppTitle} is still running.%n%nPlease save your work, close {#AppTitle} and then click OK.
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
@@ -95,3 +104,57 @@ Name: "{autodesktop}\{#AppTitle}"; Filename: "{app}\python\Rhinvoice.exe"; Param
 
 [Run]
 Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice_boot"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#AppTitle}}"; Flags: nowait postinstall skipifsilent
+; Started by the program (ADR 0031): it closed itself for the setup and comes back.
+Filename: "{app}\python\Rhinvoice.exe"; Parameters: "-m rhinvoice_boot"; WorkingDir: "{app}"; Flags: nowait; Check: FromRhinvoice
+
+[Code]
+{ Rhinvoice starts its setup with /FROMRHINVOICE and closes itself (ADR 0031). }
+function FromRhinvoice: Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 1 to ParamCount do
+    if CompareText(ParamStr(I), '/FROMRHINVOICE') = 0 then
+      Result := True;
+end;
+
+function InitializeSetup: Boolean;
+var
+  Waited: Integer;
+begin
+  Result := True;
+  if FromRhinvoice then
+  begin
+    { The program stops its server and database before it ends: wait for that. }
+    Waited := 0;
+    while CheckForMutexes('{#RunningMutex}') and (Waited < 120000) do
+    begin
+      Sleep(500);
+      Waited := Waited + 500;
+    end;
+    { The boot that started it ends just after. }
+    Sleep(1500);
+  end;
+  while CheckForMutexes('{#RunningMutex}') do
+    if MsgBox(CustomMessage('RhinvoiceRunning'), mbError, MB_OKCANCEL) <> IDOK then
+    begin
+      Result := False;
+      Exit;
+    end;
+end;
+
+{ A database left running (a program that was ended by force) keeps its files open:
+  stop it the way the program would, before the Restart Manager would kill it. }
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  PgCtl, Database: String;
+  Code: Integer;
+begin
+  Result := '';
+  PgCtl := ExpandConstant('{app}\postgresql\bin\pg_ctl.exe');
+  Database := ExpandConstant('{localappdata}\{#AppTitle}\database');
+  if FileExists(PgCtl) and DirExists(Database) then
+    Exec(PgCtl, 'stop --wait --mode=fast --pgdata="' + Database + '"', '', SW_HIDE,
+      ewWaitUntilTerminated, Code);
+end;

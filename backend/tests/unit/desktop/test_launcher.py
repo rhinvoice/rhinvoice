@@ -32,6 +32,7 @@ from rhinvoice.desktop.launcher import (
 )
 from rhinvoice.desktop.ports import free_port
 from rhinvoice.desktop.postgres import BundledPostgres
+from rhinvoice.desktop.setup import SetupDownloader
 from rhinvoice.desktop.updates import PackageInstaller
 from rhinvoice_boot import RESTART, State, load_state, save_state
 from tests.helpers import raises_exactly
@@ -451,6 +452,20 @@ def test_started_by_the_boot_it_can_install_updates(install: Path, tmp_path: Pat
     installer = own.installer
     assert isinstance(installer, PackageInstaller)
     assert (installer.platform, installer.runtime) == ("linux-x64", 1)
+    # Only Windows and macOS know how to run a setup (ADR 0031).
+    assert own.setup_installer is None
+
+
+@pytest.mark.parametrize("system", ["Windows", "Darwin"])
+def test_on_windows_and_macos_it_can_install_a_new_setup(
+    install: Path, tmp_path: Path, system: str
+) -> None:
+    (install / "runtime.json").write_text('{"generation": 1}')
+    recorder = Recorder()
+    surroundings = replace(desktop(install, tmp_path, recorder), system=system)
+    run(build_parser().parse_args(["--no-browser"]), surroundings)
+    [own] = recorder.owns
+    assert isinstance(own.setup_installer, SetupDownloader)
 
 
 @pytest.mark.usefixtures("data")

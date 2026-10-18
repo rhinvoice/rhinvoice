@@ -2,7 +2,8 @@
 
 A server installation (Docker) is told the release; it updates with its own commands.
 The installation without Docker installs the release's app package with one click, unless
-the package needs a newer runtime: then the setup has to be run.
+the package needs a newer runtime: then the setup has to be run, which the program
+downloads, checks and starts itself (ADR 0031).
 """
 
 from __future__ import annotations
@@ -12,11 +13,18 @@ from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from rhinvoice.application.errors import ConflictError, UnavailableError
+from rhinvoice.application.updates.ports import SetupProgress, SetupState
 
 if TYPE_CHECKING:
     from datetime import datetime
 
-    from rhinvoice.application.updates.ports import Release, ReleaseFeed, UpdateInstaller
+    from rhinvoice.application.updates.ports import (
+        PackageFile,
+        Release,
+        ReleaseFeed,
+        SetupInstaller,
+        UpdateInstaller,
+    )
     from rhinvoice.domain.shared.clock import Clock
 
 
@@ -44,6 +52,8 @@ class UpdateStatus:
     version that ran before runs again, and the release is not offered again."""
     can_check: bool = False
     """Someone may ask for a check now; False with the check switched off."""
+    setup: SetupProgress | None = None
+    """The new setup as the program downloads it; None when it cannot (ADR 0031)."""
 
 
 def is_newer(candidate: str, current: str) -> bool:
@@ -61,12 +71,14 @@ class UpdateHandlers:
         current: str,
         clock: Clock,
         installer: UpdateInstaller | None = None,
+        setup_installer: SetupInstaller | None = None,
     ) -> None:
         """``feed`` None: the check is switched off (RHINVOICE_UPDATE_CHECK=false)."""
         self._feed = feed
         self._current = current
         self._clock = clock
         self._installer = installer
+        self._setup_installer = setup_installer
         # Replaced as one tuple: requests read it while the background check writes it.
         self._known: tuple[Release | None, datetime | None] = (None, None)
 
@@ -114,6 +126,7 @@ class UpdateHandlers:
             checked_at=checked_at,
             failed=failed,
             can_check=self._feed is not None,
+            setup=None if (offer := self._setup_offer(release)) is None else _progress(offer),
         )
 
     def install(self) -> None:
@@ -128,6 +141,46 @@ class UpdateHandlers:
         ):
             raise ConflictError("there is no update to install here", code="no_update")
         installer.install(release)
+
+    def download_setup(self) -> None:
+        """Start downloading the setup the status asks for (ADR 0031)."""
+        offer = self._setup_offer(self._known[0])
+        if offer is None:
+            raise ConflictError("there is no setup to download here", code="no_setup")
+        release, setup, setup_installer = offer
+        setup_installer.download(release.version, setup)
+
+    def run_setup(self) -> None:
+        """Hand over to the downloaded setup: the program closes, the setup installs."""
+        offer = self._setup_offer(self._known[0])
+        if offer is None or _progress(offer).state is not SetupState.READY:
+            raise ConflictError("the setup is not downloaded yet", code="setup_not_ready")
+        offer[2].run()
+
+    def _setup_offer(
+        self, release: Release | None
+    ) -> tuple[Release, PackageFile, SetupInstaller] | None:
+        """Return the release's setup if it is needed and the program can install it itself."""
+        installer = self._installer
+        setup_installer = self._setup_installer
+        if release is None or installer is None or setup_installer is None:
+            return None
+        setup = release.setup_files.get(installer.setup)
+        if (
+            setup is None
+            or not is_newer(release.version, self._current)
+            or installer.failed(release.version)
+            or _desktop_action(release, installer) is not UpdateAction.SETUP
+        ):
+            return None
+        return release, setup, setup_installer
+
+
+def _progress(offer: tuple[Release, PackageFile, SetupInstaller]) -> SetupProgress:
+    release, _, setup_installer = offer
+    progress = setup_installer.progress()
+    # A setup of another release (an older download) is not this one's.
+    return progress if progress.version == release.version else SetupProgress()
 
 
 def _desktop_action(release: Release, installer: UpdateInstaller) -> UpdateAction:

@@ -5565,6 +5565,39 @@
         "title": "SetupRequest",
         "type": "object"
       },
+      "SetupResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "received": {
+            "title": "Received",
+            "type": "integer"
+          },
+          "state": {
+            "$ref": "#/components/schemas/SetupState"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "state",
+          "received",
+          "total"
+        ],
+        "title": "SetupResponse",
+        "type": "object"
+      },
+      "SetupState": {
+        "enum": [
+          "idle",
+          "downloading",
+          "ready",
+          "failed"
+        ],
+        "title": "SetupState",
+        "type": "string"
+      },
       "SetupStatus": {
         "additionalProperties": false,
         "properties": {
@@ -6206,6 +6239,16 @@
             ],
             "title": "Notes Url"
           },
+          "setup": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SetupResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "setup_url": {
             "anyOf": [
               {
@@ -6226,7 +6269,8 @@
           "setup_url",
           "checked_at",
           "failed",
-          "can_check"
+          "can_check",
+          "setup"
         ],
         "title": "UpdateResponse",
         "type": "object"
@@ -18325,6 +18369,180 @@
           }
         ],
         "summary": "Install Update",
+        "tags": [
+          "updates"
+        ]
+      }
+    },
+    "/api/updates/setup/download": {
+      "post": {
+        "description": "Start downloading the new setup; GET /api/updates tells the progress.\n\n409 no_setup unless the status offers the setup to download (setup not null).",
+        "operationId": "updates_download_setup",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Download Setup",
+        "tags": [
+          "updates"
+        ]
+      }
+    },
+    "/api/updates/setup/run": {
+      "post": {
+        "description": "Start the downloaded setup; the program closes shortly after this answer.\n\n409 setup_not_ready unless the setup is downloaded and checked.",
+        "operationId": "updates_run_setup",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Run Setup",
         "tags": [
           "updates"
         ]

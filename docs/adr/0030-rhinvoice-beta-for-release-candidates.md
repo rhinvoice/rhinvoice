@@ -71,7 +71,8 @@ the released program refuses a database with a newer schema. The update channel 
   the last release, as before.
 - Candidates of one version carry the same version number (ADR 0025): Rhinvoice Beta updates
   itself to the next version's candidate, but `-rc.2` of the same version is installed with its
-  setup over `-rc.1` (the data stays).
+  setup over `-rc.1` (the data stays). From 0.8.4 on it updates to `-rc.2` within the program
+  ([ADR 0035](0035-candidates-of-one-version.md)).
 - A candidate's run of the *Desktop* workflow and every pull request that touches the programs
   take a few minutes longer (a second setup and disk image, the second smoke test on Windows).
 - Test installations that relied on `"update_channel": "test"` in `rhinvoice.json` install

@@ -16,6 +16,7 @@ import rhinvoice_boot as boot
 from rhinvoice.desktop.launcher import build_parser as launcher_parser
 from rhinvoice.desktop.postgres import BundledPostgres
 from rhinvoice_boot import (
+    BUILD,
     RESTART,
     SESSION,
     START,
@@ -23,6 +24,7 @@ from rhinvoice_boot import (
     Package,
     Runtime,
     State,
+    build_name,
     choose,
     confirm,
     load_state,
@@ -43,9 +45,12 @@ PREFIX_BEFORE = os.environ.get("PYTHONPYCACHEPREFIX")
 """As the test process started; the tests of main() must leave it so."""
 
 
-def package(folder: Path, version: str, runtime: int = 1) -> Path:
+def package(folder: Path, version: str, runtime: int = 1, candidate: object = None) -> Path:
     folder.mkdir(parents=True)
-    (folder / "manifest.json").write_text(json.dumps({"version": version, "runtime": runtime}))
+    manifest: dict[str, object] = {"version": version, "runtime": runtime}
+    if candidate is not None:
+        manifest["candidate"] = candidate
+    (folder / "manifest.json").write_text(json.dumps(manifest))
     return folder
 
 
@@ -94,6 +99,42 @@ def runtime(install: Path, data: Path, program: Program) -> Runtime:
 def test_versions_are_ordered_by_their_numbers() -> None:
     assert version_key("0.10.0") > version_key("0.9.1") > version_key("0.9")
     assert version_key("0.7.0-beta") == ()
+
+
+def test_builds_of_one_version_are_ordered_by_their_candidate() -> None:
+    """ADR 0035: a version without a candidate comes after its candidates."""
+    assert (
+        version_key("0.8.5-rc.1")
+        > version_key("0.8.4")
+        > version_key("0.8.4-rc.10")
+        > version_key("0.8.4-rc.9")
+        > version_key("0.8.3")
+    )
+    assert version_key("0.8.4-rc.3") == (0, 8, 4, 0, 3)
+    assert version_key("0.8.4") == (0, 8, 4, 1, 0)
+    assert version_key("0.8.4-rc.") == ()
+    assert version_key("0.8.4-rc.x") == ()
+    assert build_name("0.8.4", 3) == "0.8.4-rc.3"
+    assert build_name("0.8.4", None) == "0.8.4"
+
+
+def test_two_candidates_of_one_version_are_two_packages(runtime_folder: Path, data: Path) -> None:
+    """ADR 0035: Rhinvoice Beta updates from 0.7.0-rc.2 to 0.7.0-rc.3."""
+    package(data / "app" / "versions" / "0.7.0-rc.2", "0.7.0", candidate=2)
+    package(data / "app" / "versions" / "0.7.0-rc.3", "0.7.0", candidate=3)
+    package(data / "app" / "versions" / "zero", "0.7.0", candidate=0)  # no candidate's number
+    package(data / "app" / "versions" / "text", "0.7.0", candidate="4")
+    package(data / "app" / "versions" / "yes", "0.7.0", candidate=True)
+    found = packages(runtime_folder, data)
+    assert [p.version for p in found] == ["0.7.0-rc.3", "0.7.0-rc.2", "0.6.2"]
+    assert choose(runtime_folder, data, State(failed=["0.7.0-rc.3"])).version == "0.7.0-rc.2"
+
+
+def test_a_manifest_that_is_no_object_is_no_package(runtime_folder: Path, data: Path) -> None:
+    folder = data / "app" / "versions" / "0.7.0"
+    folder.mkdir(parents=True)
+    (folder / "manifest.json").write_text("[]")
+    assert [p.version for p in packages(runtime_folder, data)] == ["0.6.2"]
 
 
 def test_the_newest_package_that_fits_the_runtime_is_chosen(
@@ -326,9 +367,12 @@ def test_the_launcher_of_the_package_runs_in_this_process(
         "def main(arguments):\n    return len(arguments)\n"
     )
     monkeypatch.setattr(sys, "path", list(sys.path))
-    chosen = Package("0.7.0", folder, 1)
+    monkeypatch.delenv(BUILD, raising=False)
+    chosen = Package("0.7.0-rc.3", folder, 1)
     assert boot.launch(chosen, ["a", "b"], module="boot_test_launcher") == 2
     assert sys.path[0] == str(folder / "site-packages")
+    # The package learns which build runs (ADR 0035).
+    assert os.environ[BUILD] == "0.7.0-rc.3"
 
 
 @pytest.mark.parametrize("windows", [False, True])
@@ -665,6 +709,19 @@ def test_confirming_keeps_the_last_three_versions_and_copies(data: Path) -> None
     ]  # fmt: skip
 
 
+def test_pruning_keeps_the_running_build_also_in_a_folder_named_after_its_version(
+    data: Path,
+) -> None:
+    """A package before ADR 0035 put a candidate's build into a folder named after the version."""
+    versions = data / "app" / "versions"
+    package(versions / "0.7.0", "0.7.0", candidate=1)
+    for version in ("0.7.1", "0.7.2", "0.7.3"):
+        update(data, version)
+    (versions / "planted").mkdir()  # no package
+    prune(data, "0.7.0-rc.1")
+    assert sorted(f.name for f in versions.iterdir()) == ["0.7.0", "0.7.1", "0.7.2", "0.7.3"]
+
+
 def test_pruning_without_updates_or_copies_does_nothing(data: Path) -> None:
     prune(data, "0.6.2")
     assert not data.exists()
@@ -702,6 +759,7 @@ def test_the_interface_of_the_boot_for_app_packages_stays_as_it_is() -> None:
     ):
         assert callable(getattr(boot, name)), name
     assert RESTART == 75
+    assert BUILD == "RHINVOICE_BUILD"
     assert {"failed"} <= set(State.__dataclass_fields__)
     arguments = ["--install-dir", "/i", "--static-dir", "/s", "--data-dir", "/d", "--attach"]
     parsed = launcher_parser().parse_args(arguments)

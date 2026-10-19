@@ -149,7 +149,19 @@ def read_release(values: object) -> Release:
         packages=packages,
         setups=setups,
         setup_files=setup_files,
+        # Since ADR 0035: the release candidate the app packages were built as.
+        candidate=_candidate(fields),
     )
+
+
+def _candidate(fields: Mapping[str, object]) -> int | None:
+    if "candidate" not in fields:
+        return None
+    candidate = _number(fields, "candidate")
+    if candidate < 1:
+        msg = "'candidate' is not a release candidate's number"
+        raise ValueError(msg)
+    return candidate
 
 
 def _package(value: object) -> PackageFile:

@@ -13,6 +13,12 @@ before 1.0, minor versions may contain breaking changes.
   pins a version. Download the current `deploy/compose.yml` once, which tells the app how
   `.env` is set; with an older one the notice shows the line "only if .env pins a version".
 
+### Fixed
+- Rhinvoice Beta now offers a newer test version of the same version number as an update, for
+  example `v0.8.4-rc.3` after `v0.8.4-rc.2`, and shows the candidate beside the version.
+  It is installed and, if it does not start, taken back like any update (ADR 0035).
+  Installations of Rhinvoice Beta need a setup of 0.8.4 or later once.
+
 ## [0.8.3] – 2026-10-18
 
 ### Security

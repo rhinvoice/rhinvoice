@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
+      candidate: ${{ steps.version.outputs.candidate }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -51,7 +52,10 @@ jobs:
             echo "::error::$GITHUB_REF_NAME is not on dev; tag a commit of dev"
             exit 1
           fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=$version"
+            echo "candidate=${GITHUB_REF_NAME##*-rc.}"
+          } >> "$GITHUB_OUTPUT"
 
   image-build:
     name: Build ${{ matrix.image.name }} image (${{ matrix.platform }})
@@ -201,6 +205,8 @@ jobs:
     uses: ./.github/workflows/desktop.yml
     with:
       version: ${{ needs.candidate.outputs.version }}
+      # The app packages name it; Rhinvoice Beta tells candidates of one version apart (ADR 0035).
+      candidate: ${{ needs.candidate.outputs.candidate }}
 
   github-release:
     name: GitHub pre-release (setups, app packages, signed release.json)

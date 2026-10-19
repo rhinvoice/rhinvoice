@@ -12,7 +12,10 @@ files described here; it uses the standard library only.
     <data>/backups/                   copies of the database folder before each update
 
 An app package holds ``site-packages/``, ``static/`` and ``manifest.json``
-({"version": "0.7.0", "runtime": 1}: the runtime generation it needs at least).
+({"version": "0.7.0", "runtime": 1}: the runtime generation it needs at least; since 0.8.4
+also "candidate": 3, the release candidate its files were built as). The boot knows a package
+by its build: the version, with the candidate if there is one ("0.8.4-rc.3"), so that two
+candidates of one version are two packages (ADR 0035).
 
 The edition is fixed when the setup is built (ADR 0030): "beta" is Rhinvoice Beta, the
 release candidates' separate installation, with data, caches and logs of its own; without
@@ -54,6 +57,10 @@ that no module lying there is imported instead of Python's or Rhinvoice's own.""
 NO_WINDOW: int = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 """Windows opens a console window for every command-line tool a program without a console
 starts (Rhinvoice.exe); this flag keeps them hidden. 0 elsewhere."""
+BUILD = "RHINVOICE_BUILD"
+"""Set for the package the boot starts, to its build ("0.8.4-rc.3"): it tells the package
+which candidate runs, and that this boot keeps candidates of one version apart (ADR 0035)."""
+CANDIDATE = "-rc."
 NOT_RUNNING = 3
 """Exit code of ``pg_ctl status`` when no server runs on the data folder."""
 
@@ -143,10 +150,21 @@ def make_private(folder: Path) -> None:
     folder.mkdir(mode=0o777 if sys.platform == "win32" else 0o700, parents=True, exist_ok=True)
 
 
+def build_name(version: str, candidate: int | None) -> str:
+    """Name a package's build: its version, with the release candidate it was built as."""
+    return version if candidate is None else f"{version}{CANDIDATE}{candidate}"
+
+
 def version_key(version: str) -> tuple[int, ...]:
-    """Order versions like 0.10.0 after 0.9.1; anything else is not a version."""
+    """Order versions like 0.10.0 after 0.9.1; anything else is not a version and gives ().
+
+    Builds of one version are ordered by their candidate (0.8.4-rc.3 after 0.8.4-rc.2); the
+    version without one comes after its candidates.
+    """
+    base, separator, candidate = version.partition(CANDIDATE)
     try:
-        return tuple(int(part) for part in version.split("."))
+        numbers = tuple(int(part) for part in base.split("."))
+        return (*numbers, 0, int(candidate)) if separator else (*numbers, 1, 0)
     except ValueError:
         return ()
 
@@ -154,6 +172,7 @@ def version_key(version: str) -> tuple[int, ...]:
 @dataclass(frozen=True, slots=True)
 class Package:
     version: str
+    """Its build: the version, with the candidate its files were built as (0.8.4-rc.3)."""
     folder: Path
     runtime: int
 
@@ -226,13 +245,22 @@ def prune(data: Path, active: str, keep: int = KEEP) -> None:
     packages = [
         folder
         for folder in found
-        if folder.is_dir() and folder.suffix != ".partial" and folder.name != active
+        if folder.is_dir() and folder.suffix != ".partial" and active not in _names(folder)
     ]
     _remove_oldest(packages, "", keep)
     backups = data / "backups"
     for kind in ("database-before-", "database-failed-"):
         copies = [f for f in backups.glob(f"{kind}*") if f.is_dir()] if backups.is_dir() else []
         _remove_oldest(copies, kind, keep)
+
+
+def _names(folder: Path) -> set[str]:
+    """Return the folder's name and its package's build.
+
+    A package before ADR 0035 put a candidate's build into a folder named after its version.
+    """
+    package = read_package(folder)
+    return {folder.name} if package is None else {folder.name, package.version}
 
 
 def _remove_oldest(folders: list[Path], prefix: str, keep: int) -> None:
@@ -254,8 +282,12 @@ def runtime_generation(install: Path) -> int:
 def read_package(folder: Path) -> Package | None:
     try:
         manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
-        package = Package(str(manifest["version"]), folder, int(manifest["runtime"]))
-    except (OSError, ValueError, KeyError, TypeError):
+        candidate = manifest.get("candidate")
+        if candidate is not None and (type(candidate) is not int or candidate < 1):
+            return None
+        version = build_name(str(manifest["version"]), candidate)
+        package = Package(version, folder, int(manifest["runtime"]))
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
         return None
     return package if version_key(package.version) else None
 
@@ -478,6 +510,7 @@ def stop_database(runtime: Runtime) -> None:
 
 def launch(package: Package, arguments: list[str], module: str = LAUNCHER) -> int:
     """Run the package's launcher in this process."""
+    os.environ[BUILD] = package.version
     # As a site folder, so that the .pth files of its libraries apply; first on the path.
     before = list(sys.path)
     site.addsitedir(str(package.folder / "site-packages"))

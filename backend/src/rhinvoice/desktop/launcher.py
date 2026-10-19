@@ -41,7 +41,13 @@ from rhinvoice.desktop.edition import Edition, installed_edition
 from rhinvoice.desktop.ports import free_port, listening
 from rhinvoice.desktop.postgres import BundledPostgres, PostgresError
 from rhinvoice.desktop.setup import SetupDownloader, helper_command, mark_running
-from rhinvoice.desktop.updates import PackageInstaller, Restarter, platform_name
+from rhinvoice.desktop.updates import (
+    BUILD,
+    PackageInstaller,
+    Restarter,
+    platform_name,
+    running_candidate,
+)
 from rhinvoice.infrastructure.backup.restic import ResticArchive
 from rhinvoice.infrastructure.updates.feed import installed_version
 from rhinvoice_boot import (
@@ -422,7 +428,18 @@ def _installer(
         return None
     platform = platform_name(desktop.system, desktop.machine)
     setup = platform + edition.setup_suffix
-    return PackageInstaller(folder, platform, runtime, restarter.request, setup=setup)
+    # Only a boot that keeps the builds of one version apart says which one runs (ADR 0035).
+    build = desktop.environ.get(BUILD)
+    candidate = running_candidate(build, installed_version()) if edition.beta else None
+    return PackageInstaller(
+        folder,
+        platform,
+        runtime,
+        restarter.request,
+        setup=setup,
+        builds=build is not None,
+        candidate=candidate,
+    )
 
 
 def _serve(  # noqa: PLR0913 - the parts of one start (keywords for the update's)

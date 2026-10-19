@@ -14,6 +14,13 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   herunter, sie sagt dem Programm, wie `.env` eingestellt ist; mit einer älteren zeigt der
   Hinweis die Zeile «Nur wenn .env eine feste Version hat».
 
+### Behoben
+- Rhinvoice Beta bietet jetzt auch einen neueren Testkandidaten mit derselben Versionsnummer
+  als Update an, zum Beispiel `v0.8.4-rc.3` nach `v0.8.4-rc.2`, und zeigt den Testkandidaten
+  neben der Version an. Er wird wie jedes Update installiert und, wenn er nicht startet,
+  zurückgenommen (ADR 0035). Installationen von Rhinvoice Beta brauchen dafür einmal ein
+  Setup ab 0.8.4.
+
 ## [0.8.3] – 2026-10-18
 
 ### Sicherheit

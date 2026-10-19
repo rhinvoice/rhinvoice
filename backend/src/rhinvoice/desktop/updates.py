@@ -6,12 +6,17 @@ restarts; the boot copies the database and lets the new version prove itself.
 
 A complete package holds ``package.sha256``, the SHA-256 of the archive it came from: a
 folder of that version without it, or of another archive, is installed afresh, never trusted.
+
+On a boot that knows builds (ADR 0035) the folder is named after the build, so that a later
+release candidate of the same version (0.8.4-rc.3 after 0.8.4-rc.2) gets a folder of its own
+and the boot can take it back; an earlier boot only knows versions, and gets those.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
 import signal
 import tempfile
@@ -23,6 +28,7 @@ from typing import TYPE_CHECKING
 import httpx
 
 from rhinvoice.application.errors import ConflictError, UnavailableError
+from rhinvoice.application.updates.handlers import build_name
 from rhinvoice_boot import load_state
 
 if TYPE_CHECKING:
@@ -36,6 +42,18 @@ RESTART_DELAY_SECONDS = 1.0
 """Long enough for the answer to the request to reach the browser."""
 VERIFIED = "package.sha256"
 """Written into a package once it was downloaded, checked and unpacked completely."""
+BUILD = "RHINVOICE_BUILD"
+"""What the boot sets to the build it started (rhinvoice_boot.BUILD, ADR 0035). Not imported
+from there: an update runs on the boot of an earlier setup, which has no such name."""
+CANDIDATE = re.compile(r"-rc\.([1-9][0-9]*)", re.ASCII)
+
+
+def running_candidate(build: str | None, version: str) -> int | None:
+    """Return the release candidate of the build the boot started, if it is of ``version``."""
+    if build is None or not build.startswith(version):
+        return None
+    match = CANDIDATE.fullmatch(build.removeprefix(version))
+    return None if match is None else int(match[1])
 
 
 def platform_name(system: str, machine: str) -> str:
@@ -82,10 +100,19 @@ class PackageInstaller:
         client: httpx.Client | None = None,
         restart_delay: float = RESTART_DELAY_SECONDS,
         setup: str | None = None,
+        builds: bool = False,
+        candidate: int | None = None,
     ) -> None:
+        """Install into ``data`` for ``platform``.
+
+        ``builds``: the boot keeps builds apart (ADR 0035); ``candidate``: the running one's,
+        given only where later candidates of the same version are offered (Rhinvoice Beta).
+        """
         self.platform = platform
         self.setup = setup or platform
         self.runtime = runtime
+        self.candidate = candidate
+        self._builds = builds
         self._versions = data / "app" / "versions"
         self._restart = restart
         self._client = client or httpx.Client(timeout=TIMEOUT_SECONDS, follow_redirects=True)
@@ -98,7 +125,7 @@ class PackageInstaller:
         if not self._installing.acquire(blocking=False):
             raise ConflictError("an update is being installed", code="update_running")
         try:
-            target = self._versions / release.version
+            target = self._versions / self._folder_name(release)
             package = release.packages[self.platform]
             if not verified(target, package):
                 self._put_in_place(release, package, target)
@@ -110,8 +137,13 @@ class PackageInstaller:
         timer.daemon = True
         timer.start()
 
-    def failed(self, version: str) -> bool:
-        return version in load_state(self._data).failed
+    def failed(self, release: Release) -> bool:
+        # A boot records the build it took back; one before ADR 0035 the version.
+        names = {release.version, build_name(release.version, release.candidate)}
+        return not names.isdisjoint(load_state(self._data).failed)
+
+    def _folder_name(self, release: Release) -> str:
+        return build_name(release.version, release.candidate) if self._builds else release.version
 
     def _put_in_place(self, release: Release, package: PackageFile, target: Path) -> None:
         partial = target.with_name(target.name + ".partial")
@@ -183,8 +215,12 @@ def unpack(archive: Path, target: Path) -> None:
 def check_manifest(package: Path, release: Release) -> None:
     try:
         manifest = json.loads((package / "manifest.json").read_text(encoding="utf-8"))
-        matches = manifest["version"] == release.version and manifest["runtime"] == release.runtime
-    except (OSError, ValueError, KeyError, TypeError) as error:
+        matches = (
+            manifest["version"] == release.version
+            and manifest["runtime"] == release.runtime
+            and manifest.get("candidate") == release.candidate
+        )
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
         msg = "the update has no valid manifest.json"
         raise UnavailableError(msg) from error
     if not matches:

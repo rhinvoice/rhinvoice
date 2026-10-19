@@ -50,10 +50,14 @@ def test_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(tool, "PUBLIC_KEY", PUBLIC)
 
 
-def package(folder: Path, version: str = "0.9.0", runtime: int = 2) -> Path:
+def package(folder: Path, version: str = "0.9.0", runtime: int = 2, candidate: object = 2) -> Path:
+    """Write an app package built as candidate 2 (TAG), or as none with ``candidate=None``."""
     path = folder / f"rhinvoice-app-{version}-windows-x64.zip"
+    manifest: dict[str, object] = {"version": version, "runtime": runtime}
+    if candidate is not None:
+        manifest["candidate"] = candidate
     with zipfile.ZipFile(path, "w") as archive:
-        archive.writestr("manifest.json", json.dumps({"version": version, "runtime": runtime}))
+        archive.writestr("manifest.json", json.dumps(manifest))
     return path
 
 
@@ -98,6 +102,55 @@ def test_writes_a_release_json_the_program_reads(tmp_path: Path) -> None:
     assert set(release.setup_files) == {"windows-x64", "macos-arm64-beta"}
     assert release.setup_files["windows-x64"].size == len(b"setup for windows")
     assert release.setups["windows-x64"] == release.setup_files["windows-x64"].url
+    assert release.candidate == 2
+
+
+def test_the_release_names_the_candidate_it_was_promoted_from(tmp_path: Path) -> None:
+    """ADR 0035: Rhinvoice Beta on that candidate is not offered the same files again."""
+    _, taken = candidate(tmp_path)
+
+    release = tool.write_signed("0.9.0", taken, "v0.9.0", PEM)
+
+    assert release["candidate"] == 2
+
+
+def test_packages_without_a_candidate_name_none(tmp_path: Path) -> None:
+    folder = tmp_path / "release"
+    folder.mkdir()
+    package(folder, candidate=None)
+
+    assert "candidate" not in tool.write_signed("0.9.0", folder, "v0.9.0", PEM)
+
+
+@pytest.mark.parametrize(
+    ("built_as", "message"),
+    [
+        (3, "was built as candidate 3, not as v0.9.0-rc.2"),
+        (None, "was built as candidate None, not as v0.9.0-rc.2"),
+        (0, "names no candidate's number: 0"),
+        ("2", "names no candidate's number: '2'"),
+        (True, "names no candidate's number: True"),
+    ],
+)
+def test_refuses_a_package_not_built_as_this_candidate(
+    tmp_path: Path, built_as: object, message: str
+) -> None:
+    folder = tmp_path / "release"
+    folder.mkdir()
+    package(folder, candidate=built_as)
+
+    with pytest.raises(SystemExit, match=re.escape(message)):
+        tool.write_signed("0.9.0", folder, TAG, PEM)
+
+
+def test_refuses_packages_built_as_different_candidates(tmp_path: Path) -> None:
+    folder = tmp_path / "release"
+    folder.mkdir()
+    package(folder, candidate=3).rename(folder / "rhinvoice-app-0.9.0-macos-arm64.zip")
+    package(folder, candidate=None)
+
+    with pytest.raises(SystemExit, match="built as different candidates"):
+        tool.write_signed("0.9.0", folder, "v0.9.0", PEM)
 
 
 def test_a_server_release_has_runtime_one(tmp_path: Path) -> None:

@@ -38,3 +38,4 @@ Status: `accepted`, `superseded by NNNN` or `rejected`.
 - [0031 – Install a new setup from within the program, after asking](0031-install-a-new-setup-from-within-the-program.md)
 - [0033 – Hardened release signing and pinned dependencies of the build](0033-hardened-release-signing.md)
 - [0034 – Server hardening: request bodies, DNS rebinding, sign-in floods](0034-server-hardening.md)
+- [0035 – Rhinvoice Beta updates between candidates of one version](0035-candidates-of-one-version.md)

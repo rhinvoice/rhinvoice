@@ -7,18 +7,22 @@ import signal
 import threading
 import zipfile
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 
 import httpx
 import pytest
 
+import rhinvoice_boot
 from rhinvoice.application.errors import ConflictError, UnavailableError
 from rhinvoice.application.updates.ports import PackageFile, Release
 from rhinvoice.desktop.updates import (
+    BUILD,
     VERIFIED,
     PackageInstaller,
     Restarter,
     platform_name,
+    running_candidate,
     verified,
 )
 from rhinvoice_boot import State, save_state
@@ -40,6 +44,9 @@ PACKAGE = archive({
     "site-packages/rhinvoice/__init__.py": "",
     "static/index.html": "<!doctype html>",
 })  # fmt: skip
+MANIFEST_RC_2 = archive(
+    {"manifest.json": json.dumps({"version": "0.7.0", "runtime": 1, "candidate": 2})}
+)
 
 
 def release(
@@ -183,6 +190,17 @@ def test_a_folder_that_cannot_be_replaced_stops_the_update(tmp_path: Path) -> No
             release(archive({"manifest.json": '{"version": "0.6.0", "runtime": 1}'})),
             "the update's manifest.json does not match the release",
         ),
+        (
+            # Built as another candidate than the release says (ADR 0035).
+            github(MANIFEST_RC_2),
+            replace(release(MANIFEST_RC_2), candidate=3),
+            "the update's manifest.json does not match the release",
+        ),
+        (
+            github(archive({"manifest.json": "[]"})),
+            release(archive({"manifest.json": "[]"})),
+            "the update has no valid manifest.json",
+        ),
     ],
 )
 def test_anything_but_the_released_package_is_refused(
@@ -282,5 +300,61 @@ def test_a_failed_download_lets_the_next_attempt_run(tmp_path: Path) -> None:
 def test_versions_taken_back_by_the_boot_count_as_failed(tmp_path: Path) -> None:
     save_state(tmp_path, State(active="0.6.2", failed=["0.7.0"]))
     taken_back = installer(tmp_path, github(PACKAGE), Restarts())
-    assert taken_back.failed("0.7.0")
-    assert not taken_back.failed("0.7.1")
+    assert taken_back.failed(release())
+    assert taken_back.failed(replace(release(), candidate=2))  # by a boot before ADR 0035
+    assert not taken_back.failed(replace(release(), version="0.7.1"))
+
+
+def test_builds_taken_back_by_the_boot_count_as_failed(tmp_path: Path) -> None:
+    """ADR 0035: the boot records the build; a later candidate of the version is not failed."""
+    save_state(tmp_path, State(active="0.6.2", failed=["0.7.0-rc.2"]))
+    taken_back = installer(tmp_path, github(PACKAGE), Restarts())
+    assert taken_back.failed(replace(release(), candidate=2))
+    assert not taken_back.failed(replace(release(), candidate=3))
+    assert not taken_back.failed(release())
+
+
+def test_on_a_boot_that_knows_builds_each_candidate_gets_its_own_folder(tmp_path: Path) -> None:
+    """ADR 0035: rc.3 beside the running rc.2 of the same version, for the boot to try."""
+    client = httpx.Client(transport=httpx.MockTransport(github(MANIFEST_RC_2)))
+    beta = PackageInstaller(
+        tmp_path, "windows-x64", 1, Restarts(), client=client, restart_delay=0, builds=True,
+        candidate=1,
+    )  # fmt: skip
+    assert beta.candidate == 1
+    beta.install(replace(release(MANIFEST_RC_2), candidate=2))
+    assert [path.name for path in (tmp_path / "app" / "versions").iterdir()] == ["0.7.0-rc.2"]
+
+
+def test_on_an_earlier_boot_the_folder_is_named_after_the_version(tmp_path: Path) -> None:
+    """Its boot orders the folders by their names, which must be versions it knows."""
+    installer(tmp_path, github(MANIFEST_RC_2), Restarts()).install(
+        replace(release(MANIFEST_RC_2), candidate=2)
+    )
+    assert [path.name for path in (tmp_path / "app" / "versions").iterdir()] == ["0.7.0"]
+
+
+@pytest.mark.parametrize(
+    ("build", "candidate"),
+    [
+        ("0.7.0-rc.3", 3),
+        ("0.7.0-rc.12", 12),
+        ("0.7.0", None),
+        (None, None),
+        ("0.7.1-rc.3", None),  # of another version
+        ("0.7.00-rc.3", None),
+        ("0.7.0-rc.0", None),
+        ("0.7.0-rc.03", None),
+        ("0.7.0-rc.", None),
+        ("0.7.0-rc.3x", None),
+        ("0.7.0-rc.\u0663", None),  # an Arabic-Indic three
+    ],
+)
+def test_the_running_candidate_comes_from_the_boot(
+    build: str | None, candidate: int | None
+) -> None:
+    assert running_candidate(build, "0.7.0") == candidate
+
+
+def test_the_boot_and_the_package_name_the_build_alike() -> None:
+    assert BUILD == rhinvoice_boot.BUILD

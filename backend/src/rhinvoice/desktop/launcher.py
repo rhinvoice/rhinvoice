@@ -18,6 +18,7 @@ import os
 import platform
 import signal
 import sys
+import sysconfig
 import threading
 import time
 import urllib.request
@@ -90,7 +91,11 @@ class Desktop:
     """Shows the address in a program window until it is closed; None without windows."""
     system: str
     machine: str
-    """platform.machine(): the processor, for the update package (x64 or arm64)."""
+    """The bundled interpreter's architecture, for the update package (x64 or arm64).
+
+    Not the processor's: Windows on ARM runs the x64 runtime emulated, and an arm64 package
+    would not run in it, nor does release.json offer one (sysconfig says "amd64" there).
+    """
     environ: dict[str, str]
     home: Path
     install: Path
@@ -142,7 +147,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         close_window=window.close if window.available() else None,
         bring_forward=window.ask_to_bring_forward if window.available() else None,
         system=platform.system(),
-        machine=platform.machine(),
+        machine=sysconfig.get_platform().rsplit("-", 1)[-1],
         environ=dict(os.environ),
         home=Path.home(),
         # The bundled interpreter lives in <install>/python.

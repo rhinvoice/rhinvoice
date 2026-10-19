@@ -474,6 +474,15 @@ LOGO = (
     ' cy="12.42" r="2.3" fill="#ffffff" stroke="#2a6db0" stroke-width="1.2"/></g></svg>'
 )
 """The logo of frontend/public/favicon.svg: the card loads nothing from elsewhere."""
+BETA_LOGO = LOGO.replace(
+    "</svg>",
+    '<defs><pattern id="s" width="4" height="4" patternUnits="userSpaceOnUse"'
+    ' patternTransform="rotate(45)"><rect width="2" height="4" fill="#1b1b1b"/><rect x="2"'
+    ' width="2" height="4" fill="#ffc81f"/></pattern><clipPath id="c"><rect width="32"'
+    ' height="32" rx="8"/></clipPath></defs><rect y="27.2" width="32" height="4.8"'
+    ' fill="url(#s)" clip-path="url(#c)"/></svg>',
+)
+"""Rhinvoice Beta's: the logo with the striped edge of its app icon (desktop/icons)."""
 
 SPLASH_PAGE = """<!doctype html>
 <html><head><meta charset="utf-8"><title>__NAME__</title><style>
@@ -511,7 +520,7 @@ window.addEventListener("pywebviewready", () => {
 def splash_html(version: str, name: str = TITLE) -> str:
     """Write the start card's page: logo, name, version and the step of the start."""
     return (
-        SPLASH_PAGE.replace("__LOGO__", LOGO)
+        SPLASH_PAGE.replace("__LOGO__", LOGO if name == TITLE else BETA_LOGO)
         .replace("__NAME__", html.escape(name))
         .replace("__VERSION__", html.escape(version))
         .replace("__TEXTS__", json.dumps(SPLASH_TEXTS, ensure_ascii=False))

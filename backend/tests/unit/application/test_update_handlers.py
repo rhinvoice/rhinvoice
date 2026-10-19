@@ -9,6 +9,7 @@ from rhinvoice.application.updates.handlers import (
     UpdateAction,
     UpdateHandlers,
     UpdateStatus,
+    follows,
     is_newer,
 )
 from rhinvoice.application.updates.ports import (
@@ -79,6 +80,50 @@ def handlers(
 )
 def test_versions_are_compared_by_their_numbers(candidate: str, current: str, newer: bool) -> None:
     assert is_newer(candidate, current) is newer
+
+
+@pytest.mark.parametrize(
+    ("tag", "version", "follows_it"),
+    [
+        ("latest", "0.7.0", True),
+        ("0.7.0", "0.7.0", True),
+        ("0.7", "0.7.0", True),
+        ("0", "0.7.0", True),
+        ("0.6", "0.7.0", False),
+        ("0.6.2", "0.7.0", False),
+        ("0.7.0-rc.1", "0.7.0", False),
+        ("0.7.", "0.7.0", False),
+        ("", "0.7.0", False),
+    ],
+)
+def test_an_image_tag_follows_the_releases_it_leads_to(
+    tag: str, version: str, follows_it: bool
+) -> None:
+    assert follows(tag, version) is follows_it
+
+
+@pytest.mark.parametrize(
+    ("tag", "pinned"), [("latest", False), ("0.7", False), ("0.6.2", True), (None, None)]
+)
+def test_a_server_installation_is_told_whether_env_holds_it_back(
+    tag: str | None, pinned: bool | None
+) -> None:
+    updates = UpdateHandlers(Feed(RELEASE), "0.6.2", FixedClock(NOW), image_tag=tag)
+    updates.refresh()
+    assert updates.status().pinned is pinned
+
+
+def test_the_image_tag_only_matters_for_a_server_installation() -> None:
+    desktop = UpdateHandlers(
+        Feed(RELEASE), "0.6.2", FixedClock(NOW), Installer(), image_tag="0.6.2"
+    )
+    desktop.refresh()
+    current = UpdateHandlers(Feed(RELEASE), "0.7.0", FixedClock(NOW), image_tag="0.6.2")
+    current.refresh()
+    unchecked = UpdateHandlers(Feed(RELEASE), "0.6.2", FixedClock(NOW), image_tag="0.6.2")
+    assert desktop.status().pinned is None
+    assert current.status().pinned is None
+    assert unchecked.status().pinned is None
 
 
 def test_before_the_first_check_nothing_is_known() -> None:

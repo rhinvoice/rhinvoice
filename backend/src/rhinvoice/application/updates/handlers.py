@@ -54,6 +54,15 @@ class UpdateStatus:
     """Someone may ask for a check now; False with the check switched off."""
     setup: SetupProgress | None = None
     """The new setup as the program downloads it; None when it cannot (ADR 0031)."""
+    pinned: bool | None = None
+    """With action command: True when the image tag in .env (RHINVOICE_VERSION) holds the
+    server below the release, so it has to change before the pull; False when the pull
+    alone brings it (latest, or 0.8 for 0.8.3); None when the tag is not known."""
+
+
+def follows(tag: str, version: str) -> bool:
+    """Tell whether the image ``tag`` leads to ``version`` (latest, 0.8 and 0.8.3 to 0.8.3)."""
+    return tag in {"latest", version} or version.startswith(f"{tag}.")
 
 
 def is_newer(candidate: str, current: str) -> bool:
@@ -65,20 +74,27 @@ def is_newer(candidate: str, current: str) -> bool:
 
 
 class UpdateHandlers:
-    def __init__(
+    def __init__(  # noqa: PLR0913 - what decides the update (keyword for the image tag)
         self,
         feed: ReleaseFeed | None,
         current: str,
         clock: Clock,
         installer: UpdateInstaller | None = None,
         setup_installer: SetupInstaller | None = None,
+        *,
+        image_tag: str | None = None,
     ) -> None:
-        """``feed`` None: the check is switched off (RHINVOICE_UPDATE_CHECK=false)."""
+        """``feed`` None: the check is switched off (RHINVOICE_UPDATE_CHECK=false).
+
+        ``image_tag``: the tag a server installation's image was started with
+        (RHINVOICE_VERSION); None when not known.
+        """
         self._feed = feed
         self._current = current
         self._clock = clock
         self._installer = installer
         self._setup_installer = setup_installer
+        self._image_tag = image_tag
         # Replaced as one tuple: requests read it while the background check writes it.
         self._known: tuple[Release | None, datetime | None] = (None, None)
 
@@ -127,6 +143,11 @@ class UpdateHandlers:
             failed=failed,
             can_check=self._feed is not None,
             setup=None if (offer := self._setup_offer(release)) is None else _progress(offer),
+            pinned=(
+                None
+                if release is None or action is not UpdateAction.COMMAND or self._image_tag is None
+                else not follows(self._image_tag, release.version)
+            ),
         )
 
     def install(self) -> None:

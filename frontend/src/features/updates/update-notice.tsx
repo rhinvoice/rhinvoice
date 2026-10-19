@@ -290,9 +290,17 @@ export function UpdateNoticeContent({
           <strong className="text-sm">
             {t("updates.newVersion", { version: notice.version })}
           </strong>
-          <span>{t("updates.commandEnv")}</span>
-          <CopyLine text={notice.envLine} />
-          <span>{t("updates.commandRun")}</span>
+          {notice.envLine === null ? (
+            <span>{t("updates.commandOnly")}</span>
+          ) : (
+            <>
+              <span>
+                {t(notice.pinned === true ? "updates.commandEnv" : "updates.commandEnvIfPinned")}
+              </span>
+              <CopyLine text={notice.envLine} />
+              <span>{t("updates.commandRun")}</span>
+            </>
+          )}
           <CopyLine text={notice.command} />
           <Notes url={notice.notesUrl} />
         </>

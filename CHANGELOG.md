@@ -5,6 +5,14 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.8.4] – 2026-10-19
+
+### Changed
+- The update notice of a Docker installation that follows `latest` shows only the command
+  `docker compose pull && docker compose up -d`; the line for `.env` appears only when `.env`
+  pins a version. Download the current `deploy/compose.yml` once, which tells the app how
+  `.env` is set; with an older one the notice shows the line "only if .env pins a version".
+
 ## [0.8.3] – 2026-10-18
 
 ### Security

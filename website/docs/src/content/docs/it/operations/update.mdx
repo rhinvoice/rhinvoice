@@ -3,7 +3,7 @@ title: Aggiornare Rhinvoice a una nuova versione
 description: Aggiornare Rhinvoice con Docker Compose. Impostare la nuova versione in .env, scaricare le immagini, riavviare. Prima fare un backup e leggere il changelog.
 faq:
   - q: Come aggiorno Rhinvoice?
-    a: Imposti RHINVOICE_VERSION in .env sulla nuova versione, poi esegua docker compose pull e docker compose up -d. Le migrazioni del database vengono eseguite automaticamente all’avvio.
+    a: Esegua docker compose pull e docker compose up -d. Con una versione fissata, imposti prima RHINVOICE_VERSION in .env sulla nuova versione; con latest non serve. Le migrazioni del database vengono eseguite automaticamente all’avvio.
   - q: Rhinvoice si aggiorna da solo?
     a: Non con una versione fissata. Le versioni fissate cambiano solo quando cambia RHINVOICE_VERSION. Con latest, ogni docker compose pull scarica la release più recente.
   - q: Le fatture emesse cambiano con un aggiornamento?
@@ -33,12 +33,12 @@ Per aggiornare Rhinvoice, imposti la nuova versione in `.env`, scarichi le immag
 
 <Steps>
 
-1. Nella cartella con `compose.yml` e `.env`, imposti `RHINVOICE_VERSION` in `.env` sulla nuova versione, p. es. `RHINVOICE_VERSION=0.8.0`.
+1. Solo con una versione fissata: nella cartella con `compose.yml` e `.env`, imposti `RHINVOICE_VERSION` in `.env` sulla nuova versione, p. es. `RHINVOICE_VERSION=0.8.3`. Con `latest` salti questo passo.
 
 2. Scarichi le immagini e riavvii:
 
    ```bash
-   # impostare RHINVOICE_VERSION in .env sulla nuova versione, poi
+   # con una versione fissata: impostare prima RHINVOICE_VERSION in .env, poi
    docker compose pull
    docker compose up -d
    ```
@@ -68,7 +68,7 @@ Un aggiornamento non modifica mai i documenti emessi. Mantengono il loro contenu
 
 ## Avviso di una nuova versione
 
-Una volta al giorno Rhinvoice controlla se esiste una nuova versione. Compare allora in fondo alla navigazione una scheda con il numero della nuova versione, un link alle novità e i due passi per il server: la riga per `.env` e il comando, entrambi pronti da copiare. *Informazioni su Rhinvoice* mostra lo stesso, e se la Sua versione è aggiornata; **Cerca aggiornamenti** lì controlla subito invece di aspettare il giorno dopo.
+Una volta al giorno Rhinvoice controlla se esiste una nuova versione. Compare allora in fondo alla navigazione una scheda con il numero della nuova versione, un link alle novità e i passi per il server, pronti da copiare: il comando e, prima, la riga per `.env` se il Suo `.env` fissa una versione. Con `latest` la scheda mostra solo il comando; come è impostato `.env` lo sa da `compose.yml`, quindi al prossimo aggiornamento scarichi quello attuale (con uno più vecchio la scheda mostra la riga con «Solo se .env fissa una versione»). <Since version="0.8.4" /> *Informazioni su Rhinvoice* mostra lo stesso, e se la Sua versione è aggiornata; **Cerca aggiornamenti** lì controlla subito invece di aspettare il giorno dopo.
 
 Per il controllo Rhinvoice scarica un piccolo file firmato dall’ultima release su GitHub. Come per ogni download, GitHub vede l’indirizzo del Suo server; nessun dato della Sua installazione viene inviato. Un file la cui firma non corrisponde viene scartato. Per disattivare il controllo, imposti in `.env`:
 

@@ -2,7 +2,7 @@
 #
 #   curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/deploy/compose.yml
 #   curl -fsSL https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/.env.example -o .env
-#   # edit .env: POSTGRES_PASSWORD and RHINVOICE_VERSION
+#   # edit .env: POSTGRES_PASSWORD (RHINVOICE_VERSION only to pin a version)
 #   docker compose pull
 #   docker compose up -d
 #
@@ -26,6 +26,8 @@ services:
       RHINVOICE_RUN_MIGRATIONS: ${RHINVOICE_RUN_MIGRATIONS:-true}
       RHINVOICE_RECURRING: ${RHINVOICE_RECURRING:-true}
       RHINVOICE_RECURRING_INTERVAL: ${RHINVOICE_RECURRING_INTERVAL:-600}
+      # The update notice tells from it whether .env has to change for a new release.
+      RHINVOICE_IMAGE_TAG: ${RHINVOICE_VERSION:-latest}
     command: ["rhinvoice", "serve", "--forwarded-allow-ips", "${RHINVOICE_FORWARDED_ALLOW_IPS:-127.0.0.1}"]
     # A recurring invoice being written (and mailed) may finish before the container stops.
     stop_grace_period: 40s

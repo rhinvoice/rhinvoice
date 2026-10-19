@@ -12,7 +12,10 @@ export type UpdateNotice =
       readonly kind: "command";
       readonly version: string;
       readonly notesUrl: string | null;
-      readonly envLine: string;
+      /** null: the pull alone brings the release (.env follows latest). */
+      readonly envLine: string | null;
+      /** Whether .env surely pins a version; null: not known (compose files before 0.8.4). */
+      readonly pinned: boolean | null;
       readonly command: string;
     }
   | {
@@ -60,7 +63,8 @@ export function updateNotice(update: Update | undefined): UpdateNotice | null {
         kind: "command",
         version,
         notesUrl: update.notes_url,
-        envLine: envLine(version),
+        envLine: update.pinned === false ? null : envLine(version),
+        pinned: update.pinned,
         command: DOCKER_COMMAND,
       };
     case "setup":

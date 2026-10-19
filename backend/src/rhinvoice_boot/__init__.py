@@ -155,6 +155,17 @@ def build_name(version: str, candidate: int | None) -> str:
     return version if candidate is None else f"{version}{CANDIDATE}{candidate}"
 
 
+def recorded(build: str, entry: str | None) -> bool:
+    """Tell whether ``entry`` of state.json names the package ``build``.
+
+    A boot before ADR 0035 recorded the version only ("0.8.4"), also for a package built as a
+    candidate: that entry names every build of the version.
+    """
+    if entry is None:
+        return False
+    return build == entry or (CANDIDATE not in entry and build.partition(CANDIDATE)[0] == entry)
+
+
 def version_key(version: str) -> tuple[int, ...]:
     """Order versions like 0.10.0 after 0.9.1; anything else is not a version and gives ().
 
@@ -307,7 +318,9 @@ def packages(install: Path, data: Path) -> list[Package]:
 
 def choose(install: Path, data: Path, state: State) -> Package:
     """Take the newest package that fits and did not fail, from the setup or an update."""
-    candidates = [p for p in packages(install, data) if p.version not in state.failed]
+    candidates = [
+        p for p in packages(install, data) if not any(recorded(p.version, f) for f in state.failed)
+    ]
     if not candidates:
         msg = f"no app package fits the runtime in {install}"
         raise BootError(msg)
@@ -348,7 +361,9 @@ def _run_session(argv: Sequence[str], runtime: Runtime) -> int:
         )
         return runtime.launch(package, [*argv, *_folders(runtime, package)])
     package = choose(runtime.install, runtime.data, state)
-    if package.version != state.active and not (state.trying == package.version and state.saved):
+    if not recorded(package.version, state.active) and not (
+        recorded(package.version, state.trying) and state.saved
+    ):
         try:
             copy_database(runtime, f"before-{package.version}")
         except (OSError, subprocess.CalledProcessError) as error:
@@ -365,8 +380,10 @@ def _run_session(argv: Sequence[str], runtime: Runtime) -> int:
         code = 1
     # Only an update is taken back: without a version that ran before, there is none to
     # go back to, and the next start tries again (it may have been the computer, not us).
-    if load_state(runtime.data).trying == package.version and state.active is not None:
-        take_back(runtime, package.version)
+    trying = load_state(runtime.data).trying
+    if trying is not None and recorded(package.version, trying) and state.active is not None:
+        # Under the name its database copy has: a boot before ADR 0035 wrote the version.
+        take_back(runtime, trying)
         return runtime.restart()
     if code == RESTART:
         return runtime.restart()
@@ -384,7 +401,7 @@ def _folders(runtime: Runtime, package: Package) -> list[str]:
 def _package_of(runtime: Runtime, state: State) -> Package:
     """Find the package of the version that ran before."""
     for package in packages(runtime.install, runtime.data):
-        if package.version == state.active:
+        if recorded(package.version, state.active):
             return package
     msg = f"the version that ran before ({state.active}) is no longer installed"
     raise BootError(msg)

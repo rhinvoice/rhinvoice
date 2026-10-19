@@ -792,3 +792,67 @@ def test_every_start_keeps_the_working_folder_off_the_module_path() -> None:
     ]
     assert len(starts) == 5
     assert all("-P -m rhinvoice_boot" in line for line in starts)
+
+
+def candidate_update(data: Path) -> None:
+    """0.7.0 built as candidate 3, in the folder a boot before ADR 0035 named after the version."""
+    package(data / "app" / "versions" / "0.7.0", "0.7.0", candidate=3)
+
+
+def test_a_package_an_earlier_boot_took_back_is_not_started_again(
+    runtime_folder: Path, data: Path
+) -> None:
+    """ADR 0035: that boot recorded the version, not the build."""
+    candidate_update(data)
+    state = State(active="0.6.2", failed=["0.7.0"])
+    assert choose(runtime_folder, data, state).version == "0.6.2"
+
+
+def test_the_package_that_ran_under_an_earlier_boot_is_no_trial(
+    runtime_folder: Path, data: Path
+) -> None:
+    """A crash of the version that works is not a failed update: nothing is taken back."""
+    candidate_update(data)
+    save_state(data, State(active="0.7.0", failed=["0.6.9"]))
+    program = Program(data, works=False, code=1)
+    assert run([], runtime(runtime_folder, data, program)) == 1
+    assert program.started[0][0] == "0.7.0-rc.3"
+    assert program.restarts == 0
+    assert load_state(data) == State(active="0.7.0", failed=["0.6.9"])
+    assert not (data / "backups").exists()
+
+
+def test_maintenance_runs_the_package_that_ran_under_an_earlier_boot(
+    runtime_folder: Path, data: Path
+) -> None:
+    candidate_update(data)
+    save_state(data, State(active="0.7.0"))
+    program = Program(data)
+    assert run(["--list-backups"], runtime(runtime_folder, data, program)) == 0
+    assert program.started[0][0] == "0.7.0-rc.3"
+
+
+def test_the_trial_an_earlier_boot_began_is_taken_back_with_its_copy(
+    runtime_folder: Path, data: Path
+) -> None:
+    installed(runtime_folder, data)
+    candidate_update(data)
+    shutil.copytree(data / "database", data / "backups" / "database-before-0.7.0")
+    (data / "database" / "invoices").write_text("half migrated")
+    save_state(data, State(active="0.6.2", trying="0.7.0", saved=True))
+    program = Program(data, works=False, code=1)
+    assert run([], runtime(runtime_folder, data, program)) == 1
+    assert program.started[0][0] == "0.7.0-rc.3"
+    assert (data / "database" / "invoices").read_text() == "before the update"
+    assert load_state(data) == State(active="0.6.2", failed=["0.7.0"])
+    assert choose(runtime_folder, data, load_state(data)).version == "0.6.2"
+
+
+def test_state_entries_name_builds_or_all_builds_of_a_version() -> None:
+    assert boot.recorded("0.7.0-rc.3", "0.7.0-rc.3")
+    assert boot.recorded("0.7.0-rc.3", "0.7.0")
+    assert boot.recorded("0.7.0", "0.7.0")
+    assert not boot.recorded("0.7.0-rc.3", "0.7.0-rc.2")
+    assert not boot.recorded("0.7.0", "0.7.0-rc.2")
+    assert not boot.recorded("0.7.1-rc.1", "0.7.0")
+    assert not boot.recorded("0.7.0", None)

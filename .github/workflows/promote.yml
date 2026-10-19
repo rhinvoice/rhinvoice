@@ -31,8 +31,12 @@ jobs:
     if: github.repository == 'rhinvoice/rhinvoice'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    # Holds the signing key: runs only from dev and after the maintainer's approval (ADR 0033).
+    environment: release
     permissions:
+      # Creates the release and pushes the release branch.
       contents: write
+      # Tags the candidate's images as the release.
       packages: write
       # Starts the website build and the demo deployment.
       actions: write
@@ -86,11 +90,14 @@ jobs:
             echo "version=$version"
           } >> "$GITHUB_OUTPUT"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # The candidate's own changelog and history.
           ref: ${{ steps.candidate.outputs.name }}
           fetch-depth: 0
+          # The only checkout that keeps its token: the last step pushes the release branch.
+          # The signing steps run before it, from desktop/signing only (ADR 0033).
+          persist-credentials: true
 
       - name: The candidate's commit
         id: version
@@ -122,10 +129,10 @@ jobs:
           echo "::error::dev changed its workflows since the candidate, so this workflow may not create v$VERSION. Run once, then run Promote again: git push origin$missing"
           exit 1
 
-      - uses: astral-sh/setup-uv@v6
+      # No cache in a job that holds the signing key (ADR 0033).
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
         with:
-          enable-cache: true
-          cache-dependency-glob: backend/uv.lock
+          enable-cache: false
 
       - name: Take the candidate's files
         env:
@@ -142,6 +149,20 @@ jobs:
           fi
           ls -l build/release
 
+      # Signed again below, so first make sure these are the files that were tested: the
+      # candidate's signed release.json must list each with its size and SHA-256 (ADR 0033).
+      - name: The files are the candidate's
+        env:
+          CANDIDATE: ${{ steps.candidate.outputs.name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir -p build/candidate
+          gh release download "$CANDIDATE" --dir build/candidate \
+            --pattern release.json --pattern release.json.sig
+          uv run --project desktop/signing --frozen python desktop/release_manifest.py \
+            "$VERSION" build/release --verify build/candidate --tag "$CANDIDATE"
+
+      # The key is in this step only, and only cryptography runs beside it (ADR 0033).
       - name: Write and sign release.json for the release (ADR 0022)
         env:
           RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
@@ -151,7 +172,8 @@ jobs:
             echo "::error::The secret RELEASE_SIGNING_KEY is missing: without a signed release.json no installation learns of this release."
             exit 1
           fi
-          uv run --project backend python desktop/release_manifest.py "$VERSION" build/release
+          uv run --project desktop/signing --frozen python desktop/release_manifest.py \
+            "$VERSION" build/release
 
       - name: Release notes from the changelog
         env:
@@ -167,8 +189,8 @@ jobs:
           print(match.group(1).strip())
           PY
 
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}

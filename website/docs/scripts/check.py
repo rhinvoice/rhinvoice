@@ -3,12 +3,15 @@
 
     python3 scripts/check.py content   # before the build: pages, frontmatter, wording
     python3 scripts/check.py links     # after the build: every link into /docs/ leads to a page
+    python3 scripts/check.py csp       # after the build: the CSP of each page allows its scripts
 
 The rules come from WRITING.md. A failed rule prints the file and what to change.
 """
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import re
 import sys
 from html.parser import HTMLParser
@@ -142,9 +145,67 @@ def check_links() -> list[str]:
     return problems
 
 
+class _Scripts(HTMLParser):
+    """The page's Content-Security-Policy and the inline scripts a browser would run."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.policy: str | None = None
+        self.scripts: list[str] = []
+        self._inline = False
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        values = dict(attrs)
+        if tag == "meta" and (values.get("http-equiv") or "").lower() == "content-security-policy":
+            self.policy = values.get("content")
+        # A <meta> policy governs what follows it. Data (JSON-LD) is no script; a script with
+        # src is covered by 'self'.
+        self._inline = (
+            tag == "script"
+            and self.policy is not None
+            and "src" not in values
+            and "json" not in (values.get("type") or "")
+        )
+        if self._inline:
+            self.scripts.append("")
+
+    def handle_data(self, data: str) -> None:
+        if self._inline:
+            self.scripts[-1] += data
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "script":
+            self._inline = False
+
+
+def check_csp() -> list[str]:
+    """Each page carries a CSP whose script-src names the hash of every inline script (ADR 0033)."""
+    problems: list[str] = []
+    if not DIST.is_dir():
+        return [f"{DIST}: build the docs first (pnpm build)"]
+    for html in sorted(DIST.rglob("*.html")):
+        parser = _Scripts()
+        parser.feed(html.read_text(encoding="utf-8"))
+        name = html.relative_to(DIST)
+        if parser.policy is None:
+            problems.append(f"{name}: no Content-Security-Policy <meta>")
+            continue
+        directives = {
+            part.split()[0]: part.split()[1:] for part in parser.policy.split(";") if part.strip()
+        }
+        allowed = directives.get("script-src", [])
+        if "'unsafe-inline'" in allowed:
+            problems.append(f"{name}: script-src must not allow 'unsafe-inline'")
+        for script in parser.scripts:
+            digest = base64.b64encode(hashlib.sha256(script.encode()).digest()).decode()
+            if f"'sha256-{digest}'" not in allowed:
+                problems.append(f"{name}: no hash for the inline script «{script.strip()[:60]}»")
+    return problems
+
+
 def main() -> int:
     mode = sys.argv[1] if len(sys.argv) > 1 else ""
-    checks = {"content": check_content, "links": check_links}
+    checks = {"content": check_content, "links": check_links, "csp": check_csp}
     if mode not in checks:
         print(__doc__)
         return 2

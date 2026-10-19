@@ -41,8 +41,8 @@ Wiederherstellen **ersetzt alle Daten** durch den Stand eines Backups, in einer 
 **Windows** (PowerShell):
 
 ```powershell
-& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -m rhinvoice_boot --list-backups
-& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -m rhinvoice_boot --restore latest
+& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -P -m rhinvoice_boot --list-backups
+& "$env:LOCALAPPDATA\Programs\Rhinvoice\python\python.exe" -P -m rhinvoice_boot --restore latest
 ```
 
 **Mac** (Terminal):

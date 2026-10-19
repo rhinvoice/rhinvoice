@@ -1,0 +1,10 @@
+# The environment that signs release.json (ADR 0033): cryptography and nothing else, so the
+# release key never meets the backend's packages. Renovate keeps uv.lock current.
+[project]
+name = "rhinvoice-release-signing"
+version = "0"
+requires-python = ">=3.12"
+dependencies = ["cryptography==50.0.2"]
+
+[tool.uv]
+package = false

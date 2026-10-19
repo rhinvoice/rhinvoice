@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import date, datetime
 from typing import Annotated, Any, Self
 from urllib.parse import quote
@@ -905,14 +906,8 @@ def document_pdf(
 ) -> Response:
     """Return the PDF, shown in the browser or (``download``) saved as a file."""
     file = container.printing.pdf(document_id)
-    name = pdf_file_name(file.document)
-    # filename*: the full UTF-8 name; filename: an ASCII fallback for old clients.
-    fallback = name.encode("ascii", "replace").decode().replace("?", "_")
-    disposition = "attachment" if download else "inline"
     headers = {
-        "Content-Disposition": (
-            f"{disposition}; filename=\"{fallback}\"; filename*=UTF-8''{quote(name)}"
-        ),
+        "Content-Disposition": file_disposition(pdf_file_name(file.document), download=download),
         # Drafts change, issued documents never do.
         "Cache-Control": "no-store" if file.sha256 is None else "private, max-age=31536000",
     }
@@ -929,6 +924,7 @@ def list_attachments(
     return [AttachmentResponse.of(item) for item in container.documents.attachments(document_id)]
 
 
+CONTROL_CHARACTERS = re.compile(r"[\x00-\x1f\x7f]")
 ATTACHMENT_FILE: dict[int | str, dict[str, Any]] = {
     200: {
         "description": "The file as it was added",
@@ -951,20 +947,28 @@ def attachment_file(
 ) -> Response:
     """Return an attachment, shown in the browser or (``download``) saved as a file."""
     attachment, content = container.documents.attachment(document_id, attachment_id)
-    name = attachment.file_name.rsplit("/", 1)[-1]
-    fallback = name.encode("ascii", "replace").decode().replace("?", "_").replace('"', "_")
-    disposition = "attachment" if download else "inline"
     return Response(
         content=content,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": (
-                f"{disposition}; filename=\"{fallback}\"; filename*=UTF-8''{quote(name)}"
-            ),
+            "Content-Disposition": file_disposition(attachment.file_name, download=download),
             "Cache-Control": "private, max-age=31536000",
             "ETag": f'"{attachment.sha256}"',
         },
     )
+
+
+def file_disposition(file_name: str, *, download: bool) -> str:
+    """Build the Content-Disposition of a download: no folder, no control characters.
+
+    filename* carries the full UTF-8 name, filename an ASCII fallback for old clients. The
+    name of an attachment came with an upload; a control character must never reach the header.
+    """
+    name = CONTROL_CHARACTERS.sub("", file_name.rsplit("/", 1)[-1])
+    fallback = name.encode("ascii", "replace").decode()
+    fallback = fallback.replace("?", "_").replace('"', "_").replace("\\", "_")
+    disposition = "attachment" if download else "inline"
+    return f"{disposition}; filename=\"{fallback}\"; filename*=UTF-8''{quote(name)}"
 
 
 @router.post("/documents/{document_id}/files", dependencies=[NOT_IN_DEMO])

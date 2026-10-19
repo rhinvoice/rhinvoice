@@ -72,7 +72,7 @@ class Program:
         flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
         output = smoke_log(self.data).open("ab")
         self.process = subprocess.Popen(  # noqa: S603 - the installed program
-            [python, "-m", "rhinvoice_boot", "--no-browser"],
+            [python, "-P", "-m", "rhinvoice_boot", "--no-browser"],
             creationflags=flags,
             stdout=output,
             stderr=subprocess.STDOUT,
@@ -239,7 +239,14 @@ def check_restore(program: Program, api: Api) -> None:
     """Restore the backup as the docs describe it, then start again on the restored data."""
     step("the data is replaced with the latest backup (--restore latest)")
     restored = subprocess.run(  # noqa: S603 - the installed program
-        [program.install / "python" / "python.exe", "-m", "rhinvoice_boot", "--restore", "latest"],
+        [
+            program.install / "python" / "python.exe",
+            "-P",
+            "-m",
+            "rhinvoice_boot",
+            "--restore",
+            "latest",
+        ],
         capture_output=True,
         text=True,
         check=False,

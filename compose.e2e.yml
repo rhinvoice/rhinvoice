@@ -5,7 +5,7 @@ name: rhinvoice-e2e
 
 services:
   db:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
     environment:
       POSTGRES_DB: rhinvoice
       POSTGRES_USER: rhinvoice
@@ -25,7 +25,7 @@ services:
 
   # Takes the mails the tests send (SMTP on 1025) and shows them over HTTP (8025).
   mailpit:
-    image: axllent/mailpit:v1.31.5
+    image: axllent/mailpit:v1.31.5@sha256:94f6b70c1436defae6799d9ac7ff0eeff9540465b842026d5cdb018f1c0234ea
 
   app:
     build: .
@@ -54,7 +54,7 @@ services:
       retries: 30
 
   e2e:
-    image: mcr.microsoft.com/playwright:v1.64.0-noble
+    image: mcr.microsoft.com/playwright:v1.64.0-noble@sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f
     depends_on:
       app:
         condition: service_healthy

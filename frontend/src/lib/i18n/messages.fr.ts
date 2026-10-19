@@ -204,6 +204,7 @@ export const fr: Catalog<MessageKey> = {
     "L’adresse e-mail ou le code est incorrect, ou le code a expiré. Après cinq tentatives infructueuses, un nouveau code est nécessaire.",
   "error.reset_by_administrator":
     "Ici, c’est un administrateur qui réinitialise le mot de passe sur le serveur.",
+  "error.rate_limited": "Trop de tentatives depuis cette adresse. Veuillez patienter une minute.",
   "error.account_locked":
     "Trop de tentatives infructueuses. Le compte est bloqué pendant 15 minutes.",
   "error.totp_required": "Veuillez saisir le code de confirmation.",

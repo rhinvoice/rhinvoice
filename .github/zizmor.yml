@@ -1,0 +1,8 @@
+# zizmor (ADR 0033): only findings checked to be false positives are ignored here.
+rules:
+  cache-poisoning:
+    ignore:
+      # zizmor takes the run on a candidate's tag for a publishing run. CI publishes nothing:
+      # it holds no write permission and uploads only test reports. The images, setups and
+      # release.json come from release.yml and promote.yml, whose signing jobs use no cache.
+      - ci.yml

@@ -64,8 +64,13 @@ PostgreSQL major version): packages built afterwards then need the new setup."""
 # Not needed to run the server; about a third of the PostgreSQL download.
 POSTGRES_UNUSED = ("include", "doc", "symbols", "pgAdmin 4", "StackBuilder")
 EDITIONS = {
-    "stable": {"name": "Rhinvoice", "identifier": "ch.webberz.rhinvoice"},
-    "beta": {"name": "Rhinvoice Beta", "identifier": "ch.webberz.rhinvoice.beta"},
+    "stable": {"name": "Rhinvoice", "identifier": "ch.webberz.rhinvoice", "icon": "Rhinvoice"},
+    # Rhinvoice's icon with a striped edge at the bottom, to tell the two apart.
+    "beta": {
+        "name": "Rhinvoice Beta",
+        "identifier": "ch.webberz.rhinvoice.beta",
+        "icon": "Rhinvoice-Beta",
+    },
 }
 """Rhinvoice, and Rhinvoice Beta for release candidates (ADR 0030): the name is that of the
 program, of its macOS bundle and of its folders (rhinvoice_boot.NAMES). Never change an
@@ -365,6 +370,7 @@ def build_windows_beta(out: Path) -> None:
         raise SystemExit(msg)
     shutil.rmtree(beta, ignore_errors=True)
     shutil.copytree(install, beta)
+    shutil.copy2(ROOT / "desktop" / "icons" / "Rhinvoice-Beta.ico", beta / "Rhinvoice.ico")
     write_runtime(beta, "beta")
     brand_windows_program(sources, beta, "beta")
     print(f"Rhinvoice Beta {version()} assembled in {beta}")
@@ -403,7 +409,8 @@ if [ ! -t 1 ]; then
     mkdir -p "$HOME/Library/Logs/__NAME__"
     exec >>"$HOME/Library/Logs/__NAME__/rhinvoice.log" 2>&1
 fi
-exec "$contents/MacOS/python3" -m rhinvoice_boot "$@"
+# -P: the working folder is not searched for modules (rhinvoice_boot.START).
+exec "$contents/MacOS/python3" -P -m rhinvoice_boot "$@"
 """
 
 
@@ -518,7 +525,6 @@ def build_macos(out: Path) -> None:
     shutil.rmtree(out, ignore_errors=True)
     install.mkdir(parents=True)
     (contents / "MacOS").mkdir()
-    shutil.copy2(ROOT / "desktop" / "icons" / "Rhinvoice.icns", install / "Rhinvoice.icns")
     python = install_runtime_python(sources, install)
     shutil.copy2(python.resolve(), contents / "MacOS" / "python3")
     brand_macos(bundle, "stable")
@@ -542,6 +548,8 @@ def brand_macos(bundle: Path, edition: str) -> None:
     start = contents / "MacOS" / "Rhinvoice"
     start.write_text(MACOS_START.replace("__NAME__", names["name"]), encoding="utf-8")
     start.chmod(0o755)
+    icon = ROOT / "desktop" / "icons" / f"{names['icon']}.icns"
+    shutil.copy2(icon, contents / "Resources" / "Rhinvoice.icns")
     write_runtime(contents / "Resources", edition)
 
 

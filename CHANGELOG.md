@@ -5,6 +5,40 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.8.3] – 2026-10-18
+
+### Security
+- The desktop updater checks more strictly: a downloaded setup is checked again right before
+  it runs (on a Mac also before the disk image is opened) and removed if it changed; only one
+  setup downloads at a time; release information with an unexpected version, address or
+  checksum is ignored; an update folder that this program did not download and check
+  completely is downloaded again instead of started.
+- The Windows and Mac programs no longer look for Python modules in the folder they were
+  started from (`python -P`). This applies to installations from the next setup on; the
+  command for restoring a backup on Windows now includes `-P`.
+- Rhinvoice now counts the size of a request while it arrives, so a request sent in pieces is
+  refused at the same limit as any other (ADR 0034).
+- The larger limits for imports and files only apply to file uploads; any other request is
+  limited to 2 MB.
+- The program for Windows and Mac only answers requests to its own address (127.0.0.1 or
+  localhost), so a web page cannot reach it under another name.
+- Every installation limits sign-ins, password changes and password resets to 10 per minute per
+  address.
+- The PDF printer of the Windows and Mac program runs no scripts and loads nothing from the
+  network, like the Docker setup.
+- File names of attachments lose control characters before they are sent back.
+- `.env.example` no longer contains a placeholder database password: Docker Compose does not
+  start until you set one.
+
+### Changed
+- Rhinvoice Beta has its own icon: Rhinvoice's with a striped edge at the bottom, so the two
+  apps are easy to tell apart in the Dock, the taskbar, the Start menu and on the start card.
+
+### Fixed
+- Windows on ARM (e.g. in Parallels on a Mac) now gets updates from within the program,
+  instead of a link to the releases page: the program asks for the package of its own x64
+  runtime, not of the processor. Installations up to 0.8.2 need the new setup once.
+
 ## [0.8.2] – 2026-10-18
 
 ### Added

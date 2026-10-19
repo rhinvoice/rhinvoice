@@ -17,7 +17,7 @@ import pytest
 from rhinvoice.api.container import NO_OWN_SERVICES, OwnServices
 from rhinvoice.api.settings import Settings
 from rhinvoice.application.backup.ports import BackupFailed, FolderSuggestion
-from rhinvoice.application.updates.ports import Release
+from rhinvoice.application.updates.ports import PackageFile, Release
 from rhinvoice.desktop import launcher
 from rhinvoice.desktop import window as program_window
 from rhinvoice.desktop.backup import FOLDER_NAME, CurrentArchive, DesktopBackupSetup
@@ -33,7 +33,7 @@ from rhinvoice.desktop.launcher import (
 from rhinvoice.desktop.ports import free_port
 from rhinvoice.desktop.postgres import BundledPostgres
 from rhinvoice.desktop.setup import SetupDownloader
-from rhinvoice.desktop.updates import PackageInstaller
+from rhinvoice.desktop.updates import VERIFIED, PackageInstaller
 from rhinvoice_boot import RESTART, State, load_state, save_state
 from tests.helpers import raises_exactly
 from tests.unit.desktop.tools import calls, commands
@@ -117,6 +117,7 @@ def test_the_server_runs_on_the_bundled_database(install: Path, tmp_path: Path, 
     assert settings.static_dir == install / "static"
     assert settings.chromium_path == install / "chromium" / "chrome-headless-shell"
     assert not settings.cookie_secure
+    assert settings.local_port == port
     assert settings.reset_code_dir == data
     assert settings.log_file == data / "rhinvoice.log"
     assert settings.update_channel == "stable"
@@ -522,8 +523,12 @@ def test_after_an_update_the_boot_is_asked_to_start_again(
         installer = own.installer
         assert installer is not None
         # An update that is already in place: the program only restarts.
-        (tmp_path / "home" / "rhinvoice" / "app" / "versions" / "0.7.0").mkdir(parents=True)
-        installer.install(Release("0.7.0", "https://x", 1))
+        package = PackageFile("https://x/app.zip", "ab" * 32, 1)
+        folder = tmp_path / "home" / "rhinvoice" / "app" / "versions" / "0.7.0"
+        folder.mkdir(parents=True)
+        (folder / VERIFIED).write_text(package.sha256)
+        assert isinstance(installer, PackageInstaller)
+        installer.install(Release("0.7.0", "https://x", 1, {installer.platform: package}))
         assert stopped.wait(5)  # the server was stopped as by Ctrl+C
         return 0
 

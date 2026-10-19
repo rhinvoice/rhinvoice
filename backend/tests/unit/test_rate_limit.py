@@ -1,4 +1,4 @@
-from rhinvoice.api.rate_limit import MAX_CLIENTS, DemoLimits, RateLimiter
+from rhinvoice.api.rate_limit import MAX_CLIENTS, ClientLimits, RateLimiter
 
 
 class Clock:
@@ -35,8 +35,16 @@ def test_many_clients_do_not_fill_the_memory() -> None:
 
 
 def test_the_demo_limits() -> None:
-    limits = DemoLimits.default()
+    limits = ClientLimits.default(demo=True)
     assert all(limits.logins.allow("a") for _ in range(10))
     assert not limits.logins.allow("a")
+    assert limits.changes is not None
     assert all(limits.changes.allow("a") for _ in range(60))
     assert not limits.changes.allow("a")
+
+
+def test_every_installation_limits_sign_ins_but_not_changes() -> None:
+    limits = ClientLimits.default()
+    assert all(limits.logins.allow("a") for _ in range(10))
+    assert not limits.logins.allow("a")
+    assert limits.changes is None

@@ -49,6 +49,8 @@ To update Rhinvoice, set the new version in `.env`, pull the images and restart 
 
 Database migrations run automatically on start (`RHINVOICE_RUN_MIGRATIONS=true` in `.env`).
 
+`compose.yml` fixes the exact images of the database and of Gotenberg; their security fixes come with Rhinvoice releases. So download the current `compose.yml` again with each update (`curl -fsSLO https://raw.githubusercontent.com/rhinvoice/rhinvoice/main/deploy/compose.yml`); `.env` keeps your settings.
+
 ## Pinned version or latest
 
 `.env` decides how Rhinvoice follows new releases:

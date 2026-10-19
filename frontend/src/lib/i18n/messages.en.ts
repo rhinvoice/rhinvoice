@@ -191,6 +191,7 @@ export const en: Catalog<MessageKey> = {
   "error.reset_code_invalid":
     "The e-mail address or the code is wrong, or the code has expired. After five wrong tries a new code is needed.",
   "error.reset_by_administrator": "Here an administrator resets the password on the server.",
+  "error.rate_limited": "Too many attempts from this address. Please wait a minute.",
   "error.account_locked": "Too many failed attempts. The account is locked for 15 minutes.",
   "error.totp_required": "Please enter the verification code.",
   "error.retry": "Try again",

@@ -403,6 +403,11 @@ def test_the_card_needs_nothing_from_elsewhere() -> None:
     assert "http" not in page
 
 
+def test_the_card_of_rhinvoice_beta_shows_its_icon() -> None:
+    assert 'id="s"' in window.splash_html("0.8.3", "Rhinvoice Beta")
+    assert 'id="s"' not in window.splash_html("0.8.3")
+
+
 def test_a_closed_window_ends_the_program_window(tmp_path: Path, webview: FakeWebview) -> None:
     ended = threading.Event()
     ended.set()

@@ -18,6 +18,7 @@ from rhinvoice.desktop.postgres import BundledPostgres
 from rhinvoice_boot import (
     RESTART,
     SESSION,
+    START,
     BootError,
     Package,
     Runtime,
@@ -353,7 +354,7 @@ def test_a_restart_runs_the_boot_anew_and_waits_for_it(
     monkeypatch.setattr(subprocess, "call", call)
     monkeypatch.setattr(sys, "argv", ["rhinvoice_boot", "--browser"])
     assert boot.restart() == 7
-    assert calls == [[sys.executable, "-m", "rhinvoice_boot", "--browser"]]
+    assert calls == [[sys.executable, "-P", "-m", "rhinvoice_boot", "--browser"]]
     assert ignored == ([True, True] if windows else [True])
     assert signal.getsignal(signal.SIGINT) is signal.default_int_handler
 
@@ -715,3 +716,21 @@ def test_the_interface_of_the_boot_for_app_packages_stays_as_it_is() -> None:
 def test_the_tests_leave_the_bytecode_settings_of_this_process_alone() -> None:
     """Runs after the tests of main() (pytest keeps the order of a module)."""
     assert os.environ.get("PYTHONPYCACHEPREFIX") == PREFIX_BEFORE
+
+
+def test_every_start_keeps_the_working_folder_off_the_module_path() -> None:
+    """The restart, the setup's shortcuts and the Mac's start script all run START (-P)."""
+    assert START == ("-P", "-m", "rhinvoice_boot")
+    # The nearest one upwards: mutmut runs the tests from a copy inside backend/mutants.
+    desktop = next(
+        folder / "desktop"
+        for folder in Path(__file__).parents
+        if (folder / "desktop" / "build.py").exists()
+    )
+    iss = (desktop / "windows" / "rhinvoice.iss").read_text("utf-8-sig")
+    build = (desktop / "build.py").read_text("utf-8")
+    starts = [
+        line for line in [*iss.splitlines(), *build.splitlines()] if "-m rhinvoice_boot" in line
+    ]
+    assert len(starts) == 5
+    assert all("-P -m rhinvoice_boot" in line for line in starts)

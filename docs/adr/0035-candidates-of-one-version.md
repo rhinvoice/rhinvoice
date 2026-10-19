@@ -32,11 +32,14 @@ the number cannot go into the version itself.
   the update folders and the database copies use that name, so `active`, `trying` and `failed`
   tell two candidates of one version apart. Pruning keeps the running build also in a folder
   named after its version only. A boot before this decision recorded the version only
-  (`"0.8.4"`), also for a package built as a candidate. The new boot reads such an entry as
-  naming every build of that version, so a package that boot took back stays out, the one that
-  ran stays the one to go back to, and an unfinished trial is taken back with its copy.
-  Before it starts a package, the boot sets the environment
-  variable `RHINVOICE_BUILD` to its build.
+  (`"0.8.4"`), also for a package built as a candidate. The new boot resolves each such entry
+  to the one build that boot used: the package in `versions/<entry>`, else the setup's own if
+  it is of that version. The next write keeps the resolved name. So a package that boot took
+  back stays out, a newer candidate brought by the setup is still copied for and tried, and an
+  unfinished trial is taken back with its copy, which keeps the version's name. An entry that
+  names neither stays as it is and so never names a candidate's build: at worst an extra copy
+  and trial, never a working package left out. Before it starts a package, the boot sets the
+  environment variable `RHINVOICE_BUILD` to its build.
 - **Only Rhinvoice Beta, and only on a boot that knows builds.** The app package reads
   `RHINVOICE_BUILD`. It does not import anything new from the boot, because an update runs on the
   boot of an earlier setup (ADR 0030). If the variable is missing, the boot is older: the

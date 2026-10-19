@@ -804,7 +804,9 @@ def test_a_package_an_earlier_boot_took_back_is_not_started_again(
 ) -> None:
     """ADR 0035: that boot recorded the version, not the build."""
     candidate_update(data)
-    state = State(active="0.6.2", failed=["0.7.0"])
+    save_state(data, State(active="0.6.2", failed=["0.7.0"]))
+    state = boot.current_state(runtime(runtime_folder, data, Program(data)))
+    assert state == State(active="0.6.2", failed=["0.7.0-rc.3"])
     assert choose(runtime_folder, data, state).version == "0.6.2"
 
 
@@ -844,15 +846,63 @@ def test_the_trial_an_earlier_boot_began_is_taken_back_with_its_copy(
     assert run([], runtime(runtime_folder, data, program)) == 1
     assert program.started[0][0] == "0.7.0-rc.3"
     assert (data / "database" / "invoices").read_text() == "before the update"
-    assert load_state(data) == State(active="0.6.2", failed=["0.7.0"])
+    assert load_state(data) == State(active="0.6.2", failed=["0.7.0-rc.3"])
     assert choose(runtime_folder, data, load_state(data)).version == "0.6.2"
 
 
-def test_state_entries_name_builds_or_all_builds_of_a_version() -> None:
-    assert boot.recorded("0.7.0-rc.3", "0.7.0-rc.3")
-    assert boot.recorded("0.7.0-rc.3", "0.7.0")
-    assert boot.recorded("0.7.0", "0.7.0")
-    assert not boot.recorded("0.7.0-rc.3", "0.7.0-rc.2")
-    assert not boot.recorded("0.7.0", "0.7.0-rc.2")
-    assert not boot.recorded("0.7.1-rc.1", "0.7.0")
-    assert not boot.recorded("0.7.0", None)
+def setup_candidate(runtime_folder: Path, candidate: int) -> None:
+    """Give the setup of ADR 0035 or later 0.7.0 built as ``candidate``."""
+    shutil.rmtree(runtime_folder / "app")
+    package(runtime_folder / "app", "0.7.0", candidate=candidate)
+
+
+def test_the_new_setups_candidate_is_tried_after_the_one_an_earlier_boot_ran(
+    runtime_folder: Path, data: Path
+) -> None:
+    """An earlier boot ran rc.2 from versions/0.7.0 and recorded "0.7.0"; the setup brings rc.3."""
+    package(data / "app" / "versions" / "0.7.0", "0.7.0", candidate=2)
+    setup_candidate(runtime_folder, 3)
+    save_state(data, State(active="0.7.0"))
+    (data / "database").mkdir(parents=True)
+    (data / "database" / "invoices").write_text("before")
+    program = Program(data, works=False, code=1)
+    assert run([], runtime(runtime_folder, data, program)) == 1
+    assert program.started[0][0] == "0.7.0-rc.3"
+    # Copied, tried and taken back: rc.2 runs again with the database from before.
+    assert (data / "backups" / "database-before-0.7.0-rc.3" / "invoices").read_text() == "before"
+    assert load_state(data) == State(active="0.7.0-rc.2", failed=["0.7.0-rc.3"])
+    assert choose(runtime_folder, data, load_state(data)).version == "0.7.0-rc.2"
+
+
+def test_the_new_setups_candidate_starts_after_an_earlier_boot_took_back_another(
+    runtime_folder: Path, data: Path
+) -> None:
+    package(data / "app" / "versions" / "0.7.0", "0.7.0", candidate=2)
+    setup_candidate(runtime_folder, 3)
+    save_state(data, State(active="0.6.2", failed=["0.7.0"]))
+    program = Program(data)
+    run([], runtime(runtime_folder, data, program))
+    assert program.started[0][0] == "0.7.0-rc.3"
+
+
+def test_an_entry_of_an_earlier_boot_that_names_no_package_names_no_candidate(
+    runtime_folder: Path, data: Path
+) -> None:
+    """Never a candidate's build: an extra copy and trial are harmless, a lost one is not."""
+    setup_candidate(runtime_folder, 3)
+    update(data, "0.6.9")
+    program = Program(data)
+    for state in (
+        State(active="0.6.9", failed=["0.7.0-x"]),
+        State(active="0.6.9", failed=["0.7.1"]),
+    ):
+        save_state(data, state)
+        assert choose(runtime_folder, data, state).version == "0.7.0-rc.3"
+    # A plain active of a version no package is of: the setup's package is tried.
+    save_state(data, State(active="0.6.8", failed=[]))
+    shutil.rmtree(data / "app" / "versions")
+    (data / "database").mkdir(parents=True)
+    run([], runtime(runtime_folder, data, program))
+    assert program.started[-1][0] == "0.7.0-rc.3"
+    assert (data / "backups" / "database-before-0.7.0-rc.3").is_dir()
+    assert load_state(data).active == "0.7.0-rc.3"

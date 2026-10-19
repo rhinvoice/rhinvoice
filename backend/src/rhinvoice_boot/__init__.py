@@ -155,17 +155,6 @@ def build_name(version: str, candidate: int | None) -> str:
     return version if candidate is None else f"{version}{CANDIDATE}{candidate}"
 
 
-def recorded(build: str, entry: str | None) -> bool:
-    """Tell whether ``entry`` of state.json names the package ``build``.
-
-    A boot before ADR 0035 recorded the version only ("0.8.4"), also for a package built as a
-    candidate: that entry names every build of the version.
-    """
-    if entry is None:
-        return False
-    return build == entry or (CANDIDATE not in entry and build.partition(CANDIDATE)[0] == entry)
-
-
 def version_key(version: str) -> tuple[int, ...]:
     """Order versions like 0.10.0 after 0.9.1; anything else is not a version and gives ().
 
@@ -318,13 +307,39 @@ def packages(install: Path, data: Path) -> list[Package]:
 
 def choose(install: Path, data: Path, state: State) -> Package:
     """Take the newest package that fits and did not fail, from the setup or an update."""
-    candidates = [
-        p for p in packages(install, data) if not any(recorded(p.version, f) for f in state.failed)
-    ]
+    candidates = [p for p in packages(install, data) if p.version not in state.failed]
     if not candidates:
         msg = f"no app package fits the runtime in {install}"
         raise BootError(msg)
     return candidates[0]
+
+
+def current_state(runtime: Runtime) -> State:
+    """Read the state, its entries resolved to builds (see ``resolve``)."""
+    state = load_state(runtime.data)
+    return replace(
+        state,
+        active=resolve(runtime, state.active),
+        trying=resolve(runtime, state.trying),
+        failed=[build for entry in state.failed if (build := resolve(runtime, entry))],
+    )
+
+
+def resolve(runtime: Runtime, entry: str | None) -> str | None:
+    """Return the build an entry of state.json names (ADR 0035).
+
+    A boot before ADR 0035 recorded the version only ("0.8.4"), also for a package built as a
+    candidate. Such an entry names the package it used: the update in the folder of that name,
+    else the setup's own. One that names neither stays as it is and so names no candidate's
+    build: an extra copy and trial are harmless, excluding a working package is not.
+    """
+    if entry is None or CANDIDATE in entry:
+        return entry
+    for folder in (runtime.data / "app" / "versions" / entry, runtime.install / "app"):
+        package = read_package(folder)
+        if package is not None and package.version.partition(CANDIDATE)[0] == entry:
+            return package.version
+    return entry
 
 
 @dataclass(frozen=True, slots=True)
@@ -342,13 +357,13 @@ def run(argv: Sequence[str], runtime: Runtime) -> int:
     with session(runtime.data) as owner:
         if not owner:
             # Started again while it runs (or migrates): only show the running program.
-            package = choose(runtime.install, runtime.data, load_state(runtime.data))
+            package = choose(runtime.install, runtime.data, current_state(runtime))
             return runtime.launch(package, [*argv, *_folders(runtime, package), "--attach"])
         return _run_session(argv, runtime)
 
 
 def _run_session(argv: Sequence[str], runtime: Runtime) -> int:
-    state = load_state(runtime.data)
+    state = current_state(runtime)
     if state.restore is not None:
         state = put_database_back(runtime, state)
     if maintenance(argv):
@@ -361,9 +376,7 @@ def _run_session(argv: Sequence[str], runtime: Runtime) -> int:
         )
         return runtime.launch(package, [*argv, *_folders(runtime, package)])
     package = choose(runtime.install, runtime.data, state)
-    if not recorded(package.version, state.active) and not (
-        recorded(package.version, state.trying) and state.saved
-    ):
+    if package.version != state.active and not (state.trying == package.version and state.saved):
         try:
             copy_database(runtime, f"before-{package.version}")
         except (OSError, subprocess.CalledProcessError) as error:
@@ -380,10 +393,10 @@ def _run_session(argv: Sequence[str], runtime: Runtime) -> int:
         code = 1
     # Only an update is taken back: without a version that ran before, there is none to
     # go back to, and the next start tries again (it may have been the computer, not us).
-    trying = load_state(runtime.data).trying
-    if trying is not None and recorded(package.version, trying) and state.active is not None:
-        # Under the name its database copy has: a boot before ADR 0035 wrote the version.
-        take_back(runtime, trying)
+    recorded = load_state(runtime.data).trying
+    if resolve(runtime, recorded) == package.version and state.active is not None:
+        # A trial a boot before ADR 0035 began has its copy under the version's name.
+        take_back(runtime, package.version, copy=recorded)
         return runtime.restart()
     if code == RESTART:
         return runtime.restart()
@@ -401,16 +414,20 @@ def _folders(runtime: Runtime, package: Package) -> list[str]:
 def _package_of(runtime: Runtime, state: State) -> Package:
     """Find the package of the version that ran before."""
     for package in packages(runtime.install, runtime.data):
-        if recorded(package.version, state.active):
+        if package.version == state.active:
             return package
     msg = f"the version that ran before ({state.active}) is no longer installed"
     raise BootError(msg)
 
 
-def take_back(runtime: Runtime, version: str) -> None:
-    """Never choose the failed version again, and put back the database from before it."""
-    state = load_state(runtime.data)
-    saved = runtime.data / "backups" / f"database-before-{version}"
+def take_back(runtime: Runtime, version: str, copy: str | None = None) -> None:
+    """Never choose the failed version again, and put back the database from before it.
+
+    ``copy``: the name the copy of the database has, if not the version's.
+    """
+    state = current_state(runtime)
+    name = copy or version
+    saved = runtime.data / "backups" / f"database-before-{name}"
     # The decision is written first: if putting the database back fails, the next start
     # tries again before anything runs, and the failed version never starts again.
     state = replace(
@@ -418,7 +435,7 @@ def take_back(runtime: Runtime, version: str) -> None:
         trying=None,
         saved=False,
         failed=[*state.failed, version],
-        restore=version if saved.is_dir() else None,
+        restore=name if saved.is_dir() else None,
     )
     save_state(runtime.data, state)
     if state.restore is not None:

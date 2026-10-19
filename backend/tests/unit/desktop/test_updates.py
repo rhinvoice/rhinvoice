@@ -307,11 +307,14 @@ def test_versions_taken_back_by_the_boot_count_as_failed(tmp_path: Path) -> None
 
 def test_builds_taken_back_by_the_boot_count_as_failed(tmp_path: Path) -> None:
     """ADR 0035: the boot records the build; a later candidate of the version is not failed."""
-    save_state(tmp_path, State(active="0.6.2", failed=["0.7.0-rc.2"]))
-    taken_back = installer(tmp_path, github(PACKAGE), Restarts())
+    save_state(tmp_path, State(active="0.6.2", failed=["0.7.0-rc.2", "0.7.1"]))
+    taken_back = PackageInstaller(tmp_path, "windows-x64", 1, Restarts(), builds=True)
     assert taken_back.failed(replace(release(), candidate=2))
     assert not taken_back.failed(replace(release(), candidate=3))
     assert not taken_back.failed(release())
+    # A plain entry the boot could not resolve names no candidate's build.
+    assert taken_back.failed(replace(release(), version="0.7.1"))
+    assert not taken_back.failed(replace(release(), version="0.7.1", candidate=1))
 
 
 def test_on_a_boot_that_knows_builds_each_candidate_gets_its_own_folder(tmp_path: Path) -> None:

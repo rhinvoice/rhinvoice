@@ -329,16 +329,16 @@ def resolve(runtime: Runtime, entry: str | None) -> str | None:
     """Return the build an entry of state.json names (ADR 0035).
 
     A boot before ADR 0035 recorded the version only ("0.8.4"), also for a package built as a
-    candidate. Such an entry names the package it used: the update in the folder of that name,
-    else the setup's own. One that names neither stays as it is and so names no candidate's
-    build: an extra copy and trial are harmless, excluding a working package is not.
+    candidate. Such an entry names the package it used: the update in the folder of that name.
+    One without that folder stays as it is and so names no candidate's build: an extra copy and
+    trial are harmless, excluding a working package is not.
     """
     if entry is None or CANDIDATE in entry:
         return entry
-    for folder in (runtime.data / "app" / "versions" / entry, runtime.install / "app"):
-        package = read_package(folder)
-        if package is not None and package.version.partition(CANDIDATE)[0] == entry:
-            return package.version
+    # Never the setup's own: one built as a candidate came with this boot, not the earlier one.
+    package = read_package(runtime.data / "app" / "versions" / entry)
+    if package is not None and package.version.partition(CANDIDATE)[0] == entry:
+        return package.version
     return entry
 
 

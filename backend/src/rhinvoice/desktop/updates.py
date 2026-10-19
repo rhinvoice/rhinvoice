@@ -138,9 +138,12 @@ class PackageInstaller:
         timer.start()
 
     def failed(self, release: Release) -> bool:
-        # A boot records the build it took back; one before ADR 0035 the version.
-        names = {release.version, build_name(release.version, release.candidate)}
-        return not names.isdisjoint(load_state(self._data).failed)
+        failed = load_state(self._data).failed
+        if self._builds:
+            # The boot resolves entries of earlier boots to builds; the rest name no candidate.
+            return build_name(release.version, release.candidate) in failed
+        # An earlier boot records the version it took back.
+        return release.version in failed
 
     def _folder_name(self, release: Release) -> str:
         return build_name(release.version, release.candidate) if self._builds else release.version

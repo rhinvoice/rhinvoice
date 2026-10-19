@@ -33,12 +33,14 @@ the number cannot go into the version itself.
   tell two candidates of one version apart. Pruning keeps the running build also in a folder
   named after its version only. A boot before this decision recorded the version only
   (`"0.8.4"`), also for a package built as a candidate. The new boot resolves each such entry
-  to the one build that boot used: the package in `versions/<entry>`, else the setup's own if
-  it is of that version. The next write keeps the resolved name. So a package that boot took
-  back stays out, a newer candidate brought by the setup is still copied for and tried, and an
-  unfinished trial is taken back with its copy, which keeps the version's name. An entry that
-  names neither stays as it is and so never names a candidate's build: at worst an extra copy
-  and trial, never a working package left out. Before it starts a package, the boot sets the
+  to the one build that boot used: the package in `versions/<entry>`. Never the setup's own:
+  a package built as a candidate came with the new boot, so the earlier one never ran it. The
+  next write keeps the resolved name. So a package that boot took back stays out, a newer
+  candidate brought by the setup is still copied for and tried, and an unfinished trial is taken
+  back with its copy, which keeps the version's name. An entry without that folder stays as it
+  is and so never names a candidate's build: at worst an extra copy and trial, never a working
+  package left out. The installer checks taken-back releases the same way: on such a boot by
+  their build only. Before it starts a package, the boot sets the
   environment variable `RHINVOICE_BUILD` to its build.
 - **Only Rhinvoice Beta, and only on a boot that knows builds.** The app package reads
   `RHINVOICE_BUILD`. It does not import anything new from the boot, because an update runs on the

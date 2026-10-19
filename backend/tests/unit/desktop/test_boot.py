@@ -885,6 +885,24 @@ def test_the_new_setups_candidate_starts_after_an_earlier_boot_took_back_another
     assert program.started[0][0] == "0.7.0-rc.3"
 
 
+@pytest.mark.parametrize("failed", [True, False])
+def test_the_setups_candidate_is_never_what_an_earlier_boot_recorded(
+    runtime_folder: Path, data: Path, failed: bool
+) -> None:
+    """Its package came with this boot: a plain entry without its update folder is not it."""
+    setup_candidate(runtime_folder, 3)
+    update(data, "0.6.9")
+    (data / "database").mkdir(parents=True)
+    state = State(active="0.6.9", failed=["0.7.0"]) if failed else State(active="0.7.0")
+    save_state(data, state)
+    program = Program(data, works=False, code=1)
+    run([], runtime(runtime_folder, data, program))
+    assert program.started[0][0] == "0.7.0-rc.3"
+    # Copied for and tried: it failed and is taken back.
+    assert (data / "backups" / "database-before-0.7.0-rc.3").is_dir()
+    assert "0.7.0-rc.3" in load_state(data).failed
+
+
 def test_an_entry_of_an_earlier_boot_that_names_no_package_names_no_candidate(
     runtime_folder: Path, data: Path
 ) -> None:

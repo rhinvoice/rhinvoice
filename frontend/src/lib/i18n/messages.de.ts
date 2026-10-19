@@ -76,6 +76,8 @@ export const de = {
   "updates.installing": "Wird heruntergeladen …",
   "updates.restarting": "Rhinvoice startet neu …",
   "updates.commandEnv": "In der Datei .env setzen:",
+  "updates.commandEnvIfPinned": "Nur wenn .env eine feste Version hat, dort setzen:",
+  "updates.commandOnly": "Auf dem Server ausführen:",
   "updates.commandRun": "Dann auf dem Server ausführen:",
   "updates.setupTitle": "{version} braucht ein neues Setup",
   "updates.setupHint": "Einmal installieren, Ihre Daten bleiben erhalten.",

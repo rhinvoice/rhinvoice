@@ -14,6 +14,7 @@ function release(overrides: Record<string, unknown>) {
     failed: false,
     can_check: true,
     setup: null,
+    pinned: null,
     ...overrides,
   };
 }
@@ -58,16 +59,38 @@ test("the installation without Docker installs a new version with one click", as
   expect(installed).toBe(true);
 });
 
-test("a server installation is told the version line and the command", async ({ page }) => {
+// pinned: whether RHINVOICE_VERSION in .env holds the server back; null: not known.
+for (const [pinned, hint] of [
+  [true, "In der Datei .env setzen:"],
+  [null, "Nur wenn .env eine feste Version hat, dort setzen:"],
+] as const) {
+  test(`a server installation is told the version line and the command (pinned ${String(pinned)})`, async ({
+    page,
+  }) => {
+    await page.route("**/api/updates", async (route) => {
+      await route.fulfill({ json: release({ action: "command", pinned }) });
+    });
+    await openApp(page, "/", "Übersicht");
+    await showNavigation(page);
+    const notice = page.getByRole("region", { name: "Aktualisierung" });
+    await expect(notice.getByText(hint)).toBeVisible();
+    await expect(notice.getByText("RHINVOICE_VERSION=0.7.0")).toBeVisible();
+    await expect(notice.getByText("docker compose pull && docker compose up -d")).toBeVisible();
+    await expect(notice.getByRole("button", { name: "Jetzt aktualisieren" })).toHaveCount(0);
+    await expectAccessible(page);
+  });
+}
+
+test("a server installation that follows latest is told only the command", async ({ page }) => {
   await page.route("**/api/updates", async (route) => {
-    await route.fulfill({ json: release({ action: "command" }) });
+    await route.fulfill({ json: release({ action: "command", pinned: false }) });
   });
   await openApp(page, "/", "Übersicht");
   await showNavigation(page);
   const notice = page.getByRole("region", { name: "Aktualisierung" });
-  await expect(notice.getByText("RHINVOICE_VERSION=0.7.0")).toBeVisible();
+  await expect(notice.getByText("Auf dem Server ausführen:")).toBeVisible();
   await expect(notice.getByText("docker compose pull && docker compose up -d")).toBeVisible();
-  await expect(notice.getByRole("button", { name: "Jetzt aktualisieren" })).toHaveCount(0);
+  await expect(notice.getByText(/RHINVOICE_VERSION/)).toHaveCount(0);
   await expectAccessible(page);
 });
 

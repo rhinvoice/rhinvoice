@@ -4093,6 +4093,8 @@ export interface components {
             latest: string | null;
             /** Notes Url */
             notes_url: string | null;
+            /** Pinned */
+            pinned: boolean | null;
             setup: components["schemas"]["SetupResponse"] | null;
             /** Setup Url */
             setup_url: string | null;

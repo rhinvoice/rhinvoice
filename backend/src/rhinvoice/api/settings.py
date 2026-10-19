@@ -61,6 +61,11 @@ class Settings(BaseSettings):
     """Which releases the update check offers. stable: the latest release, never a
     pre-release. test: also release candidates (GitHub pre-releases tagged vX.Y.Z-rc.N),
     for the maintainer's test machines; the same signature check applies."""
+    image_tag: str | None = None
+    """The image tag the server was started with, as deploy/compose.yml passes it from
+    RHINVOICE_VERSION in .env: latest or 0.8 follow the releases, 0.8.2 stays. The update
+    notice then says whether .env has to change. None: not known (compose files before
+    0.8.4, installations without Docker)."""
     recurring: bool = True
     """Write due recurring invoices in the background of ``rhinvoice serve``."""
     recurring_interval: int = Field(default=600, ge=60)

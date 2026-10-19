@@ -153,7 +153,12 @@ def build_container(
     )
     return Container(
         updates=UpdateHandlers(
-            feed, installed_version(), effective_clock, own.installer, own.setup_installer
+            feed,
+            installed_version(),
+            effective_clock,
+            own.installer,
+            own.setup_installer,
+            image_tag=settings.image_tag,
         ),
         support=SupportHandlers(
             installed_version(),

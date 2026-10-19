@@ -6239,6 +6239,17 @@
             ],
             "title": "Notes Url"
           },
+          "pinned": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pinned"
+          },
           "setup": {
             "anyOf": [
               {
@@ -6270,7 +6281,8 @@
           "checked_at",
           "failed",
           "can_check",
-          "setup"
+          "setup",
+          "pinned"
         ],
         "title": "UpdateResponse",
         "type": "object"

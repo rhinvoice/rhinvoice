@@ -5,6 +5,15 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.8.4] – 2026-10-19
+
+### Geändert
+- Der Hinweis auf eine neue Version zeigt einer Docker-Installation, die `latest` folgt, nur
+  den Befehl `docker compose pull && docker compose up -d`; die Zeile für `.env` erscheint nur,
+  wenn `.env` eine feste Version hat. Laden Sie dazu einmal die aktuelle `deploy/compose.yml`
+  herunter, sie sagt dem Programm, wie `.env` eingestellt ist; mit einer älteren zeigt der
+  Hinweis die Zeile «Nur wenn .env eine feste Version hat».
+
 ## [0.8.3] – 2026-10-18
 
 ### Sicherheit

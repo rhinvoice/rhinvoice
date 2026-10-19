@@ -109,7 +109,7 @@ once, also with several app containers; periods missed while the app was stopped
 ## Updating
 
 ```bash
-# set RHINVOICE_VERSION in .env to the new version, then
+# with a pinned version: set RHINVOICE_VERSION in .env first; with latest: just run
 docker compose pull
 docker compose up -d
 ```

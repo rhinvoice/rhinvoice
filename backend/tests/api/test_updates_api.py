@@ -94,6 +94,7 @@ def test_a_server_installation_is_told_the_release(clients: ClientFactory) -> No
         "failed": False,
         "can_check": True,
         "setup": None,
+        "pinned": None,
     }
     refused = client.post("/api/updates/install")
     assert refused.status_code == 409

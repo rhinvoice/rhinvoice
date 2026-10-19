@@ -81,6 +81,8 @@ export const it: Catalog<MessageKey> = {
   "updates.installing": "Download in corso …",
   "updates.restarting": "Rhinvoice si sta riavviando …",
   "updates.commandEnv": "Impostare nel file .env:",
+  "updates.commandEnvIfPinned": "Solo se .env fissa una versione, impostare lì:",
+  "updates.commandOnly": "Eseguire sul server:",
   "updates.commandRun": "Poi eseguire sul server:",
   "updates.setupTitle": "{version} richiede un nuovo setup",
   "updates.setupHint": "Da installare una sola volta, i suoi dati restano invariati.",

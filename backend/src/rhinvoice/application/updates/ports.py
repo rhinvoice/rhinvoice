@@ -32,6 +32,9 @@ class Release:
     setup_files: Mapping[str, PackageFile] = field(default_factory=dict[str, PackageFile])
     """The same setups with size and SHA-256, so the program can download and check one
     itself (ADR 0031); releases before ADR 0031 have none."""
+    candidate: int | None = None
+    """The release candidate its app packages were built as (3 for v0.8.4-rc.3 and for the
+    v0.8.4 promoted from it); None without packages and before ADR 0035."""
 
 
 class ReleaseFeed(Protocol):
@@ -49,13 +52,16 @@ class UpdateInstaller(Protocol):
     """Its setup in release.json: the platform, "-beta" added for Rhinvoice Beta (ADR 0030)."""
     runtime: int
     """The generation of the installed runtime."""
+    candidate: int | None
+    """The candidate the running package was built as, where a later candidate of the same
+    version is offered: Rhinvoice Beta on a boot that keeps them apart (ADR 0035); else None."""
 
     def install(self, release: Release) -> None:
         """Download and check the release's package, put it in place and restart."""
         ...
 
-    def failed(self, version: str) -> bool:
-        """Tell whether ``version`` was installed here, did not start and was taken back."""
+    def failed(self, release: Release) -> bool:
+        """Tell whether ``release`` was installed here, did not start and was taken back."""
         ...
 
 

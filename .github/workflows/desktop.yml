@@ -16,6 +16,10 @@ on:
         description: "The version the programs carry (from the candidate's tag)"
         type: string
         default: ""
+      candidate:
+        description: "The candidate the app packages are built as (3 for v0.8.4-rc.3, ADR 0035)"
+        type: string
+        default: ""
   pull_request:
     paths:
       - "desktop/**"
@@ -75,7 +79,10 @@ jobs:
           key: desktop-downloads-${{ hashFiles('desktop/sources.json') }}
 
       - name: Assemble the program folder
-        run: python desktop/build.py windows
+        env:
+          CANDIDATE: ${{ inputs.candidate }}
+        run: |
+          if ($env:CANDIDATE) { python desktop/build.py windows --candidate "$env:CANDIDATE" } else { python desktop/build.py windows }
 
       - name: Build the setup
         shell: pwsh
@@ -191,7 +198,9 @@ jobs:
           key: desktop-downloads-macos-${{ hashFiles('desktop/sources.json') }}
 
       - name: Assemble Rhinvoice.app
-        run: python desktop/build.py macos
+        env:
+          CANDIDATE: ${{ inputs.candidate }}
+        run: python desktop/build.py macos ${CANDIDATE:+--candidate "$CANDIDATE"}
 
       - name: Derive Rhinvoice Beta.app (ADR 0030)
         # Before the first start: the copy must not take anything a start leaves behind.

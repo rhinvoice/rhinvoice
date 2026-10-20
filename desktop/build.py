@@ -30,6 +30,9 @@ the bundled Python, plus a headless Chromium for the PDFs (macOS has no Edge).
 
 An app package holds ``site-packages/`` (Rhinvoice and its locked dependencies),
 ``static/`` (the built web interface: build frontend/dist first) and ``manifest.json``.
+A release candidate's build names its candidate (``--candidate 3`` for v0.8.4-rc.3): the
+manifest carries it, so that Rhinvoice Beta tells two candidates of one version apart and
+the release promoted from it is known as the same files (ADR 0035).
 
 Every download is pinned in sources.json and checked against its SHA-256. Needs uv.
 Only the standard library: it runs before anything else is installed.
@@ -259,7 +262,7 @@ def check_imports(python: Path, package: Path, system: str) -> None:
     )  # fmt: skip
 
 
-def build_app_package(python: Path, package: Path) -> None:
+def build_app_package(python: Path, package: Path, candidate: int | None = None) -> None:
     """Install Rhinvoice with its locked dependencies for ``python`` into ``package``."""
     site_packages = package / "site-packages"
     with tempfile.TemporaryDirectory() as temporary:
@@ -280,7 +283,9 @@ def build_app_package(python: Path, package: Path) -> None:
     shutil.rmtree(site_packages / "rhinvoice_boot")
     shutil.rmtree(site_packages / "PyObjCTest", ignore_errors=True)
     install_static(package)
-    manifest = {"version": version(), "runtime": RUNTIME_GENERATION}
+    manifest: dict[str, object] = {"version": version(), "runtime": RUNTIME_GENERATION}
+    if candidate is not None:
+        manifest["candidate"] = candidate
     (package / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
 
@@ -341,7 +346,7 @@ def brand_windows_program(
     )  # fmt: skip
 
 
-def build_windows(out: Path) -> None:
+def build_windows(out: Path, candidate: int | None = None) -> None:
     sources = json.loads((ROOT / "desktop" / "sources.json").read_text(encoding="utf-8"))["windows"]
     install = out / "install"
     shutil.rmtree(out, ignore_errors=True)
@@ -351,7 +356,7 @@ def build_windows(out: Path) -> None:
     install_postgres(sources, install)
     install_restic(sources, install)
     brand_windows_program(sources, install)
-    build_app_package(python, install / "app")
+    build_app_package(python, install / "app", candidate)
     trim_runtime(install / "python")
     check_imports(python, install / "app", "windows")
     zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-windows-x64.zip")
@@ -516,7 +521,7 @@ def install_chromium(sources: dict[str, dict[str, str]], install: Path) -> None:
         shutil.move(top, install / "chromium")
 
 
-def build_macos(out: Path) -> None:
+def build_macos(out: Path, candidate: int | None = None) -> None:
     sources = json.loads((ROOT / "desktop" / "sources.json").read_text(encoding="utf-8"))
     sources = sources["macos-arm64"]
     bundle = out / "Rhinvoice.app"
@@ -531,7 +536,7 @@ def build_macos(out: Path) -> None:
     install_postgres_from_app(sources, install)
     install_chromium(sources, install)
     install_restic(sources, install)
-    build_app_package(python, install / "app")
+    build_app_package(python, install / "app", candidate)
     trim_runtime(install / "python")
     check_imports(python, install / "app", "macos")
     zip_app_package(install / "app", out / f"rhinvoice-app-{version()}-macos-arm64.zip")
@@ -586,6 +591,9 @@ def main() -> None:
     }
     parser.add_argument("target", choices=[*builds, "version"])
     parser.add_argument("--out", type=Path, help="default: build/<windows or macos>")
+    parser.add_argument(
+        "--candidate", type=int, help="the release candidate built (3 for v0.8.4-rc.3)"
+    )
     args = parser.parse_args()
     if args.target == "version":
         print(version())
@@ -596,7 +604,12 @@ def main() -> None:
     if sys.platform != needed:
         msg = f"the {system} program is assembled on {system}"
         raise SystemExit(msg)
-    builds[args.target](args.out or ROOT / "build" / system)
+    out = args.out or ROOT / "build" / system
+    if args.target == system:
+        builds[args.target](out, args.candidate)
+    else:
+        # Rhinvoice Beta is derived from Rhinvoice's build, with its app package.
+        builds[args.target](out)
 
 
 if __name__ == "__main__":

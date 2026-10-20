@@ -12,7 +12,10 @@ files described here; it uses the standard library only.
     <data>/backups/                   copies of the database folder before each update
 
 An app package holds ``site-packages/``, ``static/`` and ``manifest.json``
-({"version": "0.7.0", "runtime": 1}: the runtime generation it needs at least).
+({"version": "0.7.0", "runtime": 1}: the runtime generation it needs at least; since 0.8.4
+also "candidate": 3, the release candidate its files were built as). The boot knows a package
+by its build: the version, with the candidate if there is one ("0.8.4-rc.3"), so that two
+candidates of one version are two packages (ADR 0035).
 
 The edition is fixed when the setup is built (ADR 0030): "beta" is Rhinvoice Beta, the
 release candidates' separate installation, with data, caches and logs of its own; without
@@ -54,6 +57,10 @@ that no module lying there is imported instead of Python's or Rhinvoice's own.""
 NO_WINDOW: int = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 """Windows opens a console window for every command-line tool a program without a console
 starts (Rhinvoice.exe); this flag keeps them hidden. 0 elsewhere."""
+BUILD = "RHINVOICE_BUILD"
+"""Set for the package the boot starts, to its build ("0.8.4-rc.3"): it tells the package
+which candidate runs, and that this boot keeps candidates of one version apart (ADR 0035)."""
+CANDIDATE = "-rc."
 NOT_RUNNING = 3
 """Exit code of ``pg_ctl status`` when no server runs on the data folder."""
 
@@ -143,10 +150,21 @@ def make_private(folder: Path) -> None:
     folder.mkdir(mode=0o777 if sys.platform == "win32" else 0o700, parents=True, exist_ok=True)
 
 
+def build_name(version: str, candidate: int | None) -> str:
+    """Name a package's build: its version, with the release candidate it was built as."""
+    return version if candidate is None else f"{version}{CANDIDATE}{candidate}"
+
+
 def version_key(version: str) -> tuple[int, ...]:
-    """Order versions like 0.10.0 after 0.9.1; anything else is not a version."""
+    """Order versions like 0.10.0 after 0.9.1; anything else is not a version and gives ().
+
+    Builds of one version are ordered by their candidate (0.8.4-rc.3 after 0.8.4-rc.2); the
+    version without one comes after its candidates.
+    """
+    base, separator, candidate = version.partition(CANDIDATE)
     try:
-        return tuple(int(part) for part in version.split("."))
+        numbers = tuple(int(part) for part in base.split("."))
+        return (*numbers, 0, int(candidate)) if separator else (*numbers, 1, 0)
     except ValueError:
         return ()
 
@@ -154,6 +172,7 @@ def version_key(version: str) -> tuple[int, ...]:
 @dataclass(frozen=True, slots=True)
 class Package:
     version: str
+    """Its build: the version, with the candidate its files were built as (0.8.4-rc.3)."""
     folder: Path
     runtime: int
 
@@ -226,13 +245,22 @@ def prune(data: Path, active: str, keep: int = KEEP) -> None:
     packages = [
         folder
         for folder in found
-        if folder.is_dir() and folder.suffix != ".partial" and folder.name != active
+        if folder.is_dir() and folder.suffix != ".partial" and active not in _names(folder)
     ]
     _remove_oldest(packages, "", keep)
     backups = data / "backups"
     for kind in ("database-before-", "database-failed-"):
         copies = [f for f in backups.glob(f"{kind}*") if f.is_dir()] if backups.is_dir() else []
         _remove_oldest(copies, kind, keep)
+
+
+def _names(folder: Path) -> set[str]:
+    """Return the folder's name and its package's build.
+
+    A package before ADR 0035 put a candidate's build into a folder named after its version.
+    """
+    package = read_package(folder)
+    return {folder.name} if package is None else {folder.name, package.version}
 
 
 def _remove_oldest(folders: list[Path], prefix: str, keep: int) -> None:
@@ -254,8 +282,12 @@ def runtime_generation(install: Path) -> int:
 def read_package(folder: Path) -> Package | None:
     try:
         manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
-        package = Package(str(manifest["version"]), folder, int(manifest["runtime"]))
-    except (OSError, ValueError, KeyError, TypeError):
+        candidate = manifest.get("candidate")
+        if candidate is not None and (type(candidate) is not int or candidate < 1):
+            return None
+        version = build_name(str(manifest["version"]), candidate)
+        package = Package(version, folder, int(manifest["runtime"]))
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
         return None
     return package if version_key(package.version) else None
 
@@ -282,6 +314,34 @@ def choose(install: Path, data: Path, state: State) -> Package:
     return candidates[0]
 
 
+def current_state(runtime: Runtime) -> State:
+    """Read the state, its entries resolved to builds (see ``resolve``)."""
+    state = load_state(runtime.data)
+    return replace(
+        state,
+        active=resolve(runtime, state.active),
+        trying=resolve(runtime, state.trying),
+        failed=[build for entry in state.failed if (build := resolve(runtime, entry))],
+    )
+
+
+def resolve(runtime: Runtime, entry: str | None) -> str | None:
+    """Return the build an entry of state.json names (ADR 0035).
+
+    A boot before ADR 0035 recorded the version only ("0.8.4"), also for a package built as a
+    candidate. Such an entry names the package it used: the update in the folder of that name.
+    One without that folder stays as it is and so names no candidate's build: an extra copy and
+    trial are harmless, excluding a working package is not.
+    """
+    if entry is None or CANDIDATE in entry:
+        return entry
+    # Never the setup's own: one built as a candidate came with this boot, not the earlier one.
+    package = read_package(runtime.data / "app" / "versions" / entry)
+    if package is not None and package.version.partition(CANDIDATE)[0] == entry:
+        return package.version
+    return entry
+
+
 @dataclass(frozen=True, slots=True)
 class Runtime:
     """The surroundings of the boot; tests replace the program and the restart."""
@@ -297,13 +357,13 @@ def run(argv: Sequence[str], runtime: Runtime) -> int:
     with session(runtime.data) as owner:
         if not owner:
             # Started again while it runs (or migrates): only show the running program.
-            package = choose(runtime.install, runtime.data, load_state(runtime.data))
+            package = choose(runtime.install, runtime.data, current_state(runtime))
             return runtime.launch(package, [*argv, *_folders(runtime, package), "--attach"])
         return _run_session(argv, runtime)
 
 
 def _run_session(argv: Sequence[str], runtime: Runtime) -> int:
-    state = load_state(runtime.data)
+    state = current_state(runtime)
     if state.restore is not None:
         state = put_database_back(runtime, state)
     if maintenance(argv):
@@ -333,8 +393,10 @@ def _run_session(argv: Sequence[str], runtime: Runtime) -> int:
         code = 1
     # Only an update is taken back: without a version that ran before, there is none to
     # go back to, and the next start tries again (it may have been the computer, not us).
-    if load_state(runtime.data).trying == package.version and state.active is not None:
-        take_back(runtime, package.version)
+    recorded = load_state(runtime.data).trying
+    if resolve(runtime, recorded) == package.version and state.active is not None:
+        # A trial a boot before ADR 0035 began has its copy under the version's name.
+        take_back(runtime, package.version, copy=recorded)
         return runtime.restart()
     if code == RESTART:
         return runtime.restart()
@@ -358,10 +420,14 @@ def _package_of(runtime: Runtime, state: State) -> Package:
     raise BootError(msg)
 
 
-def take_back(runtime: Runtime, version: str) -> None:
-    """Never choose the failed version again, and put back the database from before it."""
-    state = load_state(runtime.data)
-    saved = runtime.data / "backups" / f"database-before-{version}"
+def take_back(runtime: Runtime, version: str, copy: str | None = None) -> None:
+    """Never choose the failed version again, and put back the database from before it.
+
+    ``copy``: the name the copy of the database has, if not the version's.
+    """
+    state = current_state(runtime)
+    name = copy or version
+    saved = runtime.data / "backups" / f"database-before-{name}"
     # The decision is written first: if putting the database back fails, the next start
     # tries again before anything runs, and the failed version never starts again.
     state = replace(
@@ -369,7 +435,7 @@ def take_back(runtime: Runtime, version: str) -> None:
         trying=None,
         saved=False,
         failed=[*state.failed, version],
-        restore=version if saved.is_dir() else None,
+        restore=name if saved.is_dir() else None,
     )
     save_state(runtime.data, state)
     if state.restore is not None:
@@ -478,6 +544,7 @@ def stop_database(runtime: Runtime) -> None:
 
 def launch(package: Package, arguments: list[str], module: str = LAUNCHER) -> int:
     """Run the package's launcher in this process."""
+    os.environ[BUILD] = package.version
     # As a site folder, so that the .pth files of its libraries apply; first on the path.
     before = list(sys.path)
     site.addsitedir(str(package.folder / "site-packages"))

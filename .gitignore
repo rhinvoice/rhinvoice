@@ -3,3 +3,7 @@ website/dist/
 
 # Program folder and setups of the installation without Docker (desktop/build.py)
 /build/
+
+# Python bytecode
+__pycache__/
+*.py[cod]

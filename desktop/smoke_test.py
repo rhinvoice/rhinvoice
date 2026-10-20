@@ -130,6 +130,8 @@ class Program:
         package = self.data / "app" / "versions" / version
         shutil.copytree(self.install / "app", package)
         manifest = json.loads((package / "manifest.json").read_text())
+        # A candidate's package carries its number; the copy stands for a final release.
+        manifest.pop("candidate", None)
         (package / "manifest.json").write_text(json.dumps({**manifest, "version": version}))
         return package
 

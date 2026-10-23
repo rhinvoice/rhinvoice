@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   isEditableTarget,
+  isInFormOrOverlay,
   isMacPlatform,
   isModified,
   isPlainKey,
@@ -26,6 +27,30 @@ function input(type: string): HTMLInputElement {
   element.type = type;
   return element;
 }
+
+describe("isInFormOrOverlay", () => {
+  it("detects targets in forms, dialogs, menus and lists", () => {
+    for (const container of [
+      document.createElement("form"),
+      ...["dialog", "alertdialog", "menu", "listbox"].map((role) => {
+        const element = document.createElement("div");
+        element.setAttribute("role", role);
+        return element;
+      }),
+    ]) {
+      const checkbox = input("checkbox");
+      container.append(checkbox);
+      expect(isInFormOrOverlay(checkbox)).toBe(true);
+      expect(isPlainKey(key("a", { target: checkbox }), "a")).toBe(false);
+    }
+  });
+
+  it("ignores other targets", () => {
+    expect(isInFormOrOverlay(document.body)).toBe(false);
+    expect(isInFormOrOverlay(null)).toBe(false);
+    expect(isInFormOrOverlay(window)).toBe(false);
+  });
+});
 
 describe("isEditableTarget", () => {
   it("detects editable elements", () => {

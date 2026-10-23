@@ -9,10 +9,11 @@ faq:
   - q: Comment enregistrer un paiement partiel?
     a: "Ouvrez la facture et choisissez Saisir un paiement (touche P). Saisissez la date de paiement et le montant reçu; la facture apparaît alors comme partiellement payée, avec le montant ouvert."
   - q: Existe-t-il un raccourci clavier pour une nouvelle facture?
-    a: "Oui. Appuyez sur N n’importe où en dehors d’un champ de saisie. Cmd+Entrée (Ctrl+Entrée sous Windows et Linux) enregistre, et ? affiche tous les raccourcis."
+    a: "Oui. Appuyez sur I ou N n’importe où en dehors d’un champ de saisie. Cmd+Entrée (Ctrl+Entrée sous Windows et Linux) enregistre, et ? affiche tous les raccourcis."
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Dans Rhinvoice, vous établissez une facture dans l’éditeur : choisissez le client, ajoutez les lignes, vérifiez l’**aperçu en direct** et cliquez sur *Émettre*. C’est seulement à ce moment que la facture reçoit son numéro et devient non modifiable. Ensuite, vous ouvrez le PDF, l’envoyez et marquez la facture comme payée lorsque l’argent arrive.
@@ -79,17 +80,19 @@ Dans la liste des factures, *Payée* sur une ligne marque une seule facture comm
 
 | Touche | Action |
 |---|---|
-| **N** | Nouvelle facture |
+| **I** (ou **N**) | Nouvelle facture |
 | **Q** | Nouvelle offre |
+| **C** | Nouveau client |
+| **A** | Nouvel article |
 | **/** | Activer la recherche |
 | **⌘K** / **Ctrl+K** | Ouvrir la palette de commandes |
 | **⌘↵** / **Ctrl+Entrée** | Enregistrer |
 | **P** | Saisir un paiement (dans le document) |
 | **⌘Z** / **Ctrl+Z** | Annuler la dernière action (tant que le message est visible) |
-| **G** puis **I** | Aller aux factures |
+| **G** puis **I** / **Q** / **C** / **A** | Aller aux factures / offres / clients / articles |
 | **?** | Afficher tous les raccourcis |
 
-Les raccourcis d’une seule touche ne fonctionnent que lorsqu’aucun champ de saisie n’est actif.
+Les raccourcis d’une seule touche ne fonctionnent que lorsqu’aucun champ de saisie n’est actif. Chaque élément a une lettre: seule, elle en crée un nouveau; après **G**, elle ouvre la liste. Les lettres viennent de l’anglais (Invoice, Quote, Customer, Article) et sont les mêmes dans toutes les langues. <Since version="0.8.5" />
 
 ## Questions fréquentes
 

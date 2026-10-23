@@ -611,6 +611,9 @@ export const de = {
   "numbering.problem.year":
     "Bei jährlichem Zurücksetzen braucht das Muster {YYYY} oder {YY}, sonst wiederholen sich Nummern.",
   "shortcuts.newQuote": "Neues Angebot",
+  "shortcuts.newCustomer": "Neuer Kunde",
+  "shortcuts.newArticle": "Neuer Artikel",
+  "shortcuts.or": "oder",
   "shortcuts.undo": "Letzte Aktion rückgängig machen (solange die Meldung sichtbar ist)",
   "shortcuts.payment": "Zahlung erfassen (im Dokument)",
   "shortcuts.moveLineUp": "Position nach oben (im Editor)",

@@ -9,10 +9,11 @@ faq:
   - q: Come registro un pagamento parziale?
     a: Apra la fattura e scelga Registra pagamento (tasto P). Inserisca la data del pagamento e l’importo ricevuto; la fattura appare allora come pagata parzialmente, con l’importo aperto.
   - q: Esiste una scorciatoia da tastiera per una nuova fattura?
-    a: Sì. Prema N ovunque fuori da un campo di inserimento. Cmd+Invio (Ctrl+Invio su Windows e Linux) salva, e ? mostra tutte le scorciatoie.
+    a: Sì. Prema I o N ovunque fuori da un campo di inserimento. Cmd+Invio (Ctrl+Invio su Windows e Linux) salva, e ? mostra tutte le scorciatoie.
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 In Rhinvoice una fattura si scrive nell’editor: scegliere il cliente, aggiungere le posizioni, controllare l’**anteprima dal vivo** e cliccare su *Emetti*. Solo allora la fattura riceve il suo numero e diventa immodificabile. Poi apre il PDF, lo invia e segna la fattura come pagata quando arriva il denaro.
@@ -79,17 +80,19 @@ Nell’elenco delle fatture, *Pagata* in una riga segna come pagata una singola 
 
 | Tasto | Azione |
 |---|---|
-| **N** | Nuova fattura |
+| **I** (o **N**) | Nuova fattura |
 | **Q** | Nuova offerta |
+| **C** | Nuovo cliente |
+| **A** | Nuovo articolo |
 | **/** | Vai alla ricerca |
 | **⌘K** / **Ctrl+K** | Apri la tavolozza dei comandi |
 | **⌘↵** / **Ctrl+Invio** | Salva |
 | **P** | Registra pagamento (nel documento) |
 | **⌘Z** / **Ctrl+Z** | Annulla l’ultima azione (finché il messaggio è visibile) |
-| **G** poi **I** | Vai alle fatture |
+| **G** poi **I** / **Q** / **C** / **A** | Vai a fatture / offerte / clienti / articoli |
 | **?** | Mostrare tutte le scorciatoie |
 
-Le scorciatoie a un tasto funzionano solo quando nessun campo di inserimento è attivo.
+Le scorciatoie a un tasto funzionano solo quando nessun campo di inserimento è attivo. Ogni elemento ha una lettera: da sola ne crea uno nuovo, dopo **G** apre l’elenco. Le lettere vengono dall’inglese (Invoice, Quote, Customer, Article) e sono uguali in tutte le lingue. <Since version="0.8.5" />
 
 ## Domande frequenti
 

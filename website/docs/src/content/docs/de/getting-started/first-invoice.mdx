@@ -9,10 +9,11 @@ faq:
   - q: Wie erfasse ich eine Teilzahlung?
     a: Öffnen Sie die Rechnung und wählen Sie Zahlung erfassen (Taste P). Tragen Sie Zahlungsdatum und erhaltenen Betrag ein. Die Rechnung zeigt dann Teilweise bezahlt mit dem offenen Betrag.
   - q: Gibt es ein Tastaturkürzel für eine neue Rechnung?
-    a: Ja. Drücken Sie N, wenn kein Eingabefeld aktiv ist. Cmd+Enter (unter Windows und Linux Ctrl+Enter) speichert, ? zeigt alle Tastaturkürzel.
+    a: Ja. Drücken Sie I oder N, wenn kein Eingabefeld aktiv ist. Cmd+Enter (unter Windows und Linux Ctrl+Enter) speichert, ? zeigt alle Tastaturkürzel.
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Eine Rechnung schreiben Sie in Rhinvoice im Editor: Kunde wählen, Positionen erfassen, die **Live-Vorschau** prüfen und auf *Ausstellen* klicken. Erst dann bekommt die Rechnung ihre Nummer und lässt sich nicht mehr ändern. Danach öffnen Sie das PDF, versenden es und markieren die Rechnung als bezahlt, sobald das Geld da ist.
@@ -79,17 +80,19 @@ In der Rechnungsliste markiert *Bezahlt* in einer Zeile eine einzelne Rechnung a
 
 | Taste | Aktion |
 |---|---|
-| **N** | Neue Rechnung |
+| **I** (oder **N**) | Neue Rechnung |
 | **Q** | Neues Angebot |
+| **C** | Neuer Kunde |
+| **A** | Neuer Artikel |
 | **/** | Suche fokussieren |
 | **⌘K** / **Ctrl+K** | Befehlspalette öffnen |
 | **⌘↵** / **Ctrl+Enter** | Speichern |
 | **P** | Zahlung erfassen (im Dokument) |
 | **⌘Z** / **Ctrl+Z** | Letzte Aktion rückgängig machen (solange die Meldung sichtbar ist) |
-| **G** dann **I** | Gehe zu Rechnungen |
+| **G** dann **I** / **Q** / **C** / **A** | Gehe zu Rechnungen / Angeboten / Kunden / Artikeln |
 | **?** | Alle Tastaturkürzel anzeigen |
 
-Einzeltasten-Kürzel sind nur aktiv, wenn kein Eingabefeld fokussiert ist.
+Einzeltasten-Kürzel sind nur aktiv, wenn kein Eingabefeld fokussiert ist. Jede Sache hat einen Buchstaben: allein legt er sie neu an, nach **G** öffnet er die Liste. Die Buchstaben kommen aus dem Englischen (Invoice, Quote, Customer, Article) und sind in jeder Sprache gleich. <Since version="0.8.5" />
 
 ## Häufige Fragen
 

@@ -5,6 +5,14 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.8.5] – 2026-10-24
+
+### Changed
+- Each thing has one keyboard letter, the same in every language: alone it creates one, after
+  *G* it opens the list. **I** new invoice (**N** keeps working), **Q** new quote, **C** new
+  customer, **A** new article; *G Q* goes to the quotes (*G O* keeps working). **C** and **A**
+  worked only in the customer and article lists before; the command palette now shows them.
+
 ## [0.8.4] – 2026-10-19
 
 ### Added

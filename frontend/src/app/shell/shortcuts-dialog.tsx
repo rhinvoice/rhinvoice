@@ -16,6 +16,8 @@ interface ShortcutRow {
   readonly keys: readonly string[];
   readonly label: MessageKey;
   readonly sequence?: boolean;
+  /** A second key that does the same. */
+  readonly alternative?: string;
 }
 
 export function ShortcutsDialog({
@@ -33,8 +35,10 @@ export function ShortcutsDialog({
       [
         { keys: [mod, "K"], label: "shortcuts.palette" },
         { keys: ["/"], label: "shortcuts.search" },
-        { keys: ["N"], label: "shortcuts.newInvoice" },
+        { keys: ["I"], label: "shortcuts.newInvoice", alternative: "N" },
         { keys: ["Q"], label: "shortcuts.newQuote" },
+        { keys: ["C"], label: "shortcuts.newCustomer" },
+        { keys: ["A"], label: "shortcuts.newArticle" },
         { keys: [mod, "↵"], label: "shortcuts.save" },
         { keys: [mod, "Z"], label: "shortcuts.undo" },
         { keys: ["P"], label: "shortcuts.payment" },
@@ -49,7 +53,7 @@ export function ShortcutsDialog({
       [
         { keys: ["G", "D"], label: "shortcuts.goDashboard", sequence: true },
         { keys: ["G", "I"], label: "shortcuts.goInvoices", sequence: true },
-        { keys: ["G", "O"], label: "shortcuts.goQuotes", sequence: true },
+        { keys: ["G", "Q"], label: "shortcuts.goQuotes", sequence: true },
         { keys: ["G", "C"], label: "shortcuts.goCustomers", sequence: true },
         { keys: ["G", "A"], label: "shortcuts.goArticles", sequence: true },
         { keys: ["G", "S"], label: "shortcuts.goSettings", sequence: true },
@@ -81,6 +85,12 @@ export function ShortcutsDialog({
                         <Kbd>{key}</Kbd>
                       </Fragment>
                     ))}
+                    {row.alternative === undefined ? null : (
+                      <>
+                        <span className="text-xs text-muted-foreground">{t("shortcuts.or")}</span>
+                        <Kbd>{row.alternative}</Kbd>
+                      </>
+                    )}
                   </dd>
                 </div>
               ))}

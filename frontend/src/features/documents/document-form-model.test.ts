@@ -19,6 +19,8 @@ import {
   hasSupply,
   isBlankLine,
   lineFromArticle,
+  articleFromLine,
+  canSaveAsArticle,
   MAX_LINES,
   type DocumentFormValues,
 } from "@/features/documents/document-form-model";
@@ -231,6 +233,41 @@ describe("customer and article defaults", () => {
     });
     // No EUR price: the typed price stays.
     expect(lineFromArticle(line, article, "EUR", "de-CH").unit_price).toBe("5");
+  });
+
+  it("turns a typed position into an article", () => {
+    const line = {
+      ...emptyLine(),
+      key: "x",
+      description: " Rasenpflege ",
+      details: "pro Stunde",
+      unit: "HUR" as const,
+      unit_price: "1’085.5",
+      supply: "service" as const,
+    };
+    expect(canSaveAsArticle(line)).toBe(true);
+    expect(articleFromLine(line, "CHF", "de-CH")).toEqual({
+      number: "",
+      name: "Rasenpflege",
+      description: "pro Stunde",
+      group: "",
+      unit: "HUR",
+      tax_category: "standard",
+      supply: "service",
+      prices: { CHF: "1085.5" },
+    });
+    expect(articleFromLine({ ...line, unit_price: " " }, "EUR", "de-CH").prices).toEqual({});
+  });
+
+  it("offers to save only typed positions with a name that fits and a unit", () => {
+    const line = { ...emptyLine(), key: "x", description: "Rasenpflege" };
+    expect(canSaveAsArticle(line)).toBe(true);
+    expect(canSaveAsArticle({ ...line, kind: "text" })).toBe(false);
+    expect(canSaveAsArticle({ ...line, article_id: "a1" })).toBe(false);
+    expect(canSaveAsArticle({ ...line, description: "  " })).toBe(false);
+    expect(canSaveAsArticle({ ...line, description: "x".repeat(120) })).toBe(true);
+    expect(canSaveAsArticle({ ...line, description: "x".repeat(121) })).toBe(false);
+    expect(canSaveAsArticle({ ...line, unit: "" })).toBe(false);
   });
 });
 

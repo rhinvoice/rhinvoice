@@ -22,6 +22,7 @@ export type Totals = components["schemas"]["TotalsResponse"];
 export type TaxTreatment = components["schemas"]["TaxTreatment"];
 export type CustomerOption = components["schemas"]["CustomerResponse"];
 export type ArticleOption = components["schemas"]["ArticleResponse"];
+export type ArticleRequest = components["schemas"]["ArticleRequest"];
 export type DocumentPage = components["schemas"]["DocumentPage"];
 export type CurrencyTotals = components["schemas"]["CurrencyTotalsResponse"];
 export type RecordedPayment = components["schemas"]["RecordedPaymentSchema"];
@@ -108,6 +109,17 @@ export function articleOptionsQuery(q: string) {
     queryFn: () =>
       unwrap(api.GET("/api/articles", { params: { query: { q, limit: 8, sort: "name" } } })),
     placeholderData: keepPreviousData,
+  });
+}
+
+/** Save a typed position as an article, so the line search finds it next time. */
+export function useCreateArticle() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ArticleRequest) => unwrap(api.POST("/api/articles", { body })),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["articles"] });
+    },
   });
 }
 

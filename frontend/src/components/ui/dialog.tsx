@@ -29,6 +29,8 @@ const contentVariants = cva(
         center:
           "top-1/2 left-1/2 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl p-6 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
         left: "inset-y-0 left-0 h-full w-72 max-w-[85vw] overflow-y-auto p-4 data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
+        right:
+          "inset-y-0 right-0 h-full w-full overflow-y-auto px-4 pt-6 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-2xl md:px-8",
         bottom:
           "inset-x-0 bottom-0 max-h-[90dvh] overflow-y-auto rounded-t-xl p-4 data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
       },

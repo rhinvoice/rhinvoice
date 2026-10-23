@@ -13,6 +13,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+import { EditorSheetsProvider } from "@/app/editor-sheets";
 import { AboutDialog } from "@/app/shell/about-dialog";
 import { CommandPalette } from "@/app/shell/command-palette";
 import { DemoBanner } from "@/app/shell/demo-banner";
@@ -339,7 +340,9 @@ export function AppShell({ user }: { readonly user: User }) {
           className="flex-1 px-4 py-6 pb-24 outline-none md:px-8 md:pb-8"
         >
           <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6">
-            <Outlet />
+            <EditorSheetsProvider>
+              <Outlet />
+            </EditorSheetsProvider>
           </div>
         </main>
 

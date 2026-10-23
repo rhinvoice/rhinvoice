@@ -211,7 +211,7 @@ export function BankAccountsSettings({
   );
 }
 
-function BankAccountDialog({
+export function BankAccountDialog({
   account,
   defaults,
   profile,
@@ -261,21 +261,21 @@ function BankAccountDialog({
           <FormAlert message={errors.root?.message ?? null} />
           <div className="grid gap-4 sm:grid-cols-[1fr_8rem]">
             <Field label={t("bank.bankName")} error={error("bank_name")}>
-              <Input id="bank_name" {...form.register("bank_name")} />
+              <Input id="bank-bank_name" {...form.register("bank_name")} />
             </Field>
             <Field label={t("bank.currency")} error={error("currency")}>
-              <NativeSelect id="currency" {...form.register("currency")}>
+              <NativeSelect id="bank-currency" {...form.register("currency")}>
                 <option value="CHF">CHF</option>
                 <option value="EUR">EUR</option>
               </NativeSelect>
             </Field>
           </div>
           <Field label={t("bank.holder")} error={error("holder")}>
-            <Input id="holder" {...form.register("holder")} />
+            <Input id="bank-holder" {...form.register("holder")} />
           </Field>
           <Field label={t("bank.iban")} error={error("iban")}>
             <Input
-              id="iban"
+              id="bank-iban"
               className="font-mono uppercase"
               autoComplete="off"
               spellCheck={false}
@@ -290,7 +290,7 @@ function BankAccountDialog({
               optionalLabel={t("common.optional")}
             >
               <Input
-                id="qr_iban"
+                id="bank-qr_iban"
                 className="font-mono uppercase"
                 autoComplete="off"
                 spellCheck={false}
@@ -300,7 +300,7 @@ function BankAccountDialog({
           ) : null}
           <Field label={t("bank.bic")} error={error("bic")} optionalLabel={t("common.optional")}>
             <Input
-              id="bic"
+              id="bank-bic"
               className="font-mono uppercase"
               autoComplete="off"
               spellCheck={false}
@@ -312,8 +312,12 @@ function BankAccountDialog({
             name="is_default"
             render={({ field }) => (
               <div className="flex items-center justify-between gap-4">
-                <Label htmlFor="is_default">{t("bank.isDefault")}</Label>
-                <Switch id="is_default" checked={field.value} onCheckedChange={field.onChange} />
+                <Label htmlFor="bank-is_default">{t("bank.isDefault")}</Label>
+                <Switch
+                  id="bank-is_default"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
               </div>
             )}
           />

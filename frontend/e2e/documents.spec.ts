@@ -293,7 +293,7 @@ test("a quote is sent, accepted and turned into an invoice", async ({ page }, te
   await page.keyboard.press("Escape");
 });
 
-test("issuing without a bank account keeps the draft, which can be deleted", async ({
+test("issuing without a bank account points to it; the draft saves and can be deleted", async ({
   page,
 }, testInfo) => {
   const suffix = unique(testInfo.project.name);
@@ -306,17 +306,18 @@ test("issuing without a bank account keeps the draft, which can be deleted", asy
   await page.getByLabel("Währung").selectOption("EUR");
   await page.locator("#lines-0-description").fill("Beratung");
   await page.locator("#lines-0-unit_price").fill("100");
+  // No EUR account: the editor says so before issuing and leads there instead.
+  const missing = page.getByRole("region", { name: "Vor dem Ausstellen fehlt noch:" });
+  await expect(missing.getByText("ein Bankkonto in EUR für die Zahlungsangaben")).toBeVisible();
   await page.getByRole("button", { name: "Ausstellen" }).click();
-  await page
-    .getByRole("alertdialog", { name: "Rechnung ausstellen?" })
-    .getByRole("button", { name: "Ausstellen" })
-    .click();
+  await expect(missing).toBeFocused();
+  await expect(page.getByRole("alertdialog", { name: "Rechnung ausstellen?" })).toBeHidden();
+  await expectAccessible(page);
 
-  // No EUR account: the draft is saved and opened, the reason is explained.
+  // Saving still works.
+  await page.getByRole("button", { name: "Speichern" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Rechnung (Entwurf)" })).toBeVisible();
   await expect(page).toHaveURL(/\/documents\/[0-9a-f-]{36}$/);
-  await expect(page.getByText(/kein Bankkonto erfasst/)).toBeVisible();
-  await expectAccessible(page);
 
   await page.getByRole("button", { name: "Weitere Aktionen" }).click();
   await page.getByRole("menuitem", { name: "Entwurf löschen" }).click();

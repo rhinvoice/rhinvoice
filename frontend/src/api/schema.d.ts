@@ -2698,6 +2698,8 @@ export interface components {
             /** E Invoice Problems */
             e_invoice_problems: components["schemas"]["EInvoiceProblem"][];
             goods_treatment: components["schemas"]["TaxTreatment"] | null;
+            /** Issue Blockers */
+            issue_blockers: string[];
             /** Line Amounts */
             line_amounts: (string | null)[];
             /** Notice */

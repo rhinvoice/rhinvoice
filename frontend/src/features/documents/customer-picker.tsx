@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { UserPlusIcon } from "lucide-react";
 import { useState } from "react";
 
 import { useI18n } from "@/components/i18n/use-i18n";
@@ -13,6 +14,8 @@ import {
 interface CustomerPickerProps {
   readonly value: string;
   readonly onChange: (customer: CustomerOption) => void;
+  /** Offered when the search finds nothing: create a customer with the typed name. */
+  readonly onCreate?: ((name: string) => void) | undefined;
   readonly id?: string;
   readonly placeholder?: string;
   readonly "aria-describedby"?: string | undefined;
@@ -20,7 +23,14 @@ interface CustomerPickerProps {
 }
 
 /** Search customers by name, number or city; the chosen customer's name stays in the input. */
-export function CustomerPicker({ value, onChange, id, placeholder, ...aria }: CustomerPickerProps) {
+export function CustomerPicker({
+  value,
+  onChange,
+  onCreate,
+  id,
+  placeholder,
+  ...aria
+}: CustomerPickerProps) {
   const { t } = useI18n();
   const client = useQueryClient();
   const selected = useQuery({ ...customerOptionQuery(value), enabled: value !== "" });
@@ -31,6 +41,10 @@ export function CustomerPicker({ value, onChange, id, placeholder, ...aria }: Cu
   const term = useDebouncedValue(text, 200);
   const searching = draft !== null;
   const options = useQuery({ ...customerOptionsQuery(term), enabled: searching });
+  const found = searching ? (options.data?.items ?? []) : [];
+  // Only once the search for exactly this text is done and empty.
+  const nothingFound =
+    searching && text.trim() !== "" && term === text && !options.isFetching && found.length === 0;
 
   return (
     <Autocomplete
@@ -38,7 +52,22 @@ export function CustomerPicker({ value, onChange, id, placeholder, ...aria }: Cu
       {...aria}
       value={text}
       onValueChange={setDraft}
-      options={searching ? (options.data?.items ?? []) : []}
+      options={found}
+      action={
+        onCreate !== undefined && nothingFound
+          ? {
+              label: (
+                <>
+                  <UserPlusIcon aria-hidden="true" />
+                  {t("documents.createCustomerNamed", { name: text.trim() })}
+                </>
+              ),
+              onSelect: () => {
+                onCreate(text.trim());
+              },
+            }
+          : undefined
+      }
       optionKey={(customer) => customer.id}
       listLabel={t("nav.customers")}
       countLabel={(count) => t("common.results", { count })}

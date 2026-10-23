@@ -2493,6 +2493,13 @@
               }
             ]
           },
+          "issue_blockers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Issue Blockers",
+            "type": "array"
+          },
           "line_amounts": {
             "items": {
               "anyOf": [
@@ -2543,6 +2550,7 @@
           "rates",
           "notice",
           "customer_vat_missing",
+          "issue_blockers",
           "e_invoice_problems",
           "xrechnung_problems"
         ],

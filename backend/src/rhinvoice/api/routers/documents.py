@@ -478,6 +478,11 @@ class DocumentPreviewResponse(ApiModel):
     """Legal notice the treatment puts on the document."""
     customer_vat_missing: bool
     """The customer is an EU business without a VAT number: with one, reverse charge."""
+    issue_blockers: list[str]
+    """Error codes issuing would still raise for missing details, in the order it checks:
+    bank_account_missing, reverse_charge_needs_vat_number, a country's (e.g.
+    company_vat_number_missing, company_tax_id_missing, customer_vat_number_required),
+    company_vat_id_missing, customer_vat_id_missing."""
     e_invoice_problems: list[EInvoiceProblem]
     """What keeps the invoice, issued now, from carrying its e-invoice (ZUGFeRD)."""
     xrechnung_problems: list[EInvoiceProblem]
@@ -494,6 +499,7 @@ class DocumentPreviewResponse(ApiModel):
         amounts = {line.line_id: line.amount for line in view.totals.lines}
         return cls(
             customer_vat_missing=preview.customer_vat_missing,
+            issue_blockers=list(preview.issue_blockers),
             e_invoice_problems=list(e_invoice_problems),
             xrechnung_problems=list(xrechnung_problems),
             rates={category: plain_number(rate) for category, rate in preview.rates.items()},

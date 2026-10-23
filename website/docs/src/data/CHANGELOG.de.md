@@ -7,6 +7,18 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [0.8.4] – 2026-10-19
 
+### Neu
+- Die erste Rechnung führt nicht mehr in eine Sackgasse. Eine neue Rechnung sagt oben, wenn es
+  noch keinen Kunden gibt; die Kundensuche bietet «…» als neuen Kunden anlegen an, wenn sie
+  nichts findet. Das ganze Kundenformular öffnet sich neben der Rechnung, und der gespeicherte
+  Kunde ist gewählt. Was fürs Ausstellen noch fehlt (ein Bankkonto in der Währung der Rechnung,
+  die MWST-Nummer oder Steuernummer der Firma, die UID des Kunden), steht schon beim Schreiben
+  oben im Editor, mit Knöpfen, die das passende Formular öffnen; der Entwurf speichert trotzdem,
+  und *Ausstellen* führt zuerst dorthin. Die Entwurfsvorschau der API nennt das als
+  `issue_blockers`.
+- *Als Artikel speichern* neben *Übernehmen* behält eine getippte Position als Artikel, damit
+  die Suche in der Zeile sie beim nächsten Mal findet.
+
 ### Geändert
 - Der Hinweis auf eine neue Version zeigt einer Docker-Installation, die `latest` folgt, nur
   den Befehl `docker compose pull && docker compose up -d`; die Zeile für `.env` erscheint nur,

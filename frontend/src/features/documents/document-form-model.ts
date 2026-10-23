@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { ErrorSummaryItem } from "@/components/ui/error-summary";
 import type {
   ArticleOption,
+  ArticleRequest,
   CustomerOption,
   DocumentDetail,
   DraftRequest,
@@ -211,6 +212,40 @@ export function lineFromArticle(
     tax_category: article.tax_category,
     supply: article.supply,
     article_id: article.id,
+  };
+}
+
+/** Longest article name (the line's description becomes the name). */
+export const MAX_ARTICLE_NAME = 120;
+
+/** Whether a typed line can become an article: a position with a name that fits and a unit. */
+export function canSaveAsArticle(line: LineFormValues): boolean {
+  const name = line.description.trim();
+  return (
+    line.kind === "item" &&
+    line.article_id === null &&
+    name !== "" &&
+    name.length <= MAX_ARTICLE_NAME &&
+    line.unit !== ""
+  );
+}
+
+/** The article a typed line stands for, priced in the document's currency. */
+export function articleFromLine(
+  line: LineFormValues,
+  currency: Currency,
+  locale: Locale,
+): ArticleRequest {
+  const price = line.unit_price.trim();
+  return {
+    number: "",
+    name: line.description.trim(),
+    description: line.details.trim(),
+    group: "",
+    unit: line.unit as ArticleRequest["unit"],
+    tax_category: line.tax_category,
+    supply: line.supply,
+    prices: price === "" ? {} : { [currency]: toApiDecimal(price, locale) },
   };
 }
 

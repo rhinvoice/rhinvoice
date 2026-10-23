@@ -424,6 +424,9 @@ export const de = {
   "customers.note": "Interne Notiz",
   "customers.noteHint": "Erscheint nicht auf Dokumenten.",
   "customers.created": "Kunde «{name}» angelegt.",
+  "customers.sheetHint":
+    "Die Rechnung bleibt dahinter offen. Nach dem Speichern geht es dort weiter.",
+  "customers.createAndChoose": "Anlegen und wählen",
   "customers.archivedToast": "«{name}» archiviert.",
   "customers.restoredToast": "«{name}» wiederhergestellt.",
   "customers.archivedNotice":
@@ -530,6 +533,11 @@ export const de = {
   "company.vatNumberHint": "z. B. CHE-123.456.789 MWST oder DE123456789",
   "company.taxNumber": "Steuernummer",
   "company.taxNumberHint": "Deutsche Steuernummer, falls keine USt-IdNr. vorhanden ist.",
+  "company.taxDialogTitle": "Steuerangaben der Firma",
+  "company.taxDialogHint":
+    "Diese Angaben stehen auf jeder Rechnung und gelten ab sofort für die ganze Firma.",
+  "company.taxDialogOtherErrors":
+    "Andere Firmenangaben sind unvollständig. Bitte unter Einstellungen → Firma prüfen.",
   "company.commercialRegister": "Handelsregister",
   "company.commercialRegisterHint": "z. B. Handelsregister des Kantons Zürich, CHE-123.456.789",
   "company.smallBusiness": "Nicht MWST-pflichtig / Kleinunternehmer",
@@ -762,6 +770,8 @@ export const de = {
   "documents.customerSearch": "Kunde suchen",
   "documents.changeCustomer": "Ändern",
   "documents.discardLine": "Verwerfen",
+  "documents.saveAsArticle": "Als Artikel speichern",
+  "documents.articleSaved": "Artikel {number} «{name}» gespeichert.",
   "documents.dueInDays": "{days} Tage",
   "documents.dueNow": "Sofort",
   "documents.editLine": "Position {number} bearbeiten: {description}",
@@ -868,6 +878,27 @@ export const de = {
   "documents.customerPlaceholder": "Name, Nummer oder Ort eingeben …",
   "documents.customerRequired": "Bitte wählen Sie einen Kunden.",
   "documents.noCustomerFound": "Kein Kunde gefunden.",
+  "documents.createCustomerNamed": "«{name}» als neuen Kunden anlegen",
+  "documents.noCustomersTitle": "Noch keine Kunden.",
+  "documents.noCustomersHint":
+    "Eine Rechnung braucht einen Empfänger. Legen Sie ihn hier an, die Rechnung bleibt offen.",
+  "documents.createCustomer": "Kunden anlegen",
+  "documents.importCustomers": "Kunden importieren",
+  "documents.blockersTitle": "Vor dem Ausstellen fehlt noch:",
+  "documents.blockersHint": "Speichern geht schon, nur das Ausstellen wartet darauf.",
+  "blocker.bank_account_missing": "ein Bankkonto in {currency} für die Zahlungsangaben",
+  "blocker.reverse_charge_needs_vat_number": "die UID bzw. USt-IdNr. des Kunden für Reverse Charge",
+  "blocker.company_vat_number_missing":
+    "Ihre MWST-Nummer bzw. UID, oder die Angabe «nicht MWST-pflichtig»",
+  "blocker.company_tax_id_missing": "Ihre Steuernummer oder USt-IdNr.",
+  "blocker.customer_vat_number_required": "die UID des Kunden (Rechnungen über 10.000 EUR)",
+  "blocker.company_vat_id_missing":
+    "Ihre USt-IdNr. bzw. UID für die innergemeinschaftliche Lieferung",
+  "blocker.customer_vat_id_missing":
+    "die USt-IdNr. bzw. UID des Kunden für die innergemeinschaftliche Lieferung",
+  "blocker.fix.bank_account": "{currency}-Konto erfassen",
+  "blocker.fix.company": "Steuerangaben ergänzen",
+  "blocker.fix.customer": "Kunde ergänzen",
   "documents.subject": "Betreff",
   "documents.subjectHint": "z. B. «Website-Relaunch, Phase 2»",
   "documents.reference": "Referenz",

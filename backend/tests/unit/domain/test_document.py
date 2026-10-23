@@ -774,3 +774,33 @@ def test_mails_are_recorded_in_the_history() -> None:
         draft().record_mail(EventKind.EMAILED, "a@example.com", LATER)
     with raises_exactly(ValidationError, "only mails are recorded this way"):
         invoice.record_mail(EventKind.PAYMENT_ADDED, "x", LATER)
+
+
+def test_issue_blockers_name_all_missing_party_details_at_once() -> None:
+    german = factories.company(
+        address=factories.address(country=CountryCode("DE")), vat_number=None, tax_number=""
+    )
+    customer = factories.customer(address=factories.address(country=CountryCode("AT")))
+    supply = draft(
+        lines=(line("1", "300.00", supply=Supply.GOODS),),
+        currency=Currency.EUR,
+        treatment=TaxTreatment.REVERSE_CHARGE,
+        goods_treatment=TaxTreatment.INTRA_COMMUNITY,
+    )
+    assert supply.issue_blockers(german, customer, Money(Decimal(300), Currency.EUR)) == (
+        "reverse_charge_needs_vat_number",
+        "company_tax_id_missing",
+        "company_vat_id_missing",
+        "customer_vat_id_missing",
+    )
+
+
+def test_issue_blockers_are_empty_when_the_details_are_complete() -> None:
+    total = Money(Decimal(1500), Currency.CHF)
+    assert draft().issue_blockers(factories.company(), factories.customer(), total) == ()
+    swiss = factories.company(vat_number=None)
+    assert draft().issue_blockers(swiss, factories.customer(), total) == (
+        "company_vat_number_missing",
+    )
+    # Quotes are sent, not issued: they state no tax IDs.
+    assert draft(DocumentType.QUOTE).issue_blockers(swiss, factories.customer(), total) == ()

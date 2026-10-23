@@ -21,7 +21,7 @@ Schliessen Sie vor der ersten Rechnung den [ersten Start](/docs/de/getting-start
 
 ## 1. Kunden anlegen
 
-Der Editor wählt Kunden, die es schon gibt. Legen Sie einen unter *Kunden → Neuer Kunde* an oder importieren Sie Ihre Kunden aus einer CSV- oder Excel-Datei ([Kunden und Artikel übernehmen](/docs/de/moving/customers-and-articles/)). Bei deutschen Behörden tragen Sie beim Kunden die Leitweg-ID für die [XRechnung](/docs/de/invoices/e-invoice/) ein.
+Noch kein Kunde? Legen Sie ihn direkt im Editor an: Namen in die Kundensuche tippen und *«…» als neuen Kunden anlegen* wählen, oder bei einer neuen Rechnung im Hinweis oben auf *Kunden anlegen* klicken. Das Kundenformular öffnet sich neben der Rechnung; nach dem Speichern ist der Kunde gewählt, und alles Eingetragene bleibt stehen. Kunden lassen sich auch unter *Kunden → Neuer Kunde* anlegen oder aus einer CSV- oder Excel-Datei importieren ([Kunden und Artikel übernehmen](/docs/de/moving/customers-and-articles/)). Bei deutschen Behörden tragen Sie beim Kunden die Leitweg-ID für die [XRechnung](/docs/de/invoices/e-invoice/) ein.
 
 ## 2. Den Editor öffnen
 
@@ -35,7 +35,7 @@ Klicken Sie in der Navigation auf *Neue Rechnung* oder drücken Sie **N**, wenn 
 
 2. **Daten**: *Datum* leer lassen für das Datum des Ausstellens, *Fällig am* leer lassen für die Zahlungsfrist des Kunden bzw. der Firma. Sie können auch eine *Zahlungsfrist* in Tagen wählen.
 
-3. **Positionen**: *Position hinzufügen*, dann Bezeichnung, Menge, Einheit und Preis eingeben. Beim Tippen werden Artikel vorgeschlagen. *Übernehmen* stellt die Position in die Liste. Ein Klick auf eine Position in der Liste oder in der Vorschau öffnet sie wieder. *Textzeile hinzufügen* fügt einen Zwischentitel oder Hinweis ohne Betrag ein. **Alt+↑** und **Alt+↓** verschieben eine Position.
+3. **Positionen**: *Position hinzufügen*, dann Bezeichnung, Menge, Einheit und Preis eingeben. Beim Tippen werden Artikel vorgeschlagen. *Übernehmen* stellt die Position in die Liste. Mit dem Häkchen *Als Artikel speichern* findet die Suche eine getippte Position beim nächsten Mal wieder. Ein Klick auf eine Position in der Liste oder in der Vorschau öffnet sie wieder. *Textzeile hinzufügen* fügt einen Zwischentitel oder Hinweis ohne Betrag ein. **Alt+↑** und **Alt+↓** verschieben eine Position.
 
 4. **Texte** (freiwillig): Einleitung, Zahlungsbedingungen und Schluss, auch aus Ihren Textbausteinen.
 
@@ -51,7 +51,7 @@ Der *Steuerfall* ergibt sich aus dem Land Ihrer Firma und dem des Kunden: Inland
 
 ## 5. Die Rechnung ausstellen
 
-Klicken Sie auf *Ausstellen*. Rhinvoice fragt *Rechnung ausstellen?*: Die Rechnung erhält ihre endgültige Nummer und kann danach nicht mehr geändert werden. Korrekturen sind nur noch per Stornorechnung möglich. Vor dem Ausstellen prüft Rhinvoice die Pflichtangaben Ihres Landes und sagt, was fehlt.
+Klicken Sie auf *Ausstellen*. Rhinvoice fragt *Rechnung ausstellen?*: Die Rechnung erhält ihre endgültige Nummer und kann danach nicht mehr geändert werden. Korrekturen sind nur noch per Stornorechnung möglich. Was fürs Ausstellen noch fehlt, etwa ein Bankkonto in der Währung der Rechnung oder Ihre MWST-Nummer, steht schon beim Schreiben oben im Editor: *Vor dem Ausstellen fehlt noch*. Die Knöpfe dort öffnen das passende Formular, ohne die Rechnung zu verlassen; der Entwurf speichert trotzdem.
 
 <Aside type="caution" title="Ausgestellt heisst endgültig">
 Ab dem Ausstellen sind Inhalt und PDF eingefroren, das PDF wird mit seiner SHA-256-Prüfsumme aufbewahrt. Um eine ausgestellte Rechnung zu korrigieren, stornieren Sie sie (*Stornieren* erzeugt eine Stornorechnung mit eigener Nummer) und schreiben eine neue. Siehe [Ausstellen und Storno](/docs/de/invoices/issue-and-cancel/).

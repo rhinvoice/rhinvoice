@@ -1,15 +1,21 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useBlocker } from "@tanstack/react-router";
 import {
+  Building2Icon,
   ChevronDownIcon,
   EyeIcon,
   FileCheckIcon,
   InfoIcon,
+  LandmarkIcon,
   PencilIcon,
   PrinterIcon,
   SlidersHorizontalIcon,
   TextIcon,
+  TriangleAlertIcon,
+  UserPenIcon,
+  UserPlusIcon,
+  UsersIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode, type SyntheticEvent } from "react";
 import { Controller, FormProvider, useForm, useFormContext, useWatch } from "react-hook-form";
@@ -36,6 +42,7 @@ import { useDebouncedValue } from "@/components/use-debounced-value";
 import { useSaveShortcut } from "@/components/use-key-shortcuts";
 import {
   customerOptionQuery,
+  customerOptionsQuery,
   previewQuery,
   renderQuery,
   type CreateRequest,
@@ -61,11 +68,17 @@ import {
 import { DocumentTextFields } from "@/features/documents/document-text-fields";
 import { switchLanguage } from "@/features/documents/document-texts";
 import { EInvoiceProblems } from "@/features/documents/e-invoice-card";
+import {
+  blockerFixes,
+  knownBlockers,
+  type BlockerFix,
+} from "@/features/documents/issue-blockers-model";
 import { LineItems } from "@/features/documents/line-items";
 import { PaperPreview } from "@/components/paper-preview";
 import { printPage } from "@/features/documents/print-page";
 import type { Company } from "@/features/shared/company-api";
 import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
+import { useEditorSheets } from "@/features/shared/editor-sheets";
 import { FormAlert } from "@/features/shared/form-alert";
 import { applyServerErrors } from "@/features/shared/server-errors";
 import { textTemplatesQuery } from "@/features/shared/texts-api";
@@ -191,6 +204,32 @@ export function DocumentEditor<Saved = DocumentDetail>({
   const page = useQuery(renderQuery(body));
   const amounts = preview.data?.line_amounts ?? [];
 
+  // What is missing (a customer, a bank account, a tax ID) is filled in on top of the
+  // editor, never by leaving it: "never a dead end" (chosen 2026-10-23).
+  const client = useQueryClient();
+  const sheets = useEditorSheets();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const offerSheets = sheets !== null && plan === undefined;
+  const anyCustomer = useQuery({ ...customerOptionsQuery(""), enabled: isNew && offerSheets });
+  const noCustomers =
+    isNew && offerSheets && values.customer_id === "" && anyCustomer.data?.items.length === 0;
+  const blockers =
+    type === "invoice" && plan === undefined
+      ? knownBlockers(preview.data?.issue_blockers ?? [])
+      : [];
+  const blockersRef = useRef<HTMLDivElement>(null);
+  /** The editor's own ⌘↵ rests while a sheet is open; the page reloads after it. */
+  const withSheet = async <R,>(open: () => Promise<R>): Promise<R> => {
+    setSheetOpen(true);
+    try {
+      return await open();
+    } finally {
+      setSheetOpen(false);
+      void client.invalidateQueries({ queryKey: ["documents", "preview"] });
+      void client.invalidateQueries({ queryKey: ["documents", "render"] });
+    }
+  };
+
   // Leaving with unsaved changes asks first (also on reload or closing the tab).
   // formState is only refreshed on the next render, so a navigation right after
   // saving (e.g. to the new draft's page) must not see the old "dirty" state.
@@ -229,7 +268,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
       }
     })(event);
   };
-  useSaveShortcut(() => void submit("save")());
+  useSaveShortcut(() => void submit("save")(), !sheetOpen);
 
   // Existing drafts save themselves once the form has been valid and unchanged
   // for a moment (principles.md 4.4). Edits made while saving stay unsaved.
@@ -284,6 +323,28 @@ export function DocumentEditor<Saved = DocumentDetail>({
     form.setValue("closing_text", texts.closing_text, options);
   };
 
+  const createCustomer = async (name: string) => {
+    if (sheets === null) return;
+    const customer = await withSheet(() => sheets.createCustomer(name));
+    if (customer === null) return;
+    client.setQueryData(customerOptionQuery(customer.id).queryKey, customer);
+    void client.invalidateQueries({ queryKey: ["customers", "options"] });
+    chooseCustomer(customer);
+    form.setValue("customer_id", customer.id, { shouldDirty: true, shouldValidate: true });
+    setChoosingCustomer(false);
+  };
+
+  const fix = (kind: BlockerFix) => {
+    if (sheets === null) return;
+    void withSheet(() =>
+      kind === "bank_account"
+        ? sheets.addBankAccount(values.currency)
+        : kind === "company"
+          ? sheets.editCompanyTaxIds()
+          : sheets.editCustomer(values.customer_id),
+    );
+  };
+
   const summary = [...(plan?.problems ?? []), ...documentSummaryItems(errors, t)];
   const issueLabel = type === "quote" ? t("documents.send") : t("documents.issue");
   const title = type === "quote" ? t("documentType.quote") : t("documentType.invoice");
@@ -303,6 +364,81 @@ export function DocumentEditor<Saved = DocumentDetail>({
           />
         ) : null}
         <FormAlert message={errors.root?.message ?? null} />
+        {noCustomers ? (
+          <div className="flex flex-col gap-3 rounded-lg border bg-accent/40 p-4 text-sm sm:flex-row sm:items-center">
+            <UsersIcon
+              className="hidden size-5 shrink-0 text-muted-foreground sm:block"
+              aria-hidden="true"
+            />
+            <p className="flex-1">
+              <span className="font-medium">{t("documents.noCustomersTitle")}</span>{" "}
+              {t("documents.noCustomersHint")}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  void createCustomer("");
+                }}
+              >
+                <UserPlusIcon aria-hidden="true" />
+                {t("documents.createCustomer")}
+              </Button>
+              <Button asChild size="sm" variant="ghost">
+                <Link to="/customers/import">{t("documents.importCustomers")}</Link>
+              </Button>
+            </div>
+          </div>
+        ) : null}
+        {blockers.length > 0 ? (
+          <div
+            ref={blockersRef}
+            tabIndex={-1}
+            role="region"
+            aria-labelledby="blockers-title"
+            className="flex flex-col gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <div className="flex items-start gap-2">
+              <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <div className="flex flex-col gap-1">
+                <p id="blockers-title" className="font-medium">
+                  {t("documents.blockersTitle")}
+                </p>
+                <ul className="list-disc pl-5">
+                  {blockers.map((code) => (
+                    <li key={code}>{t(`blocker.${code}`, { currency: values.currency })}</li>
+                  ))}
+                </ul>
+                <p className="text-muted-foreground">{t("documents.blockersHint")}</p>
+              </div>
+            </div>
+            {offerSheets ? (
+              <div className="flex flex-wrap gap-2 sm:pl-6">
+                {blockerFixes(blockers).map((kind) => (
+                  <Button
+                    key={kind}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      fix(kind);
+                    }}
+                  >
+                    {kind === "bank_account" ? (
+                      <LandmarkIcon aria-hidden="true" />
+                    ) : kind === "company" ? (
+                      <Building2Icon aria-hidden="true" />
+                    ) : (
+                      <UserPenIcon aria-hidden="true" />
+                    )}
+                    {t(`blocker.fix.${kind}`, { currency: values.currency })}
+                  </Button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         {/* Phones and narrow windows switch between editing and the paper. */}
         <div
@@ -373,6 +509,13 @@ export function DocumentEditor<Saved = DocumentDetail>({
                       <CustomerPicker
                         id={fieldId("customer_id")}
                         value={field.value}
+                        onCreate={
+                          offerSheets
+                            ? (name) => {
+                                void createCustomer(name);
+                              }
+                            : undefined
+                        }
                         onChange={(customer) => {
                           chooseCustomer(customer);
                           field.onChange(customer.id);
@@ -657,6 +800,12 @@ export function DocumentEditor<Saved = DocumentDetail>({
               type="button"
               disabled={isSubmitting}
               onClick={() => {
+                // Missing details first: issuing would only fail on them.
+                if (blockers.length > 0) {
+                  blockersRef.current?.scrollIntoView({ block: "center" });
+                  blockersRef.current?.focus({ preventScroll: true });
+                  return;
+                }
                 setConfirmIssue(true);
               }}
             >

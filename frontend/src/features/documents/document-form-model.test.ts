@@ -17,7 +17,10 @@ import {
   ownTreatment,
   goodsHintKey,
   hasSupply,
+  isBlankLine,
   lineFromArticle,
+  articleFromLine,
+  canSaveAsArticle,
   MAX_LINES,
   type DocumentFormValues,
 } from "@/features/documents/document-form-model";
@@ -111,6 +114,14 @@ describe("document form", () => {
     expect(emptyLine().key).not.toBe(emptyLine().key);
   });
 
+  it("tells a line still as added from one with content", () => {
+    expect(isBlankLine(emptyLine())).toBe(true);
+    expect(isBlankLine({ ...emptyLine("text"), key: "other" })).toBe(true);
+    expect(isBlankLine({ ...emptyLine(), description: "Beratung" })).toBe(false);
+    expect(isBlankLine({ ...emptyLine(), quantity: "2" })).toBe(false);
+    expect(isBlankLine({ ...emptyLine(), article_id: "a" })).toBe(false);
+  });
+
   it("accepts a valid draft", () => {
     expect(issues(valid())).toEqual({});
   });
@@ -129,9 +140,13 @@ describe("document form", () => {
   it("allows negative quantities but not negative prices", () => {
     const line = { ...emptyLine(), key: "x", description: "Gutschrift" };
     expect(issues(valid({ lines: [{ ...line, quantity: "-2", unit_price: "10" }] }))).toEqual({});
-    expect(issues(valid({ lines: [{ ...line, unit_price: "-10" }] }))).toEqual({
-      "lines.0.unit_price": "Bitte geben Sie eine Zahl ein, z. B. 150.00.",
-    });
+    // ICU versions group de-CH digits with ’ or ', so compare with one of them.
+    expect(
+      issues(valid({ lines: [{ ...line, unit_price: "-10" }] }))["lines.0.unit_price"]?.replace(
+        /\u2019/g,
+        "'",
+      ),
+    ).toBe("Bitte eine Zahl von 0 bis 99'999'999.9999 eingeben.");
     expect(issues(valid({ lines: [{ ...line, quantity: "1.23456" }] }))).toEqual({
       "lines.0.quantity": "Höchstens 4 Nachkommastellen.",
     });
@@ -218,6 +233,41 @@ describe("customer and article defaults", () => {
     });
     // No EUR price: the typed price stays.
     expect(lineFromArticle(line, article, "EUR", "de-CH").unit_price).toBe("5");
+  });
+
+  it("turns a typed position into an article", () => {
+    const line = {
+      ...emptyLine(),
+      key: "x",
+      description: " Rasenpflege ",
+      details: "pro Stunde",
+      unit: "HUR" as const,
+      unit_price: "1’085.5",
+      supply: "service" as const,
+    };
+    expect(canSaveAsArticle(line)).toBe(true);
+    expect(articleFromLine(line, "CHF", "de-CH")).toEqual({
+      number: "",
+      name: "Rasenpflege",
+      description: "pro Stunde",
+      group: "",
+      unit: "HUR",
+      tax_category: "standard",
+      supply: "service",
+      prices: { CHF: "1085.5" },
+    });
+    expect(articleFromLine({ ...line, unit_price: " " }, "EUR", "de-CH").prices).toEqual({});
+  });
+
+  it("offers to save only typed positions with a name that fits and a unit", () => {
+    const line = { ...emptyLine(), key: "x", description: "Rasenpflege" };
+    expect(canSaveAsArticle(line)).toBe(true);
+    expect(canSaveAsArticle({ ...line, kind: "text" })).toBe(false);
+    expect(canSaveAsArticle({ ...line, article_id: "a1" })).toBe(false);
+    expect(canSaveAsArticle({ ...line, description: "  " })).toBe(false);
+    expect(canSaveAsArticle({ ...line, description: "x".repeat(120) })).toBe(true);
+    expect(canSaveAsArticle({ ...line, description: "x".repeat(121) })).toBe(false);
+    expect(canSaveAsArticle({ ...line, unit: "" })).toBe(false);
   });
 });
 

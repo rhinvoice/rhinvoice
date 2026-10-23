@@ -5,6 +5,44 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.8.4] – 2026-10-19
+
+### Neu
+- Die erste Rechnung führt nicht mehr in eine Sackgasse. Eine neue Rechnung sagt oben, wenn es
+  noch keinen Kunden gibt; die Kundensuche bietet «…» als neuen Kunden anlegen an, wenn sie
+  nichts findet. Das ganze Kundenformular öffnet sich neben der Rechnung, und der gespeicherte
+  Kunde ist gewählt. Was fürs Ausstellen noch fehlt (ein Bankkonto in der Währung der Rechnung,
+  die MWST-Nummer oder Steuernummer der Firma, die UID des Kunden), steht schon beim Schreiben
+  oben im Editor, mit Knöpfen, die das passende Formular öffnen; der Entwurf speichert trotzdem,
+  und *Ausstellen* führt zuerst dorthin. Die Entwurfsvorschau der API nennt das als
+  `issue_blockers`.
+- *Als Artikel speichern* neben *Übernehmen* behält eine getippte Position als Artikel, damit
+  die Suche in der Zeile sie beim nächsten Mal findet.
+
+### Geändert
+- Der Hinweis auf eine neue Version zeigt einer Docker-Installation, die `latest` folgt, nur
+  den Befehl `docker compose pull && docker compose up -d`; die Zeile für `.env` erscheint nur,
+  wenn `.env` eine feste Version hat. Laden Sie dazu einmal die aktuelle `deploy/compose.yml`
+  herunter, sie sagt dem Programm, wie `.env` eingestellt ist; mit einer älteren zeigt der
+  Hinweis die Zeile «Nur wenn .env eine feste Version hat».
+
+### Behoben
+- Rhinvoice Beta bietet jetzt auch einen neueren Testkandidaten mit derselben Versionsnummer
+  als Update an, zum Beispiel `v0.8.4-rc.3` nach `v0.8.4-rc.2`, und zeigt den Testkandidaten
+  neben der Version an. Er wird wie jedes Update installiert und, wenn er nicht startet,
+  zurückgenommen (ADR 0035). Installationen von Rhinvoice Beta brauchen dafür einmal ein
+  Setup ab 0.8.4.
+- In einer neuen Rechnung entfernt «Verwerfen» die leere erste Position. Bisher wurde sie
+  geprüft und blieb mit «Bitte ausfüllen.» offen.
+- Zahlenfelder nennen den erlaubten Bereich, wenn ein Wert nicht passt, zum Beispiel «Bitte
+  eine Zahl von 0 bis 100 eingeben.» bei einem Rabatt von −12 oder 150. Das Beispiel in der
+  Meldung für eine Eingabe, die keine Zahl ist, folgt dem Zahlenformat der Installation.
+- Die Vorschau unter Einstellungen › Druckvorlage zeigt vor dem ersten Kunden eine
+  Beispielrechnung an einen erfundenen Kunden statt einer Fehlermeldung.
+- Beim Öffnen eines Formulars meldet die Browser-Konsole kein blockiertes Skript mehr, auch
+  nicht den Hinweis «'script-src' was not explicitly set»: Die Formularprüfung versucht kein
+  `eval` mehr, das die Content-Security-Policy verbietet.
+
 ## [0.8.3] – 2026-10-18
 
 ### Sicherheit

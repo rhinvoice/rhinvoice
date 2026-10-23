@@ -58,6 +58,7 @@ if TYPE_CHECKING:
         DocumentSummary,
     )
     from rhinvoice.application.uow import UnitOfWork, UnitOfWorkFactory
+    from rhinvoice.domain.company.bank_account import BankAccount
     from rhinvoice.domain.company.company import Company
     from rhinvoice.domain.customer.customer import Customer
     from rhinvoice.domain.document.calculation import Totals
@@ -173,6 +174,8 @@ class DocumentPreview:
     """Rate per tax category that the draft's lines would get, for the line selects."""
     customer_vat_missing: bool = False
     """The customer is an EU business without a VAT number: with one, reverse charge."""
+    issue_blockers: tuple[str, ...] = ()
+    """Codes of the details issuing would still ask for (bank account, tax IDs)."""
 
 
 def _customer_name(document: Document, customer: Customer | None) -> str:
@@ -249,11 +252,17 @@ class DocumentHandlers:
             uow.commit()
         return view
 
-    def preview(self, document_type: DocumentType, draft: DraftInput) -> DocumentPreview:
-        """Calculate a draft without saving it, for live totals in the editor."""
+    def preview(
+        self, document_type: DocumentType, draft: DraftInput, *, customer: Customer | None = None
+    ) -> DocumentPreview:
+        """Calculate a draft without saving it, for live totals in the editor.
+
+        ``customer`` stands in for one that is not saved (the layout preview's sample).
+        """
         with self.uow() as uow:
             company = self._company(uow)
-            customer = self._customer(uow, draft.customer_id)
+            if customer is None:
+                customer = self._customer(uow, draft.customer_id)
             content = self._content(company, customer, draft, previous=None)
             document = Document.new_draft(new_id(), document_type, content, self.clock.now())
             rates = profile_of(company.country).rates_on(content.tax_date or self.clock.today())
@@ -264,9 +273,17 @@ class DocumentHandlers:
                 except ValidationError:
                     continue  # e.g. no special rate in Germany
                 available[category] = rate if content.treatment.charges_vat else Decimal(0)
+            view = replace(self._view(uow, document), customer=customer)
+            blockers = document.issue_blockers(company, customer, view.totals.total)
+            if (
+                document_type is DocumentType.INVOICE
+                and self._account(uow, content.currency) is None
+            ):
+                blockers = ("bank_account_missing", *blockers)
             return DocumentPreview(
-                view=self._view(uow, document),
+                view=view,
                 rates=available,
+                issue_blockers=blockers,
                 # A treatment chosen by hand needs no hint about the automatic one.
                 customer_vat_missing=draft.treatment_override is None
                 and vat_number_would_reverse_charge(_tax_context(company, customer)),
@@ -527,10 +544,7 @@ class DocumentHandlers:
         company = self._company(uow)
         customer = self._customer(uow, document.content.customer_id)
         currency = document.content.currency
-        account = next(
-            (a for a in uow.bank_accounts.list() if a.currency is currency and a.is_default),
-            None,
-        )
+        account = self._account(uow, currency)
         if account is None and document.type is DocumentType.INVOICE:
             raise ValidationError(
                 "currency",
@@ -684,6 +698,14 @@ class DocumentHandlers:
         if customer is None:
             raise ValidationError("customer_id", "the customer does not exist")
         return customer
+
+    @staticmethod
+    def _account(uow: UnitOfWork, currency: Currency) -> BankAccount | None:
+        """Find the default account in ``currency``, which invoices name for the payment."""
+        return next(
+            (a for a in uow.bank_accounts.list() if a.currency is currency and a.is_default),
+            None,
+        )
 
     @staticmethod
     def _require(uow: UnitOfWork, document_id: UUID, *, for_update: bool = False) -> Document:

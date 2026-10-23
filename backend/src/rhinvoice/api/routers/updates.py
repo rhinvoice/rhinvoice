@@ -40,6 +40,9 @@ class UpdateResponse(ApiModel):
     setup: SetupResponse | None
     """With action "setup": the program downloads and runs the setup itself (ADR 0031);
     None: only setup_url, to download by hand."""
+    pinned: bool | None
+    """With action "command": True when RHINVOICE_VERSION in .env has to change before the
+    pull, False when the pull alone brings the release (latest); None: not known."""
 
     @classmethod
     def of(cls, update: UpdateStatus) -> Self:
@@ -53,6 +56,7 @@ class UpdateResponse(ApiModel):
             failed=update.failed,
             can_check=update.can_check,
             setup=None if update.setup is None else SetupResponse.of(update.setup),
+            pinned=update.pinned,
         )
 
 

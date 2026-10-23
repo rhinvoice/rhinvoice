@@ -1462,7 +1462,7 @@ export interface paths {
          * Preview Print Layout
          * @description Render the latest invoice (or a sample one) with this layout, without saving it.
          *
-         *     409 preview_needs_customer when there is neither an invoice nor a customer.
+         *     409 company_not_set_up before the company is set up.
          */
         post: operations["print-layout_preview_print_layout"];
         delete?: never;
@@ -2698,6 +2698,8 @@ export interface components {
             /** E Invoice Problems */
             e_invoice_problems: components["schemas"]["EInvoiceProblem"][];
             goods_treatment: components["schemas"]["TaxTreatment"] | null;
+            /** Issue Blockers */
+            issue_blockers: string[];
             /** Line Amounts */
             line_amounts: (string | null)[];
             /** Notice */
@@ -4093,6 +4095,8 @@ export interface components {
             latest: string | null;
             /** Notes Url */
             notes_url: string | null;
+            /** Pinned */
+            pinned: boolean | null;
             setup: components["schemas"]["SetupResponse"] | null;
             /** Setup Url */
             setup_url: string | null;

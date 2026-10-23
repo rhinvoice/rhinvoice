@@ -21,7 +21,7 @@ Avant votre première facture, terminez le [premier démarrage](/docs/fr/getting
 
 ## 1. Ajouter un client
 
-L’éditeur propose les clients qui existent déjà. Ajoutez-en un sous *Clients → Nouveau client*, ou importez vos clients depuis un fichier CSV ou Excel ([clients et articles](/docs/fr/moving/customers-and-articles/)). Pour les autorités publiques allemandes, saisissez leur Leitweg-ID sur le client pour la [XRechnung](/docs/fr/invoices/e-invoice/).
+Pas encore de client ? Créez-le directement dans l’éditeur : tapez le nom dans la recherche de clients et choisissez *Créer « … » comme nouveau client*, ou cliquez sur *Créer un client* dans l’avis en haut d’une nouvelle facture. Le formulaire du client s’ouvre à côté de la facture ; après l’enregistrement, le client est choisi et tout ce qui a été saisi reste. Vous pouvez aussi ajouter des clients sous *Clients → Nouveau client* ou importer vos clients depuis un fichier CSV ou Excel ([clients et articles](/docs/fr/moving/customers-and-articles/)). Pour les autorités publiques allemandes, saisissez leur Leitweg-ID sur le client pour la [XRechnung](/docs/fr/invoices/e-invoice/).
 
 ## 2. Ouvrir l’éditeur
 
@@ -35,7 +35,7 @@ Cliquez sur *Nouvelle facture* dans la navigation, ou appuyez sur **N** n’impo
 
 2. **Dates** : laissez *Date* vide pour utiliser la date d’émission, et *Échéance* vide pour utiliser les conditions de paiement du client ou de l’entreprise. Vous pouvez aussi choisir *Délai de paiement* un nombre de jours.
 
-3. **Positions** : *Ajouter une position*, puis saisissez la description, la quantité, l’unité et le prix. Les articles sont proposés pendant la saisie. *Appliquer* reprend la ligne dans la liste; un clic sur une ligne de la liste ou de l’aperçu la rouvre. *Ajouter une ligne de texte* ajoute un titre ou une remarque sans montant. **Alt+↑** et **Alt+↓** déplacent une ligne.
+3. **Positions** : *Ajouter une position*, puis saisissez la description, la quantité, l’unité et le prix. Les articles sont proposés pendant la saisie. *Appliquer* reprend la ligne dans la liste ; cochez d’abord *Enregistrer comme article* pour retrouver une ligne saisie dans la recherche la prochaine fois ; un clic sur une ligne de la liste ou de l’aperçu la rouvre. *Ajouter une ligne de texte* ajoute un titre ou une remarque sans montant. **Alt+↑** et **Alt+↓** déplacent une ligne.
 
 4. **Textes** (facultatif) : introduction, conditions de paiement et texte de conclusion, aussi depuis vos modèles de texte.
 
@@ -51,7 +51,7 @@ Le *Cas fiscal* découle des pays de votre entreprise et du client : national, a
 
 ## 5. Émettre la facture
 
-Cliquez sur *Émettre*. Rhinvoice demande *Émettre la facture ?* : la facture reçoit son numéro définitif et ne peut plus être modifiée ensuite. Les corrections ne sont possibles qu’avec une facture d’annulation. Avant l’émission, Rhinvoice vérifie les mentions obligatoires de votre pays et indique ce qui manque.
+Cliquez sur *Émettre*. Rhinvoice demande *Émettre la facture ?* : la facture reçoit son numéro définitif et ne peut plus être modifiée ensuite. Les corrections ne sont possibles qu’avec une facture d’annulation. Ce qui manque encore pour l’émission, par exemple un compte bancaire dans la monnaie de la facture ou votre numéro de TVA, apparaît dès la saisie en haut de l’éditeur : *Il manque encore avant l’émission*. Ses boutons ouvrent le formulaire correspondant sans quitter la facture ; le brouillon s’enregistre quand même.
 
 <Aside type="caution" title="Émise veut dire définitive">
 Dès l’émission, le contenu et le PDF sont figés et le PDF est conservé avec sa somme de contrôle SHA-256. Pour corriger une facture émise, annulez-la (*Annuler* crée une facture d’annulation avec son propre numéro) et établissez-en une nouvelle. Voir [Émettre et annuler](/docs/fr/invoices/issue-and-cancel/).

@@ -6,7 +6,9 @@ r"""Write and sign release.json for a release (ADR 0022, 0033).
 Reads the release's files in the folder (``rhinvoice-app-<version>-<platform>.zip``,
 ``Rhinvoice-Setup-<version>.exe``), writes ``release.json`` with their download URLs,
 sizes and SHA-256 under the release's tag (a candidate's ``vX.Y.Z-rc.N``, or ``vX.Y.Z``
-once it is released), and ``release.json.sig`` with its Ed25519 signature. Before it ends it
+once it is released), and ``release.json.sig`` with its Ed25519 signature. The app packages
+name the candidate they were built as; release.json repeats it as ``candidate``, for the
+candidate and for the release promoted from it (ADR 0035). Before it ends it
 checks the signature the way every installation will: with the public key the program
 carries. Both files then belong to the GitHub release.
 
@@ -75,14 +77,27 @@ def file_entry(path: Path, tag: str) -> dict[str, object]:
     }
 
 
-def package_entry(path: Path, version: str, tag: str) -> tuple[dict[str, object], int]:
-    """Describe an app package; return it with the runtime generation it needs."""
+CANDIDATE_TAG = re.compile(r"v\d+\.\d+\.\d+-rc\.(?P<candidate>\d+)")
+
+
+def package_entry(
+    path: Path, version: str, tag: str
+) -> tuple[dict[str, object], int, int | None]:
+    """Describe an app package; return it with the runtime it needs and its candidate."""
     with zipfile.ZipFile(path) as package:
         manifest = json.loads(package.read("manifest.json"))
     if manifest["version"] != version:
         msg = f"{path.name} holds version {manifest['version']}, not {version}"
         raise SystemExit(msg)
-    return file_entry(path, tag), int(manifest["runtime"])
+    candidate = manifest.get("candidate")
+    if candidate is not None and (type(candidate) is not int or candidate < 1):
+        msg = f"{path.name} names no candidate's number: {candidate!r}"
+        raise SystemExit(msg)
+    # A candidate's packages are built as that candidate (ADR 0035).
+    if (match := CANDIDATE_TAG.fullmatch(tag)) and candidate != int(match["candidate"]):
+        msg = f"{path.name} was built as candidate {candidate}, not as {tag}"
+        raise SystemExit(msg)
+    return file_entry(path, tag), int(manifest["runtime"]), candidate
 
 
 def manifest(version: str, folder: Path, tag: str) -> dict[str, object]:
@@ -91,12 +106,17 @@ def manifest(version: str, folder: Path, tag: str) -> dict[str, object]:
     )
     packages: dict[str, dict[str, object]] = {}
     runtimes: set[int] = set()
+    candidates: set[int | None] = set()
     for path in sorted(folder.iterdir()):
         if match := pattern.fullmatch(path.name):
-            packages[match["platform"]], runtime = package_entry(path, version, tag)
+            packages[match["platform"]], runtime, candidate = package_entry(path, version, tag)
             runtimes.add(runtime)
+            candidates.add(candidate)
     if len(runtimes) > 1:
         msg = f"the app packages need different runtimes: {sorted(runtimes)}"
+        raise SystemExit(msg)
+    if len(candidates) > 1:
+        msg = f"the app packages were built as different candidates: {candidates}"
         raise SystemExit(msg)
     present = {platform: folder / name for name, platform in SETUPS.items()}
     present = {platform: path for platform, path in present.items() if path.exists()}
@@ -107,7 +127,7 @@ def manifest(version: str, folder: Path, tag: str) -> dict[str, object]:
         for platform, path in present.items()
     }
     setup_files = {platform: file_entry(path, tag) for platform, path in present.items()}
-    return {
+    release: dict[str, object] = {
         "version": version,
         "notes_url": f"{REPOSITORY}/releases/tag/{tag}",
         "runtime": runtimes.pop() if runtimes else 1,
@@ -115,6 +135,10 @@ def manifest(version: str, folder: Path, tag: str) -> dict[str, object]:
         "setups": setups,
         "setup_files": setup_files,
     }
+    # Read by programs since ADR 0035; earlier ones ignore it.
+    if (candidate := candidates.pop() if candidates else None) is not None:
+        release["candidate"] = candidate
+    return release
 
 
 def sign(content: bytes, pem: str) -> bytes:

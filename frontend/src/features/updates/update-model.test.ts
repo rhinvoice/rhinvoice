@@ -29,6 +29,7 @@ function update(overrides: Partial<Update> = {}): Update {
     failed: false,
     can_check: true,
     setup: null,
+    pinned: null,
     ...overrides,
   };
 }
@@ -45,12 +46,28 @@ describe("updateNotice", () => {
   });
 
   it("tells a server installation the version line and the command", () => {
-    expect(updateNotice(update({ action: "command" }))).toEqual({
+    expect(updateNotice(update({ action: "command", pinned: true }))).toEqual({
       kind: "command",
       version: "0.7.0",
       notesUrl: NOTES,
       envLine: "RHINVOICE_VERSION=0.7.0",
+      pinned: true,
       command: DOCKER_COMMAND,
+    });
+  });
+
+  it("tells a server installation that follows latest only the command", () => {
+    expect(updateNotice(update({ action: "command", pinned: false }))).toMatchObject({
+      envLine: null,
+      pinned: false,
+      command: DOCKER_COMMAND,
+    });
+  });
+
+  it("keeps the version line when it is not known how .env is set", () => {
+    expect(updateNotice(update({ action: "command", pinned: null }))).toMatchObject({
+      envLine: "RHINVOICE_VERSION=0.7.0",
+      pinned: null,
     });
   });
 

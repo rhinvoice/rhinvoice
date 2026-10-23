@@ -54,31 +54,65 @@ class UpdateStatus:
     """Someone may ask for a check now; False with the check switched off."""
     setup: SetupProgress | None = None
     """The new setup as the program downloads it; None when it cannot (ADR 0031)."""
+    pinned: bool | None = None
+    """With action command: True when the image tag in .env (RHINVOICE_VERSION) holds the
+    server below the release, so it has to change before the pull; False when the pull
+    alone brings it (latest, or 0.8 for 0.8.3); None when the tag is not known."""
 
 
-def is_newer(candidate: str, current: str) -> bool:
-    """Tell whether ``candidate`` is a later version than ``current`` (0.10.0 after 0.9.1)."""
+def follows(tag: str, version: str) -> bool:
+    """Tell whether the image ``tag`` leads to ``version`` (latest, 0.8 and 0.8.3 to 0.8.3)."""
+    return tag in {"latest", version} or version.startswith(f"{tag}.")
+
+
+def is_newer(
+    version: str,
+    current: str,
+    candidate: int | None = None,
+    current_candidate: int | None = None,
+) -> bool:
+    """Tell whether ``version`` is later than ``current`` (0.10.0 after 0.9.1).
+
+    Of one version, a later release candidate counts only when both candidates are known
+    (Rhinvoice Beta, ADR 0035): 0.8.4-rc.3 after 0.8.4-rc.2. The release promoted from a
+    candidate carries its candidate, so it is not offered to the one that runs it already.
+    """
     try:
-        return tuple(map(int, candidate.split("."))) > tuple(map(int, current.split(".")))
+        new, old = tuple(map(int, version.split("."))), tuple(map(int, current.split(".")))
     except ValueError:
         return False
+    if new != old:
+        return new > old
+    return candidate is not None and current_candidate is not None and candidate > current_candidate
+
+
+def build_name(version: str, candidate: int | None) -> str:
+    """Name a version as built from a release candidate: 0.8.4-rc.3 (ADR 0035)."""
+    return version if candidate is None else f"{version}-rc.{candidate}"
 
 
 class UpdateHandlers:
-    def __init__(
+    def __init__(  # noqa: PLR0913 - what decides the update (keyword for the image tag)
         self,
         feed: ReleaseFeed | None,
         current: str,
         clock: Clock,
         installer: UpdateInstaller | None = None,
         setup_installer: SetupInstaller | None = None,
+        *,
+        image_tag: str | None = None,
     ) -> None:
-        """``feed`` None: the check is switched off (RHINVOICE_UPDATE_CHECK=false)."""
+        """``feed`` None: the check is switched off (RHINVOICE_UPDATE_CHECK=false).
+
+        ``image_tag``: the tag a server installation's image was started with
+        (RHINVOICE_VERSION); None when not known.
+        """
         self._feed = feed
         self._current = current
         self._clock = clock
         self._installer = installer
         self._setup_installer = setup_installer
+        self._image_tag = image_tag
         # Replaced as one tuple: requests read it while the background check writes it.
         self._known: tuple[Release | None, datetime | None] = (None, None)
 
@@ -104,11 +138,9 @@ class UpdateHandlers:
     def status(self) -> UpdateStatus:
         release, checked_at = self._known
         failed = (
-            release is not None
-            and self._installer is not None
-            and self._installer.failed(release.version)
+            release is not None and self._installer is not None and self._installer.failed(release)
         )
-        if release is None or failed or not is_newer(release.version, self._current):
+        if release is None or failed or not self._is_newer(release):
             action = UpdateAction.NONE
         elif self._installer is None:
             action = UpdateAction.COMMAND
@@ -117,9 +149,13 @@ class UpdateHandlers:
         setup_url = None
         if release is not None and self._installer is not None:
             setup_url = release.setups.get(self._installer.setup)
+        candidate = self._candidate()
         return UpdateStatus(
-            current=self._current,
-            latest=None if release is None else release.version,
+            current=build_name(self._current, candidate),
+            # Rhinvoice Beta tells candidates of one version apart; Rhinvoice never sees one.
+            latest=None
+            if release is None
+            else build_name(release.version, None if candidate is None else release.candidate),
             action=action,
             notes_url=None if release is None else release.notes_url,
             setup_url=setup_url,
@@ -127,6 +163,11 @@ class UpdateHandlers:
             failed=failed,
             can_check=self._feed is not None,
             setup=None if (offer := self._setup_offer(release)) is None else _progress(offer),
+            pinned=(
+                None
+                if release is None or action is not UpdateAction.COMMAND or self._image_tag is None
+                else not follows(self._image_tag, release.version)
+            ),
         )
 
     def install(self) -> None:
@@ -135,8 +176,8 @@ class UpdateHandlers:
         if (
             release is None
             or installer is None
-            or not is_newer(release.version, self._current)
-            or installer.failed(release.version)
+            or not self._is_newer(release)
+            or installer.failed(release)
             or _desktop_action(release, installer) is not UpdateAction.INSTALL
         ):
             raise ConflictError("there is no update to install here", code="no_update")
@@ -157,6 +198,12 @@ class UpdateHandlers:
             raise ConflictError("the setup is not downloaded yet", code="setup_not_ready")
         offer[2].run()
 
+    def _candidate(self) -> int | None:
+        return None if self._installer is None else self._installer.candidate
+
+    def _is_newer(self, release: Release) -> bool:
+        return is_newer(release.version, self._current, release.candidate, self._candidate())
+
     def _setup_offer(
         self, release: Release | None
     ) -> tuple[Release, PackageFile, SetupInstaller] | None:
@@ -168,8 +215,8 @@ class UpdateHandlers:
         setup = release.setup_files.get(installer.setup)
         if (
             setup is None
-            or not is_newer(release.version, self._current)
-            or installer.failed(release.version)
+            or not self._is_newer(release)
+            or installer.failed(release)
             or _desktop_action(release, installer) is not UpdateAction.SETUP
         ):
             return None

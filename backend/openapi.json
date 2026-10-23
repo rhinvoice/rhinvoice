@@ -2493,6 +2493,13 @@
               }
             ]
           },
+          "issue_blockers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Issue Blockers",
+            "type": "array"
+          },
           "line_amounts": {
             "items": {
               "anyOf": [
@@ -2543,6 +2550,7 @@
           "rates",
           "notice",
           "customer_vat_missing",
+          "issue_blockers",
           "e_invoice_problems",
           "xrechnung_problems"
         ],
@@ -6239,6 +6247,17 @@
             ],
             "title": "Notes Url"
           },
+          "pinned": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pinned"
+          },
           "setup": {
             "anyOf": [
               {
@@ -6270,7 +6289,8 @@
           "checked_at",
           "failed",
           "can_check",
-          "setup"
+          "setup",
+          "pinned"
         ],
         "title": "UpdateResponse",
         "type": "object"
@@ -16075,7 +16095,7 @@
     },
     "/api/print-layout/preview": {
       "post": {
-        "description": "Render the latest invoice (or a sample one) with this layout, without saving it.\n\n409 preview_needs_customer when there is neither an invoice nor a customer.",
+        "description": "Render the latest invoice (or a sample one) with this layout, without saving it.\n\n409 company_not_set_up before the company is set up.",
         "operationId": "print-layout_preview_print_layout",
         "requestBody": {
           "content": {

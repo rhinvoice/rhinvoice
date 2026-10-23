@@ -174,6 +174,11 @@ PACKAGE = cast("dict[str, dict[str, object]]", MANIFEST["packages"])["windows-x6
         package(sha256=" " + "ab" * 32),
         package(sha256="zz" * 32),
         {**MANIFEST, "setup_files": {"windows-x64": {**PACKAGE, "url": "ftp://x/Setup.exe"}}},
+        # A candidate's number (ADR 0035).
+        {**MANIFEST, "candidate": 0},
+        {**MANIFEST, "candidate": "3"},
+        {**MANIFEST, "candidate": True},
+        {**MANIFEST, "candidate": None},
     ],
 )
 def test_a_signed_release_with_unexpected_values_counts_as_unknown(
@@ -181,6 +186,18 @@ def test_a_signed_release_with_unexpected_values_counts_as_unknown(
 ) -> None:
     content = json.dumps(manifest).encode()
     assert feed(github(content, signed(content))).latest() is None
+
+
+def test_a_release_names_the_candidate_its_packages_were_built_as() -> None:
+    """ADR 0035; programs before it ignore the field."""
+    content = json.dumps({**MANIFEST, "candidate": 3}).encode()
+    release = feed(github(content, signed(content))).latest()
+    assert release is not None
+    assert release.candidate == 3
+    content = json.dumps(MANIFEST).encode()
+    release = feed(github(content, signed(content))).latest()
+    assert release is not None
+    assert release.candidate is None
 
 
 def test_an_unreachable_or_missing_release_counts_as_unknown() -> None:

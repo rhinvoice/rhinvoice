@@ -33,7 +33,8 @@ from rhinvoice.desktop.launcher import (
 from rhinvoice.desktop.ports import free_port
 from rhinvoice.desktop.postgres import BundledPostgres
 from rhinvoice.desktop.setup import SetupDownloader
-from rhinvoice.desktop.updates import VERIFIED, PackageInstaller
+from rhinvoice.desktop.updates import BUILD, VERIFIED, PackageInstaller
+from rhinvoice.infrastructure.updates.feed import installed_version
 from rhinvoice_boot import RESTART, State, load_state, save_state
 from tests.helpers import raises_exactly
 from tests.unit.desktop.tools import calls, commands
@@ -958,7 +959,32 @@ def test_rhinvoice_beta_is_a_separate_installation(install: Path, tmp_path: Path
     [own] = recorder.owns
     assert isinstance(own.installer, PackageInstaller)
     assert (own.installer.platform, own.installer.setup) == ("linux-x64", "linux-x64-beta")
+    # Its boot did not say which build runs: no candidates of one version (ADR 0035).
+    assert own.installer.candidate is None
     assert isinstance(own.backup_setup, DesktopBackupSetup)
     assert own.backup_setup.target().suggestions == [
         FolderSuggestion("Dropbox", str(tmp_path / "Dropbox" / "Rhinvoice-Beta-Backup"))
     ]
+
+
+@pytest.mark.parametrize(
+    ("runtime", "build", "candidate"),
+    [
+        ('{"generation": 1, "edition": "beta"}', f"{installed_version()}-rc.3", 3),
+        # Rhinvoice is never offered candidates of its version.
+        ('{"generation": 1}', f"{installed_version()}-rc.3", None),
+        ('{"generation": 1, "edition": "beta"}', installed_version(), None),
+    ],
+)
+def test_rhinvoice_beta_knows_the_candidate_its_boot_started(
+    install: Path, tmp_path: Path, runtime: str, build: str, candidate: int | None
+) -> None:
+    """ADR 0035: the boot names the build it started, and keeps candidates apart."""
+    (install / "runtime.json").write_text(runtime)
+    recorder = Recorder()
+    started = desktop(install, tmp_path, recorder)
+    started = replace(started, environ={**started.environ, BUILD: build})
+    assert run(build_parser().parse_args(["--no-browser"]), started) == 0
+    [own] = recorder.owns
+    assert isinstance(own.installer, PackageInstaller)
+    assert own.installer.candidate == candidate

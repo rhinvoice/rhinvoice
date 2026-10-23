@@ -32,6 +32,7 @@ class Installer:
     platform = "windows-x64"
     setup = "windows-x64"
     runtime = 1
+    candidate: int | None = None
 
     def __init__(self) -> None:
         self.installed: list[str] = []
@@ -40,8 +41,8 @@ class Installer:
     def install(self, release: Release) -> None:
         self.installed.append(release.version)
 
-    def failed(self, version: str) -> bool:
-        return version in self.taken_back
+    def failed(self, release: Release) -> bool:
+        return release.version in self.taken_back
 
 
 type ClientFactory = Callable[[Installer | None], TestClient]
@@ -94,6 +95,7 @@ def test_a_server_installation_is_told_the_release(clients: ClientFactory) -> No
         "failed": False,
         "can_check": True,
         "setup": None,
+        "pinned": None,
     }
     refused = client.post("/api/updates/install")
     assert refused.status_code == 409

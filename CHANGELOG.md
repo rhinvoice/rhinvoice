@@ -5,6 +5,41 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.8.4] – 2026-10-19
+
+### Added
+- A first invoice no longer ends in a dead end. A new invoice says on top when there is no
+  customer yet; the customer search offers "Create “…” as a new customer" when it finds
+  nothing. The full customer form opens in a panel beside the invoice, and the saved customer
+  is chosen. What issuing still needs (a bank account in the invoice's currency, the company's
+  VAT number or tax number, the customer's VAT number) is listed on top of the editor while
+  writing, with buttons that open the form for it; the draft saves meanwhile, and *Issue* leads
+  there first. The draft preview of the API names these as `issue_blockers`.
+- *Save as article* beside *Apply* keeps a typed position as an article, so the line search
+  finds it next time.
+
+### Changed
+- The update notice of a Docker installation that follows `latest` shows only the command
+  `docker compose pull && docker compose up -d`; the line for `.env` appears only when `.env`
+  pins a version. Download the current `deploy/compose.yml` once, which tells the app how
+  `.env` is set; with an older one the notice shows the line "only if .env pins a version".
+
+### Fixed
+- Rhinvoice Beta now offers a newer test version of the same version number as an update, for
+  example `v0.8.4-rc.3` after `v0.8.4-rc.2`, and shows the candidate beside the version.
+  It is installed and, if it does not start, taken back like any update (ADR 0035).
+  Installations of Rhinvoice Beta need a setup of 0.8.4 or later once.
+- In a new invoice, "Discard" on the empty first position removes it. Before, it checked the
+  empty position, which then stayed open with "Please fill in this field."
+- Number fields name the allowed range when a value does not fit, for example "Please enter a
+  number from 0 to 100." for a discount of -12 or 150. The example in the message for input
+  that is no number follows the number format of the installation.
+- The preview in Settings › Print template shows a sample invoice to a made-up customer before
+  the first customer exists, instead of an error.
+- Opening a form no longer leaves a blocked script and the note "'script-src' was not
+  explicitly set" in the browser console: the form checks no longer try `eval`, which the
+  Content-Security-Policy forbids.
+
 ## [0.8.3] – 2026-10-18
 
 ### Security

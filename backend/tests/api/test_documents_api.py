@@ -364,6 +364,7 @@ def test_preview_calculates_without_saving(user_client: TestClient, customer_id:
     preview = post(user_client, "/api/documents/preview", body)
     assert preview["treatment"] == "domestic"
     assert preview["notice"] == ""
+    assert preview["issue_blockers"] == []
     assert preview["line_amounts"] == ["1500.00", None, "37.05"]
     assert preview["totals"]["total"] == "1493.55"
     assert preview["rates"] == {

@@ -18,6 +18,7 @@ import {
   useWatch,
   type FieldError,
 } from "react-hook-form";
+import { toast } from "sonner";
 
 import { useI18n } from "@/components/i18n/use-i18n";
 import { Autocomplete } from "@/components/ui/autocomplete";
@@ -27,12 +28,16 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { useDebouncedValue } from "@/components/use-debounced-value";
 import {
   articleOptionsQuery,
+  useCreateArticle,
   type ArticleOption,
   type TaxTreatment,
 } from "@/features/documents/api";
 import {
+  articleFromLine,
+  canSaveAsArticle,
   emptyLine,
   fieldId,
+  isBlankLine,
   lineFromArticle,
   lineRates,
   MAX_LINES,
@@ -43,6 +48,7 @@ import {
   type LineFormValues,
 } from "@/features/documents/document-form-model";
 import { taxCategoryLabel, type CountryProfile } from "@/features/shared/country-profile-model";
+import { useErrorMessage } from "@/features/shared/use-error-message";
 import { unitsQuery } from "@/features/shared/reference-api";
 import { cn } from "@/lib/cn";
 import { formatMoney, formatNumber, formatPercent } from "@/lib/format";
@@ -98,8 +104,11 @@ export function LineItems({
     readonly line: LineFormValues | null;
   } | null>(null);
   // A line can also be opened from outside, e.g. by a click on the paper preview.
+  // A blank one (the first line of a new document) counts as new: "Discard" removes
+  // it instead of restoring an empty line that then fails its checks and stays open.
   if (editing !== null && snapshot?.index !== editing) {
-    setSnapshot({ index: editing, line: getValues(`lines.${editing}`) });
+    const line = getValues(`lines.${editing}`);
+    setSnapshot({ index: editing, line: isBlankLine(line) ? null : line });
   }
   const original = snapshot?.index === editing ? snapshot.line : null;
 
@@ -426,9 +435,13 @@ function LineEditor({
   const details = useWatch({ control, name: `lines.${index}.details` });
   const taxCategory = useWatch({ control, name: `lines.${index}.tax_category` });
   const supply = useWatch({ control, name: `lines.${index}.supply` });
+  const line = useWatch({ control, name: `lines.${index}` });
   const own = ownTreatment(supply, goodsTreatment);
   const offered = lineRates(rates, own);
   const [showDetails, setShowDetails] = useState(false);
+  const [saveAsArticle, setSaveAsArticle] = useState(false);
+  const createArticle = useCreateArticle();
+  const errorMessage = useErrorMessage();
   const errors = formState.errors.lines?.[index];
   const number = index + 1;
   const path = (field: string) => `lines.${String(index)}.${field}`;
@@ -439,7 +452,25 @@ function LineEditor({
 
   const apply = async () => {
     // Only a complete line closes; otherwise its errors show right here.
-    if (await trigger(`lines.${index}`)) onApply();
+    if (!(await trigger(`lines.${index}`))) return;
+    const applied = getValues(`lines.${index}`);
+    if (isNew && saveAsArticle && canSaveAsArticle(applied)) {
+      // The line closes right away; the callbacks of mutate() would not outlive it.
+      createArticle.mutateAsync(articleFromLine(applied, currency, locale)).then(
+        (article) => {
+          // The line may have moved meanwhile; it keeps its key.
+          const at = getValues("lines").findIndex((other) => other.key === applied.key);
+          if (at >= 0) setValue(`lines.${at}.article_id`, article.id, { shouldDirty: true });
+          toast.success(
+            t("documents.articleSaved", { name: article.name, number: article.number }),
+          );
+        },
+        (caught: unknown) => {
+          toast.error(errorMessage(caught) ?? t("error.generic"));
+        },
+      );
+    }
+    onApply();
   };
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     const to = moveTarget(event, index, count);
@@ -644,9 +675,33 @@ function LineEditor({
           <CheckIcon aria-hidden="true" />
           {t("documents.applyLine")}
         </Button>
-        <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          // Keeps the focus in the field: leaving it would show its error first, which
+          // moves this button away from under the pointer before the click lands.
+          onMouseDown={(event) => {
+            event.preventDefault();
+          }}
+          onClick={onCancel}
+        >
           {isNew ? t("documents.discardLine") : t("common.cancel")}
         </Button>
+        {isNew && isItem && line.article_id === null ? (
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="size-4 accent-primary"
+              checked={saveAsArticle && canSaveAsArticle(line)}
+              disabled={!canSaveAsArticle(line)}
+              onChange={(event) => {
+                setSaveAsArticle(event.target.checked);
+              }}
+            />
+            {t("documents.saveAsArticle")}
+          </label>
+        ) : null}
         <span className="ml-auto flex gap-1">
           <Button
             type="button"

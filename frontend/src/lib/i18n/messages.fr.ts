@@ -81,6 +81,8 @@ export const fr: Catalog<MessageKey> = {
   "updates.installing": "Téléchargement …",
   "updates.restarting": "Rhinvoice redémarre …",
   "updates.commandEnv": "Définir dans le fichier .env :",
+  "updates.commandEnvIfPinned": "Seulement si .env fixe une version, y définir :",
+  "updates.commandOnly": "Exécuter sur le serveur :",
   "updates.commandRun": "Puis exécuter sur le serveur :",
   "updates.setupTitle": "{version} nécessite un nouveau programme d’installation",
   "updates.setupHint": "Installez-le une fois, vos données sont conservées.",
@@ -353,7 +355,8 @@ export const fr: Catalog<MessageKey> = {
   "address.city": "Localité",
   "address.country": "Pays",
   "validation.maxLength": "{max} caractères au maximum.",
-  "validation.number": "Veuillez saisir un nombre, p. ex. 150.00.",
+  "validation.number": "Veuillez saisir un nombre, p. ex. {example}.",
+  "validation.range": "Veuillez saisir un nombre de {min} à {max}.",
   "validation.decimals": "{max} décimales au maximum.",
   "validation.percent": "Veuillez saisir une valeur entre 0 et 100.",
   "validation.days": "Veuillez saisir un nombre entier de 0 à 365.",
@@ -430,6 +433,9 @@ export const fr: Catalog<MessageKey> = {
   "customers.note": "Note interne",
   "customers.noteHint": "N’apparaît pas sur les documents.",
   "customers.created": "Client « {name} » créé.",
+  "customers.sheetHint":
+    "La facture reste ouverte derrière. Après l’enregistrement, vous y revenez.",
+  "customers.createAndChoose": "Créer et choisir",
   "customers.archivedToast": "« {name} » archivé.",
   "customers.restoredToast": "« {name} » restauré.",
   "customers.archivedNotice":
@@ -538,6 +544,11 @@ export const fr: Catalog<MessageKey> = {
   "company.taxNumber": "Numéro fiscal",
   "company.taxNumberHint":
     "Numéro fiscal allemand, si vous n’avez pas de n° TVA intracommunautaire.",
+  "company.taxDialogTitle": "Données fiscales de l’entreprise",
+  "company.taxDialogHint":
+    "Ces données figurent sur chaque facture et s’appliquent dès maintenant à toute l’entreprise.",
+  "company.taxDialogOtherErrors":
+    "D’autres données de l’entreprise sont incomplètes. Veuillez les vérifier sous Paramètres → Entreprise.",
   "company.commercialRegister": "Registre du commerce",
   "company.commercialRegisterHint":
     "p. ex. Registre du commerce du canton de Vaud, CHE-123.456.789",
@@ -771,6 +782,8 @@ export const fr: Catalog<MessageKey> = {
   "documents.customerSearch": "Rechercher un client",
   "documents.changeCustomer": "Modifier",
   "documents.discardLine": "Rejeter",
+  "documents.saveAsArticle": "Enregistrer comme article",
+  "documents.articleSaved": "Article {number} « {name} » enregistré.",
   "documents.dueInDays": "{days} jours",
   "documents.dueNow": "Immédiatement",
   "documents.editLine": "Modifier la position {number} : {description}",
@@ -875,6 +888,29 @@ export const fr: Catalog<MessageKey> = {
   "documents.customerPlaceholder": "Saisir un nom, un numéro ou une localité …",
   "documents.customerRequired": "Veuillez choisir un client.",
   "documents.noCustomerFound": "Aucun client trouvé.",
+  "documents.createCustomerNamed": "Créer « {name} » comme nouveau client",
+  "documents.noCustomersTitle": "Pas encore de clients.",
+  "documents.noCustomersHint":
+    "Une facture a besoin d’un destinataire. Créez-le ici, la facture reste ouverte.",
+  "documents.createCustomer": "Créer un client",
+  "documents.importCustomers": "Importer des clients",
+  "documents.blockersTitle": "Il manque encore avant l’émission :",
+  "documents.blockersHint":
+    "L’enregistrement fonctionne déjà ; seule l’émission attend ces données.",
+  "blocker.bank_account_missing":
+    "un compte bancaire en {currency} pour les informations de paiement",
+  "blocker.reverse_charge_needs_vat_number": "le numéro de TVA du client pour l’autoliquidation",
+  "blocker.company_vat_number_missing":
+    "votre numéro de TVA, ou l’indication « non assujetti à la TVA »",
+  "blocker.company_tax_id_missing": "votre numéro fiscal ou numéro de TVA",
+  "blocker.customer_vat_number_required":
+    "le numéro de TVA du client (factures de plus de 10 000 EUR)",
+  "blocker.company_vat_id_missing": "votre numéro de TVA pour la livraison intracommunautaire",
+  "blocker.customer_vat_id_missing":
+    "le numéro de TVA du client pour la livraison intracommunautaire",
+  "blocker.fix.bank_account": "Ajouter un compte {currency}",
+  "blocker.fix.company": "Compléter les données fiscales",
+  "blocker.fix.customer": "Compléter le client",
   "documents.subject": "Objet",
   "documents.subjectHint": "p. ex. « Refonte du site web, phase 2 »",
   "documents.reference": "Référence",
@@ -1461,7 +1497,6 @@ export const fr: Catalog<MessageKey> = {
   "printLayout.issuedStay": "S’applique aux nouveaux PDF. Les documents émis conservent leur PDF.",
   "printLayout.preview": "Aperçu de la mise en page d’impression",
   "printLayout.previewHint": "Aperçu avec la facture la plus récente.",
-  "error.preview_needs_customer": "L’aperçu nécessite une facture ou un client.",
   "settings.tabDunning": "Relances",
   "dunning.title": "Relances",
   "dunning.description": "Factures en retard, rappels déjà établis et prochaine étape.",

@@ -21,7 +21,7 @@ Before your first invoice, finish the [first start](/docs/getting-started/first-
 
 ## 1. Add a customer
 
-The editor picks customers that exist already. Add one under *Customers → New customer*, or import your customers from a CSV or Excel file ([customers and articles](/docs/moving/customers-and-articles/)). For German public authorities, enter their Leitweg-ID on the customer for the [XRechnung](/docs/invoices/e-invoice/).
+No customer yet? Create one right in the editor: type the name in the customer search and choose *Create “…” as a new customer*, or click *Create customer* in the notice on top of a new invoice. The customer form opens beside the invoice; after saving, the customer is chosen and everything you entered stays. You can also add customers under *Customers → New customer* or import your customers from a CSV or Excel file ([customers and articles](/docs/moving/customers-and-articles/)). For German public authorities, enter their Leitweg-ID on the customer for the [XRechnung](/docs/invoices/e-invoice/).
 
 ## 2. Open the editor
 
@@ -35,7 +35,7 @@ Click *New invoice* in the navigation, or press **N** anywhere outside an input 
 
 2. **Dates**: leave *Date* empty to use the date of issue, and *Due date* empty to use the payment terms of the customer or company. You can also pick *Payable within* a number of days.
 
-3. **Lines**: *Add line*, then enter description, quantity, unit and price. Articles are suggested while you type. *Apply* takes the line into the list; clicking a line in the list or in the preview opens it again. *Add text line* adds a heading or a note without amount. **Alt+↑** and **Alt+↓** move a line.
+3. **Lines**: *Add line*, then enter description, quantity, unit and price. Articles are suggested while you type. *Apply* takes the line into the list; tick *Save as article* first to find a typed line in the search next time. clicking a line in the list or in the preview opens it again. *Add text line* adds a heading or a note without amount. **Alt+↑** and **Alt+↓** move a line.
 
 4. **Texts** (optional): intro, payment terms and closing, also from your text templates.
 
@@ -51,7 +51,7 @@ The *Tax treatment* follows from the countries of your company and the customer:
 
 ## 5. Issue the invoice
 
-Click *Issue*. Rhinvoice asks *Issue the invoice?*: the invoice gets its final number and cannot be changed afterwards. Corrections are only possible with a cancellation invoice. Before issuing, Rhinvoice checks the mandatory details of your country and says what is missing.
+Click *Issue*. Rhinvoice asks *Issue the invoice?*: the invoice gets its final number and cannot be changed afterwards. Corrections are only possible with a cancellation invoice. What issuing still needs, such as a bank account in the invoice's currency or your VAT number, is listed on top of the editor as soon as you write: *Still missing before issuing*. Its buttons open the form for it without leaving the invoice; the draft saves in the meantime.
 
 <Aside type="caution" title="Issued means final">
 From issuing on, content and PDF are frozen and the PDF is kept with its SHA-256 checksum. To correct an issued invoice, cancel it (*Cancel invoice* creates a cancellation invoice with its own number) and write a new one. See [Issuing and cancelling](/docs/invoices/issue-and-cancel/).

@@ -16,6 +16,8 @@ interface AutocompleteProps<T> {
   readonly countLabel?: (count: number) => string;
   /** Shown when the list is open but has no options, e.g. "No customers found". */
   readonly emptyText?: string;
+  /** A last entry after the options, e.g. "Create “Muster” as a new customer". */
+  readonly action?: { readonly label: ReactNode; readonly onSelect: () => void } | undefined;
   /** Open the list only from this many characters on (0: also on focus). */
   readonly minLength?: number;
   readonly onBlur?: () => void;
@@ -46,6 +48,7 @@ export function Autocomplete<T>({
   listLabel,
   countLabel,
   emptyText,
+  action,
   minLength = 1,
   onBlur,
   onKeyDown: onOtherKeyDown,
@@ -63,9 +66,17 @@ export function Autocomplete<T>({
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const enoughText = value.trim().length >= minLength;
-  const showList = open && enoughText && (options.length > 0 || emptyText !== undefined);
+  // The action is the entry after the last option.
+  const count = options.length + (action === undefined ? 0 : 1);
+  const showList = open && enoughText && (count > 0 || emptyText !== undefined);
   const activeOption = showList ? options[active] : undefined;
-  const activeId = activeOption === undefined ? undefined : `${listId}-${optionKey(activeOption)}`;
+  const actionActive = showList && action !== undefined && active === options.length;
+  const actionId = `${listId}-action`;
+  const activeId = actionActive
+    ? actionId
+    : activeOption === undefined
+      ? undefined
+      : `${listId}-${optionKey(activeOption)}`;
 
   // Keep the option chosen with the keyboard visible in the scrolling list.
   useEffect(() => {
@@ -80,22 +91,29 @@ export function Autocomplete<T>({
     setActive(-1);
   };
 
+  const pickAction = () => {
+    action?.onSelect();
+    setOpen(false);
+    setActive(-1);
+  };
+
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     // Alt+arrows are left to the caller (e.g. reordering lines).
     if (!event.altKey && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
       event.preventDefault();
       if (!open) {
         setOpen(true);
-        setActive(event.key === "ArrowDown" ? 0 : options.length - 1);
+        setActive(event.key === "ArrowDown" ? 0 : count - 1);
         return;
       }
       const step = event.key === "ArrowDown" ? 1 : -1;
-      setActive((current) =>
-        options.length === 0 ? -1 : (current + step + options.length) % options.length,
-      );
+      setActive((current) => (count === 0 ? -1 : (current + step + count) % count));
     } else if (event.key === "Enter" && activeOption !== undefined) {
       event.preventDefault();
       pick(activeOption);
+    } else if (event.key === "Enter" && actionActive) {
+      event.preventDefault();
+      pickAction();
     } else if (event.key === "Escape" && showList) {
       // Only consume Escape while the list is open, so dialogs still close.
       event.preventDefault();
@@ -156,38 +174,62 @@ export function Autocomplete<T>({
         hidden={!showList}
         className="absolute inset-x-0 top-full z-50 mt-1 max-h-72 min-w-64 overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
       >
-        {options.length === 0 ? (
+        {options.length === 0 && emptyText !== undefined ? (
           <p className="px-2 py-2 text-sm text-muted-foreground">{emptyText}</p>
-        ) : (
-          options.map((option, index) => (
-            <div
-              key={optionKey(option)}
-              id={`${listId}-${optionKey(option)}`}
-              role="option"
-              tabIndex={-1}
-              aria-selected={index === active}
-              // Keep the focus in the input; the click still selects.
-              onMouseDown={(event) => {
+        ) : null}
+        {options.map((option, index) => (
+          <div
+            key={optionKey(option)}
+            id={`${listId}-${optionKey(option)}`}
+            role="option"
+            tabIndex={-1}
+            aria-selected={index === active}
+            // Keep the focus in the input; the click still selects.
+            onMouseDown={(event) => {
+              event.preventDefault();
+            }}
+            onClick={() => {
+              pick(option);
+            }}
+            // Options are not tab stops; this only covers a programmatically focused option.
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
-              }}
-              onClick={() => {
                 pick(option);
-              }}
-              // Options are not tab stops; this only covers a programmatically focused option.
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  pick(option);
-                }
-              }}
-              className={cn(
-                "flex min-h-9 cursor-pointer flex-col justify-center rounded-sm px-2 py-1.5 text-sm",
-                index === active ? "bg-accent text-accent-foreground" : "hover:bg-muted",
-              )}
-            >
-              {renderOption(option)}
-            </div>
-          ))
+              }
+            }}
+            className={cn(
+              "flex min-h-9 cursor-pointer flex-col justify-center rounded-sm px-2 py-1.5 text-sm",
+              index === active ? "bg-accent text-accent-foreground" : "hover:bg-muted",
+            )}
+          >
+            {renderOption(option)}
+          </div>
+        ))}
+        {action === undefined ? null : (
+          <div
+            id={actionId}
+            role="option"
+            tabIndex={-1}
+            aria-selected={actionActive}
+            onMouseDown={(event) => {
+              event.preventDefault();
+            }}
+            onClick={pickAction}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                pickAction();
+              }
+            }}
+            className={cn(
+              "flex min-h-9 cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium text-primary [&_svg]:size-4",
+              options.length > 0 && "mt-1 border-t",
+              actionActive ? "bg-accent text-accent-foreground" : "hover:bg-muted",
+            )}
+          >
+            {action.label}
+          </div>
         )}
       </div>
     </div>

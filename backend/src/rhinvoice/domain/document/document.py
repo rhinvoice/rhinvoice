@@ -27,6 +27,7 @@ from rhinvoice.domain.tax.supply import line_treatment
 from rhinvoice.domain.tax.treatment import TaxTreatment
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
     from datetime import datetime
     from decimal import Decimal
     from uuid import UUID
@@ -592,15 +593,8 @@ class Document:
             raise ValidationError(
                 "due_date", "the due date is before the document date", code="due_before_issue"
             )
-        if (
-            self.content.treatment is TaxTreatment.REVERSE_CHARGE
-            and snapshot.customer.vat_number is None
-        ):
-            raise ValidationError(
-                "treatment",
-                "reverse charge needs the customer's VAT number",
-                code="reverse_charge_needs_vat_number",
-            )
+        for problem in _reverse_charge_problems(self.content, snapshot.customer):
+            raise problem
         company = snapshot.company
         tax_date = self.content.service_to or self.content.service_from or issue_date
         rates = profile_of(company.country).rates_on(tax_date)
@@ -628,7 +622,8 @@ class Document:
         if self.type is DocumentType.INVOICE:
             profile_of(company.country).check_invoice(company, snapshot.customer, totals.total)
             if TaxTreatment.INTRA_COMMUNITY in content.treatments:
-                _check_intra_community(company, snapshot.customer)
+                for problem in _intra_community_problems(company, snapshot.customer):
+                    raise problem
         return replace(
             issuing,
             status=DocumentStatus.SENT if quote else DocumentStatus.ISSUED,
@@ -638,6 +633,21 @@ class Document:
             issued_totals=totals,
             events=self._with_event(now, EventKind.SENT if quote else EventKind.ISSUED, number),
         )
+
+    def issue_blockers(self, company: Company, customer: Customer, total: Money) -> tuple[str, ...]:
+        """Codes of the company and customer details that issuing would still ask for.
+
+        Issuing stops at the first; the editor lists them all, to be filled in before.
+        """
+        problems = list(_reverse_charge_problems(self.content, customer))
+        if self.type is DocumentType.INVOICE:
+            try:
+                profile_of(company.country).check_invoice(company, customer, total)
+            except ValidationError as error:
+                problems.append(error)
+            if TaxTreatment.INTRA_COMMUNITY in self.content.treatments:
+                problems.extend(_intra_community_problems(company, customer))
+        return tuple(problem.code for problem in problems)
 
     def accept(self, now: datetime) -> Document:
         self._require(DocumentStatus.SENT, action="accepted")
@@ -889,16 +899,27 @@ class Document:
         self._require(DocumentStatus.DRAFT, action="deleted")
 
 
-def _check_intra_community(company: Company, customer: Customer) -> None:
+def _reverse_charge_problems(
+    content: DraftContent, customer: Customer
+) -> Iterator[ValidationError]:
+    if content.treatment is TaxTreatment.REVERSE_CHARGE and customer.vat_number is None:
+        yield ValidationError(
+            "treatment",
+            "reverse charge needs the customer's VAT number",
+            code="reverse_charge_needs_vat_number",
+        )
+
+
+def _intra_community_problems(company: Company, customer: Customer) -> Iterator[ValidationError]:
     """§ 14a Abs. 3 UStG (DE), Art. 11 Abs. 2 UStG (AT): both VAT IDs on the invoice."""
     if company.vat_number is None:
-        raise ValidationError(
+        yield ValidationError(
             "company",
             "an intra-Community supply states the VAT ID of the company",
             code="company_vat_id_missing",
         )
     if customer.vat_number is None:
-        raise ValidationError(
+        yield ValidationError(
             "customer_id",
             "an intra-Community supply states the VAT ID of the customer",
             code="customer_vat_id_missing",

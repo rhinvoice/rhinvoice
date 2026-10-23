@@ -9,6 +9,8 @@ from rhinvoice.application.updates.handlers import (
     UpdateAction,
     UpdateHandlers,
     UpdateStatus,
+    build_name,
+    follows,
     is_newer,
 )
 from rhinvoice.application.updates.ports import (
@@ -46,15 +48,16 @@ class Installer:
     setup = "windows-x64"
     runtime = 1
 
-    def __init__(self, *failures: str) -> None:
+    def __init__(self, *failures: str, candidate: int | None = None) -> None:
         self.installed: list[Release] = []
         self.failures = set(failures)
+        self.candidate = candidate
 
     def install(self, release: Release) -> None:
         self.installed.append(release)
 
-    def failed(self, version: str) -> bool:
-        return version in self.failures
+    def failed(self, release: Release) -> bool:
+        return build_name(release.version, release.candidate) in self.failures
 
 
 def handlers(
@@ -79,6 +82,74 @@ def handlers(
 )
 def test_versions_are_compared_by_their_numbers(candidate: str, current: str, newer: bool) -> None:
     assert is_newer(candidate, current) is newer
+
+
+@pytest.mark.parametrize(
+    ("tag", "version", "follows_it"),
+    [
+        ("latest", "0.7.0", True),
+        ("0.7.0", "0.7.0", True),
+        ("0.7", "0.7.0", True),
+        ("0", "0.7.0", True),
+        ("0.6", "0.7.0", False),
+        ("0.6.2", "0.7.0", False),
+        ("0.7.0-rc.1", "0.7.0", False),
+        ("0.7.", "0.7.0", False),
+        ("", "0.7.0", False),
+    ],
+)
+def test_an_image_tag_follows_the_releases_it_leads_to(
+    tag: str, version: str, follows_it: bool
+) -> None:
+    assert follows(tag, version) is follows_it
+
+
+@pytest.mark.parametrize(
+    ("tag", "pinned"), [("latest", False), ("0.7", False), ("0.6.2", True), (None, None)]
+)
+def test_a_server_installation_is_told_whether_env_holds_it_back(
+    tag: str | None, pinned: bool | None
+) -> None:
+    updates = UpdateHandlers(Feed(RELEASE), "0.6.2", FixedClock(NOW), image_tag=tag)
+    updates.refresh()
+    assert updates.status().pinned is pinned
+
+
+def test_the_image_tag_only_matters_for_a_server_installation() -> None:
+    desktop = UpdateHandlers(
+        Feed(RELEASE), "0.6.2", FixedClock(NOW), Installer(), image_tag="0.6.2"
+    )
+    desktop.refresh()
+    current = UpdateHandlers(Feed(RELEASE), "0.7.0", FixedClock(NOW), image_tag="0.6.2")
+    current.refresh()
+    unchecked = UpdateHandlers(Feed(RELEASE), "0.6.2", FixedClock(NOW), image_tag="0.6.2")
+    assert desktop.status().pinned is None
+    assert current.status().pinned is None
+    assert unchecked.status().pinned is None
+
+
+@pytest.mark.parametrize(
+    ("version", "candidate", "current_candidate", "newer"),
+    [
+        ("0.7.0", 3, 2, True),
+        ("0.7.0", 2, 2, False),  # the release promoted from the running candidate
+        ("0.7.0", 1, 2, False),
+        ("0.7.0", 3, None, False),  # Rhinvoice, or a package that names no candidate
+        ("0.7.0", None, 2, False),
+        ("0.7.1", 1, 9, True),
+        ("0.6.9", 9, 1, False),
+    ],
+)
+def test_candidates_of_one_version_are_compared_where_both_are_known(
+    version: str, candidate: int | None, current_candidate: int | None, newer: bool
+) -> None:
+    """ADR 0035."""
+    assert is_newer(version, "0.7.0", candidate, current_candidate) is newer
+
+
+def test_a_build_is_named_with_its_candidate() -> None:
+    assert build_name("0.8.4", 3) == "0.8.4-rc.3"
+    assert build_name("0.8.4", None) == "0.8.4"
 
 
 def test_before_the_first_check_nothing_is_known() -> None:
@@ -151,6 +222,50 @@ def test_rhinvoice_beta_is_led_to_its_own_setup_only() -> None:
     updates = handlers(replace(RELEASE, runtime=2), installer=installer)
     updates.refresh()
     assert updates.status().setup_url is None
+
+
+def test_rhinvoice_beta_is_offered_a_later_candidate_of_its_version() -> None:
+    """ADR 0035: 0.7.0-rc.3 after 0.7.0-rc.2, installed like any update."""
+    installer = Installer(candidate=2)
+    updates = handlers(replace(RELEASE, candidate=3), installer=installer, current="0.7.0")
+    updates.refresh()
+    status = updates.status()
+    assert (status.action, status.current, status.latest) == (
+        UpdateAction.INSTALL,
+        "0.7.0-rc.2",
+        "0.7.0-rc.3",
+    )
+    updates.install()
+    assert installer.installed == [replace(RELEASE, candidate=3)]
+
+
+def test_the_release_of_the_running_candidate_is_not_offered_again() -> None:
+    """The promoted release carries the candidate it was promoted from: the same files."""
+    updates = handlers(
+        replace(RELEASE, candidate=2), installer=Installer(candidate=2), current="0.7.0"
+    )
+    updates.refresh()
+    assert updates.status().action is UpdateAction.NONE
+    with raises_exactly(ConflictError, "there is no update to install here"):
+        updates.install()
+
+
+def test_rhinvoice_shows_versions_without_candidates() -> None:
+    updates = handlers(replace(RELEASE, candidate=3), installer=Installer(), current="0.6.2")
+    updates.refresh()
+    status = updates.status()
+    assert (status.action, status.current, status.latest) == (
+        UpdateAction.INSTALL,
+        "0.6.2",
+        "0.7.0",
+    )
+
+
+def test_a_candidate_that_was_taken_back_is_not_offered_again() -> None:
+    installer = Installer("0.7.0-rc.3", candidate=2)
+    updates = handlers(replace(RELEASE, candidate=3), installer=installer, current="0.7.0")
+    updates.refresh()
+    assert (updates.status().action, updates.status().failed) == (UpdateAction.NONE, True)
 
 
 def test_the_running_version_or_an_older_one_offers_nothing() -> None:

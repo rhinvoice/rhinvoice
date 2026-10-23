@@ -30,9 +30,10 @@ describe("decimal fields", () => {
     expect(message(f.decimal({ max: 100, decimals: 2 }), "150")).toBe(
       "Bitte eine Zahl von 0 bis 100 eingeben.",
     );
-    expect(message(f.decimal({ max: 1_234_567.5, decimals: 2 }), "2000000")).toBe(
-      "Bitte eine Zahl von 0 bis 1’234’567.5 eingeben.",
-    );
+    // ICU versions group de-CH digits with ’ or ', so compare with one of them.
+    expect(
+      message(f.decimal({ max: 1_234_567.5, decimals: 2 }), "2000000")?.replace(/\u2019/g, "'"),
+    ).toBe("Bitte eine Zahl von 0 bis 1'234'567.5 eingeben.");
   });
 
   it("gives an example in the locale's format when the input is no number", () => {

@@ -138,9 +138,13 @@ describe("document form", () => {
   it("allows negative quantities but not negative prices", () => {
     const line = { ...emptyLine(), key: "x", description: "Gutschrift" };
     expect(issues(valid({ lines: [{ ...line, quantity: "-2", unit_price: "10" }] }))).toEqual({});
-    expect(issues(valid({ lines: [{ ...line, unit_price: "-10" }] }))).toEqual({
-      "lines.0.unit_price": "Bitte eine Zahl von 0 bis 99’999’999.9999 eingeben.",
-    });
+    // ICU versions group de-CH digits with ’ or ', so compare with one of them.
+    expect(
+      issues(valid({ lines: [{ ...line, unit_price: "-10" }] }))["lines.0.unit_price"]?.replace(
+        /\u2019/g,
+        "'",
+      ),
+    ).toBe("Bitte eine Zahl von 0 bis 99'999'999.9999 eingeben.");
     expect(issues(valid({ lines: [{ ...line, quantity: "1.23456" }] }))).toEqual({
       "lines.0.quantity": "Höchstens 4 Nachkommastellen.",
     });

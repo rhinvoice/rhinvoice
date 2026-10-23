@@ -36,7 +36,7 @@ test("article prices are validated", async ({ page }) => {
   await page.getByLabel("Bezeichnung").fill("Kabel");
   await page.getByLabel("Preis in CHF").fill("abc");
   await page.getByLabel("Preis in CHF").blur();
-  await expect(page.getByText("Bitte geben Sie eine Zahl ein, z. B. 150.00.")).toBeVisible();
+  await expect(page.getByText("Bitte geben Sie eine Zahl ein, z. B. 12.50.")).toBeVisible();
   await page.getByLabel("Preis in CHF").fill("1.23456");
   await page.getByLabel("Preis in CHF").blur();
   await expect(page.getByText("Höchstens 4 Nachkommastellen.")).toBeVisible();

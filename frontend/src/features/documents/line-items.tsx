@@ -33,6 +33,7 @@ import {
 import {
   emptyLine,
   fieldId,
+  isBlankLine,
   lineFromArticle,
   lineRates,
   MAX_LINES,
@@ -98,8 +99,11 @@ export function LineItems({
     readonly line: LineFormValues | null;
   } | null>(null);
   // A line can also be opened from outside, e.g. by a click on the paper preview.
+  // A blank one (the first line of a new document) counts as new: "Discard" removes
+  // it instead of restoring an empty line that then fails its checks and stays open.
   if (editing !== null && snapshot?.index !== editing) {
-    setSnapshot({ index: editing, line: getValues(`lines.${editing}`) });
+    const line = getValues(`lines.${editing}`);
+    setSnapshot({ index: editing, line: isBlankLine(line) ? null : line });
   }
   const original = snapshot?.index === editing ? snapshot.line : null;
 
@@ -644,7 +648,17 @@ function LineEditor({
           <CheckIcon aria-hidden="true" />
           {t("documents.applyLine")}
         </Button>
-        <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          // Keeps the focus in the field: leaving it would show its error first, which
+          // moves this button away from under the pointer before the click lands.
+          onMouseDown={(event) => {
+            event.preventDefault();
+          }}
+          onClick={onCancel}
+        >
           {isNew ? t("documents.discardLine") : t("common.cancel")}
         </Button>
         <span className="ml-auto flex gap-1">

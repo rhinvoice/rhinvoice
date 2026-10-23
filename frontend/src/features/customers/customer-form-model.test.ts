@@ -46,7 +46,7 @@ describe("customer form", () => {
       "Die Prüfziffer der UID stimmt nicht – bitte prüfen.",
     );
     expect(issues({ ...base, default_discount: "150" })["default_discount"]).toBe(
-      "Bitte geben Sie eine Zahl ein, z. B. 150.00.",
+      "Bitte eine Zahl von 0 bis 100 eingeben.",
     );
     expect(issues({ ...base, default_discount: "2.555" })["default_discount"]).toBe(
       "Höchstens 2 Nachkommastellen.",

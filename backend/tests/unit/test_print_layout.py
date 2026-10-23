@@ -2,11 +2,13 @@
 
 import re
 from dataclasses import replace
+from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
 
 from rhinvoice.application.company.handlers import CompanyHandlers
+from rhinvoice.application.document.printing import sample_customer
 from rhinvoice.application.errors import ConflictError
 from rhinvoice.domain.company.print_layout import (
     FooterAccounts,
@@ -17,6 +19,7 @@ from rhinvoice.domain.company.print_layout import (
     PrintTemplate,
 )
 from rhinvoice.domain.document.document import DocumentType
+from rhinvoice.domain.shared.country import Country
 from rhinvoice.domain.shared.email import EmailAddress
 from rhinvoice.domain.shared.iban import Bic, Iban
 from rhinvoice.domain.shared.money import Currency
@@ -170,10 +173,49 @@ def test_the_preview_shows_the_latest_invoice(store: Store) -> None:
 def test_the_preview_without_invoices_uses_a_sample(store: Store) -> None:
     html = printing_for(store).layout_preview_html(PrintLayout())
     assert "Beratung" in html
+    assert "Muster AG" not in html
+
+
+def test_the_preview_before_the_first_customer_uses_a_made_up_one(store: Store) -> None:
     store.customers.clear()
-    with raises_exactly(ConflictError, "the preview needs an invoice or a customer") as caught:
+    html = printing_for(store).layout_preview_html(PrintLayout())
+    assert "Beratung" in html
+    assert "Muster AG" in html
+    assert "8000 Zürich" in html
+    # Shown only: neither the customer nor the invoice is saved.
+    assert store.customers == {}
+    assert store.documents == {}
+
+
+def test_the_preview_needs_the_company(store: Store) -> None:
+    store.customers.clear()
+    store.company = None
+    with raises_exactly(ConflictError, "set up the company before the preview") as caught:
         printing_for(store).layout_preview_html(PrintLayout())
-    assert caught.value.code == "preview_needs_customer"
+    assert caught.value.code == "company_not_set_up"
+
+
+@pytest.mark.parametrize(
+    ("country", "name", "line"),
+    [
+        (Country.CH, "Muster AG", "Musterstrasse 1"),
+        (Country.LI, "Muster AG", "9490 Vaduz"),
+        (Country.DE, "Muster GmbH", "Musterstraße 1"),
+        (Country.AT, "Muster GmbH", "1010 Wien"),
+    ],
+)
+def test_the_made_up_customer_lives_in_the_company_country(
+    country: Country, name: str, line: str
+) -> None:
+    customer = sample_customer(country, datetime(2026, 10, 23, tzinfo=UTC))
+    assert customer.display_name == name
+    assert customer.address.country.value == country.value
+    assert line in " ".join(
+        (
+            f"{customer.address.street} {customer.address.house_number}",
+            f"{customer.address.postal_code} {customer.address.city}",
+        )
+    )
 
 
 def test_issued_documents_are_rendered_with_every_account(store: Store) -> None:

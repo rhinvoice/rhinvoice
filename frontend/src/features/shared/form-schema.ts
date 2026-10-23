@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { formatDecimalInput, formatNumber } from "@/lib/format";
 import { parseDecimal } from "@/lib/format/parse-decimal";
 import type { T } from "@/lib/i18n";
 import type { Locale } from "@/lib/locale";
@@ -63,13 +64,22 @@ export function fields(t: T, locale: Locale) {
             return;
           }
           const parsed = parseDecimal(value, locale);
+          if (parsed === null) {
+            const example = formatDecimalInput("12.5", locale);
+            context.addIssue({ code: "custom", message: t("validation.number", { example }) });
+            return;
+          }
           const negativeAllowed = options.signed === true;
           if (
-            parsed === null ||
             (parsed.startsWith("-") && !negativeAllowed) ||
             Math.abs(Number(parsed)) > options.max
           ) {
-            context.addIssue({ code: "custom", message: t("validation.number") });
+            // Name the allowed range: "-12" or "150" in a discount is a number, just not one that fits.
+            const max = formatNumber(String(options.max), locale, options.decimals);
+            const min = negativeAllowed
+              ? formatNumber(String(-options.max), locale, options.decimals)
+              : "0";
+            context.addIssue({ code: "custom", message: t("validation.range", { min, max }) });
             return;
           }
           const fraction = parsed.split(".")[1] ?? "";

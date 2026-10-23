@@ -148,6 +148,13 @@ export function emptyLine(kind: "item" | "text" = "item"): LineFormValues {
   };
 }
 
+/** Whether a line is still exactly as added: nothing typed, nothing picked. */
+export function isBlankLine(line: LineFormValues): boolean {
+  return (
+    JSON.stringify({ ...line, key: "" }) === JSON.stringify({ ...emptyLine(line.kind), key: "" })
+  );
+}
+
 export function emptyDocument(company: Company): DocumentFormValues {
   return {
     customer_id: "",

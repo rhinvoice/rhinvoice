@@ -249,11 +249,17 @@ class DocumentHandlers:
             uow.commit()
         return view
 
-    def preview(self, document_type: DocumentType, draft: DraftInput) -> DocumentPreview:
-        """Calculate a draft without saving it, for live totals in the editor."""
+    def preview(
+        self, document_type: DocumentType, draft: DraftInput, *, customer: Customer | None = None
+    ) -> DocumentPreview:
+        """Calculate a draft without saving it, for live totals in the editor.
+
+        ``customer`` stands in for one that is not saved (the layout preview's sample).
+        """
         with self.uow() as uow:
             company = self._company(uow)
-            customer = self._customer(uow, draft.customer_id)
+            if customer is None:
+                customer = self._customer(uow, draft.customer_id)
             content = self._content(company, customer, draft, previous=None)
             document = Document.new_draft(new_id(), document_type, content, self.clock.now())
             rates = profile_of(company.country).rates_on(content.tax_date or self.clock.today())
@@ -265,7 +271,7 @@ class DocumentHandlers:
                     continue  # e.g. no special rate in Germany
                 available[category] = rate if content.treatment.charges_vat else Decimal(0)
             return DocumentPreview(
-                view=self._view(uow, document),
+                view=replace(self._view(uow, document), customer=customer),
                 rates=available,
                 # A treatment chosen by hand needs no hint about the automatic one.
                 customer_vat_missing=draft.treatment_override is None

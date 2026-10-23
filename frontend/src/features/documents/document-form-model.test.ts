@@ -17,6 +17,7 @@ import {
   ownTreatment,
   goodsHintKey,
   hasSupply,
+  isBlankLine,
   lineFromArticle,
   MAX_LINES,
   type DocumentFormValues,
@@ -111,6 +112,14 @@ describe("document form", () => {
     expect(emptyLine().key).not.toBe(emptyLine().key);
   });
 
+  it("tells a line still as added from one with content", () => {
+    expect(isBlankLine(emptyLine())).toBe(true);
+    expect(isBlankLine({ ...emptyLine("text"), key: "other" })).toBe(true);
+    expect(isBlankLine({ ...emptyLine(), description: "Beratung" })).toBe(false);
+    expect(isBlankLine({ ...emptyLine(), quantity: "2" })).toBe(false);
+    expect(isBlankLine({ ...emptyLine(), article_id: "a" })).toBe(false);
+  });
+
   it("accepts a valid draft", () => {
     expect(issues(valid())).toEqual({});
   });
@@ -129,9 +138,13 @@ describe("document form", () => {
   it("allows negative quantities but not negative prices", () => {
     const line = { ...emptyLine(), key: "x", description: "Gutschrift" };
     expect(issues(valid({ lines: [{ ...line, quantity: "-2", unit_price: "10" }] }))).toEqual({});
-    expect(issues(valid({ lines: [{ ...line, unit_price: "-10" }] }))).toEqual({
-      "lines.0.unit_price": "Bitte geben Sie eine Zahl ein, z. B. 150.00.",
-    });
+    // ICU versions group de-CH digits with ’ or ', so compare with one of them.
+    expect(
+      issues(valid({ lines: [{ ...line, unit_price: "-10" }] }))["lines.0.unit_price"]?.replace(
+        /\u2019/g,
+        "'",
+      ),
+    ).toBe("Bitte eine Zahl von 0 bis 99'999'999.9999 eingeben.");
     expect(issues(valid({ lines: [{ ...line, quantity: "1.23456" }] }))).toEqual({
       "lines.0.quantity": "Höchstens 4 Nachkommastellen.",
     });

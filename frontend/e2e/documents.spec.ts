@@ -550,3 +550,19 @@ test("German customers: Leitweg-ID, reference hint and XRechnung warning before 
   await expect(confirm.getByText("E-Mail beim Kunden")).toBeVisible();
   await expect(confirm.getByText("Leitweg-ID beim Kunden oder Referenz der Rechnung")).toBeHidden();
 });
+
+test("cancelling the first line of a new invoice discards it without errors", async ({ page }) => {
+  await openApp(page, "/invoices/new", "Neue Rechnung");
+  // The first line opens blank: "Discard" removes it instead of checking it.
+  await page.locator("#lines-0-description").focus();
+  await page.getByRole("button", { name: "Verwerfen" }).click();
+  await expect(page.locator("#lines-0-description")).toHaveCount(0);
+  await expect(page.getByText("Bitte ausfüllen.")).toHaveCount(0);
+
+  // A line added by hand behaves the same, also when the click leaves an empty field.
+  await page.getByRole("button", { name: "Position hinzufügen" }).click();
+  await expect(page.locator("#lines-0-description")).toBeFocused();
+  await page.getByRole("button", { name: "Verwerfen" }).click();
+  await expect(page.locator("#lines-0-description")).toHaveCount(0);
+  await expect(page.getByText("Bitte ausfüllen.")).toHaveCount(0);
+});

@@ -79,6 +79,6 @@ def preview_print_layout(
 ) -> HTMLResponse:
     """Render the latest invoice (or a sample one) with this layout, without saving it.
 
-    409 preview_needs_customer when there is neither an invoice nor a customer.
+    409 company_not_set_up before the company is set up.
     """
     return HTMLResponse(container.printing.layout_preview_html(body.to_domain()))

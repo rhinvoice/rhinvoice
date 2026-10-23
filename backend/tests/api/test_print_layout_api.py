@@ -29,7 +29,7 @@ def test_layout_and_preview(user_client: TestClient) -> None:
     )
     refused = user_client.post("/api/print-layout/preview", json=DEFAULT)
     assert refused.status_code == 409
-    assert refused.json()["error"]["code"] == "preview_needs_customer"
+    assert refused.json()["error"]["code"] == "company_not_set_up"
     user_client.put(
         "/api/company",
         json={

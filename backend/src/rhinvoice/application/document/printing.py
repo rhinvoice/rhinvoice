@@ -25,11 +25,15 @@ from rhinvoice.application.document.handlers import DraftInput, LineInput
 from rhinvoice.application.document.ports import DocumentQuery
 from rhinvoice.application.errors import ConflictError, NotFoundError, UnavailableError
 from rhinvoice.domain.company.print_layout import PrintLayout
+from rhinvoice.domain.customer.customer import Customer, CustomerKind
 from rhinvoice.domain.document.document import DocumentOrigin, DocumentType, default_due_date
 from rhinvoice.domain.document.lines import LineKind
+from rhinvoice.domain.shared.address import Address
+from rhinvoice.domain.shared.country import Country, CountryCode
+from rhinvoice.domain.shared.identifier import new_id
 
 if TYPE_CHECKING:
-    from datetime import date
+    from datetime import date, datetime
     from uuid import UUID
 
     from rhinvoice.application.document.handlers import DocumentHandlers, DocumentView
@@ -37,7 +41,6 @@ if TYPE_CHECKING:
     from rhinvoice.domain.company.bank_account import BankAccount
     from rhinvoice.domain.company.company import Company
     from rhinvoice.domain.company.logo import Logo
-    from rhinvoice.domain.customer.customer import Customer
     from rhinvoice.domain.document.document import Document
     from rhinvoice.domain.dunning.reminder import Reminder
     from rhinvoice.domain.shared.clock import Clock
@@ -48,6 +51,34 @@ _ONE = PageRequest(limit=1)
 _INVOICES = frozenset({DocumentType.INVOICE})
 SAMPLE_LINE = LineInput(kind=LineKind.ITEM, description="Beratung", quantity="2", unit_price="150")
 """The position of the sample invoice when there is none to show the layout with."""
+
+
+_SAMPLE_ADDRESSES = {
+    Country.CH: ("Musterstrasse", "8000", "Zürich"),
+    Country.LI: ("Musterstrasse", "9490", "Vaduz"),
+    Country.DE: ("Musterstraße", "10115", "Berlin"),
+    Country.AT: ("Musterstraße", "1010", "Wien"),
+}
+_SAMPLE_FORMS = {Country.CH: "AG", Country.LI: "AG", Country.DE: "GmbH", Country.AT: "GmbH"}
+
+
+def sample_customer(country: Country, now: datetime) -> Customer:
+    """Make up a customer in the company's country for the layout preview; never saved."""
+    street, postal_code, city = _SAMPLE_ADDRESSES[country]
+    return Customer(
+        id=new_id(),
+        number="0",
+        kind=CustomerKind.COMPANY,
+        company_name=f"Muster {_SAMPLE_FORMS[country]}",
+        address=Address(
+            street=street,
+            house_number="1",
+            postal_code=postal_code,
+            city=city,
+            country=CountryCode(country.value),
+        ),
+        created_at=now,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,7 +198,8 @@ class PrintHandlers:
     def layout_preview_html(self, layout: PrintLayout) -> str:
         """Render the latest invoice with a layout that is not saved yet.
 
-        Without invoices a sample invoice to the first customer is shown.
+        Without invoices a sample invoice to the first customer is shown, or to a
+        made-up one before there is any.
         """
         with self.uow() as uow:
             invoices = uow.documents.search(
@@ -179,15 +211,19 @@ class PrintHandlers:
                 )
             ).items
             customers = uow.customers.search(CustomerQuery(page=_ONE)).items
+            company = uow.company.get()
+        now = self.clock.now()
         if invoices:
             view = self.documents.get(invoices[0].id)
-        elif customers:
-            draft = DraftInput(customer_id=customers[0].id, lines=(SAMPLE_LINE,))
-            view = self.documents.preview(DocumentType.INVOICE, draft).view
         else:
-            raise ConflictError(
-                "the preview needs an invoice or a customer", code="preview_needs_customer"
-            )
+            if company is None:
+                raise ConflictError(
+                    "set up the company before the preview", code="company_not_set_up"
+                )
+            # Before the first customer a made-up one, so the layout shows from the start.
+            customer = customers[0] if customers else sample_customer(company.country, now)
+            draft = DraftInput(customer_id=customer.id, lines=(SAMPLE_LINE,))
+            view = self.documents.preview(DocumentType.INVOICE, draft, customer=customer).view
         return self.renderer.html(replace(self.model(view), layout=layout))
 
     def reminder(self, reminder_id: UUID) -> ReminderPrint:

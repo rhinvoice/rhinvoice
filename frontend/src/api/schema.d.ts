@@ -1462,7 +1462,7 @@ export interface paths {
          * Preview Print Layout
          * @description Render the latest invoice (or a sample one) with this layout, without saving it.
          *
-         *     409 preview_needs_customer when there is neither an invoice nor a customer.
+         *     409 company_not_set_up before the company is set up.
          */
         post: operations["print-layout_preview_print_layout"];
         delete?: never;

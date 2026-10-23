@@ -7,6 +7,17 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [0.8.4] – 2026-10-19
 
+### Added
+- A first invoice no longer ends in a dead end. A new invoice says on top when there is no
+  customer yet; the customer search offers "Create “…” as a new customer" when it finds
+  nothing. The full customer form opens in a panel beside the invoice, and the saved customer
+  is chosen. What issuing still needs (a bank account in the invoice's currency, the company's
+  VAT number or tax number, the customer's VAT number) is listed on top of the editor while
+  writing, with buttons that open the form for it; the draft saves meanwhile, and *Issue* leads
+  there first. The draft preview of the API names these as `issue_blockers`.
+- *Save as article* beside *Apply* keeps a typed position as an article, so the line search
+  finds it next time.
+
 ### Changed
 - The update notice of a Docker installation that follows `latest` shows only the command
   `docker compose pull && docker compose up -d`; the line for `.env` appears only when `.env`

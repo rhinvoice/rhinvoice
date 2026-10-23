@@ -313,7 +313,11 @@ export function BankAccountDialog({
             render={({ field }) => (
               <div className="flex items-center justify-between gap-4">
                 <Label htmlFor="bank-is_default">{t("bank.isDefault")}</Label>
-                <Switch id="bank-is_default" checked={field.value} onCheckedChange={field.onChange} />
+                <Switch
+                  id="bank-is_default"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
               </div>
             )}
           />

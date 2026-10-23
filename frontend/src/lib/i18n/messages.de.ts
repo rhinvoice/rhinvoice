@@ -351,7 +351,8 @@ export const de = {
   "address.city": "Ort",
   "address.country": "Land",
   "validation.maxLength": "Höchstens {max} Zeichen.",
-  "validation.number": "Bitte geben Sie eine Zahl ein, z. B. 150.00.",
+  "validation.number": "Bitte geben Sie eine Zahl ein, z. B. {example}.",
+  "validation.range": "Bitte eine Zahl von {min} bis {max} eingeben.",
   "validation.decimals": "Höchstens {max} Nachkommastellen.",
   "validation.percent": "Bitte einen Wert zwischen 0 und 100 eingeben.",
   "validation.days": "Bitte eine ganze Zahl von 0 bis 365 eingeben.",
@@ -1439,7 +1440,6 @@ export const de = {
   "printLayout.issuedStay": "Gilt für neue PDFs. Ausgestellte Dokumente behalten ihr PDF.",
   "printLayout.preview": "Vorschau der Druckvorlage",
   "printLayout.previewHint": "Vorschau mit der neuesten Rechnung.",
-  "error.preview_needs_customer": "Für die Vorschau braucht es eine Rechnung oder einen Kunden.",
   "settings.tabDunning": "Mahnwesen",
   "dunning.title": "Mahnwesen",
   "dunning.description":

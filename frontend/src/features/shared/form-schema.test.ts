@@ -20,10 +20,28 @@ describe("decimal fields", () => {
   it("allows negative values only when signed", () => {
     const signed = f.decimal({ max: 100, decimals: 2, signed: true });
     expect(message(signed, "-100")).toBeUndefined();
-    expect(message(signed, "-100.01")).toBe("Bitte geben Sie eine Zahl ein, z. B. 150.00.");
-    expect(message(f.decimal({ max: 100, decimals: 2 }), "-1")).toBe(
-      "Bitte geben Sie eine Zahl ein, z. B. 150.00.",
+    expect(message(signed, "-100.01")).toBe("Bitte eine Zahl von -100 bis 100 eingeben.");
+    expect(message(f.decimal({ max: 100, decimals: 2 }), "-12")).toBe(
+      "Bitte eine Zahl von 0 bis 100 eingeben.",
     );
+  });
+
+  it("names the range when a number is too large", () => {
+    expect(message(f.decimal({ max: 100, decimals: 2 }), "150")).toBe(
+      "Bitte eine Zahl von 0 bis 100 eingeben.",
+    );
+    expect(message(f.decimal({ max: 1_234_567.5, decimals: 2 }), "2000000")).toBe(
+      "Bitte eine Zahl von 0 bis 1’234’567.5 eingeben.",
+    );
+  });
+
+  it("gives an example in the locale's format when the input is no number", () => {
+    expect(message(f.decimal({ max: 100, decimals: 2 }), "abc")).toBe(
+      "Bitte geben Sie eine Zahl ein, z. B. 12.50.",
+    );
+    const de = fields(translatorFor("de-DE"), "de-DE");
+    const result = de.decimal({ max: 100, decimals: 2 }).safeParse("abc");
+    expect(result.error?.issues[0]?.message).toBe("Bitte geben Sie eine Zahl ein, z. B. 12,50.");
   });
 
   it("converts to the API format", () => {

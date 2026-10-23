@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { ArchiveIcon, PlusIcon, SearchIcon, UsersIcon, UploadIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/table";
 import { useDebouncedValue } from "@/components/use-debounced-value";
 import { useDocumentTitle } from "@/components/use-document-title";
-import { usePageShortcut } from "@/components/use-key-shortcuts";
 import { customerListQuery, type CustomerSort } from "@/features/customers/api";
 import { ariaSort, PAGE_SIZE, toggleSort, type ListSearch } from "@/features/shared/list-search";
 import { Pagination } from "@/features/shared/pagination";
@@ -41,14 +40,12 @@ interface CustomerListPageProps {
 export function CustomerListPage({ search, onSearchChange }: CustomerListPageProps) {
   const { t, locale } = useI18n();
   useDocumentTitle(t("app.pageTitle", { title: t("customers.title") }));
-  const navigate = useNavigate();
   const errorMessage = useErrorMessage();
   const [term, setTerm] = useState(search.q);
   const debounced = useDebouncedValue(term, 250);
   useEffect(() => {
     if (debounced !== search.q) onSearchChange({ q: debounced, page: 1 });
   }, [debounced, search.q, onSearchChange]);
-  usePageShortcut("c", () => void navigate({ to: "/customers/new" }));
 
   const offset = (search.page - 1) * PAGE_SIZE;
   const query = useQuery(

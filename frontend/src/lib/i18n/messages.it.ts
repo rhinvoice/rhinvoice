@@ -614,6 +614,9 @@ export const it: Catalog<MessageKey> = {
   "numbering.problem.year":
     "Con l’azzeramento annuale lo schema richiede {YYYY} o {YY}, altrimenti i numeri si ripetono.",
   "shortcuts.newQuote": "Nuova offerta",
+  "shortcuts.newCustomer": "Nuovo cliente",
+  "shortcuts.newArticle": "Nuovo articolo",
+  "shortcuts.or": "o",
   "shortcuts.undo": "Annulla l’ultima azione (finché il messaggio è visibile)",
   "shortcuts.payment": "Registra pagamento (nel documento)",
   "shortcuts.moveLineUp": "Sposta la posizione in alto (nell’editor)",

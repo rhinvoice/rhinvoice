@@ -5,6 +5,15 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.8.5] – 2026-10-24
+
+### Geändert
+- Jede Sache hat einen Buchstaben auf der Tastatur, in jeder Sprache derselbe: allein legt er
+  sie neu an, nach *G* öffnet er die Liste. **I** neue Rechnung (**N** geht weiter), **Q** neues
+  Angebot, **C** neuer Kunde, **A** neuer Artikel; *G Q* führt zu den Angeboten (*G O* geht
+  weiter). **C** und **A** gingen bisher nur in der Kunden- bzw. Artikelliste; die
+  Befehlspalette zeigt sie jetzt an.
+
 ## [0.8.4] – 2026-10-19
 
 ### Neu

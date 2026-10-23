@@ -86,6 +86,33 @@ test.describe("app shell", () => {
     await expect(page).toHaveURL(/\/invoices\/new$/);
   });
 
+  test("gives each thing one letter: alone it creates one, after G it opens the list", async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, "keyboard shortcuts are a desktop feature");
+    const things = [
+      ["i", "/invoices"],
+      ["q", "/quotes"],
+      ["c", "/customers"],
+      ["a", "/articles"],
+    ] as const;
+    for (const [key, list] of things) {
+      await openApp(page, "/", "Übersicht");
+      await page.keyboard.press(key);
+      await expect(page).toHaveURL(new RegExp(`${list}/new$`));
+      await openApp(page, "/", "Übersicht");
+      await page.keyboard.press("g");
+      await page.keyboard.press(key);
+      await expect(page).toHaveURL(new RegExp(`${list}$`));
+    }
+    // The earlier key for the quotes stays.
+    await openApp(page, "/", "Übersicht");
+    await page.keyboard.press("g");
+    await page.keyboard.press("o");
+    await expect(page).toHaveURL(/\/quotes$/);
+  });
+
   test("switches the colour scheme", async ({ page }) => {
     await openApp(page, "/", "Übersicht");
     await page.getByRole("button", { name: "Farbschema" }).click();

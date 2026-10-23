@@ -25,7 +25,7 @@ export function useSaveShortcut(onSave: () => void, enabled = true): void {
 }
 
 /**
- * A page specific single-key shortcut (e.g. "c" for a new customer). Respects
+ * A page specific single-key shortcut (e.g. "p" for a payment). Respects
  * the user's preference and never fires while typing (WCAG 2.1.4).
  */
 export function usePageShortcut(key: string, handler: () => void): void {

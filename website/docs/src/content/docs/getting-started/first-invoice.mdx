@@ -9,10 +9,11 @@ faq:
   - q: How do I record a partial payment?
     a: Open the invoice and choose Record payment (key P). Enter the payment date and the amount received; the invoice then shows as partially paid with the open amount.
   - q: Is there a keyboard shortcut for a new invoice?
-    a: Yes. Press N anywhere outside an input field. Cmd+Enter (Ctrl+Enter on Windows and Linux) saves, and ? shows all shortcuts.
+    a: Yes. Press I or N anywhere outside an input field. Cmd+Enter (Ctrl+Enter on Windows and Linux) saves, and ? shows all shortcuts.
 ---
 
 import Faq from "../../../components/Faq.astro";
+import Since from "../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 You write an invoice in Rhinvoice in the editor: choose the customer, add the lines, check the **live preview** and click *Issue*. Only then does the invoice get its number and become unchangeable. After that you open the PDF, send it, and mark the invoice as paid when the money arrives.
@@ -79,17 +80,19 @@ In the invoice list, *Paid* in a row marks a single invoice as paid; several inv
 
 | Key | Action |
 |---|---|
-| **N** | New invoice |
+| **I** (or **N**) | New invoice |
 | **Q** | New quote |
+| **C** | New customer |
+| **A** | New article |
 | **/** | Focus search |
 | **⌘K** / **Ctrl+K** | Open command palette |
 | **⌘↵** / **Ctrl+Enter** | Save |
 | **P** | Record a payment (in a document) |
 | **⌘Z** / **Ctrl+Z** | Undo the last action (while its message is visible) |
-| **G** then **I** | Go to invoices |
+| **G** then **I** / **Q** / **C** / **A** | Go to invoices / quotes / customers / articles |
 | **?** | Show all shortcuts |
 
-Single-key shortcuts only work while no input field is focused.
+Single-key shortcuts only work while no input field is focused. Each thing has one letter: alone it creates one, after **G** it opens the list. The letters come from English (Invoice, Quote, Customer, Article) and are the same in every language. <Since version="0.8.5" />
 
 ## Questions
 

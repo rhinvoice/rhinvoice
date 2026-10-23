@@ -165,6 +165,8 @@ export function AppShell({ user }: { readonly user: User }) {
       },
       newInvoice,
       newQuote: () => void navigate({ to: "/quotes/new" }),
+      newCustomer: () => void navigate({ to: "/customers/new" }),
+      newArticle: () => void navigate({ to: "/articles/new" }),
       undo: () => undoRegistry.trigger(),
       focusSearch: () => {
         const search = document.querySelector<HTMLElement>("[data-page-search]");
@@ -175,7 +177,9 @@ export function AppShell({ user }: { readonly user: User }) {
         }
       },
       goTo: (key) => {
-        const item = ALL_NAV.find((candidate) => candidate.goKey === key);
+        const item = ALL_NAV.find(
+          (candidate) => candidate.goKey === key || candidate.goAliases?.includes(key) === true,
+        );
         if (item === undefined) return false;
         void navigate({ to: item.to });
         return true;

@@ -54,8 +54,10 @@ export function NewBankAccountDialog({
 
 /** The company's tax IDs and VAT registration, which invoices state. */
 export function CompanyTaxDialog({ onClose }: { readonly onClose: () => void }) {
-  const company = useQuery(companyQuery).data;
-  if (company === undefined || company === null) return null;
+  // The whole company is saved: start from its current state, not from the cache.
+  const query = useQuery({ ...companyQuery, refetchOnMount: "always" });
+  const company = query.data;
+  if (!query.isFetchedAfterMount || company === undefined || company === null) return null;
   return <CompanyTaxForm company={company} onClose={onClose} />;
 }
 

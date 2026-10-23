@@ -18,6 +18,16 @@ before 1.0, minor versions may contain breaking changes.
   example `v0.8.4-rc.3` after `v0.8.4-rc.2`, and shows the candidate beside the version.
   It is installed and, if it does not start, taken back like any update (ADR 0035).
   Installations of Rhinvoice Beta need a setup of 0.8.4 or later once.
+- In a new invoice, "Discard" on the empty first position removes it. Before, it checked the
+  empty position, which then stayed open with "Please fill in this field."
+- Number fields name the allowed range when a value does not fit, for example "Please enter a
+  number from 0 to 100." for a discount of -12 or 150. The example in the message for input
+  that is no number follows the number format of the installation.
+- The preview in Settings › Print template shows a sample invoice to a made-up customer before
+  the first customer exists, instead of an error.
+- Opening a form no longer leaves a blocked script and the note "'script-src' was not
+  explicitly set" in the browser console: the form checks no longer try `eval`, which the
+  Content-Security-Policy forbids.
 
 ## [0.8.3] – 2026-10-18
 

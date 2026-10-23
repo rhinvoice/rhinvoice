@@ -20,6 +20,16 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   neben der Version an. Er wird wie jedes Update installiert und, wenn er nicht startet,
   zurückgenommen (ADR 0035). Installationen von Rhinvoice Beta brauchen dafür einmal ein
   Setup ab 0.8.4.
+- In einer neuen Rechnung entfernt «Verwerfen» die leere erste Position. Bisher wurde sie
+  geprüft und blieb mit «Bitte ausfüllen.» offen.
+- Zahlenfelder nennen den erlaubten Bereich, wenn ein Wert nicht passt, zum Beispiel «Bitte
+  eine Zahl von 0 bis 100 eingeben.» bei einem Rabatt von −12 oder 150. Das Beispiel in der
+  Meldung für eine Eingabe, die keine Zahl ist, folgt dem Zahlenformat der Installation.
+- Die Vorschau unter Einstellungen › Druckvorlage zeigt vor dem ersten Kunden eine
+  Beispielrechnung an einen erfundenen Kunden statt einer Fehlermeldung.
+- Beim Öffnen eines Formulars meldet die Browser-Konsole kein blockiertes Skript mehr, auch
+  nicht den Hinweis «'script-src' was not explicitly set»: Die Formularprüfung versucht kein
+  `eval` mehr, das die Content-Security-Policy verbietet.
 
 ## [0.8.3] – 2026-10-18
 

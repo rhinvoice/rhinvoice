@@ -57,7 +57,7 @@ def interpreter(install: Path) -> tuple[Path, dict[str, str]]:
         "PYTHONHOME": str(install / "python"),
         "PYTHONPYCACHEPREFIX": str(cache),
     }
-    return install.parent / "MacOS" / "python3", environment
+    return install.parent / "MacOS" / f"{edition_name(install)} Helper", environment
 
 
 def tool(install: Path, *parts: str) -> Path:

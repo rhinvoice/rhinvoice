@@ -23,8 +23,10 @@ name, with its own identity and data folder, for release candidates. On Windows:
     install-beta/             the same as install/, as Rhinvoice Beta (windows-beta)
 
 On macOS the same parts sit in ``Rhinvoice.app/Contents/Resources``; the bundle starts
-``Contents/MacOS/Rhinvoice``, a script that runs a copy of the interpreter from
-``Contents/MacOS`` (so that macOS shows Rhinvoice's name and icon) with PYTHONHOME set to
+``Contents/MacOS/Rhinvoice``, a script that runs a copy of the interpreter,
+``Contents/MacOS/Rhinvoice Helper`` (so that macOS shows Rhinvoice's name and icon, and a
+firewall such as Little Snitch names the program, not "python3"; in Rhinvoice Beta
+``Rhinvoice Beta Helper``) with PYTHONHOME set to
 the bundled Python, plus a headless Chromium for the PDFs (macOS has no Edge).
 ``Rhinvoice Beta.app`` beside it is the copy that macos-beta renames and signs again.
 
@@ -400,6 +402,8 @@ INFO_PLIST = """<?xml version="1.0" encoding="UTF-8"?>
 </dict>
 </plist>
 """
+HELPER = "{name} Helper"
+"""The interpreter in Contents/MacOS: the name macOS and firewalls show for the running program."""
 MACOS_START = """#!/bin/sh
 # __NAME__: start the boot with the bundled Python (ADR 0021, 0022). The interpreter
 # lies in Contents/MacOS, so that macOS shows the app's name and icon. Caches and logs
@@ -415,7 +419,7 @@ if [ ! -t 1 ]; then
     exec >>"$HOME/Library/Logs/__NAME__/rhinvoice.log" 2>&1
 fi
 # -P: the working folder is not searched for modules (rhinvoice_boot.START).
-exec "$contents/MacOS/python3" -P -m rhinvoice_boot "$@"
+exec "$contents/MacOS/__NAME__ Helper" -P -m rhinvoice_boot "$@"
 """
 
 
@@ -531,7 +535,7 @@ def build_macos(out: Path, candidate: int | None = None) -> None:
     install.mkdir(parents=True)
     (contents / "MacOS").mkdir()
     python = install_runtime_python(sources, install)
-    shutil.copy2(python.resolve(), contents / "MacOS" / "python3")
+    shutil.copy2(python.resolve(), contents / "MacOS" / HELPER.format(name="Rhinvoice"))
     brand_macos(bundle, "stable")
     install_postgres_from_app(sources, install)
     install_chromium(sources, install)
@@ -550,6 +554,9 @@ def brand_macos(bundle: Path, edition: str) -> None:
     names = EDITIONS[edition]
     plist = INFO_PLIST.format(version=version(), **names)
     (contents / "Info.plist").write_text(plist, encoding="utf-8")
+    # The copy for Rhinvoice Beta takes the interpreter of Rhinvoice: give it the edition's name.
+    [helper] = (contents / "MacOS").glob(HELPER.format(name="*"))
+    helper.rename(helper.with_name(HELPER.format(name=names["name"])))
     start = contents / "MacOS" / "Rhinvoice"
     start.write_text(MACOS_START.replace("__NAME__", names["name"]), encoding="utf-8")
     start.chmod(0o755)

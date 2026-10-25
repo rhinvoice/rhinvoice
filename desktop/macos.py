@@ -104,7 +104,7 @@ def sign_app(app: Path) -> None:
         codesign([bundle], entitlements=False)
     codesign([app], entitlements=True)
     run("/usr/bin/codesign", "--verify", "--deep", "--strict", "--verbose=2", app)
-    python = app / "Contents" / "MacOS" / "python3"
+    [python] = (app / "Contents" / "MacOS").glob("* Helper")
     run("/usr/bin/codesign", "--display", "--entitlements", "-", python)
 
 

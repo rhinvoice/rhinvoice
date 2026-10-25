@@ -7,11 +7,24 @@ export interface GlobalShortcutHandlers {
   readonly openHelp: () => void;
   readonly newInvoice: () => void;
   readonly newQuote: () => void;
+  readonly newCustomer: () => void;
+  readonly newArticle: () => void;
   /** Run the undo of the visible undo toast; false when there is none. */
   readonly undo: () => boolean;
   readonly focusSearch: () => void;
   readonly goTo: (key: string) => boolean;
 }
+
+const CREATE_KEYS: readonly (readonly [
+  string,
+  "newInvoice" | "newQuote" | "newCustomer" | "newArticle",
+])[] = [
+  ["i", "newInvoice"],
+  ["n", "newInvoice"],
+  ["q", "newQuote"],
+  ["c", "newCustomer"],
+  ["a", "newArticle"],
+];
 
 /** How long the "G" prefix of a two-key navigation shortcut stays armed. */
 export const GO_PREFIX_TIMEOUT_MS = 1500;
@@ -48,12 +61,11 @@ export function handleShortcut(
     handlers.openHelp();
     return { handled: true, goPending: false };
   }
-  if (isPlainKey(event, "n")) {
-    handlers.newInvoice();
-    return { handled: true, goPending: false };
-  }
-  if (isPlainKey(event, "q")) {
-    handlers.newQuote();
+  // One letter per thing: alone it creates one, after "G" it opens the list.
+  // "N" stays as the familiar second key for a new invoice.
+  const create = CREATE_KEYS.find(([key]) => isPlainKey(event, key));
+  if (create !== undefined) {
+    handlers[create[1]]();
     return { handled: true, goPending: false };
   }
   if (isPlainKey(event, "/")) {

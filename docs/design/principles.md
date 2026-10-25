@@ -378,20 +378,21 @@ In the display, "Überfällig" replaces "Ausgestellt"/"Teilweise bezahlt" and ad
 - Every entry shows its shortcut on the right (`<kbd>`). Recently used entries at the top. Search terms tolerant of umlauts ("Mueller" finds "Müller").
 
 ### 4.9 Keyboard shortcuts
-Single-key shortcuts are active only when no input field has focus, and can be turned off in the settings (WCAG 2.1.4). Overview with `?` as a dialog, grouped.
+Single-key shortcuts are active only when no input field has focus, and can be turned off in the settings (WCAG 2.1.4). Overview with `?` as a dialog, grouped. Each thing has one letter, taken from its English name so it is the same in every language: alone it creates one, after `G` it opens the list (`G O` stays for the quotes).
 
 | Shortcut | Action |
 |---|---|
 | `⌘K` / `Ctrl+K` | Command palette |
 | `/` | Focus the search in the current list |
-| `N` | New invoice |
+| `I` (also `N`) | New invoice |
 | `Q` | New quote |
-| `C` (in the customer list) | New customer |
+| `C` | New customer |
+| `A` | New article |
 | `⌘↵` / `Ctrl+↵` | Save / submit form |
 | `⌘Z` / `Ctrl+Z` | Undo the last action (while the undo toast is visible) |
 | `?` | Shortcut overview |
 | `Esc` | Close dialog/palette/sheet |
-| `G` then `D` / `I` / `O` / `C` / `A` / `S` | Go to dashboard / invoices / quotes / customers / articles / settings |
+| `G` then `D` / `I` / `Q` / `C` / `A` / `S` | Go to dashboard / invoices / quotes / customers / articles / settings |
 | `J` / `K` or `↓` / `↑` | Next / previous row in lists |
 | `↵` | Open the selected row |
 | `P` (in a document) | Open PDF |

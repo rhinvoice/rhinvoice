@@ -582,6 +582,9 @@ export const en: Catalog<MessageKey> = {
   "numbering.problem.year":
     "A yearly reset needs {YYYY} or {YY} in the pattern, otherwise numbers repeat.",
   "shortcuts.newQuote": "New quote",
+  "shortcuts.newCustomer": "New customer",
+  "shortcuts.newArticle": "New article",
+  "shortcuts.or": "or",
   "shortcuts.undo": "Undo the last action (while its message is visible)",
   "shortcuts.payment": "Record a payment (in a document)",
   "shortcuts.moveLineUp": "Move line up (in the editor)",

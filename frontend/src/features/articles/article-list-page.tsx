@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { ArchiveIcon, PackageIcon, PlusIcon, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/table";
 import { useDebouncedValue } from "@/components/use-debounced-value";
 import { useDocumentTitle } from "@/components/use-document-title";
-import { usePageShortcut } from "@/components/use-key-shortcuts";
 import { priceCurrencies } from "@/features/articles/article-form-model";
 import { articleListQuery, type ArticleSort } from "@/features/articles/api";
 import { companyQuery } from "@/features/shared/company-api";
@@ -44,7 +43,6 @@ interface ArticleListPageProps {
 export function ArticleListPage({ search, onSearchChange }: ArticleListPageProps) {
   const { t, locale } = useI18n();
   useDocumentTitle(t("app.pageTitle", { title: t("articles.title") }));
-  const navigate = useNavigate();
   const errorMessage = useErrorMessage();
   // The company's currency first; on narrow screens only that one.
   const currencies = priceCurrencies(useQuery(companyQuery).data?.default_currency);
@@ -53,7 +51,6 @@ export function ArticleListPage({ search, onSearchChange }: ArticleListPageProps
   useEffect(() => {
     if (debounced !== search.q) onSearchChange({ q: debounced, page: 1 });
   }, [debounced, search.q, onSearchChange]);
-  usePageShortcut("a", () => void navigate({ to: "/articles/new" }));
 
   const offset = (search.page - 1) * PAGE_SIZE;
   const query = useQuery(

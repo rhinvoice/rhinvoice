@@ -61,7 +61,7 @@ export function CommandPalette({ open, onOpenChange, onShowShortcuts }: CommandP
             <PlusIcon aria-hidden="true" />
             {t("nav.newInvoice")}
             <CommandShortcut>
-              <Kbd>N</Kbd>
+              <Kbd>I</Kbd>
             </CommandShortcut>
           </CommandItem>
           <CommandItem
@@ -82,6 +82,9 @@ export function CommandPalette({ open, onOpenChange, onShowShortcuts }: CommandP
           >
             <UserPlusIcon aria-hidden="true" />
             {t("customers.new")}
+            <CommandShortcut>
+              <Kbd>C</Kbd>
+            </CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={() => {
@@ -90,6 +93,9 @@ export function CommandPalette({ open, onOpenChange, onShowShortcuts }: CommandP
           >
             <PackagePlusIcon aria-hidden="true" />
             {t("articles.new")}
+            <CommandShortcut>
+              <Kbd>A</Kbd>
+            </CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={() => {

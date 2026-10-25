@@ -9,6 +9,9 @@ name: Desktop
 # for any branch. Every run also builds Rhinvoice Beta (ADR 0030), the candidates' separate
 # installation, from the same runtime and app package, and checks that it lives beside Rhinvoice
 # without touching it. The candidate offers both; the promotion releases only Rhinvoice's.
+# A candidate's macOS apps are signed with the Developer ID and notarized by Apple (ADR 0036)
+# in a job of their own that holds the certificate and builds nothing; then the apps from the
+# disk images go through the smoke test as a user gets them. "Run workflow" signs on request.
 on:
   workflow_call:
     inputs:
@@ -29,6 +32,11 @@ on:
       - "backend/uv.lock"
       - ".github/workflows/desktop.yml"
   workflow_dispatch:
+    inputs:
+      sign:
+        description: "Sign and notarize the macOS apps (the branch must be admitted by the environment desktop-signing)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -257,28 +265,110 @@ jobs:
 
       - name: Pack the disk images
         run: |
-          version="$(python desktop/build.py version)"
           for name in "Rhinvoice" "Rhinvoice Beta"; do
-            staging="$(mktemp -d)"
-            cp -R "build/macos/$name.app" "$staging/"
-            ln -s /Applications "$staging/Applications"
-            image="build/macos/${name// /-}-$version.dmg"
-            # ULMO (LZMA) packs far tighter than the usual UDZO (zlib); macOS opens it from
-            # 10.15 on, below the app's minimum of 12.
-            # hdiutil on the hosted runners fails now and then with "Resource busy" (a scan of
-            # the fresh files still holds them): try again a few times before giving up.
-            for attempt in 1 2 3 4 5; do
-              hdiutil create -volname "$name $version" -srcfolder "$staging" -format ULMO \
-                -ov "$image" && break
-              [ "$attempt" = 5 ] && exit 1
-              echo "hdiutil failed (attempt $attempt), trying again"
-              sleep 10
-            done
-            hdiutil verify "$image"
-            ls -l "$image"
+            python desktop/macos.py dmg "build/macos/$name.app" build/macos
           done
           # What makes the app big, for the next steps (sizes in MB).
           du -sm build/macos/Rhinvoice.app/Contents/Resources/* | sort -rn | head -8
+
+      # Signed, the disk images come from the job macos-signing; these stay with the run.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ (inputs.version != '' || inputs.sign) && 'unsigned-macos' || 'Rhinvoice-macos' }}
+          path: |
+            build/macos/Rhinvoice-*.dmg
+            build/macos/rhinvoice-app-*.zip
+          retention-days: 14
+      - name: Keep the apps for signing (tar keeps file modes, links and attributes)
+        if: inputs.version != '' || inputs.sign
+        run: tar -cf build/macos/apps.tar -C build/macos "Rhinvoice.app" "Rhinvoice Beta.app"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: inputs.version != '' || inputs.sign
+        with:
+          name: macos-apps
+          path: |
+            build/macos/apps.tar
+            build/macos/rhinvoice-app-*.zip
+          retention-days: 1
+
+  macos-signing:
+    name: macOS apps (sign with the Developer ID, notarize)
+    needs: macos
+    if: inputs.version != '' || inputs.sign
+    runs-on: macos-15
+    timeout-minutes: 90
+    # Holds the Developer ID certificate: admits only v* tags, and the branch that tests this
+    # job while it is built (ADR 0036). Nothing is built or cached here; Apple's tools and
+    # desktop/macos.py (standard library only, the system's Python) are all that runs.
+    environment: desktop-signing
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: macos-apps
+          path: build/macos
+      - name: Unpack the apps
+        run: tar -xf build/macos/apps.tar -C build/macos && rm build/macos/apps.tar
+
+      - name: Put the certificate into a keychain of this run
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$APPLE_CERTIFICATE" ]; then
+            echo "::error::The secret APPLE_CERTIFICATE of the environment desktop-signing is missing."
+            exit 1
+          fi
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password="$(openssl rand -base64 24)"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" -f pkcs12 \
+            -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          rm "$RUNNER_TEMP/certificate.p12"
+          security set-key-partition-list -S apple-tool:,apple: -k "$password" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" login.keychain-db
+          security find-identity -v -p codesigning "$keychain"
+
+      - name: Sign the apps
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_KEYCHAIN: ${{ runner.temp }}/signing.keychain-db
+        run: /usr/bin/python3 desktop/macos.py sign "build/macos/Rhinvoice.app" "build/macos/Rhinvoice Beta.app"
+      - name: Notarize the apps
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for name in "Rhinvoice" "Rhinvoice Beta"; do
+            /usr/bin/python3 desktop/macos.py notarize "build/macos/$name.app"
+          done
+      - name: Pack and sign the disk images
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_KEYCHAIN: ${{ runner.temp }}/signing.keychain-db
+        run: |
+          for name in "Rhinvoice" "Rhinvoice Beta"; do
+            /usr/bin/python3 desktop/macos.py dmg "build/macos/$name.app" build/macos
+          done
+          /usr/bin/python3 desktop/macos.py sign build/macos/Rhinvoice-*.dmg
+      - name: Notarize the disk images
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for image in build/macos/Rhinvoice-*.dmg; do
+            /usr/bin/python3 desktop/macos.py notarize "$image"
+          done
+      - name: Remove the keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -288,3 +378,57 @@ jobs:
             build/macos/rhinvoice-app-*.zip
           retention-days: 14
 
+  macos-signed:
+    name: macOS apps as users get them (Gatekeeper, smoke test)
+    needs: macos-signing
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: Rhinvoice-macos
+          path: build/release
+
+      - name: Install the apps from the disk images, as a user does
+        run: |
+          for name in "Rhinvoice" "Rhinvoice Beta"; do
+            image="$(ls build/release/"${name// /-}"-*.dmg)"
+            echo "--- $image"
+            spctl --assess --type open --context context:primary-signature --verbose=2 "$image"
+            xcrun stapler validate "$image"
+            mount="$(mktemp -d)"
+            hdiutil attach -nobrowse -readonly -mountpoint "$mount" "$image"
+            ditto "$mount/$name.app" "/Applications/$name.app"
+            hdiutil detach "$mount"
+          done
+
+      - name: Gatekeeper lets them start (signed by the Developer ID, notarized)
+        run: |
+          for name in "Rhinvoice" "Rhinvoice Beta"; do
+            app="/Applications/$name.app"
+            codesign --verify --deep --strict --verbose=2 "$app"
+            xcrun stapler validate "$app"
+            verdict="$(spctl --assess --type execute --verbose=2 "$app" 2>&1)"
+            echo "$verdict"
+            echo "$verdict" | grep -q "source=Notarized Developer ID" || {
+              echo "::error title=Gatekeeper::$name.app is not accepted as notarized: $verdict"
+              exit 1
+            }
+          done
+
+      # Updates come as the release's app package, whose modules the certificate did not sign:
+      # the hardened runtime must load them (desktop/entitlements.plist).
+      - name: Smoke test Rhinvoice
+        run: |
+          python desktop/smoke_test.py "/Applications/Rhinvoice.app/Contents/Resources" \
+            --update-package "$(ls build/release/rhinvoice-app-*-macos-arm64.zip)"
+      - name: Smoke test Rhinvoice Beta beside it
+        run: |
+          python desktop/smoke_test.py "/Applications/Rhinvoice Beta.app/Contents/Resources" \
+            --update-package "$(ls build/release/rhinvoice-app-*-macos-arm64.zip)"

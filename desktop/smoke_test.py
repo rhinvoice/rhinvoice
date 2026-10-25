@@ -1,14 +1,19 @@
 """Check an installed Rhinvoice without Docker the way a user meets it (ADR 0021).
 
-    python desktop/smoke_test.py <install folder>
+    python desktop/smoke_test.py <install folder> [--update-package <zip>]
+
+The install folder is the one the setup chose on Windows, ``<App>.app/Contents/Resources`` on
+a Mac (ADR 0036: there the signed app as a user gets it from the disk image).
 
 Starts the installed program on the user's empty data folder (without window), creates the first
 user and the company, fills in the demo data, prints an invoice as PDF, sets up a backup
 folder and waits for the first backup (ADR 0023), kills the program
 and starts it again (the database left running must be taken over), installs an update and
-a broken update (taken back, ADR 0022), ends it the way Windows asks a program to close, and
+a broken update (taken back, ADR 0022), ends it the way the system asks a program to close, and
 restores the backup with ``--restore latest``. For Rhinvoice Beta (ADR 0030) it checks
-the same on Rhinvoice Beta's own data folder, and that the program uses no other.
+the same on Rhinvoice Beta's own data folder, and that the program uses no other. With
+``--update-package`` the updates are that app package as the release offers it, not a copy of
+the installed one: on a Mac its modules are not signed with the app's certificate.
 Only the standard library: it runs beside the installation, not inside it.
 """
 
@@ -24,9 +29,11 @@ import os
 import shutil
 import signal
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.request
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +43,27 @@ NOT_RUNNING = 3
 PDF_MIN_BYTES = 10_000
 BACKUP_SECONDS = 180
 """The worker looks every 30 seconds; pg_dump and restic take a few seconds."""
+MACOS = sys.platform == "darwin"
+
+
+def interpreter(install: Path) -> tuple[Path, dict[str, str]]:
+    """Return the installed Python and the environment the program's start gives it."""
+    if not MACOS:
+        return install / "python" / "python.exe", dict(os.environ)
+    # Contents/MacOS/Rhinvoice, the app's start script, does the same (desktop/build.py).
+    cache = Path.home() / "Library" / "Caches" / edition_name(install) / "pycache"
+    environment = {
+        **os.environ,
+        "PYTHONHOME": str(install / "python"),
+        "PYTHONPYCACHEPREFIX": str(cache),
+    }
+    return install.parent / "MacOS" / "python3", environment
+
+
+def tool(install: Path, *parts: str) -> Path:
+    """Return an installed command-line tool (pg_ctl, restic)."""
+    path = install.joinpath(*parts)
+    return path if MACOS else path.with_suffix(".exe")
 
 
 class Api:
@@ -61,23 +89,26 @@ def smoke_log(data: Path) -> Path:
 
 
 class Program:
-    def __init__(self, install: Path, data: Path) -> None:
+    def __init__(self, install: Path, data: Path, update_package: Path | None = None) -> None:
         self.install = install
         self.data = data
+        self.update_package = update_package
         self.process: subprocess.Popen[bytes] | None = None
 
     def start(self) -> int:
         """Start the program; return its port once the web interface answers."""
-        python = self.install / "python" / "python.exe"
+        python, environment = interpreter(self.install)
         flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
         output = smoke_log(self.data).open("ab")
         self.process = subprocess.Popen(  # noqa: S603 - the installed program
             [python, "-P", "-m", "rhinvoice_boot", "--no-browser"],
             creationflags=flags,
+            # A group of its own on a Mac, so that closing reaches the program after an update.
+            start_new_session=MACOS,
             stdout=output,
             stderr=subprocess.STDOUT,
             # Every line in the log right away, also the last ones before a failure.
-            env={**os.environ, "PYTHONUNBUFFERED": "1"},
+            env={**environment, "PYTHONUNBUFFERED": "1"},
         )
         deadline = time.monotonic() + START_SECONDS
         while time.monotonic() < deadline:
@@ -106,8 +137,11 @@ class Program:
         self.running().wait()
 
     def close(self) -> None:
-        """Ask the program to end, as Windows does when the user logs off."""
-        self.running().send_signal(getattr(signal, "CTRL_BREAK_EVENT", signal.SIGINT))
+        """Ask the program to end, as Windows does when the user logs off (Ctrl+C on a Mac)."""
+        if MACOS:
+            os.killpg(self.running().pid, signal.SIGINT)
+        else:
+            self.running().send_signal(getattr(signal, "CTRL_BREAK_EVENT", signal.SIGINT))
         self.running().wait(timeout=60)
         # After an update the program may run as a child of the boot: give it time to end.
         deadline = time.monotonic() + 60
@@ -126,9 +160,13 @@ class Program:
         return self.state()
 
     def put_update(self, version: str) -> Path:
-        """Put a copy of the installed app package into the data folder as ``version``."""
+        """Put the app package into the data folder as ``version``, as an update would."""
         package = self.data / "app" / "versions" / version
-        shutil.copytree(self.install / "app", package)
+        if self.update_package is None:
+            shutil.copytree(self.install / "app", package)
+        else:
+            with zipfile.ZipFile(self.update_package) as archive:
+                archive.extractall(package)
         manifest = json.loads((package / "manifest.json").read_text())
         # A candidate's package carries its number; the copy stands for a final release.
         manifest.pop("candidate", None)
@@ -141,7 +179,7 @@ class Program:
         return f"postgresql+psycopg://rhinvoice:{password}@127.0.0.1:{port}/rhinvoice"
 
     def database_running(self) -> bool:
-        pg_ctl = self.install / "postgresql" / "bin" / "pg_ctl.exe"
+        pg_ctl = tool(self.install, "postgresql", "bin", "pg_ctl")
         status = subprocess.run(  # noqa: S603 - the installed tool
             [pg_ctl, "status", f"--pgdata={self.data / 'database'}"], check=False
         )
@@ -160,8 +198,8 @@ def step(text: str) -> None:
     print(f"--- {text}", flush=True)
 
 
-def check(install: Path, data: Path) -> None:
-    program = Program(install, data)
+def check(install: Path, data: Path, update_package: Path | None) -> None:
+    program = Program(install, data, update_package)
     step("first start on an empty data folder")
     first_port = program.start()
     api = Api(first_port)
@@ -197,9 +235,10 @@ def check(install: Path, data: Path) -> None:
         f"import site; site.addsitedir(r'{site_packages}'); "
         "from rhinvoice.api.cli import main; raise SystemExit(main(['demo']))"
     )
+    python, environment = interpreter(install)
     subprocess.run(  # noqa: S603 - the installed program
-        [install / "python" / "python.exe", "-c", demo],
-        env={**os.environ, "RHINVOICE_DATABASE_URL": program.database_url()},
+        [python, "-c", demo],
+        env={**environment, "RHINVOICE_DATABASE_URL": program.database_url()},
         check=True,
     )
     step("the browser of this computer prints a page")
@@ -240,15 +279,10 @@ def check(install: Path, data: Path) -> None:
 def check_restore(program: Program, api: Api) -> None:
     """Restore the backup as the docs describe it, then start again on the restored data."""
     step("the data is replaced with the latest backup (--restore latest)")
+    python, environment = interpreter(program.install)
     restored = subprocess.run(  # noqa: S603 - the installed program
-        [
-            program.install / "python" / "python.exe",
-            "-P",
-            "-m",
-            "rhinvoice_boot",
-            "--restore",
-            "latest",
-        ],
+        [python, "-P", "-m", "rhinvoice_boot", "--restore", "latest"],
+        env=environment,
         capture_output=True,
         text=True,
         check=False,
@@ -283,8 +317,10 @@ def print_directly(install: Path) -> None:
     """Print one page with the installed program's browser, outside the web server."""
     site_packages = install / "app" / "site-packages"
     code = f"import site; site.addsitedir(r'{site_packages}')\n" + PRINT_A_PAGE
+    python, environment = interpreter(install)
     result = subprocess.run(  # noqa: S603 - the installed program
-        [install / "python" / "python.exe", "-c", code, install],
+        [python, "-c", code, install],
+        env=environment,
         capture_output=True,
         text=True,
         check=False,
@@ -318,7 +354,7 @@ def check_backup(program: Program, api: Api) -> None:
         raise SystemExit(msg)
     # The key opens the backups: a restore would work.
     listed = subprocess.run(  # noqa: S603 - the installed tool
-        [program.install / "restic" / "restic.exe", "snapshots", "--json", "--tag", "rhinvoice"],
+        [tool(program.install, "restic", "restic"), "snapshots", "--json", "--tag", "rhinvoice"],
         env={**os.environ, "RESTIC_REPOSITORY": str(folder), "RESTIC_PASSWORD": key},
         capture_output=True,
         text=True,
@@ -378,15 +414,17 @@ def report(error: BaseException, data: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("install", type=Path)
+    parser.add_argument("--update-package", type=Path, help="the release's app package (.zip)")
     args = parser.parse_args()
     # The folder the program uses for this user, as on a real computer (a fresh one in CI).
-    data = Path(os.environ["LOCALAPPDATA"]) / edition_name(args.install)
+    folders = Path.home() / "Library" / "Application Support" if MACOS else None
+    data = (folders or Path(os.environ["LOCALAPPDATA"])) / edition_name(args.install)
     if data.exists():
         msg = f"{data} exists: the smoke test needs a computer without {data.name} data"
         raise SystemExit(msg)
     others = {path: path.stat().st_mtime_ns for path in data.parent.glob("Rhinvoice*/*.json")}
     try:
-        check(args.install, data)
+        check(args.install, data, args.update_package)
         left_alone(others, data.name)
     except BaseException as error:
         report(error, data)

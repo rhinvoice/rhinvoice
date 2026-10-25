@@ -398,7 +398,8 @@ jobs:
       - name: Install the apps from the disk images, as a user does
         run: |
           for name in "Rhinvoice" "Rhinvoice Beta"; do
-            image="$(ls build/release/"${name// /-}"-*.dmg)"
+            # A digit after the name: "Rhinvoice-*" would also take Rhinvoice Beta's image.
+            image="$(ls build/release/"${name// /-}"-[0-9]*.dmg)"
             echo "--- $image"
             spctl --assess --type open --context context:primary-signature --verbose=2 "$image"
             xcrun stapler validate "$image"

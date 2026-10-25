@@ -5,6 +5,17 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.8.6] – 2026-10-26
+
+### Geändert
+- Die Mac-Apps (Rhinvoice und Rhinvoice Beta) sind mit dem Apple-Zertifikat des Herstellers
+  signiert und von Apple beglaubigt (notarisiert): macOS öffnet sie gleich beim ersten Start,
+  ohne den Umweg über *Systemeinstellungen → Datenschutz & Sicherheit → Dennoch öffnen*. Das
+  Setup für Windows ist noch nicht signiert.
+- Auf dem Mac heisst das laufende Programm *Rhinvoice Helper* (*Rhinvoice Beta Helper*) statt
+  *python3*, in der Aktivitätsanzeige und in Firewalls wie Little Snitch, etwa beim Prüfen auf
+  Updates.
+
 ## [0.8.5] – 2026-10-24
 
 ### Geändert

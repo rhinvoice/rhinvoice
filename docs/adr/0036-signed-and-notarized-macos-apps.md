@@ -1,0 +1,58 @@
+# 0036 – Signed and notarized macOS apps
+
+- Status: accepted
+- Date: 2026-10-25
+
+## Context
+The macOS apps were signed ad hoc ([ADR 0021](0021-native-install-without-docker.md)): Apple
+silicon runs no unsigned code, but Gatekeeper blocked the first start, and the docs led through
+*System Settings → Privacy & Security → Open Anyway*. The maintainer now has an Apple Developer
+ID certificate (team T3P59F52F4). Three things in Rhinvoice shape how it is used:
+- The app packages of updates lie in the data folder, outside the bundle
+  ([ADR 0022](0022-desktop-updates.md)), and their Python modules are not signed with the team's
+  certificate. Notarization requires the hardened runtime, whose library validation refuses
+  exactly such modules.
+- The bundle holds Python, PostgreSQL, Chromium and restic: hundreds of programs and libraries,
+  each of which must carry the Developer ID signature, a secure timestamp and the hardened
+  runtime.
+- `release.json` lists every file with its SHA-256 ([ADR 0033](0033-hardened-release-signing.md)),
+  and the promotion releases the candidate's files unchanged. Signing must therefore happen
+  before the candidate's `release.json` is written.
+
+## Decision
+- **A job of its own holds the certificate.** `macos-signing` in `desktop.yml` runs after the
+  build, in the environment `desktop-signing`, which admits only `v*` tags (and, while the job is
+  built, its branch). It builds nothing and uses no cache: it unpacks the apps the build job left,
+  imports the certificate into a keychain of the run (deleted at the end), and runs only Apple's
+  tools and `desktop/macos.py` (standard library, the system's Python). The secrets are
+  `APPLE_CERTIFICATE` (the .p12, base64), `APPLE_CERTIFICATE_PASSWORD`,
+  `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD` (an app-specific password for
+  notarytool) and `APPLE_TEAM_ID`, each in the environment of the step that needs it.
+- **Inside out, with the hardened runtime.** `macos.py sign` finds every Mach-O file by its
+  header, signs the libraries, then the programs with `desktop/entitlements.plist`, then nested
+  bundles, then the app. The entitlements: `disable-library-validation` (the update packages),
+  `allow-unsigned-executable-memory` (ctypes and cffi callbacks) and `allow-jit` (Chromium).
+- **Notarized twice.** Each app is notarized and stapled, then packed into its disk image, which
+  is signed, notarized and stapled too: the app carries its ticket after it was dragged out of the
+  image, and the image passes Gatekeeper when it is opened offline.
+- **Checked as a user gets it.** `macos-signed` installs both apps from the signed disk images
+  into `/Applications`, requires Gatekeeper's verdict "Notarized Developer ID", and runs
+  `desktop/smoke_test.py`, now also on a Mac, with the release's app package as the update: PDFs
+  through Chromium, the backup with restic, an update and a broken one, a restore.
+- **The interpreter carries the app's name.** The copy of Python in `Contents/MacOS` was called
+  `python3`, so the Activity Monitor and firewalls such as Little Snitch named every request of
+  Rhinvoice "python3". It is now `Rhinvoice Helper` (`Rhinvoice Beta Helper`); the start script
+  `Contents/MacOS/Rhinvoice`, which the docs use on the command line, stays.
+- **Pull requests stay unsigned.** Without a candidate's version (or the *sign* input of "Run
+  workflow") the build job publishes its ad-hoc signed images as before.
+- The Windows setups follow when Microsoft has confirmed the identity for Artifact Signing.
+
+## Consequences
+- macOS opens Rhinvoice and Rhinvoice Beta from the first start without a warning; the docs no
+  longer lead through *Open Anyway*.
+- A candidate needs Apple's notary service: four submissions, a few minutes each. If it is down,
+  the candidate's run fails and is started again.
+- The hardened runtime with library validation switched off still protects against injected
+  code at run time (no `DYLD_` variables, no debugger without the user's consent); the app
+  packages remain protected by the signed `release.json`.
+- The certificate expires in 2031; a renewed one changes only the secrets.

@@ -2,8 +2,8 @@
 
 A setup for Windows (`Rhinvoice-Setup-x.y.z.exe`) and a disk image for Macs with Apple silicon
 (`Rhinvoice-x.y.z.dmg`) on the [GitHub releases](https://github.com/rhinvoice/rhinvoice/releases).
-Beta. The setups are not signed yet: Windows asks once ("More info" → "Run anyway"), macOS
-blocks the first start (System Settings → Privacy & Security → "Open Anyway").
+Beta. The Mac apps are signed with the Developer ID and notarized by Apple (ADR 0036); the Windows
+setup is not signed yet, so Windows asks once ("More info" → "Run anyway").
 
 | | Program | Data |
 |---|---|---|

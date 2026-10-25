@@ -6,7 +6,8 @@
 
 ``sign`` takes the certificate's name from APPLE_SIGNING_IDENTITY and the keychain that holds
 it from APPLE_KEYCHAIN; an app is signed from the inside out, every program and library with
-the hardened runtime, the programs with desktop/entitlements.plist. ``notarize`` takes
+the hardened runtime; the interpreters and Chromium with the entitlements their part needs
+(desktop/entitlements-*.plist), PostgreSQL and restic without any. ``notarize`` takes
 APPLE_ID, APPLE_PASSWORD (an app-specific password) and APPLE_TEAM_ID.
 Only the standard library and Apple's tools: it runs in the job that holds the certificate.
 """
@@ -26,7 +27,12 @@ import tempfile
 import time
 from pathlib import Path
 
-ENTITLEMENTS = Path(__file__).resolve().parent / "entitlements.plist"
+HERE = Path(__file__).resolve().parent
+ENTITLEMENTS = {
+    "python": HERE / "entitlements-python.plist",
+    "chromium": HERE / "entitlements-chromium.plist",
+}
+"""Which programs need what: by the folder of Contents/Resources they lie in, or the helper."""
 THIN = {b"\xcf\xfa\xed\xfe", b"\xce\xfa\xed\xfe"}
 """Mach-O for one processor (64 and 32 bit), little-endian as on Apple's processors."""
 FAT = {b"\xca\xfe\xba\xbe": ">I", b"\xca\xfe\xba\xbf": ">Q"}
@@ -79,15 +85,25 @@ def code_in(app: Path) -> tuple[list[Path], list[Path], list[Path]]:
     return programs, libraries, nested
 
 
-def codesign(paths: list[Path], *, entitlements: bool, hardened: bool = True) -> None:
+def role(app: Path, program: Path) -> str | None:
+    """Name the entitlements ``program`` needs: an interpreter, Chromium, or none."""
+    relative = program.relative_to(app / "Contents")
+    if relative.parts[0] == "MacOS":
+        return "python"
+    if relative.parts[:2] in {("Resources", "python"), ("Resources", "chromium")}:
+        return relative.parts[1]
+    return None
+
+
+def codesign(paths: list[Path], *, entitlements: Path | None = None, hardened: bool = True) -> None:
     command: list[str | Path] = ["/usr/bin/codesign", "--force", "--timestamp"]
     command += ["--sign", os.environ["APPLE_SIGNING_IDENTITY"]]
     if keychain := os.environ.get("APPLE_KEYCHAIN"):
         command += ["--keychain", keychain]
     if hardened:
         command += ["--options", "runtime"]
-    if entitlements:
-        command += ["--entitlements", ENTITLEMENTS]
+    if entitlements is not None:
+        command += ["--entitlements", entitlements]
     for start in range(0, len(paths), CHUNK):
         chunk = paths[start : start + CHUNK]
         print(f"signing {len(chunk)} files, from {chunk[0]}", flush=True)
@@ -98,11 +114,15 @@ def sign_app(app: Path) -> None:
     """Sign every program and library, then the nested bundles, the deepest first, then ``app``."""
     programs, libraries, nested = code_in(app)
     print(f"{app.name}: {len(programs)} programs, {len(libraries)} libraries", flush=True)
-    codesign(libraries, entitlements=False)
-    codesign(programs, entitlements=True)
+    codesign(libraries)
+    for name in [None, *ENTITLEMENTS]:
+        group = [program for program in programs if role(app, program) == name]
+        if group:
+            codesign(group, entitlements=ENTITLEMENTS.get(name) if name else None)
     for bundle in sorted(nested, key=lambda path: len(path.parts), reverse=True):
-        codesign([bundle], entitlements=False)
-    codesign([app], entitlements=True)
+        codesign([bundle])
+    # The bundle's own executable is the start script: it needs no entitlements.
+    codesign([app])
     run("/usr/bin/codesign", "--verify", "--deep", "--strict", "--verbose=2", app)
     [python] = (app / "Contents" / "MacOS").glob("* Helper")
     run("/usr/bin/codesign", "--display", "--entitlements", "-", python)
@@ -112,7 +132,7 @@ def sign(paths: list[Path]) -> None:
     for path in paths:
         if path.suffix == ".dmg":
             # A disk image carries no runtime; its signature names who made it.
-            codesign([path], entitlements=False, hardened=False)
+            codesign([path], hardened=False)
             run("/usr/bin/codesign", "--verify", "--verbose=2", path)
         else:
             sign_app(path)

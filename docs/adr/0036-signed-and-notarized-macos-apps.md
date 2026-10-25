@@ -29,9 +29,11 @@ ID certificate (team T3P59F52F4). Three things in Rhinvoice shape how it is used
   `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD` (an app-specific password for
   notarytool) and `APPLE_TEAM_ID`, each in the environment of the step that needs it.
 - **Inside out, with the hardened runtime.** `macos.py sign` finds every Mach-O file by its
-  header, signs the libraries, then the programs with `desktop/entitlements.plist`, then nested
-  bundles, then the app. The entitlements: `disable-library-validation` (the update packages),
-  `allow-unsigned-executable-memory` (ctypes and cffi callbacks) and `allow-jit` (Chromium).
+  header, signs the libraries, then the programs, then nested bundles, then the app. Only the
+  parts that need them get entitlements: the interpreters (`Contents/MacOS/<Name> Helper`,
+  `Resources/python`) `disable-library-validation` (the update packages) and
+  `allow-unsigned-executable-memory` (ctypes and cffi callbacks), Chromium `allow-jit` and
+  `allow-unsigned-executable-memory`; PostgreSQL and restic run with library validation and none.
 - **Notarized twice.** Each app is notarized and stapled, then packed into its disk image, which
   is signed, notarized and stapled too: the app carries its ticket after it was dragged out of the
   image, and the image passes Gatekeeper when it is opened offline.
@@ -52,7 +54,12 @@ ID certificate (team T3P59F52F4). Three things in Rhinvoice shape how it is used
   longer lead through *Open Anyway*.
 - A candidate needs Apple's notary service: four submissions, a few minutes each. If it is down,
   the candidate's run fails and is started again.
-- The hardened runtime with library validation switched off still protects against injected
-  code at run time (no `DYLD_` variables, no debugger without the user's consent); the app
-  packages remain protected by the signed `release.json`.
+- The hardened runtime with library validation switched off for the interpreter still protects
+  against injected code at run time (no `DYLD_` variables, no debugger without the user's
+  consent). The signed `release.json` protects an app package when it is downloaded; at a start
+  the boot runs what lies in the data folder. A program of the same user that writes there, or
+  runs the helper with `-c`, runs under the notarized identity. That was possible with the
+  ad-hoc signature too; it is a limit of a Python app with updates outside the bundle.
+- The signing job runs on GitHub's hosted runners only, which are discarded after each job; the
+  decoded certificate is removed when its step ends, the keychain at the end of the job.
 - The certificate expires in 2031; a renewed one changes only the secrets.

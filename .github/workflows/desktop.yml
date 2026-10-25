@@ -321,6 +321,8 @@ jobs:
             echo "::error::The secret APPLE_CERTIFICATE of the environment desktop-signing is missing."
             exit 1
           fi
+          # The decoded certificate never outlives this step, also when the import fails.
+          trap 'rm -f "$RUNNER_TEMP/certificate.p12"' EXIT
           keychain="$RUNNER_TEMP/signing.keychain-db"
           password="$(openssl rand -base64 24)"
           security create-keychain -p "$password" "$keychain"
@@ -329,7 +331,6 @@ jobs:
           printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
           security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" -f pkcs12 \
             -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          rm "$RUNNER_TEMP/certificate.p12"
           security set-key-partition-list -S apple-tool:,apple: -k "$password" "$keychain" > /dev/null
           security list-keychains -d user -s "$keychain" login.keychain-db
           security find-identity -v -p codesigning "$keychain"

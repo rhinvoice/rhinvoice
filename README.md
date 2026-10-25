@@ -94,8 +94,7 @@ Download the setup for [Windows 10/11](https://github.com/rhinvoice/rhinvoice/re
 or the app for the [Mac](https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-macOS.dmg)
 (macOS 12 or later, Apple silicon). They bring the database with them, update themselves from
 within the program and back up into a folder of your choice, such as OneDrive or iCloud Drive.
-The Mac app is signed and notarized by Apple; the Windows setup is not signed yet, so Windows
-asks once before it opens it. See
+Both are signed by the developer, and the Mac app is notarized by Apple. See
 [Install on Windows or Mac](https://rhinvoice.com/docs/getting-started/install-desktop/).
 
 ## Quickstart (Docker)

@@ -1,4 +1,4 @@
-# 0036 – Signed and notarized macOS apps
+# 0036 – Signed programs for Windows and Mac
 
 - Status: accepted
 - Date: 2026-10-25
@@ -47,11 +47,22 @@ ID certificate (team T3P59F52F4). Three things in Rhinvoice shape how it is used
   `Contents/MacOS/Rhinvoice`, which the docs use on the command line, stays.
 - **Pull requests stay unsigned.** Without a candidate's version (or the *sign* input of "Run
   workflow") the build job publishes its ad-hoc signed images as before.
-- The Windows setups follow when Microsoft has confirmed the identity for Artifact Signing.
+- **The Windows setups through Azure Artifact Signing.** `windows-signing` runs in the same
+  environment with `id-token: write` only: `azure/login` exchanges GitHub's token through the
+  federated credential `repo:rhinvoice/rhinvoice:environment:desktop-signing` of the app
+  registration `webberz-github-signing` (no client secret), and `azure/artifact-signing-action`
+  signs both setups with the certificate profile `webberz` (account `webberzsigning`, Switzerland
+  North), SHA-256 with Microsoft's timestamp. The values are environment variables, not secrets:
+  `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `ARTIFACT_SIGNING_ENDPOINT`, `ARTIFACT_SIGNING_ACCOUNT`,
+  `ARTIFACT_SIGNING_PROFILE`. `windows-signed` installs the signed setups, requires a valid
+  Authenticode signature and runs the smoke test. The programs inside the setup
+  (`Rhinvoice.exe`, PostgreSQL) stay as they come; the update packages are protected by
+  `release.json`.
 
 ## Consequences
 - macOS opens Rhinvoice and Rhinvoice Beta from the first start without a warning; the docs no
-  longer lead through *Open Anyway*.
+  longer lead through *Open Anyway*. Windows shows the publisher; SmartScreen may still ask
+  while the certificate has little reputation.
 - A candidate needs Apple's notary service: four submissions, a few minutes each. If it is down,
   the candidate's run fails and is started again.
 - The hardened runtime with library validation switched off for the interpreter still protects

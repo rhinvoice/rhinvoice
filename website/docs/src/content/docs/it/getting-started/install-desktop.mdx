@@ -1,9 +1,9 @@
 ---
 title: Installare Rhinvoice su Windows e macOS (senza Docker)
-description: Installare il programma di fatturazione Rhinvoice come programma normale per Windows e Mac, senza Docker. Scaricare il setup, confermare l’avviso di Windows, avviare.
+description: Installare il programma di fatturazione Rhinvoice come programma normale per Windows e Mac, senza Docker. Scaricare il setup, installare, avviare.
 faq:
-  - q: Perché Windows mostra un avviso la prima volta?
-    a: Il setup per Windows non è ancora firmato con un certificato, quindi Windows non conosce l’editore e chiede conferma. La dia una volta; in seguito Rhinvoice si avvia senza domande. L’app per Mac è firmata dal suo editore e autenticata (notarizzata) da Apple e si apre senza avvisi.
+  - q: Windows o macOS mostrano un avviso la prima volta?
+    a: Il setup per Windows e l’app per Mac sono firmati dal loro editore, e l’app per Mac è anche autenticata (notarizzata) da Apple: entrambi i sistemi sanno quindi da chi provengono. Finché il certificato per Windows è ancora nuovo, Windows SmartScreen può comunque chiedere una volta; confermi con Ulteriori informazioni ed Esegui comunque.
   - q: Dove conserva i miei dati Rhinvoice?
     a: Su Windows in %LOCALAPPDATA%\Rhinvoice, su un Mac in ~/Library/Application Support/Rhinvoice. Lì si trovano il database, le impostazioni e i log. Gli aggiornamenti e la disinstallazione non toccano questa cartella.
   - q: Mi servono Docker, Python o un server?
@@ -41,7 +41,7 @@ Scarichi la versione più recente per il Suo sistema. I link portano sempre all�
 
 1. Faccia doppio clic su `Rhinvoice-Setup-Windows.exe`.
 
-2. **Confermi l’avviso di Windows.** La prima volta Windows mostra «PC protetto da Windows». Clicchi su **Ulteriori informazioni**, poi su **Esegui comunque**. Il pulsante compare solo dopo il clic su «Ulteriori informazioni».
+2. **Se Windows chiede.** Il setup è firmato e Windows ne mostra l’editore. Finché il certificato è ancora nuovo, SmartScreen può comunque mostrare una volta «PC protetto da Windows»: clicchi su **Ulteriori informazioni**, poi su **Esegui comunque**. <Since version="0.8.6" />
 
 3. Segua il setup. Installa Rhinvoice solo per il Suo account utente, in `%LOCALAPPDATA%\Programs\Rhinvoice`, e non richiede diritti di amministratore.
 
@@ -61,10 +61,10 @@ Scarichi la versione più recente per il Suo sistema. I link portano sempre all�
 
 </Steps>
 
-<Aside title="Perché Windows mostra un avviso?">
-L’app per Mac è firmata dal suo editore e autenticata (notarizzata) da Apple: macOS l’ha verificata e sa da chi proviene. <Since version="0.8.6" /> Il setup per Windows non è ancora firmato con un certificato, quindi Windows non conosce l’editore e chiede una volta. Scarichi Rhinvoice solo dalla [pagina GitHub del progetto](https://github.com/rhinvoice/rhinvoice/releases).
+<Aside title="Programmi firmati">
+Il setup per Windows e l’app per Mac sono firmati dal loro editore; l’app per Mac è anche autenticata (notarizzata) da Apple, che l’ha verificata. <Since version="0.8.6" /> Windows SmartScreen giudica un nuovo certificato in base a quante volte i suoi programmi sono stati scaricati e può quindi chiedere una volta all’inizio. Scarichi Rhinvoice solo dalla [pagina GitHub del progetto](https://github.com/rhinvoice/rhinvoice/releases).
 
-I programmi per Windows e Mac sono un’offerta in fase di test, accanto all’installazione con Docker. Vengono curati finché sono usati. Anche il setup per Windows sarà firmato, e l’avviso sparirà.
+I programmi per Windows e Mac sono un’offerta in fase di test, accanto all’installazione con Docker. Vengono curati finché sono usati.
 </Aside>
 
 ## Primo avvio
@@ -96,7 +96,7 @@ Se avvia Lei un setup mentre Rhinvoice è in funzione, su Windows il setup chied
 
 Prima di essere pubblicata, una versione esce come candidata per i test. Per Windows e Mac una candidata arriva come **Rhinvoice Beta**: un programma separato, che installa accanto a Rhinvoice. Ha un nome proprio, collegamenti propri, una propria voce di disinstallazione e una propria cartella dei dati (`%LOCALAPPDATA%\Rhinvoice Beta`, su un Mac `~/Library/Application Support/Rhinvoice Beta`). Non tocca mai i dati di Rhinvoice. <Since version="0.8.1" /> La sua icona è quella di Rhinvoice con un bordo a strisce gialle e nere in basso. <Since version="0.8.3" />
 
-Scarichi `Rhinvoice-Beta-Setup-Windows.exe` o `Rhinvoice-Beta-macOS.dmg` dalla candidata su [GitHub releases](https://github.com/rhinvoice/rhinvoice/releases) e lo installi come descritto sopra; su Windows compare lo stesso avviso. Su Windows finisce in `%LOCALAPPDATA%\Programs\Rhinvoice Beta`, su un Mac si chiama `Rhinvoice Beta.app`. A Rhinvoice Beta vengono proposte come aggiornamento le candidate più recenti, a Rhinvoice solo le versioni pubblicate. Vale anche per la candidata successiva della stessa versione, per esempio `v0.8.4-rc.3` dopo `v0.8.4-rc.2`; Rhinvoice Beta mostra la candidata accanto alla versione. Per questo serve una volta un setup della versione 0.8.4 o successiva. <Since version="0.8.4" /> Lo disinstalli come Rhinvoice.
+Scarichi `Rhinvoice-Beta-Setup-Windows.exe` o `Rhinvoice-Beta-macOS.dmg` dalla candidata su [GitHub releases](https://github.com/rhinvoice/rhinvoice/releases) e lo installi come descritto sopra. Su Windows finisce in `%LOCALAPPDATA%\Programs\Rhinvoice Beta`, su un Mac si chiama `Rhinvoice Beta.app`. A Rhinvoice Beta vengono proposte come aggiornamento le candidate più recenti, a Rhinvoice solo le versioni pubblicate. Vale anche per la candidata successiva della stessa versione, per esempio `v0.8.4-rc.3` dopo `v0.8.4-rc.2`; Rhinvoice Beta mostra la candidata accanto alla versione. Per questo serve una volta un setup della versione 0.8.4 o successiva. <Since version="0.8.4" /> Lo disinstalli come Rhinvoice.
 
 <Aside type="caution">
 Le candidate servono per i test. Usi Rhinvoice Beta con dati di prova o una copia, non per le fatture che invia.

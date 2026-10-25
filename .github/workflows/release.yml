@@ -203,6 +203,10 @@ jobs:
     name: Desktop setups and app packages
     needs: candidate
     uses: ./.github/workflows/desktop.yml
+    permissions:
+      contents: read
+      # Only its job windows-signing uses it, to sign in to Azure Artifact Signing (ADR 0036).
+      id-token: write
     with:
       version: ${{ needs.candidate.outputs.version }}
       # The app packages name it; Rhinvoice Beta tells candidates of one version apart (ADR 0035).

@@ -9,9 +9,10 @@ name: Desktop
 # for any branch. Every run also builds Rhinvoice Beta (ADR 0030), the candidates' separate
 # installation, from the same runtime and app package, and checks that it lives beside Rhinvoice
 # without touching it. The candidate offers both; the promotion releases only Rhinvoice's.
-# A candidate's macOS apps are signed with the Developer ID and notarized by Apple (ADR 0036)
-# in a job of their own that holds the certificate and builds nothing; then the apps from the
-# disk images go through the smoke test as a user gets them. "Run workflow" signs on request.
+# A candidate's programs are signed (ADR 0036): the macOS apps with the Developer ID and
+# notarized by Apple, the Windows setups with Azure Artifact Signing, each in a job of its own
+# that holds the certificate (or the federated login) and builds nothing. Then the signed files
+# go through the smoke test as a user gets them. "Run workflow" signs on request.
 on:
   workflow_call:
     inputs:
@@ -123,7 +124,8 @@ jobs:
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: Rhinvoice-Setup-windows
+          # Signed, the setups come from the job windows-signing; these stay with the run.
+          name: ${{ (inputs.version != '' || inputs.sign) && 'unsigned-windows' || 'Rhinvoice-Setup-windows' }}
           path: |
             build/windows/Rhinvoice-Setup-*.exe
             build/windows/Rhinvoice-Beta-Setup-*.exe
@@ -162,6 +164,98 @@ jobs:
           if ($names -ne "Rhinvoice, Rhinvoice Beta") { throw "uninstall entries: $names" }
 
       - name: Smoke test Rhinvoice Beta (its own data; Rhinvoice's stays as it is)
+        shell: pwsh
+        run: python desktop/smoke_test.py "$env:LOCALAPPDATA\Programs\Rhinvoice Beta"
+
+  windows-signing:
+    name: Windows setups (sign with Azure Artifact Signing)
+    needs: windows
+    if: inputs.version != '' || inputs.sign
+    runs-on: windows-2025
+    timeout-minutes: 30
+    # Signs through the federated credential of this environment, without a client secret
+    # (ADR 0036). Nothing is built or cached here.
+    environment: desktop-signing
+    permissions:
+      contents: read
+      # The token azure/login exchanges for Azure's.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: unsigned-windows
+          path: build/windows
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          allow-no-subscriptions: true
+      - uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
+        with:
+          endpoint: ${{ vars.ARTIFACT_SIGNING_ENDPOINT }}
+          signing-account-name: ${{ vars.ARTIFACT_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ vars.ARTIFACT_SIGNING_PROFILE }}
+          files-folder: build/windows
+          files-folder-filter: exe
+          files-folder-recurse: false
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+          cache-dependencies: false
+      - name: Both setups carry a valid signature
+        shell: pwsh
+        run: |
+          $setups = @(Get-ChildItem build\windows\*.exe)
+          if ($setups.Count -ne 2) { throw "expected two setups, found $($setups.Count)" }
+          foreach ($setup in $setups) {
+            $signature = Get-AuthenticodeSignature $setup.FullName
+            "{0}: {1}, {2}" -f $setup.Name, $signature.Status, $signature.SignerCertificate.Subject
+            if ($signature.Status -ne "Valid") { throw "$($setup.Name) is not validly signed" }
+          }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Rhinvoice-Setup-windows
+          path: |
+            build/windows/Rhinvoice-Setup-*.exe
+            build/windows/Rhinvoice-Beta-Setup-*.exe
+            build/windows/rhinvoice-app-*.zip
+          retention-days: 14
+
+  windows-signed:
+    name: Windows setups as users get them (signature, install, smoke test)
+    needs: windows-signing
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: Rhinvoice-Setup-windows
+          path: build/release
+      - name: Install both signed setups silently for this user
+        shell: pwsh
+        run: |
+          foreach ($pattern in "Rhinvoice-Setup-*.exe", "Rhinvoice-Beta-Setup-*.exe") {
+            $setup = Get-ChildItem "build\release\$pattern" | Select-Object -First 1
+            $signature = Get-AuthenticodeSignature $setup.FullName
+            "{0}: {1}, {2}" -f $setup.Name, $signature.Status, $signature.SignerCertificate.Subject
+            if ($signature.Status -ne "Valid") { throw "$($setup.Name) is not validly signed" }
+            Start-Process -FilePath $setup.FullName -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
+          }
+          foreach ($name in "Rhinvoice", "Rhinvoice Beta") {
+            if (-not (Test-Path "$env:LOCALAPPDATA\Programs\$name\python\Rhinvoice.exe")) {
+              throw "$name was not installed"
+            }
+          }
+      - name: Smoke test Rhinvoice
+        shell: pwsh
+        run: python desktop/smoke_test.py "$env:LOCALAPPDATA\Programs\Rhinvoice"
+      - name: Smoke test Rhinvoice Beta beside it
         shell: pwsh
         run: python desktop/smoke_test.py "$env:LOCALAPPDATA\Programs\Rhinvoice Beta"
 

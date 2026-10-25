@@ -43,6 +43,8 @@ MACH_HEADER = 16
 EXECUTE = 2
 """The file type of a program (MH_EXECUTE); libraries and Python modules are others."""
 NESTED = {".app", ".framework", ".bundle", ".xpc"}
+ATTEMPTS = 5
+"""How often a call to Apple's services is tried before the job gives up."""
 CHUNK = 100
 """Files per codesign call: one call per file would take long, all at once too long a line."""
 
@@ -170,7 +172,22 @@ def notarize(path: Path) -> None:
             )
         msg = f"Apple did not notarize {path.name}: {result.get('status', 'no answer')}"
         raise SystemExit(msg)
-    run("/usr/bin/xcrun", "stapler", "staple", path)
+    staple(path)
+
+
+def staple(path: Path) -> None:
+    """Attach the ticket to ``path``; Apple's ticket service drops a connection now and then."""
+    for attempt in range(1, ATTEMPTS + 1):
+        stapled = subprocess.run(  # noqa: S603 - Apple's tool
+            ["/usr/bin/xcrun", "stapler", "staple", str(path)], check=False
+        )
+        if stapled.returncode == 0:
+            break
+        if attempt == ATTEMPTS:
+            msg = f"the ticket could not be stapled to {path.name}"
+            raise SystemExit(msg)
+        print(f"stapler failed (attempt {attempt}), trying again", flush=True)
+        time.sleep(30)
     run("/usr/bin/xcrun", "stapler", "validate", path)
 
 
@@ -187,7 +204,7 @@ def pack(app: Path, folder: Path) -> Path:
         # 10.15 on, below the app's minimum of 12.
         # hdiutil on the hosted runners fails now and then with "Resource busy" (a scan of
         # the fresh files still holds them): try again a few times before giving up.
-        for attempt in range(1, 6):
+        for attempt in range(1, ATTEMPTS + 1):
             created = subprocess.run(  # noqa: S603 - Apple's tool
                 ["/usr/bin/hdiutil", "create", "-volname", f"{name} {version}",
                  "-srcfolder", staging, "-format", "ULMO", "-ov", str(image)],
@@ -195,7 +212,7 @@ def pack(app: Path, folder: Path) -> Path:
             )  # fmt: skip
             if created.returncode == 0:
                 break
-            if attempt == 5:  # noqa: PLR2004
+            if attempt == ATTEMPTS:
                 msg = f"hdiutil could not pack {app.name}"
                 raise SystemExit(msg)
             print(f"hdiutil failed (attempt {attempt}), trying again", flush=True)

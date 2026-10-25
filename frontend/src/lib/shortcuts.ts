@@ -43,6 +43,13 @@ export function isEditableTarget(target: EventTarget | null): boolean {
   return target.getAttribute("role") === "combobox";
 }
 
+/** Forms and open overlays keep their keys, so a letter there never leaves the page. */
+const KEEPS_KEYS = 'form, [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]';
+
+export function isInFormOrOverlay(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest(KEEPS_KEYS) !== null;
+}
+
 export function isMacPlatform(platform: string): boolean {
   return /mac|iphone|ipad|ipod/i.test(platform);
 }
@@ -58,7 +65,7 @@ export function isModified(event: KeyEventLike, key: string, platform: string): 
   return modifier && !event.altKey && event.key.toLowerCase() === key.toLowerCase();
 }
 
-/** A plain key press without modifiers, outside of editable fields. */
+/** A plain key press without modifiers, outside of editable fields, forms and overlays. */
 export function isPlainKey(event: KeyEventLike, key: string): boolean {
   return (
     // Case-insensitive, so that the shortcuts also work with Caps Lock.
@@ -66,6 +73,7 @@ export function isPlainKey(event: KeyEventLike, key: string): boolean {
     !event.metaKey &&
     !event.ctrlKey &&
     !event.altKey &&
-    !isEditableTarget(event.target)
+    !isEditableTarget(event.target) &&
+    !isInFormOrOverlay(event.target)
   );
 }

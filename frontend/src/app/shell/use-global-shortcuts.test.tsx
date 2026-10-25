@@ -15,6 +15,8 @@ function handlers(): GlobalShortcutHandlers & Record<string, ReturnType<typeof v
     openHelp: vi.fn(),
     newInvoice: vi.fn(),
     newQuote: vi.fn(),
+    newCustomer: vi.fn(),
+    newArticle: vi.fn(),
     undo: vi.fn(() => true),
     focusSearch: vi.fn(),
     goTo: vi.fn((key: string) => key === "c"),
@@ -75,6 +77,12 @@ describe("handleShortcut", () => {
     expect(h.newQuote).toHaveBeenCalledOnce();
     expect(h.openHelp).toHaveBeenCalledOnce();
     expect(h.newInvoice).toHaveBeenCalledOnce();
+    expect(handleShortcut(key("i"), h, "Win32", false).handled).toBe(true);
+    expect(h.newInvoice).toHaveBeenCalledTimes(2);
+    expect(handleShortcut(key("c"), h, "Win32", false).handled).toBe(true);
+    expect(h.newCustomer).toHaveBeenCalledOnce();
+    expect(handleShortcut(key("a"), h, "Win32", false).handled).toBe(true);
+    expect(h.newArticle).toHaveBeenCalledOnce();
     expect(h.focusSearch).toHaveBeenCalledOnce();
     expect(handleShortcut(key("x"), h, "Win32", false)).toEqual({
       handled: false,
@@ -87,6 +95,7 @@ describe("handleShortcut", () => {
     expect(handleShortcut(key("g"), h, "Win32", false)).toEqual({ handled: true, goPending: true });
     expect(handleShortcut(key("C"), h, "Win32", true)).toEqual({ handled: true, goPending: false });
     expect(h.goTo).toHaveBeenCalledWith("c");
+    expect(h.newCustomer).not.toHaveBeenCalled();
     expect(handleShortcut(key("z"), h, "Win32", true)).toEqual({
       handled: false,
       goPending: false,

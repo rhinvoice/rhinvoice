@@ -623,6 +623,9 @@ export const fr: Catalog<MessageKey> = {
   "numbering.problem.year":
     "Avec une remise à zéro annuelle, le modèle doit contenir {YYYY} ou {YY}, sinon des numéros se répètent.",
   "shortcuts.newQuote": "Nouvelle offre",
+  "shortcuts.newCustomer": "Nouveau client",
+  "shortcuts.newArticle": "Nouvel article",
+  "shortcuts.or": "ou",
   "shortcuts.undo": "Annuler la dernière action (tant que le message est visible)",
   "shortcuts.payment": "Saisir un paiement (dans le document)",
   "shortcuts.moveLineUp": "Monter la position (dans l’éditeur)",

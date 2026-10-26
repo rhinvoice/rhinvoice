@@ -6,7 +6,7 @@ import { demoQuery } from "@/features/shared/demo-api";
 import { websiteUrl } from "@/lib/about";
 import { countryName } from "@/lib/countries";
 
-/** A quiet strip on every page of a public demo: shared data, reset hourly, no mail. */
+/** A quiet strip on every page of a public demo: shared data, example accounts, reset hourly, no mail. */
 export function DemoBanner() {
   const { t, locale } = useI18n();
   const demo = useQuery(demoQuery).data;

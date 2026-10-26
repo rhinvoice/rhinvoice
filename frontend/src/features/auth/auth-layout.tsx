@@ -19,7 +19,8 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ title, description, aside, children }: AuthLayoutProps) {
   const { t, locale } = useI18n();
-  // The public demo is run by webberz and names its legal pages; installations belong to their operators.
+  // The public demo is run by webberz and names its maker and legal pages; installations belong to
+  // their operators, so they name neither.
   const demo = useQuery(demoQuery).data?.enabled === true;
   const legal = legalUrls(locale);
   return (
@@ -55,12 +56,12 @@ export function AuthLayout({ title, description, aside, children }: AuthLayoutPr
           <ExternalLink href={REPOSITORY_URL} icon={false}>
             {t("about.openSource")}
           </ExternalLink>
-          <span aria-hidden="true">·</span>
-          <ExternalLink href={MAKER_URL} icon={false}>
-            {t("about.madeBy", { maker: MAKER })}
-          </ExternalLink>
           {demo ? (
             <>
+              <span aria-hidden="true">·</span>
+              <ExternalLink href={MAKER_URL} icon={false}>
+                {t("about.madeBy", { maker: MAKER })}
+              </ExternalLink>
               <span aria-hidden="true">·</span>
               <ExternalLink href={legal.notice} icon={false}>
                 {t("about.legalNotice")}

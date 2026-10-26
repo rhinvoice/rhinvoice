@@ -40,7 +40,8 @@ export const de = {
     "In der öffentlichen Demo nicht verfügbar: Hier sind alle Besucher mit demselben Zugang angemeldet, und es werden keine E-Mails versendet.",
   "demo.signIn": "Demo öffnen",
   "demo.otherCountries": "Auch als Demo:",
-  "demo.banner": "Beispieldaten, alle {minutes} Minuten zurückgesetzt, keine E-Mails",
+  "demo.banner":
+    "Beispieldaten und Beispielkonten, bitte nichts überweisen · alle {minutes} Minuten zurückgesetzt, keine E-Mails",
   "demo.countryDemo": "Demo {country}",
   "about.title": "Über Rhinvoice",
   "about.version": "Version {version}",
@@ -107,7 +108,6 @@ export const de = {
   "updates.later": "Später",
   "updates.closing": "Rhinvoice wird für das Update geschlossen …",
   "about.madeBy": "made by {maker}",
-  "about.byMaker": "by {maker}",
   "about.legalNotice": "Impressum",
   "about.privacy": "Datenschutz",
   "about.openSource": "Open Source",
@@ -578,6 +578,8 @@ export const de = {
   "bank.qrIban": "QR-IBAN",
   "bank.qrIbanHint": "Nur für QR-Rechnungen mit QR-Referenz (Schweiz und Liechtenstein).",
   "bank.bic": "BIC / SWIFT",
+  "bank.bicEpcHint":
+    "Nötig für den EPC-QR-Code auf Euro-Rechnungen an Kunden in der EU: Ohne BIC entfällt er.",
   "bank.currency": "Währung",
   "bank.isDefault": "Standardkonto für diese Währung",
   "bank.saved": "Bankkonto gespeichert.",

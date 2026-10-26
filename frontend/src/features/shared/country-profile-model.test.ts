@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   asksTaxNumber,
+  bicMattersForEpc,
   countrySummary,
   offersCashRounding,
   offersCategory,
@@ -76,6 +77,14 @@ describe("fields per country", () => {
     expect(offersQrIban(GERMAN_PROFILE, false)).toBe(false);
     expect(offersQrIban(GERMAN_PROFILE, true)).toBe(true);
     expect(offersQrIban(undefined, false)).toBe(true);
+  });
+
+  it("explains the BIC where a Swiss euro account needs it for the EPC QR code", () => {
+    expect(bicMattersForEpc(SWISS_PROFILE, "EUR", "ch56 0483 5012 3456 7800 9")).toBe(true);
+    expect(bicMattersForEpc(SWISS_PROFILE, "CHF", "CH9300762011623852957")).toBe(false);
+    expect(bicMattersForEpc(SWISS_PROFILE, "EUR", "LI2108810000002324013AA")).toBe(false);
+    expect(bicMattersForEpc(GERMAN_PROFILE, "EUR", "CH5604835012345678009")).toBe(false);
+    expect(bicMattersForEpc(undefined, "EUR", "CH5604835012345678009")).toBe(false);
   });
 
   it("asks for the tax number where it counts, or once given", () => {

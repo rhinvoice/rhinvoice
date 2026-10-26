@@ -59,6 +59,12 @@ test("bank accounts validate the IBAN", async ({ page }) => {
     dialog.getByText("Die Prüfziffern stimmen nicht – bitte auf Tippfehler prüfen."),
   ).toBeVisible();
   await expectAccessible(page);
+  // A Swiss euro account needs its BIC for the EPC QR code to customers in the EU.
+  const bicHint = dialog.getByText(/Ohne BIC entfällt er/);
+  await dialog.getByLabel("Währung", { exact: true }).selectOption("EUR");
+  await expect(bicHint).toBeVisible();
+  await dialog.getByLabel("Währung", { exact: true }).selectOption("CHF");
+  await expect(bicHint).toBeHidden();
   await dialog.getByLabel("IBAN", { exact: true }).fill("CH93 0076 2011 6238 5295 7");
   await dialog.getByLabel("QR-IBAN").fill("CH44 3199 9123 0008 8901 2");
   await dialog.getByRole("button", { name: "Speichern" }).click();

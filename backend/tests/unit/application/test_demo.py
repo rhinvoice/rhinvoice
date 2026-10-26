@@ -155,6 +155,11 @@ def test_a_swiss_installation_gets_invoices_since_january_of_last_year(
         (Currency.EUR, "CH5604835012345678009", "Pixelwerk GmbH"),
     ]
     assert all(account.is_default for account in accounts)
+    # The euro account names its BIC, so euro invoices to the EEA carry the EPC QR code.
+    assert [None if account.bic is None else account.bic.value for account in accounts] == [
+        None,
+        "CRESCHZZ80A",
+    ]
     documents = documents_of(store)
     invoices = [document for document in documents if document.type is DocumentType.INVOICE]
     issued = [document for document in invoices if not document.is_draft]

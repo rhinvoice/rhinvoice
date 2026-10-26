@@ -77,6 +77,22 @@ export function offersQrIban(profile: CountryProfile | undefined, saved: boolean
   return saved || (profile?.payment_codes.includes("swiss_qr_bill") ?? true);
 }
 
+/**
+ * Whether the BIC field says what it is for: a Swiss euro account needs it for the EPC QR code
+ * on invoices to customers in the EEA, outside of which the SEPA rulebook asks for it.
+ */
+export function bicMattersForEpc(
+  profile: CountryProfile | undefined,
+  currency: string,
+  iban: string,
+): boolean {
+  return (
+    (profile?.payment_codes.includes("epc_to_eea") ?? false) &&
+    currency === "EUR" &&
+    iban.trim().toUpperCase().startsWith("CH")
+  );
+}
+
 /** The national tax number is asked for where it can stand in for the VAT ID, or once given. */
 export function asksTaxNumber(profile: CountryProfile | undefined, value: string): boolean {
   return value !== "" || (profile?.tax_number ?? true);

@@ -12,7 +12,7 @@ name: Desktop
 # A candidate's programs are signed (ADR 0036): the macOS apps with the Developer ID and
 # notarized by Apple, the Windows setups with Azure Artifact Signing, each in a job of its own
 # that holds the certificate (or the federated login) and builds nothing. Then the signed files
-# go through the smoke test as a user gets them. "Run workflow" signs on request.
+# go through the smoke test as a user gets them. "Run workflow" builds them unsigned.
 on:
   workflow_call:
     inputs:
@@ -33,11 +33,6 @@ on:
       - "backend/uv.lock"
       - ".github/workflows/desktop.yml"
   workflow_dispatch:
-    inputs:
-      sign:
-        description: "Sign and notarize the macOS apps (the branch must be admitted by the environment desktop-signing)"
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -125,7 +120,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           # Signed, the setups come from the job windows-signing; these stay with the run.
-          name: ${{ (inputs.version != '' || inputs.sign) && 'unsigned-windows' || 'Rhinvoice-Setup-windows' }}
+          name: ${{ inputs.version != '' && 'unsigned-windows' || 'Rhinvoice-Setup-windows' }}
           path: |
             build/windows/Rhinvoice-Setup-*.exe
             build/windows/Rhinvoice-Beta-Setup-*.exe
@@ -170,7 +165,7 @@ jobs:
   windows-signing:
     name: Windows setups (sign with Azure Artifact Signing)
     needs: windows
-    if: inputs.version != '' || inputs.sign
+    if: inputs.version != ''
     runs-on: windows-2025
     timeout-minutes: 30
     # Signs through the federated credential of this environment, without a client secret
@@ -368,16 +363,16 @@ jobs:
       # Signed, the disk images come from the job macos-signing; these stay with the run.
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: ${{ (inputs.version != '' || inputs.sign) && 'unsigned-macos' || 'Rhinvoice-macos' }}
+          name: ${{ inputs.version != '' && 'unsigned-macos' || 'Rhinvoice-macos' }}
           path: |
             build/macos/Rhinvoice-*.dmg
             build/macos/rhinvoice-app-*.zip
           retention-days: 14
       - name: Keep the apps for signing (tar keeps file modes, links and attributes)
-        if: inputs.version != '' || inputs.sign
+        if: inputs.version != ''
         run: tar -cf build/macos/apps.tar -C build/macos "Rhinvoice.app" "Rhinvoice Beta.app"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        if: inputs.version != '' || inputs.sign
+        if: inputs.version != ''
         with:
           name: macos-apps
           path: |
@@ -388,7 +383,7 @@ jobs:
   macos-signing:
     name: macOS apps (sign with the Developer ID, notarize)
     needs: macos
-    if: inputs.version != '' || inputs.sign
+    if: inputs.version != ''
     runs-on: macos-15
     timeout-minutes: 90
     # Holds the Developer ID certificate: admits only v* tags, and the branch that tests this

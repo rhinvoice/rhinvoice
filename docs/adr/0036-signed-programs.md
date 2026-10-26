@@ -60,6 +60,11 @@ ID certificate (team T3P59F52F4). Three things in Rhinvoice shape how it is used
   the smoke test. The programs inside the setup (`Rhinvoice.exe`, PostgreSQL) stay as they come;
   the update packages are protected by `release.json`.
 
+- **The release hands its secrets on.** `release.yml` calls `desktop.yml` with
+  `secrets: inherit`: without it the signing job found none of its environment's secrets
+  (v0.8.6-rc.1). The repository secrets reach `desktop.yml` too, but it names only the Apple
+  secrets, in the steps of `macos-signing`; zizmor's warning is ignored on that one line.
+
 ## Consequences
 - macOS opens Rhinvoice and Rhinvoice Beta from the first start without a warning; the docs no
   longer lead through *Open Anyway*. Windows shows the publisher; SmartScreen may still ask

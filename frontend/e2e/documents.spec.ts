@@ -250,8 +250,12 @@ test("create, issue, pay and cancel an invoice", async ({ page, isMobile }, test
   await cancel.getByRole("button", { name: "Stornieren" }).click();
   await expect(page.getByRole("heading", { level: 1, name: /^Stornorechnung \S+$/ })).toBeVisible();
   await expect(page.getByText("CHF-297.80").first()).toBeVisible();
+  // A cancellation reverses its invoice: nobody pays it.
+  await expect(page.getByRole("button", { name: "Als bezahlt markieren" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Zahlung erfassen" })).toHaveCount(0);
   await page.getByRole("link", { name: "Stornierte Rechnung öffnen" }).click();
   await expect(page.getByText("Storniert", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Zahlung erfassen" })).toHaveCount(0);
   await expectAccessible(page);
 });
 

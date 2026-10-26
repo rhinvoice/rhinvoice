@@ -566,6 +566,11 @@ def test_payment_rules() -> None:
     assert currency.value.field == "amount"
     with raises_exactly(InvalidStateError, "a draft invoice cannot be paid"):
         pay(draft(), "1")
+    cancellation = replace(issued(), type=DocumentType.CANCELLATION)
+    with raises_exactly(InvalidStateError, "only invoices are paid"):
+        pay(cancellation, "1")
+    with raises_exactly(InvalidStateError, "only invoices are paid"):
+        cancellation.pay_in_full(new_id(), TODAY, NOW)
     with raises_exactly(InvalidStateError, "a issued invoice cannot be changed"):
         invoice.remove_payment(new_id(), NOW)
     with raises_exactly(ValidationError, "this payment does not belong to the document") as other:

@@ -5,6 +5,11 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Fixed
+- A cancellation invoice no longer offers *Mark as paid* and *Record payment*: it reverses its
+  invoice, so nobody pays it. Rhinvoice refused such a payment before too, but with an unclear
+  message.
+
 ## [0.8.7] – 2026-10-27
 
 ### Added

@@ -199,6 +199,9 @@ jobs:
           cache-dependencies: false
       - name: Both setups carry a valid signature
         shell: pwsh
+        # The certificate Azure Artifact Signing issues for the profile (ADR 0036).
+        env:
+          PUBLISHER: "CN=Özdemir Kadir"
         run: |
           $setups = @(Get-ChildItem build\windows\*.exe)
           if ($setups.Count -ne 2) { throw "expected two setups, found $($setups.Count)" }
@@ -206,6 +209,10 @@ jobs:
             $signature = Get-AuthenticodeSignature $setup.FullName
             "{0}: {1}, {2}" -f $setup.Name, $signature.Status, $signature.SignerCertificate.Subject
             if ($signature.Status -ne "Valid") { throw "$($setup.Name) is not validly signed" }
+            if (-not $signature.SignerCertificate.Subject.Normalize().StartsWith("$env:PUBLISHER,".Normalize())) {
+              throw "$($setup.Name) is signed by someone else"
+            }
+            if ($null -eq $signature.TimeStamperCertificate) { throw "$($setup.Name) has no timestamp" }
           }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -234,12 +241,19 @@ jobs:
           path: build/release
       - name: Install both signed setups silently for this user
         shell: pwsh
+        # The certificate Azure Artifact Signing issues for the profile (ADR 0036).
+        env:
+          PUBLISHER: "CN=Özdemir Kadir"
         run: |
           foreach ($pattern in "Rhinvoice-Setup-*.exe", "Rhinvoice-Beta-Setup-*.exe") {
             $setup = Get-ChildItem "build\release\$pattern" | Select-Object -First 1
             $signature = Get-AuthenticodeSignature $setup.FullName
             "{0}: {1}, {2}" -f $setup.Name, $signature.Status, $signature.SignerCertificate.Subject
             if ($signature.Status -ne "Valid") { throw "$($setup.Name) is not validly signed" }
+            if (-not $signature.SignerCertificate.Subject.Normalize().StartsWith("$env:PUBLISHER,".Normalize())) {
+              throw "$($setup.Name) is signed by someone else"
+            }
+            if ($null -eq $signature.TimeStamperCertificate) { throw "$($setup.Name) has no timestamp" }
             Start-Process -FilePath $setup.FullName -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
           }
           foreach ($name in "Rhinvoice", "Rhinvoice Beta") {
@@ -386,8 +400,7 @@ jobs:
     if: inputs.version != ''
     runs-on: macos-15
     timeout-minutes: 90
-    # Holds the Developer ID certificate: admits only v* tags, and the branch that tests this
-    # job while it is built (ADR 0036). Nothing is built or cached here; Apple's tools and
+    # Holds the Developer ID certificate: admits only v* tags (ADR 0036). Nothing is built or cached here; Apple's tools and
     # desktop/macos.py (standard library only, the system's Python) are all that runs.
     environment: desktop-signing
     steps:

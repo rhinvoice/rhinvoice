@@ -21,13 +21,13 @@ ID certificate (team T3P59F52F4). Three things in Rhinvoice shape how it is used
 
 ## Decision
 - **A job of its own holds the certificate.** `macos-signing` in `desktop.yml` runs after the
-  build, in the environment `desktop-signing`, which admits only `v*` tags (and, while the job is
-  built, its branch). It builds nothing and uses no cache: it unpacks the apps the build job left,
-  imports the certificate into a keychain of the run (deleted at the end), and runs only Apple's
-  tools and `desktop/macos.py` (standard library, the system's Python). The secrets are
-  `APPLE_CERTIFICATE` (the .p12, base64), `APPLE_CERTIFICATE_PASSWORD`,
-  `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD` (an app-specific password for
-  notarytool) and `APPLE_TEAM_ID`, each in the environment of the step that needs it.
+  build, in the environment `desktop-signing`, which admits only `v*` tags. It builds nothing and
+  uses no cache: it unpacks the apps the build job left, imports the certificate into a keychain
+  of the run (deleted at the end), and runs only Apple's tools and `desktop/macos.py` (standard
+  library, the system's Python). The secrets are `APPLE_CERTIFICATE` (the .p12, base64),
+  `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD` (an
+  app-specific password for notarytool) and `APPLE_TEAM_ID`, each in the environment of the step
+  that needs it.
 - **Inside out, with the hardened runtime.** `macos.py sign` finds every Mach-O file by its
   header, signs the libraries, then the programs, then nested bundles, then the app. Only the
   parts that need them get entitlements: the interpreters (`Contents/MacOS/<Name> Helper`,
@@ -45,19 +45,20 @@ ID certificate (team T3P59F52F4). Three things in Rhinvoice shape how it is used
   `python3`, so the Activity Monitor and firewalls such as Little Snitch named every request of
   Rhinvoice "python3". It is now `Rhinvoice Helper` (`Rhinvoice Beta Helper`); the start script
   `Contents/MacOS/Rhinvoice`, which the docs use on the command line, stays.
-- **Pull requests stay unsigned.** Without a candidate's version (or the *sign* input of "Run
-  workflow") the build job publishes its ad-hoc signed images as before.
+- **Pull requests stay unsigned.** Without a candidate's version ("Run workflow" included) the
+  build job publishes its ad-hoc signed images as before.
 - **The Windows setups through Azure Artifact Signing.** `windows-signing` runs in the same
   environment with `id-token: write` only: `azure/login` exchanges GitHub's token through the
-  federated credential `repo:rhinvoice/rhinvoice:environment:desktop-signing` of the app
-  registration `webberz-github-signing` (no client secret), and `azure/artifact-signing-action`
-  signs both setups with the certificate profile `webberz` (account `webberzsigning`, Switzerland
-  North), SHA-256 with Microsoft's timestamp. The values are environment variables, not secrets:
+  federated credential `repo:rhinvoice@340295224/rhinvoice@1415582286:environment:desktop-signing`
+  (GitHub names owner and repository with their IDs for this repository) of the app registration
+  `webberz-github-signing` (no client secret), and `azure/artifact-signing-action` signs both
+  setups with the certificate profile `webberz` (account `webberzsigning`, Switzerland North),
+  SHA-256 with Microsoft's timestamp. The values are environment variables, not secrets:
   `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `ARTIFACT_SIGNING_ENDPOINT`, `ARTIFACT_SIGNING_ACCOUNT`,
   `ARTIFACT_SIGNING_PROFILE`. `windows-signed` installs the signed setups, requires a valid
-  Authenticode signature and runs the smoke test. The programs inside the setup
-  (`Rhinvoice.exe`, PostgreSQL) stay as they come; the update packages are protected by
-  `release.json`.
+  Authenticode signature with a timestamp, issued to the publisher `CN=Özdemir Kadir`, and runs
+  the smoke test. The programs inside the setup (`Rhinvoice.exe`, PostgreSQL) stay as they come;
+  the update packages are protected by `release.json`.
 
 ## Consequences
 - macOS opens Rhinvoice and Rhinvoice Beta from the first start without a warning; the docs no

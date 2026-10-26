@@ -40,7 +40,8 @@ export const de = {
     "In der öffentlichen Demo nicht verfügbar: Hier sind alle Besucher mit demselben Zugang angemeldet, und es werden keine E-Mails versendet.",
   "demo.signIn": "Demo öffnen",
   "demo.otherCountries": "Auch als Demo:",
-  "demo.banner": "Beispieldaten, alle {minutes} Minuten zurückgesetzt, keine E-Mails",
+  "demo.banner":
+    "Beispieldaten und Beispielkonten, bitte nichts überweisen · alle {minutes} Minuten zurückgesetzt, keine E-Mails",
   "demo.countryDemo": "Demo {country}",
   "about.title": "Über Rhinvoice",
   "about.version": "Version {version}",

@@ -44,7 +44,8 @@ export const it: Catalog<MessageKey> = {
     "Non disponibile nella demo pubblica: qui tutti i visitatori accedono con lo stesso account e non vengono inviate e-mail.",
   "demo.signIn": "Apri la demo",
   "demo.otherCountries": "Disponibile anche come demo:",
-  "demo.banner": "Dati di esempio, reimpostati ogni {minutes} minuti, nessuna e-mail",
+  "demo.banner":
+    "Dati e conti di esempio, non bonificare nulla · reimpostati ogni {minutes} minuti, nessuna e-mail",
   "demo.countryDemo": "Demo {country}",
   "about.title": "Informazioni su Rhinvoice",
   "about.version": "Versione {version}",

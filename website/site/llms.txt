@@ -44,7 +44,7 @@ On Windows or a Mac, without Docker (beta): download the setup and start it.
 - Windows 10/11: https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-Setup-Windows.exe
 - Mac with Apple silicon, macOS 12 or later: https://github.com/rhinvoice/rhinvoice/releases/latest/download/Rhinvoice-macOS.dmg
 
-The setups are not signed yet: Windows ("More info" → "Run anyway") and macOS (System Settings → Privacy & Security → "Open Anyway") ask once.
+The setups are signed by the developer, the Mac app is also notarized by Apple. While the Windows certificate is new, Windows SmartScreen may still ask once ("More info" → "Run anyway").
 
 On a server, a NAS or your own computer with Docker:
 

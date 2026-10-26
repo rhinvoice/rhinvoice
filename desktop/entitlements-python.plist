@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  What the Python interpreters in Rhinvoice.app may do under the hardened runtime (ADR 0036).
+  disable-library-validation: the app packages of updates lie in the data folder, outside the
+  signed bundle (ADR 0022); their Python modules are not signed with the app's team.
+  allow-unsigned-executable-memory: Python's ctypes and cffi (PyObjC, cryptography) write
+  callbacks into memory they then run.
+-->
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.cs.disable-library-validation</key><true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key><true/>
+</dict>
+</plist>

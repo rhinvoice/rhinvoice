@@ -203,6 +203,14 @@ jobs:
     name: Desktop setups and app packages
     needs: candidate
     uses: ./.github/workflows/desktop.yml
+    permissions:
+      contents: read
+      # Only its job windows-signing uses it, to sign in to Azure Artifact Signing (ADR 0036).
+      id-token: write
+    # Without it the called workflow's signing job found no APPLE_CERTIFICATE of its environment
+    # desktop-signing (v0.8.6-rc.1); a mapping here cannot name them, as this job has no
+    # environment. desktop.yml names only the Apple secrets, in the steps of macos-signing.
+    secrets: inherit # zizmor: ignore[secrets-inherit]
     with:
       version: ${{ needs.candidate.outputs.version }}
       # The app packages name it; Rhinvoice Beta tells candidates of one version apart (ADR 0035).

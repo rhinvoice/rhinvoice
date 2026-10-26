@@ -9,6 +9,10 @@ name: Desktop
 # for any branch. Every run also builds Rhinvoice Beta (ADR 0030), the candidates' separate
 # installation, from the same runtime and app package, and checks that it lives beside Rhinvoice
 # without touching it. The candidate offers both; the promotion releases only Rhinvoice's.
+# A candidate's programs are signed (ADR 0036): the macOS apps with the Developer ID and
+# notarized by Apple, the Windows setups with Azure Artifact Signing, each in a job of its own
+# that holds the certificate (or the federated login) and builds nothing. Then the signed files
+# go through the smoke test as a user gets them. "Run workflow" builds them unsigned.
 on:
   workflow_call:
     inputs:
@@ -115,7 +119,8 @@ jobs:
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: Rhinvoice-Setup-windows
+          # Signed, the setups come from the job windows-signing; these stay with the run.
+          name: ${{ inputs.version != '' && 'unsigned-windows' || 'Rhinvoice-Setup-windows' }}
           path: |
             build/windows/Rhinvoice-Setup-*.exe
             build/windows/Rhinvoice-Beta-Setup-*.exe
@@ -154,6 +159,112 @@ jobs:
           if ($names -ne "Rhinvoice, Rhinvoice Beta") { throw "uninstall entries: $names" }
 
       - name: Smoke test Rhinvoice Beta (its own data; Rhinvoice's stays as it is)
+        shell: pwsh
+        run: python desktop/smoke_test.py "$env:LOCALAPPDATA\Programs\Rhinvoice Beta"
+
+  windows-signing:
+    name: Windows setups (sign with Azure Artifact Signing)
+    needs: windows
+    if: inputs.version != ''
+    runs-on: windows-2025
+    timeout-minutes: 30
+    # Signs through the federated credential of this environment, without a client secret
+    # (ADR 0036). Nothing is built or cached here.
+    environment: desktop-signing
+    permissions:
+      contents: read
+      # The token azure/login exchanges for Azure's.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: unsigned-windows
+          path: build/windows
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          allow-no-subscriptions: true
+      - uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
+        with:
+          endpoint: ${{ vars.ARTIFACT_SIGNING_ENDPOINT }}
+          signing-account-name: ${{ vars.ARTIFACT_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ vars.ARTIFACT_SIGNING_PROFILE }}
+          files-folder: build/windows
+          files-folder-filter: exe
+          files-folder-recurse: false
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+          cache-dependencies: false
+      - name: Both setups carry a valid signature
+        shell: pwsh
+        # The certificate Azure Artifact Signing issues for the profile (ADR 0036).
+        env:
+          PUBLISHER: "CN=Özdemir Kadir"
+        run: |
+          $setups = @(Get-ChildItem build\windows\*.exe)
+          if ($setups.Count -ne 2) { throw "expected two setups, found $($setups.Count)" }
+          foreach ($setup in $setups) {
+            $signature = Get-AuthenticodeSignature $setup.FullName
+            "{0}: {1}, {2}" -f $setup.Name, $signature.Status, $signature.SignerCertificate.Subject
+            if ($signature.Status -ne "Valid") { throw "$($setup.Name) is not validly signed" }
+            if (-not $signature.SignerCertificate.Subject.Normalize().StartsWith("$env:PUBLISHER,".Normalize())) {
+              throw "$($setup.Name) is signed by someone else"
+            }
+            if ($null -eq $signature.TimeStamperCertificate) { throw "$($setup.Name) has no timestamp" }
+          }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Rhinvoice-Setup-windows
+          path: |
+            build/windows/Rhinvoice-Setup-*.exe
+            build/windows/Rhinvoice-Beta-Setup-*.exe
+            build/windows/rhinvoice-app-*.zip
+          retention-days: 14
+
+  windows-signed:
+    name: Windows setups as users get them (signature, install, smoke test)
+    needs: windows-signing
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: Rhinvoice-Setup-windows
+          path: build/release
+      - name: Install both signed setups silently for this user
+        shell: pwsh
+        # The certificate Azure Artifact Signing issues for the profile (ADR 0036).
+        env:
+          PUBLISHER: "CN=Özdemir Kadir"
+        run: |
+          foreach ($pattern in "Rhinvoice-Setup-*.exe", "Rhinvoice-Beta-Setup-*.exe") {
+            $setup = Get-ChildItem "build\release\$pattern" | Select-Object -First 1
+            $signature = Get-AuthenticodeSignature $setup.FullName
+            "{0}: {1}, {2}" -f $setup.Name, $signature.Status, $signature.SignerCertificate.Subject
+            if ($signature.Status -ne "Valid") { throw "$($setup.Name) is not validly signed" }
+            if (-not $signature.SignerCertificate.Subject.Normalize().StartsWith("$env:PUBLISHER,".Normalize())) {
+              throw "$($setup.Name) is signed by someone else"
+            }
+            if ($null -eq $signature.TimeStamperCertificate) { throw "$($setup.Name) has no timestamp" }
+            Start-Process -FilePath $setup.FullName -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
+          }
+          foreach ($name in "Rhinvoice", "Rhinvoice Beta") {
+            if (-not (Test-Path "$env:LOCALAPPDATA\Programs\$name\python\Rhinvoice.exe")) {
+              throw "$name was not installed"
+            }
+          }
+      - name: Smoke test Rhinvoice
+        shell: pwsh
+        run: python desktop/smoke_test.py "$env:LOCALAPPDATA\Programs\Rhinvoice"
+      - name: Smoke test Rhinvoice Beta beside it
         shell: pwsh
         run: python desktop/smoke_test.py "$env:LOCALAPPDATA\Programs\Rhinvoice Beta"
 
@@ -224,7 +335,7 @@ jobs:
               sleep 1
             done
             curl -fsS "http://127.0.0.1:$port/api/health" || { cat "$log"; exit 1; }
-            pkill -INT -f "MacOS/python3 -P -m rhinvoice_boot"
+            pkill -INT -f "MacOS/$name Helper -P -m rhinvoice_boot"
             sleep 5
             if pgrep -f "$name/database" >/dev/null; then
               echo "the database still runs after the program ended" >&2
@@ -257,28 +368,111 @@ jobs:
 
       - name: Pack the disk images
         run: |
-          version="$(python desktop/build.py version)"
           for name in "Rhinvoice" "Rhinvoice Beta"; do
-            staging="$(mktemp -d)"
-            cp -R "build/macos/$name.app" "$staging/"
-            ln -s /Applications "$staging/Applications"
-            image="build/macos/${name// /-}-$version.dmg"
-            # ULMO (LZMA) packs far tighter than the usual UDZO (zlib); macOS opens it from
-            # 10.15 on, below the app's minimum of 12.
-            # hdiutil on the hosted runners fails now and then with "Resource busy" (a scan of
-            # the fresh files still holds them): try again a few times before giving up.
-            for attempt in 1 2 3 4 5; do
-              hdiutil create -volname "$name $version" -srcfolder "$staging" -format ULMO \
-                -ov "$image" && break
-              [ "$attempt" = 5 ] && exit 1
-              echo "hdiutil failed (attempt $attempt), trying again"
-              sleep 10
-            done
-            hdiutil verify "$image"
-            ls -l "$image"
+            python desktop/macos.py dmg "build/macos/$name.app" build/macos
           done
           # What makes the app big, for the next steps (sizes in MB).
           du -sm build/macos/Rhinvoice.app/Contents/Resources/* | sort -rn | head -8
+
+      # Signed, the disk images come from the job macos-signing; these stay with the run.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ inputs.version != '' && 'unsigned-macos' || 'Rhinvoice-macos' }}
+          path: |
+            build/macos/Rhinvoice-*.dmg
+            build/macos/rhinvoice-app-*.zip
+          retention-days: 14
+      - name: Keep the apps for signing (tar keeps file modes, links and attributes)
+        if: inputs.version != ''
+        run: tar -cf build/macos/apps.tar -C build/macos "Rhinvoice.app" "Rhinvoice Beta.app"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: inputs.version != ''
+        with:
+          name: macos-apps
+          path: |
+            build/macos/apps.tar
+            build/macos/rhinvoice-app-*.zip
+          retention-days: 1
+
+  macos-signing:
+    name: macOS apps (sign with the Developer ID, notarize)
+    needs: macos
+    if: inputs.version != ''
+    runs-on: macos-15
+    timeout-minutes: 90
+    # Holds the Developer ID certificate: admits only v* tags (ADR 0036). Nothing is built or
+    # cached here; Apple's tools and desktop/macos.py (standard library only, the system's
+    # Python) are all that runs.
+    environment: desktop-signing
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: macos-apps
+          path: build/macos
+      - name: Unpack the apps
+        run: tar -xf build/macos/apps.tar -C build/macos && rm build/macos/apps.tar
+
+      - name: Put the certificate into a keychain of this run
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$APPLE_CERTIFICATE" ]; then
+            echo "::error::The secret APPLE_CERTIFICATE of the environment desktop-signing is missing."
+            exit 1
+          fi
+          # The decoded certificate never outlives this step, also when the import fails.
+          trap 'rm -f "$RUNNER_TEMP/certificate.p12"' EXIT
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password="$(openssl rand -base64 24)"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" -f pkcs12 \
+            -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "$password" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" login.keychain-db
+          security find-identity -v -p codesigning "$keychain"
+
+      - name: Sign the apps
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_KEYCHAIN: ${{ runner.temp }}/signing.keychain-db
+        run: /usr/bin/python3 desktop/macos.py sign "build/macos/Rhinvoice.app" "build/macos/Rhinvoice Beta.app"
+      - name: Notarize the apps
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for name in "Rhinvoice" "Rhinvoice Beta"; do
+            /usr/bin/python3 desktop/macos.py notarize "build/macos/$name.app"
+          done
+      - name: Pack and sign the disk images
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_KEYCHAIN: ${{ runner.temp }}/signing.keychain-db
+        run: |
+          for name in "Rhinvoice" "Rhinvoice Beta"; do
+            /usr/bin/python3 desktop/macos.py dmg "build/macos/$name.app" build/macos
+          done
+          /usr/bin/python3 desktop/macos.py sign build/macos/Rhinvoice-*.dmg
+      - name: Notarize the disk images
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for image in build/macos/Rhinvoice-*.dmg; do
+            /usr/bin/python3 desktop/macos.py notarize "$image"
+          done
+      - name: Remove the keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -288,3 +482,76 @@ jobs:
             build/macos/rhinvoice-app-*.zip
           retention-days: 14
 
+  macos-signed:
+    name: macOS apps as users get them (Gatekeeper, smoke test)
+    needs: macos-signing
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: Rhinvoice-macos
+          path: build/release
+
+      - name: Install the apps from the disk images, as a user does
+        run: |
+          # Apple's ticket service drops a connection now and then: ask again before failing.
+          validate() {
+            for attempt in 1 2 3 4 5; do
+              xcrun stapler validate "$1" && return 0
+              echo "stapler validate failed (attempt $attempt), trying again"
+              sleep 30
+            done
+            return 1
+          }
+          for name in "Rhinvoice" "Rhinvoice Beta"; do
+            # A digit after the name: "Rhinvoice-*" would also take Rhinvoice Beta's image.
+            image="$(ls build/release/"${name// /-}"-[0-9]*.dmg)"
+            echo "--- $image"
+            spctl --assess --type open --context context:primary-signature --verbose=2 "$image"
+            validate "$image"
+            mount="$(mktemp -d)"
+            hdiutil attach -nobrowse -readonly -mountpoint "$mount" "$image"
+            ditto "$mount/$name.app" "/Applications/$name.app"
+            hdiutil detach "$mount"
+          done
+
+      - name: Gatekeeper lets them start (signed by the Developer ID, notarized)
+        run: |
+          # Apple's ticket service drops a connection now and then: ask again before failing.
+          validate() {
+            for attempt in 1 2 3 4 5; do
+              xcrun stapler validate "$1" && return 0
+              echo "stapler validate failed (attempt $attempt), trying again"
+              sleep 30
+            done
+            return 1
+          }
+          for name in "Rhinvoice" "Rhinvoice Beta"; do
+            app="/Applications/$name.app"
+            codesign --verify --deep --strict --verbose=2 "$app"
+            validate "$app"
+            verdict="$(spctl --assess --type execute --verbose=2 "$app" 2>&1)"
+            echo "$verdict"
+            echo "$verdict" | grep -q "source=Notarized Developer ID" || {
+              echo "::error title=Gatekeeper::$name.app is not accepted as notarized: $verdict"
+              exit 1
+            }
+          done
+
+      # Updates come as the release's app package, whose modules the certificate did not sign:
+      # the hardened runtime must load them (desktop/entitlements.plist).
+      - name: Smoke test Rhinvoice
+        run: |
+          python desktop/smoke_test.py "/Applications/Rhinvoice.app/Contents/Resources" \
+            --update-package "$(ls build/release/rhinvoice-app-*-macos-arm64.zip)"
+      - name: Smoke test Rhinvoice Beta beside it
+        run: |
+          python desktop/smoke_test.py "/Applications/Rhinvoice Beta.app/Contents/Resources" \
+            --update-package "$(ls build/release/rhinvoice-app-*-macos-arm64.zip)"

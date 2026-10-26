@@ -400,8 +400,9 @@ jobs:
     if: inputs.version != ''
     runs-on: macos-15
     timeout-minutes: 90
-    # Holds the Developer ID certificate: admits only v* tags (ADR 0036). Nothing is built or cached here; Apple's tools and
-    # desktop/macos.py (standard library only, the system's Python) are all that runs.
+    # Holds the Developer ID certificate: admits only v* tags (ADR 0036). Nothing is built or
+    # cached here; Apple's tools and desktop/macos.py (standard library only, the system's
+    # Python) are all that runs.
     environment: desktop-signing
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0

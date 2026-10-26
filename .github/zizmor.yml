@@ -6,3 +6,10 @@ rules:
       # it holds no write permission and uploads only test reports. The images, setups and
       # release.json come from release.yml and promote.yml, whose signing jobs use no cache.
       - ci.yml
+  secrets-inherit:
+    ignore:
+      # A called workflow reads the secrets of its job's environment only when the caller
+      # inherits them (v0.8.6-rc.1 found no APPLE_CERTIFICATE without it); a mapping from the
+      # caller cannot name them, since the caller's job has no environment. desktop.yml names
+      # only the Apple secrets, and only in the steps of macos-signing (ADR 0036).
+      - release.yml

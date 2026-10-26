@@ -207,6 +207,9 @@ jobs:
       contents: read
       # Only its job windows-signing uses it, to sign in to Azure Artifact Signing (ADR 0036).
       id-token: write
+    # A called workflow sees the secrets of its job's environment (desktop-signing) only when the
+    # caller hands its secrets on; without this the signing job found no APPLE_CERTIFICATE.
+    secrets: inherit
     with:
       version: ${{ needs.candidate.outputs.version }}
       # The app packages name it; Rhinvoice Beta tells candidates of one version apart (ADR 0035).

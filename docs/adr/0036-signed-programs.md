@@ -21,10 +21,12 @@ ID certificate (team T3P59F52F4). Three things in Rhinvoice shape how it is used
 
 ## Decision
 - **A job of its own holds the certificate.** `macos-signing` in `desktop.yml` runs after the
-  build, in the environment `desktop-signing`, which admits only `v*` tags. It builds nothing and
-  uses no cache: it unpacks the apps the build job left, imports the certificate into a keychain
-  of the run (deleted at the end), and runs only Apple's tools and `desktop/macos.py` (standard
-  library, the system's Python). The secrets are `APPLE_CERTIFICATE` (the .p12, base64),
+  build, in the environment `desktop-signing`. It admits only candidates' tags (`v*.*.*-rc.*`) and
+  waits for the maintainer's approval (required reviewer, no bypass for admins); the ruleset
+  *release tags* keeps every `v*` tag from being moved or deleted. It builds nothing and uses no
+  cache: it unpacks the apps the build job left, imports the certificate into a keychain of the
+  run (deleted at the end), and runs only Apple's tools and `desktop/macos.py` (standard library,
+  the system's Python). The secrets are `APPLE_CERTIFICATE` (the .p12, base64),
   `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD` (an
   app-specific password for notarytool) and `APPLE_TEAM_ID`, each in the environment of the step
   that needs it.

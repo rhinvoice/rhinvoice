@@ -5,6 +5,25 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.8.7] – 2026-10-27
+
+### Neu
+- *Einstellungen → Bankkonten* weist darauf hin, dass ein Schweizer Euro-Konto seinen BIC braucht:
+  Ohne ihn bekommen Euro-Rechnungen an Kunden in der EU keinen EPC-QR-Code.
+
+### Geändert
+- Eine Installation nennt ihren Hersteller nur noch unter *Über Rhinvoice*: Unten in der
+  Navigation steht nur die Version, und weder die Anmeldeseite noch das Startfenster der Programme
+  für Windows und Mac zeigen «made by webberz». Die öffentlichen Demos tun es weiterhin, neben
+  ihren rechtlichen Angaben.
+- Die öffentlichen Demos sagen in ihrem Hinweisband, dass ihre Bankkonten Beispielkonten sind und
+  nichts überwiesen werden soll. Bank-Apps lehnen dort den Schweizer QR-Code einer CHF-Rechnung ab,
+  weil die Beispiel-QR-IBAN von SIX zu keiner Bank gehört; die häufigen Fragen erklären es.
+
+### Behoben
+- In der Schweizer Demo tragen Euro-Rechnungen an Kunden im EWR den EPC-QR-Code: Ihrem
+  Euro-Konto fehlte der BIC, den ein Schweizer Konto für den Code braucht.
+
 ## [0.8.6] – 2026-10-26
 
 ### Geändert

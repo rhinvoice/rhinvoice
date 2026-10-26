@@ -5,6 +5,24 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.8.7] – 2026-10-27
+
+### Added
+- *Settings → Bank accounts* points out that a Swiss euro account needs its BIC: without it, euro
+  invoices to customers in the EU get no EPC QR code.
+
+### Changed
+- An installation names its maker only in *About Rhinvoice*: the foot of the navigation shows the
+  version alone, and neither the login page nor the start window of the programs for Windows and
+  Mac says "made by webberz" any more. The public demos still do, next to their legal pages.
+- The public demos say in their banner that their bank accounts are examples and nothing should be
+  transferred. Banking apps reject the Swiss QR code of a CHF invoice there, because the example
+  QR-IBAN from SIX belongs to no bank; the FAQ explains it.
+
+### Fixed
+- In the Swiss demo, euro invoices to customers in the EEA carry the EPC QR code: its euro
+  account had no BIC, which a Swiss account needs for the code.
+
 ## [0.8.6] – 2026-10-26
 
 ### Changed

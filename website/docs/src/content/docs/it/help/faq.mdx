@@ -32,6 +32,8 @@ faq:
     a: Domande e idee vanno nelle GitHub Discussions, gli errori nelle GitHub Issues di rhinvoice/rhinvoice. Per una licenza commerciale, una collaborazione o la ripresa del progetto scriva a hello@rhinvoice.com.
   - q: Posso provare Rhinvoice senza installarlo?
     a: Sì, nella demo pubblica per la Svizzera (ch.rhinvoice.com), la Germania (de.rhinvoice.com) e l’Austria (at.rhinvoice.com). Si azzera ogni ora e non accetta caricamenti, quindi niente importazioni, niente logo e niente file. Non invia e-mail.
+  - q: "Perché la mia app bancaria rifiuta il codice QR della demo?"
+    a: "La demo usa conti di esempio ufficiali, non conti reali. Per le fatture svizzere in CHF è il QR-IBAN di esempio di SIX, il cui codice bancario non appartiene a nessuna banca; per questo le app bancarie rifiutano il codice QR. Gli altri codici QR si possono scansionare, ma portano anch’essi a conti di esempio: per favore non bonificare nulla. Nella vostra installazione il codice QR contiene il vostro conto, e i vostri clienti lo scansionano come sempre."
 ---
 
 import Faq from "../../../../components/Faq.astro";

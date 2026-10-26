@@ -502,8 +502,7 @@ animation:flow 1.6s ease-in-out infinite}
 </style></head><body>
 <div class="top">__LOGO__<div><div class="name">__NAME__</div>
 <div class="version">Version __VERSION__ · Beta</div></div></div>
-<div><div class="river"></div><div class="bottom"><span id="step" role="status"></span>
-<span>by Webberz</span></div></div>
+<div><div class="river"></div><div class="bottom"><span id="step" role="status"></span></div></div>
 <script>
 const texts = __TEXTS__;
 const words = (navigator.language || "en").toLowerCase().startsWith("de") ? texts.de : texts.en;

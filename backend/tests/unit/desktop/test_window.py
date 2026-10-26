@@ -399,7 +399,7 @@ def test_the_card_needs_nothing_from_elsewhere() -> None:
     page = window.splash_html("1<2")
     assert "Version 1&lt;2 · Beta" in page
     assert "Datenbank wird gestartet …" in page
-    assert "by Webberz" in page
+    assert "Webberz" not in page
     assert "http" not in page
 
 

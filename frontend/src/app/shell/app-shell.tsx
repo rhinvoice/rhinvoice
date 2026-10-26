@@ -41,7 +41,7 @@ import { useLogout, type User } from "@/features/auth/api";
 import { companyQuery } from "@/features/company/api";
 import { undoRegistry } from "@/features/shared/undo";
 import { UpdateCard } from "@/features/updates/update-notice";
-import { APP_VERSION, MAKER } from "@/lib/about";
+import { APP_VERSION } from "@/lib/about";
 import { cn } from "@/lib/cn";
 import { modifierLabel } from "@/lib/shortcuts";
 import { applyAccentHue } from "@/lib/theme";
@@ -102,7 +102,7 @@ function NavLinks({
   );
 }
 
-/** The version and the maker, quiet at the foot of the navigation; opens "About". */
+/** The version, quiet at the foot of the navigation; opens "About", which names the maker. */
 function AboutLine({ onOpen }: { readonly onOpen: () => void }) {
   const { t } = useI18n();
   return (
@@ -112,7 +112,7 @@ function AboutLine({ onOpen }: { readonly onOpen: () => void }) {
       className="rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground tabular-nums transition-colors hover:text-foreground"
     >
       <span className="sr-only">{t("about.title")}: </span>
-      <span data-app-version>v{APP_VERSION}</span> · {t("about.byMaker", { maker: MAKER })}
+      <span data-app-version>v{APP_VERSION}</span>
     </button>
   );
 }

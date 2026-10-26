@@ -44,7 +44,8 @@ export const fr: Catalog<MessageKey> = {
     "Non disponible dans la démo publique : tous les visiteurs y sont connectés avec le même accès et aucun e-mail n’est envoyé.",
   "demo.signIn": "Ouvrir la démo",
   "demo.otherCountries": "Aussi en démo :",
-  "demo.banner": "Données d’exemple, réinitialisées toutes les {minutes} minutes, aucun e-mail",
+  "demo.banner":
+    "Données et comptes d’exemple, merci de ne rien virer · réinitialisées toutes les {minutes} minutes, aucun e-mail",
   "demo.countryDemo": "Démo {country}",
   "about.title": "À propos de Rhinvoice",
   "about.version": "Version {version}",
@@ -112,7 +113,6 @@ export const fr: Catalog<MessageKey> = {
   "updates.later": "Plus tard",
   "updates.closing": "Rhinvoice se ferme pour la mise à jour …",
   "about.madeBy": "made by {maker}",
-  "about.byMaker": "by {maker}",
   "about.legalNotice": "Mentions légales",
   "about.privacy": "Protection des données",
   "about.openSource": "Open source",
@@ -590,6 +590,8 @@ export const fr: Catalog<MessageKey> = {
   "bank.qrIban": "QR-IBAN",
   "bank.qrIbanHint": "Uniquement pour les factures QR avec référence QR (Suisse et Liechtenstein).",
   "bank.bic": "BIC / SWIFT",
+  "bank.bicEpcHint":
+    "Nécessaire pour le code QR EPC sur les factures en euros aux clients de l’UE : sans BIC, il n’y en a pas.",
   "bank.currency": "Monnaie",
   "bank.isDefault": "Compte par défaut pour cette monnaie",
   "bank.saved": "Compte bancaire enregistré.",

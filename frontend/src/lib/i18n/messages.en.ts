@@ -39,7 +39,8 @@ export const en: Catalog<MessageKey> = {
     "Not available in the public demo: all visitors share one login there, and no e-mails are sent.",
   "demo.signIn": "Open the demo",
   "demo.otherCountries": "Also as a demo:",
-  "demo.banner": "Sample data, reset every {minutes} minutes, no e-mails",
+  "demo.banner":
+    "Sample data and example accounts, please transfer nothing · reset every {minutes} minutes, no e-mails",
   "demo.countryDemo": "Demo {country}",
   "about.title": "About Rhinvoice",
   "about.version": "Version {version}",
@@ -102,7 +103,6 @@ export const en: Catalog<MessageKey> = {
   "updates.later": "Later",
   "updates.closing": "Rhinvoice is closing for the update …",
   "about.madeBy": "made by {maker}",
-  "about.byMaker": "by {maker}",
   "about.legalNotice": "Legal notice",
   "about.privacy": "Privacy",
   "about.openSource": "Open source",
@@ -552,6 +552,8 @@ export const en: Catalog<MessageKey> = {
   "bank.qrIban": "QR-IBAN",
   "bank.qrIbanHint": "Only for QR-bills with QR reference (Switzerland and Liechtenstein).",
   "bank.bic": "BIC / SWIFT",
+  "bank.bicEpcHint":
+    "Needed for the EPC QR code on euro invoices to customers in the EU: without the BIC there is none.",
   "bank.currency": "Currency",
   "bank.isDefault": "Default account for this currency",
   "bank.saved": "Bank account saved.",

@@ -143,7 +143,7 @@ test.describe("app shell", () => {
       await page.getByRole("button", { name: "Konto" }).click();
       await page.getByRole("menuitem", { name: "Über Rhinvoice" }).click();
     } else {
-      await page.getByRole("button", { name: /^Über Rhinvoice:.*by webberz/ }).click();
+      await page.getByRole("button", { name: /^Über Rhinvoice: v\d/ }).click();
     }
     const dialog = page.getByRole("dialog", { name: "Über Rhinvoice" });
     await expect(dialog).toBeVisible();

@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { LandmarkIcon, PencilIcon, PlusIcon, StarIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { useI18n } from "@/components/i18n/use-i18n";
@@ -48,7 +48,11 @@ import {
 } from "@/features/company/bank-account-form-model";
 import { FormAlert } from "@/features/shared/form-alert";
 import { applyServerErrors } from "@/features/shared/server-errors";
-import { offersQrIban, type CountryProfile } from "@/features/shared/country-profile-model";
+import {
+  bicMattersForEpc,
+  offersQrIban,
+  type CountryProfile,
+} from "@/features/shared/country-profile-model";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { formatIban } from "@/lib/validation/iban";
 import { useUnsavedChanges } from "@/features/shared/use-unsaved-changes";
@@ -230,6 +234,8 @@ export function BankAccountDialog({
     mode: "onTouched",
     defaultValues: account === null ? defaults : bankAccountToForm(account),
   });
+  const currency = useWatch({ control: form.control, name: "currency" });
+  const iban = useWatch({ control: form.control, name: "iban" });
   const { errors, isSubmitting, isDirty } = form.formState;
   useUnsavedChanges(isDirty);
   const error = (name: keyof BankAccountFormValues) => errors[name]?.message;
@@ -298,7 +304,14 @@ export function BankAccountDialog({
               />
             </Field>
           ) : null}
-          <Field label={t("bank.bic")} error={error("bic")} optionalLabel={t("common.optional")}>
+          <Field
+            label={t("bank.bic")}
+            description={
+              bicMattersForEpc(profile, currency, iban) ? t("bank.bicEpcHint") : undefined
+            }
+            error={error("bic")}
+            optionalLabel={t("common.optional")}
+          >
             <Input
               id="bank-bic"
               className="font-mono uppercase"

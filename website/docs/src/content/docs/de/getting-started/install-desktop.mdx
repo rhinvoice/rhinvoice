@@ -1,9 +1,9 @@
 ---
 title: Rhinvoice unter Windows und macOS installieren (ohne Docker)
-description: Rhinvoice als normales Programm für Windows und Mac installieren, ohne Docker. Setup herunterladen, Warnung von Windows oder macOS bestätigen, starten.
+description: Rhinvoice als normales Programm für Windows und Mac installieren, ohne Docker. Setup herunterladen, installieren, starten.
 faq:
-  - q: Warum warnt Windows oder macOS beim ersten Öffnen?
-    a: Die Setups von Rhinvoice sind noch nicht mit einem kostenpflichtigen Zertifikat signiert. Windows und macOS kennen den Herausgeber deshalb nicht und fragen nach. Bestätigen Sie es einmal, danach startet Rhinvoice ohne Rückfrage.
+  - q: Warnt Windows oder macOS beim ersten Öffnen?
+    a: Das Setup für Windows und die App für den Mac sind vom Hersteller signiert, die Mac-App ist zudem von Apple beglaubigt (notarisiert). Beide Systeme wissen deshalb, von wem sie stammen. Solange das Zertifikat für Windows noch neu ist, kann Windows SmartScreen trotzdem einmal nachfragen; bestätigen Sie mit Weitere Informationen und Trotzdem ausführen.
   - q: Wo speichert Rhinvoice meine Daten?
     a: Unter Windows in %LOCALAPPDATA%\Rhinvoice, auf dem Mac in ~/Library/Application Support/Rhinvoice. Dort liegen die Datenbank, die Einstellungen und die Protokolle. Ein Update oder eine Deinstallation lässt diesen Ordner unberührt.
   - q: Brauche ich Docker, Python oder einen Server?
@@ -41,7 +41,7 @@ Laden Sie die neueste Version für Ihr System herunter. Die Links führen immer 
 
 1. Öffnen Sie `Rhinvoice-Setup-Windows.exe` per Doppelklick.
 
-2. **Die Warnung von Windows bestätigen.** Windows zeigt beim ersten Mal «Der Computer wurde durch Windows geschützt». Klicken Sie auf **Weitere Informationen** und dann auf **Trotzdem ausführen**. Die Schaltfläche erscheint erst nach dem Klick auf «Weitere Informationen».
+2. **Falls Windows nachfragt.** Das Setup ist signiert, Windows zeigt den Herausgeber an. Solange das Zertifikat noch neu ist, kann SmartScreen trotzdem einmal «Der Computer wurde durch Windows geschützt» zeigen: Klicken Sie auf **Weitere Informationen** und dann auf **Trotzdem ausführen**. <Since version="0.8.6" />
 
 3. Folgen Sie dem Setup. Es installiert Rhinvoice nur für Ihr Benutzerkonto nach `%LOCALAPPDATA%\Programs\Rhinvoice` und braucht keine Administratorrechte.
 
@@ -55,18 +55,16 @@ Laden Sie die neueste Version für Ihr System herunter. Die Links führen immer 
 
 1. Öffnen Sie `Rhinvoice-macOS.dmg` und ziehen Sie **Rhinvoice** in den Ordner **Programme**.
 
-2. Öffnen Sie Rhinvoice aus dem Ordner Programme. macOS meldet beim ersten Mal, dass es Rhinvoice nicht überprüfen konnte, und öffnet es nicht. Klicken Sie auf **Fertig**.
+2. Öffnen Sie Rhinvoice aus dem Ordner Programme. Beim ersten Mal fragt macOS, ob Sie eine aus dem Internet geladene App öffnen möchten. Klicken Sie auf **Öffnen**. <Since version="0.8.6" />
 
-3. **Rhinvoice erlauben.** Öffnen Sie  > **Systemeinstellungen** > **Datenschutz & Sicherheit** und scrollen Sie zum Abschnitt **Sicherheit**. Dort steht, dass Rhinvoice blockiert wurde. Klicken Sie auf **Dennoch öffnen**, bestätigen Sie mit Ihrem Anmeldepasswort und klicken Sie im nächsten Fenster nochmals auf **Dennoch öffnen**. Die Schaltfläche erscheint nur etwa eine Stunde nach dem Öffnungsversuch aus Schritt 2.
-
-4. Rhinvoice startet. Ab jetzt öffnen Sie es wie jedes andere Programm, ohne Rückfrage.
+3. Rhinvoice startet. Ab jetzt öffnen Sie es wie jedes andere Programm, ohne Rückfrage.
 
 </Steps>
 
-<Aside title="Warum die Warnungen?">
-Die Setups sind noch nicht mit einem kostenpflichtigen Zertifikat von Microsoft oder Apple signiert. Windows und macOS kennen den Herausgeber deshalb nicht und fragen einmal nach. Laden Sie Rhinvoice nur von der [GitHub-Seite des Projekts](https://github.com/rhinvoice/rhinvoice/releases) herunter.
+<Aside title="Signierte Programme">
+Das Setup für Windows und die App für den Mac sind vom Hersteller signiert; die Mac-App ist zudem von Apple beglaubigt (notarisiert), Apple hat sie geprüft. <Since version="0.8.6" /> Windows SmartScreen beurteilt ein neues Zertifikat danach, wie oft seine Programme schon heruntergeladen wurden, und kann deshalb anfangs einmal nachfragen. Laden Sie Rhinvoice nur von der [GitHub-Seite des Projekts](https://github.com/rhinvoice/rhinvoice/releases) herunter.
 
-Die Programme für Windows und Mac sind ein Angebot in der Testphase, neben der Installation mit Docker. Sie werden gepflegt, solange sie genutzt werden. Arbeiten genug Leute damit, werden sie auch signiert, und die Warnungen entfallen.
+Die Programme für Windows und Mac sind ein Angebot in der Testphase, neben der Installation mit Docker. Sie werden gepflegt, solange sie genutzt werden.
 </Aside>
 
 ## Erster Start
@@ -98,7 +96,7 @@ Starten Sie ein Setup selbst, während Rhinvoice läuft, bittet das Setup unter 
 
 Bevor eine Version freigegeben wird, erscheint sie als Testkandidat. Für Windows und Mac kommt ein Testkandidat als **Rhinvoice Beta**: ein eigenes Programm, das Sie neben Rhinvoice installieren. Es hat einen eigenen Namen, eigene Verknüpfungen, einen eigenen Eintrag zum Deinstallieren und einen eigenen Datenordner (`%LOCALAPPDATA%\Rhinvoice Beta`, auf dem Mac `~/Library/Application Support/Rhinvoice Beta`). Die Daten von Rhinvoice berührt es nie. <Since version="0.8.1" /> Sein Icon ist das von Rhinvoice mit einer gelb-schwarz gestreiften Kante unten. <Since version="0.8.3" />
 
-Laden Sie `Rhinvoice-Beta-Setup-Windows.exe` oder `Rhinvoice-Beta-macOS.dmg` beim Testkandidaten unter [GitHub Releases](https://github.com/rhinvoice/rhinvoice/releases) herunter und installieren Sie es wie oben beschrieben; es erscheinen dieselben Warnungen. Unter Windows landet es in `%LOCALAPPDATA%\Programs\Rhinvoice Beta`, auf dem Mac heisst es `Rhinvoice Beta.app`. Rhinvoice Beta bekommt neuere Testkandidaten als Update angeboten, Rhinvoice selbst nur freigegebene Versionen. Das gilt auch für den nächsten Testkandidaten derselben Version, zum Beispiel `v0.8.4-rc.3` nach `v0.8.4-rc.2`; Rhinvoice Beta zeigt den Testkandidaten neben der Version an. Dafür braucht es einmal ein Setup ab Version 0.8.4. <Since version="0.8.4" /> Deinstallieren Sie es wie Rhinvoice.
+Laden Sie `Rhinvoice-Beta-Setup-Windows.exe` oder `Rhinvoice-Beta-macOS.dmg` beim Testkandidaten unter [GitHub Releases](https://github.com/rhinvoice/rhinvoice/releases) herunter und installieren Sie es wie oben beschrieben. Unter Windows landet es in `%LOCALAPPDATA%\Programs\Rhinvoice Beta`, auf dem Mac heisst es `Rhinvoice Beta.app`. Rhinvoice Beta bekommt neuere Testkandidaten als Update angeboten, Rhinvoice selbst nur freigegebene Versionen. Das gilt auch für den nächsten Testkandidaten derselben Version, zum Beispiel `v0.8.4-rc.3` nach `v0.8.4-rc.2`; Rhinvoice Beta zeigt den Testkandidaten neben der Version an. Dafür braucht es einmal ein Setup ab Version 0.8.4. <Since version="0.8.4" /> Deinstallieren Sie es wie Rhinvoice.
 
 <Aside type="caution">
 Testkandidaten sind zum Testen da. Verwenden Sie Rhinvoice Beta mit Testdaten oder einer Kopie, nicht für die Rechnungen, die Sie verschicken.

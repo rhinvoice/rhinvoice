@@ -5,6 +5,18 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.8.6] – 2026-10-26
+
+### Changed
+- The programs for Windows and Mac are signed. The Mac apps (Rhinvoice and Rhinvoice Beta) carry
+  the developer's Apple certificate and are notarized by Apple: macOS opens them from the first
+  start, without the detour through *System Settings → Privacy & Security → Open Anyway*. The
+  Windows setups are signed with Azure Artifact Signing, and Windows shows their publisher; while
+  the certificate is new, SmartScreen may still ask once.
+- On a Mac the running program is called *Rhinvoice Helper* (*Rhinvoice Beta Helper*) instead of
+  *python3*, in the Activity Monitor and in firewalls such as Little Snitch, for example when it
+  checks for updates.
+
 ## [0.8.5] – 2026-10-24
 
 ### Changed

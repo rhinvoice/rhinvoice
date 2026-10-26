@@ -2,8 +2,9 @@
 
 A setup for Windows (`Rhinvoice-Setup-x.y.z.exe`) and a disk image for Macs with Apple silicon
 (`Rhinvoice-x.y.z.dmg`) on the [GitHub releases](https://github.com/rhinvoice/rhinvoice/releases).
-Beta. The setups are not signed yet: Windows asks once ("More info" → "Run anyway"), macOS
-blocks the first start (System Settings → Privacy & Security → "Open Anyway").
+Beta. The Mac apps are signed with the Developer ID and notarized by Apple, the Windows setups
+signed with Azure Artifact Signing (ADR 0036). While the Windows certificate is new, SmartScreen
+may still ask once ("More info" → "Run anyway").
 
 | | Program | Data |
 |---|---|---|

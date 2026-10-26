@@ -107,7 +107,6 @@ export const de = {
   "updates.later": "Später",
   "updates.closing": "Rhinvoice wird für das Update geschlossen …",
   "about.madeBy": "made by {maker}",
-  "about.byMaker": "by {maker}",
   "about.legalNotice": "Impressum",
   "about.privacy": "Datenschutz",
   "about.openSource": "Open Source",

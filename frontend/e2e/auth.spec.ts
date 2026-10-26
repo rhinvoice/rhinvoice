@@ -11,7 +11,7 @@ test.describe("authentication", () => {
     await expect(page).toHaveScreenshot("login.png");
   });
 
-  test("switches the language and names version and maker", async ({ page }) => {
+  test("switches the language and names the version", async ({ page }) => {
     await page.goto("/login");
     // The logo leads to the website, in the language of the interface.
     await expect(page.getByRole("link", { name: /^Rhinvoice – rhinvoice\.com/ })).toHaveAttribute(
@@ -19,10 +19,8 @@ test.describe("authentication", () => {
       "https://rhinvoice.com/de/",
     );
     await expect(page.getByText(/^Rhinvoice \d+\.\d+\.\d+$/)).toBeVisible();
-    await expect(page.getByRole("link", { name: /made by webberz/ })).toHaveAttribute(
-      "href",
-      "https://www.webberz.ch",
-    );
+    // An installation belongs to its operator: the maker is named in "About" only.
+    await expect(page.getByRole("link", { name: /made by webberz/ })).toHaveCount(0);
     await expect(page.getByRole("link", { name: /Open Source/ })).toHaveAttribute(
       "href",
       "https://github.com/rhinvoice/rhinvoice",
@@ -37,9 +35,8 @@ test.describe("authentication", () => {
     await expectAccessible(page);
   });
 
-  test("names the legal pages in the public demo only", async ({ page }) => {
+  test("names the maker and the legal pages in the public demo only", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByRole("link", { name: /made by webberz/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /^Impressum/ })).toHaveCount(0);
     // The demo itself only differs in what /api/demo answers.
     await page.route("**/api/demo", async (route) => {
@@ -48,6 +45,10 @@ test.describe("authentication", () => {
       await route.fulfill({ response, json: { ...demo, enabled: true } });
     });
     await page.reload();
+    await expect(page.getByRole("link", { name: /made by webberz/ })).toHaveAttribute(
+      "href",
+      "https://www.webberz.ch",
+    );
     await expect(page.getByRole("link", { name: /^Impressum/ })).toHaveAttribute(
       "href",
       "https://rhinvoice.com/de/impressum/",

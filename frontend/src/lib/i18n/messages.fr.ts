@@ -112,7 +112,6 @@ export const fr: Catalog<MessageKey> = {
   "updates.later": "Plus tard",
   "updates.closing": "Rhinvoice se ferme pour la mise à jour …",
   "about.madeBy": "made by {maker}",
-  "about.byMaker": "by {maker}",
   "about.legalNotice": "Mentions légales",
   "about.privacy": "Protection des données",
   "about.openSource": "Open source",

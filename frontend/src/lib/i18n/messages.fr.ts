@@ -590,6 +590,8 @@ export const fr: Catalog<MessageKey> = {
   "bank.qrIban": "QR-IBAN",
   "bank.qrIbanHint": "Uniquement pour les factures QR avec référence QR (Suisse et Liechtenstein).",
   "bank.bic": "BIC / SWIFT",
+  "bank.bicEpcHint":
+    "Nécessaire pour le code QR EPC sur les factures en euros aux clients de l’UE : sans BIC, il n’y en a pas.",
   "bank.currency": "Monnaie",
   "bank.isDefault": "Compte par défaut pour cette monnaie",
   "bank.saved": "Compte bancaire enregistré.",

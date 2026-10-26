@@ -578,6 +578,8 @@ export const de = {
   "bank.qrIban": "QR-IBAN",
   "bank.qrIbanHint": "Nur für QR-Rechnungen mit QR-Referenz (Schweiz und Liechtenstein).",
   "bank.bic": "BIC / SWIFT",
+  "bank.bicEpcHint":
+    "Nötig für den EPC-QR-Code auf Euro-Rechnungen an Kunden in der EU: Ohne BIC entfällt er.",
   "bank.currency": "Währung",
   "bank.isDefault": "Standardkonto für diese Währung",
   "bank.saved": "Bankkonto gespeichert.",

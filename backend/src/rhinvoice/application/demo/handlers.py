@@ -268,6 +268,8 @@ DEMO_ACCOUNTS: dict[str, tuple[SaveBankAccount, ...]] = {
             bank_name="Demo-Bank",
             holder="",
             iban="CH5604835012345678009",
+            # Without the BIC a Swiss account gets no EPC QR code for customers in the EEA.
+            bic="CRESCHZZ80A",
             is_default=True,
         ),
     ),

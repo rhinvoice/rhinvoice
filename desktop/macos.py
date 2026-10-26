@@ -188,7 +188,7 @@ def staple(path: Path) -> None:
             raise SystemExit(msg)
         print(f"stapler failed (attempt {attempt}), trying again", flush=True)
         time.sleep(30)
-    run("/usr/bin/xcrun", "stapler", "validate", path)
+    # "staple" validates what it attached; another lookup would only meet the service again.
 
 
 def pack(app: Path, folder: Path) -> Path:

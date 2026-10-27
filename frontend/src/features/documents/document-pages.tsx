@@ -300,7 +300,10 @@ function IssuedPage({ document, company }: PageProps) {
   const decline = useDocumentAction("decline");
   const terms = termsFor(company.profile, locale);
   const tax = terms.tax_name;
-  const payable = document.status === "issued" || document.status === "partially_paid";
+  // Only invoices are paid: a cancellation reverses its invoice.
+  const payable =
+    document.type === "invoice" &&
+    (document.status === "issued" || document.status === "partially_paid");
   const writtenOff = document.status === "written_off";
   const money = (amount: string) => formatMoney(amount, document.currency, locale);
   const fail = (caught: unknown) => {

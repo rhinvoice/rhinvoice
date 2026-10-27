@@ -5,6 +5,13 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.8.8] – 2026-10-27
+
+### Behoben
+- Eine Stornorechnung bietet nicht mehr *Als bezahlt markieren* und *Zahlung erfassen* an: Sie hebt
+  ihre Rechnung auf, bezahlt wird sie nicht. Rhinvoice hat eine solche Zahlung schon vorher
+  abgelehnt, aber mit einer unklaren Meldung.
+
 ## [0.8.7] – 2026-10-27
 
 ### Neu

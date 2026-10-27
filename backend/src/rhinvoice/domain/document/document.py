@@ -531,7 +531,7 @@ class Document:
             raise InvalidStateError(f"a {self.status} {self.type} cannot be {action}")
 
     def _require_invoice(self) -> None:
-        """A cancellation reverses its invoice: nobody pays it."""
+        """Refuse payments on anything but an invoice: a cancellation reverses its invoice."""
         if self.type is not DocumentType.INVOICE:
             raise InvalidStateError("only invoices are paid")
 

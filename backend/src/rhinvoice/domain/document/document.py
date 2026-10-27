@@ -530,6 +530,11 @@ class Document:
         if self.status not in statuses:
             raise InvalidStateError(f"a {self.status} {self.type} cannot be {action}")
 
+    def _require_invoice(self) -> None:
+        """Refuse payments on anything but an invoice: a cancellation reverses its invoice."""
+        if self.type is not DocumentType.INVOICE:
+            raise InvalidStateError("only invoices are paid")
+
     def _require_own(self, action: str) -> None:
         """Refuse what needs lines: an imported invoice consists of its PDF."""
         if self.is_imported:
@@ -684,6 +689,7 @@ class Document:
     def add_payment(self, payment: Payment, now: datetime) -> Document:
         """Record a payment; on a written-off invoice it takes back that much of the loss."""
         self._require(*OPEN_INVOICE_STATUSES, DocumentStatus.WRITTEN_OFF, action="paid")
+        self._require_invoice()
         if payment.amount.currency is not self.content.currency:
             raise ValidationError("amount", f"the payment must be in {self.content.currency}")
         write_off = self.write_off
@@ -723,6 +729,7 @@ class Document:
     def pay_in_full(self, payment_id: UUID, paid_on: date, now: datetime) -> Document:
         """Record a payment of the whole open amount."""
         self._require(*OPEN_INVOICE_STATUSES, action="paid")
+        self._require_invoice()
         payment = Payment(
             id=payment_id, paid_on=paid_on, amount=self.open_amount(), recorded_at=now
         )

@@ -6,6 +6,7 @@ import {
   formatDateTime,
   formatMoney,
   formatMonth,
+  formatMonthName,
   formatNumber,
   formatChange,
   formatPercent,
@@ -126,6 +127,18 @@ describe("formatRelative", () => {
     [-24 * 3600_000, "it-CH", "ieri"],
   ] as const)("%d ms in %s", (offset, locale, expected) => {
     expect(formatRelative(new Date(now.getTime() + offset), now, locale)).toBe(expected);
+  });
+});
+
+describe("formatMonthName", () => {
+  it.each([
+    ["de-CH", 1, "Januar"],
+    ["de-AT", 1, "Jänner"],
+    ["en", 9, "September"],
+    ["fr-CH", 12, "décembre"],
+    ["it-CH", 3, "marzo"],
+  ] as const)("%s %s", (locale, month, expected) => {
+    expect(formatMonthName(month, locale)).toBe(expected);
   });
 });
 

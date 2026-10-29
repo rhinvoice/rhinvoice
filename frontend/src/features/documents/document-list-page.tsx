@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import {
   BellRingIcon,
   CheckIcon,
+  DownloadIcon,
   FileTextIcon,
   PlusIcon,
   ReceiptIcon,
@@ -44,6 +45,7 @@ import {
 } from "@/features/documents/api";
 import { BadDebtsCard } from "@/features/documents/bad-debts-card";
 import { CustomerPicker } from "@/features/documents/customer-picker";
+import { ExportDialog } from "@/features/documents/export-dialog";
 import {
   documentAriaSort,
   isPayable,
@@ -84,6 +86,7 @@ export function DocumentListPage({ kind, search, onSearchChange }: DocumentListP
     if (debounced !== search.q) onSearchChange({ q: debounced, page: 1 });
   }, [debounced, search.q, onSearchChange]);
 
+  const [exporting, setExporting] = useState(false);
   const offset = (search.page - 1) * PAGE_SIZE;
   const filter = viewFilter(kind, search.view);
   const query = useQuery(
@@ -193,6 +196,15 @@ export function DocumentListPage({ kind, search, onSearchChange }: DocumentListP
                   {t("import.open")}
                 </Link>
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setExporting(true);
+                }}
+              >
+                <DownloadIcon aria-hidden="true" />
+                {t("export.open")}
+              </Button>
               {newButton}
             </div>
           ) : (
@@ -200,6 +212,9 @@ export function DocumentListPage({ kind, search, onSearchChange }: DocumentListP
           )
         }
       />
+      {kind === "invoice" ? (
+        <ExportDialog open={exporting} onOpenChange={setExporting} years={data?.years ?? []} />
+      ) : null}
       <Filters
         kind={kind}
         search={search}

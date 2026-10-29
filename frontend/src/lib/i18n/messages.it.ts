@@ -576,7 +576,7 @@ export const it: Catalog<MessageKey> = {
   "language.it": "Italiano",
   "bank.title": "Conti bancari",
   "bank.description":
-    "Conti per i dati di pagamento e i codici QR. Per ogni valuta un conto è quello predefinito.",
+    "Conti per i dati di pagamento e i codici QR. Per ogni valuta un conto è quello predefinito; un documento può sceglierne un altro.",
   "bank.add": "Aggiungi conto",
   "bank.edit": "Modifica conto",
   "bank.emptyTitle": "Ancora nessun conto bancario",
@@ -599,7 +599,7 @@ export const it: Catalog<MessageKey> = {
   "bank.saved": "Conto bancario salvato.",
   "bank.deleteTitle": "Eliminare il conto bancario?",
   "bank.deleteDescription":
-    "I documenti già emessi mantengono i loro dati del conto. I nuovi documenti useranno un altro conto.",
+    "I documenti già emessi mantengono i loro dati del conto. Le bozze e i nuovi documenti useranno il conto predefinito della loro valuta.",
   "bank.deleted": "Conto bancario eliminato.",
   "numbering.title": "Numerazioni",
   "numbering.description":

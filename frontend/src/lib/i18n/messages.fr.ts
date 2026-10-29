@@ -582,7 +582,7 @@ export const fr: Catalog<MessageKey> = {
   "language.it": "Italien",
   "bank.title": "Comptes bancaires",
   "bank.description":
-    "Comptes pour les informations de paiement et les codes QR. Par monnaie, un compte est le compte par défaut.",
+    "Comptes pour les informations de paiement et les codes QR. Par monnaie, un compte est le compte par défaut; un document peut en choisir un autre.",
   "bank.add": "Ajouter un compte",
   "bank.edit": "Modifier le compte",
   "bank.emptyTitle": "Aucun compte bancaire pour l’instant",
@@ -605,7 +605,7 @@ export const fr: Catalog<MessageKey> = {
   "bank.saved": "Compte bancaire enregistré.",
   "bank.deleteTitle": "Supprimer le compte bancaire ?",
   "bank.deleteDescription":
-    "Les documents déjà émis conservent leurs coordonnées bancaires. Les nouveaux documents utilisent un autre compte.",
+    "Les documents déjà émis conservent leurs coordonnées bancaires. Les brouillons et les nouveaux documents utilisent le compte par défaut de leur monnaie.",
   "bank.deleted": "Compte bancaire supprimé.",
   "numbering.title": "Numérotations",
   "numbering.description":

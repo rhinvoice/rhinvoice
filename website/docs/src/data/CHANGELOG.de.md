@@ -5,6 +5,13 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.9.0] – 2026-10-30
+
+### Neu
+- *Teilen* auf einem ausgestellten Dokument gibt sein PDF an das Teilen-Menü des Handys (und von
+  Safari auf dem Mac) weiter, etwa an Mail oder einen Messenger. Browser, die keine Dateien teilen
+  können, zeigen den Knopf nicht.
+
 ## [0.8.8] – 2026-10-27
 
 ### Behoben

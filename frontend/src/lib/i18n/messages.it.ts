@@ -812,6 +812,7 @@ export const it: Catalog<MessageKey> = {
   "documents.pdf": "PDF",
   "documents.download": "Scarica",
   "documents.print": "Stampa",
+  "documents.share": "Condividi",
   "documents.viewMode": "Visualizzazione",
   "documents.viewDocument": "Documento",
   "documents.viewDetails": "Dettagli",

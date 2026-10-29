@@ -16,8 +16,8 @@ files (ADR 0019); documents written here had none.
   most ten attachments per draft. Names lose folders, control characters and the characters
   `/\:*?"<>|` as well as Unicode format characters (bidi overrides, zero widths) and line
   separators, are NFC-normalised and end in `.pdf` (`upload_name`). Downloads revalidate
-  (`Cache-Control: private, no-cache` with the hash as ETag), since a draft's file may go. The public demo refuses
-  uploads and removals, as before.
+  (`Cache-Control: private, no-cache` with the hash as ETag), since a draft's file may go.
+  The public demo refuses uploads and removals, as before.
 - **Frozen when issued.** From issuing on the files are only ever added to imported invoices,
   never to issued documents written here, and never changed or removed (GoBD, OR 958f). The
   database trigger enforces it: it reads the document `FOR SHARE`, so an upload and issuing

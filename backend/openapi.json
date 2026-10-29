@@ -3462,6 +3462,15 @@
         "title": "ExpectedWeekResponse",
         "type": "object"
       },
+      "ExportFormat": {
+        "enum": [
+          "xlsx",
+          "csv",
+          "pdf"
+        ],
+        "title": "ExportFormat",
+        "type": "string"
+      },
       "FiguresResponse": {
         "additionalProperties": false,
         "properties": {
@@ -14112,6 +14121,179 @@
         "summary": "Save Dunning Levels",
         "tags": [
           "dunning"
+        ]
+      }
+    },
+    "/api/exports/invoices": {
+      "get": {
+        "description": "Download the issued invoices and cancellations of a period for the bookkeeping.",
+        "operationId": "exports_export_invoices",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "start",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Start",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "End",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ExportFormat",
+              "default": "xlsx"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pdfs",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Pdfs",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Language"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Language"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "application/zip": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "text/csv; charset=utf-8": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The list (Excel, CSV or PDF), or with ``pdfs`` a ZIP of the list and PDFs"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A PDF is asked for, but no PDF service is configured or reachable"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Export Invoices",
+        "tags": [
+          "exports"
         ]
       }
     },

@@ -721,7 +721,9 @@ def test_a_buyer_with_a_contact_and_a_post_office_box() -> None:
 QUANTITIES = st.decimals(min_value=Decimal(-20), max_value=Decimal(50), places=2).filter(bool)
 PRICES = st.decimals(min_value=Decimal("0.05"), max_value=Decimal(5000), places=2)
 DISCOUNTS = st.sampled_from([Decimal(0), Decimal(5), Decimal("12.5"), Decimal(50)])
-CATEGORIES = st.sampled_from([TaxCategory.STANDARD, TaxCategory.REDUCED, TaxCategory.SPECIAL])
+CATEGORIES = st.sampled_from(
+    [TaxCategory.STANDARD, TaxCategory.REDUCED, TaxCategory.SPECIAL, TaxCategory.PASS_THROUGH]
+)
 
 
 @st.composite
@@ -899,3 +901,107 @@ def test_own_accounts_name_no_payee() -> None:
     assert absent(xml("de-domestic-gross"), f"{SETTLEMENT}/ram:PayeeTradeParty")
     swiss = xml("ch-third-party")
     assert text(swiss, f"{SETTLEMENT}/ram:PayeeTradeParty/ram:Name") == "Inkasso Beispiel AG"
+
+
+# --- Pass-through items (ADR 0039) -------------------------------------------------
+
+TAXES = f"{SETTLEMENT}/ram:ApplicableTradeTax"
+LINE_TAX = f"{LINES}/ram:SpecifiedLineTradeSettlement/ram:ApplicableTradeTax"
+LINE_NETS = (
+    f"{LINES}/ram:SpecifiedLineTradeSettlement/"
+    "ram:SpecifiedTradeSettlementLineMonetarySummation/ram:LineTotalAmount"
+)
+PASS_THROUGH_TEXT = "Durchlaufende Posten (im Namen und auf Rechnung des Kunden bezahlt)"
+
+
+@pytest.mark.parametrize("profile", list(EInvoiceProfile))
+def test_pass_through_lines_are_exempt_for_repayment_of_expenditures(
+    profile: EInvoiceProfile,
+) -> None:
+    root = xml("de-pass-through", profile)
+    check_sums(root)
+    assert texts(root, f"{TAXES}/ram:CategoryCode") == ["S", "E"]
+    assert amounts(root, f"{TAXES}/ram:RateApplicablePercent") == [Decimal(19), Decimal(0)]
+    # 1875 less 5 % = 1781.25; the pass-through lines keep all of 250.37 + 40.
+    assert amounts(root, f"{TAXES}/ram:BasisAmount") == [Decimal("1781.25"), Decimal("290.37")]
+    assert amounts(root, f"{TAXES}/ram:CalculatedAmount") == [Decimal("338.44"), Decimal(0)]
+    assert texts(root, f"{TAXES}/ram:ExemptionReason") == [PASS_THROUGH_TEXT]
+    assert texts(root, f"{TAXES}/ram:ExemptionReasonCode") == ["VATEX-EU-79-C"]
+    # One allowance: the document discount of the taxed lines only.
+    assert texts(
+        root,
+        f"{SETTLEMENT}/ram:SpecifiedTradeAllowanceCharge/ram:CategoryTradeTax/ram:CategoryCode",
+    ) == ["S"]
+    assert texts(root, f"{LINE_TAX}/ram:CategoryCode") == ["S", "E", "E"]
+    assert amounts(root, LINE_NETS) == [Decimal("1875.00"), Decimal("250.37"), Decimal("40.00")]
+    assert texts(root, f"{LINES}/ram:AssociatedDocumentLineDocument/ram:LineID") == ["1", "2", "3"]
+    assert amount(root, f"{SUMMATION}/ram:TaxBasisTotalAmount") == Decimal("2071.62")
+    assert amount(root, f"{SUMMATION}/ram:DuePayableAmount") == Decimal("2410.06")
+
+
+def test_exempt_lines_and_pass_through_lines_share_their_breakdown() -> None:
+    root = xml("de-pass-through-exempt")
+    check_sums(root)
+    assert texts(root, f"{TAXES}/ram:CategoryCode") == ["S", "E"]
+    assert amounts(root, f"{TAXES}/ram:BasisAmount") == [Decimal("1875.00"), Decimal("450.37")]
+    [reason] = texts(root, f"{TAXES}/ram:ExemptionReason")
+    assert reason == f"Steuerbefreite Leistung {PASS_THROUGH_TEXT}"
+    assert absent(root, f"{TAXES}/ram:ExemptionReasonCode")
+
+
+def test_swiss_pass_through_lines_come_after_the_positions() -> None:
+    root = xml("ch-pass-through")
+    check_sums(root)
+    assert texts(root, f"{TAXES}/ram:CategoryCode") == ["S", "S", "E"]
+    assert texts(root, f"{LINES}/ram:SpecifiedTradeProduct/ram:Name") == [
+        "Beratung",
+        "Fachbuch",
+        "Gebühr Handelsregister",
+    ]
+    assert texts(root, f"{TAXES}/ram:ExemptionReasonCode") == ["VATEX-EU-79-C"]
+    assert amount(root, f"{SUMMATION}/ram:DuePayableAmount") * 20 % 1 == 0
+
+
+def test_a_cancelled_pass_through_line_is_credited() -> None:
+    root = xml("ch-pass-through-cancellation")
+    check_sums(root)
+    assert texts(root, f"{TAXES}/ram:CategoryCode") == ["S", "E"]
+    assert amounts(root, f"{TAXES}/ram:BasisAmount") == [Decimal("1875.00"), Decimal("250.37")]
+
+
+def test_outside_vat_the_pass_through_lines_join_the_only_breakdown() -> None:
+    root = xml("ch-small-business-pass-through")
+    check_sums(root)
+    assert texts(root, f"{TAXES}/ram:CategoryCode") == ["O"]
+    assert amounts(root, f"{TAXES}/ram:BasisAmount") == [Decimal("2125.37")]
+    assert texts(root, f"{TAXES}/ram:ExemptionReasonCode") == ["VATEX-EU-O"]
+    assert texts(root, f"{LINE_TAX}/ram:CategoryCode") == ["O", "O"]
+    assert absent(root, f"{LINE_TAX}/ram:RateApplicablePercent")
+
+
+def test_pass_through_lines_alone() -> None:
+    sample = samples()["de-pass-through"]
+    only = replace(sample, draft=replace(sample.draft, lines=(sample.draft.lines[1],)))
+    printed = model(only)
+    assert problems(printed, EInvoiceProfile.EN16931) == ()
+    root = fromstring(WRITER.xml(printed, EInvoiceProfile.EN16931))  # noqa: S314 - our own
+    check_sums(root)
+    assert texts(root, f"{TAXES}/ram:CategoryCode") == ["E"]
+    assert texts(root, f"{TAXES}/ram:ExemptionReasonCode") == ["VATEX-EU-79-C"]
+    small = samples()["ch-small-business-pass-through"]
+    alone = replace(small, draft=replace(small.draft, lines=(small.draft.lines[1],)))
+    outside = fromstring(  # noqa: S314 - our own output
+        WRITER.xml(model(alone), EInvoiceProfile.EN16931)
+    )
+    check_sums(outside)
+    assert texts(outside, f"{TAXES}/ram:CategoryCode") == ["O"]
+    assert texts(outside, f"{TAXES}/ram:ExemptionReasonCode") == ["VATEX-EU-O"]
+
+
+def test_pass_through_lines_need_the_sellers_tax_id() -> None:
+    sample = samples()["de-pass-through"]
+    printed = model(replace(sample, draft=replace(sample.draft, lines=(sample.draft.lines[1],))))
+    company = replace(printed.company, vat_number=None, tax_number="")
+    assert problems(replace(printed, company=company), EInvoiceProfile.EN16931) == (
+        EInvoiceProblem.SELLER_TAX_ID_MISSING,
+    )

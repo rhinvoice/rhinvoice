@@ -11,6 +11,11 @@ before 1.0, minor versions may contain breaking changes.
 - *Share* on an issued document hands its PDF to the share sheet of the phone (and of Safari on a
   Mac), e.g. to mail or a messenger. Browsers that cannot share files show no such button.
 
+### Changed
+- A new quote or invoice starts with today as its *Date*. The field stays editable; cleared, the
+  document takes the date of issuing as before. Drafts, duplicates and recurring invoices keep
+  their dates as they were.
+
 ## [0.8.8] – 2026-10-27
 
 ### Fixed

@@ -158,13 +158,17 @@ export function isBlankLine(line: LineFormValues): boolean {
   );
 }
 
-export function emptyDocument(company: Company): DocumentFormValues {
+/**
+ * An empty document; ``issueDate`` preselects the date (new documents: today).
+ * Empty still means "the day of issuing" (plans have no date at all).
+ */
+export function emptyDocument(company: Company, issueDate = ""): DocumentFormValues {
   return {
     customer_id: "",
     currency: company.default_currency,
     language: company.default_language,
     price_mode: "net",
-    issue_date: "",
+    issue_date: issueDate,
     due_date: "",
     service_from: "",
     service_to: "",

@@ -226,7 +226,7 @@ def test_the_number_is_checked(number: str) -> None:
 def test_imported_invoices_consist_of_their_pdf() -> None:
     document = imported()
     for action in (
-        lambda: document.copy_as_draft(new_id(), DocumentType.INVOICE, NOW),
+        lambda: document.copy_as_draft(new_id(), DocumentType.INVOICE, NOW, today=NOW.date()),
         document.cancel_check,
         lambda: document.cancellation_draft(new_id(), NOW),
     ):
@@ -234,7 +234,7 @@ def test_imported_invoices_consist_of_their_pdf() -> None:
             action()
         assert caught.value.code == "imported_document"
     with raises_exactly(InvalidStateError, "an imported invoice cannot be copied"):
-        document.copy_as_draft(new_id(), DocumentType.QUOTE, NOW)
+        document.copy_as_draft(new_id(), DocumentType.QUOTE, NOW, today=NOW.date())
     with raises_exactly(InvalidStateError, "an imported invoice cannot be cancelled"):
         document.cancel_check()
     # Its PDF is archived like any other: once.
@@ -297,7 +297,8 @@ def test_lines_are_never_taken_over_and_the_history_has_the_time() -> None:
     assert document.frozen_totals is document.issued_totals
     assert document.record_file("x.pdf", NOW).events[-1].at == NOW
     with raises_exactly(InvalidStateError, "the document has not been issued yet"):
-        _ = issued().copy_as_draft(new_id(), DocumentType.INVOICE, NOW).frozen_totals
+        copy = issued().copy_as_draft(new_id(), DocumentType.INVOICE, NOW, today=NOW.date())
+        _ = copy.frozen_totals
 
 
 def test_small_amounts_count_too() -> None:

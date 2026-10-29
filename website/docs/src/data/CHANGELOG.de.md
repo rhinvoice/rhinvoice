@@ -22,9 +22,10 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   Zahlungsangaben und QR-Codes bleiben.
 
 ### Geändert
-- Ein neues Angebot und eine neue Rechnung beginnen mit heute als *Datum*. Das Feld bleibt
-  änderbar; geleert nimmt das Dokument wie bisher das Datum des Ausstellens. Entwürfe, Duplikate
-  und wiederkehrende Rechnungen behalten ihre Daten wie bisher.
+- Ein neues Angebot und eine neue Rechnung beginnen mit heute als *Datum*, ebenso Duplikate und
+  Rechnungen aus einem Angebot. Das Feld bleibt änderbar; geleert nimmt das Dokument wie bisher
+  das Datum des Ausstellens. Bestehende Entwürfe behalten ihre Daten, wiederkehrende Rechnungen
+  datiert ihr Plan.
 
 ## [0.8.8] – 2026-10-27
 

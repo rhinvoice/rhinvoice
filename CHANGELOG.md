@@ -20,9 +20,9 @@ before 1.0, minor versions may contain breaking changes.
   details and QR codes stay.
 
 ### Changed
-- A new quote or invoice starts with today as its *Date*. The field stays editable; cleared, the
-  document takes the date of issuing as before. Drafts, duplicates and recurring invoices keep
-  their dates as they were.
+- A new quote or invoice starts with today as its *Date*, and so do duplicates and invoices made
+  from a quote. The field stays editable; cleared, the document takes the date of issuing as
+  before. Existing drafts keep their dates, recurring invoices are dated by their plan.
 
 ## [0.8.8] – 2026-10-27
 

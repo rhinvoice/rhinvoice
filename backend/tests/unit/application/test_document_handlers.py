@@ -339,6 +339,8 @@ def test_quote_accept_decline_and_convert(handlers: DocumentHandlers, store: Sto
     assert invoice.type is DocumentType.INVOICE
     assert invoice.is_draft
     assert invoice.source_id == quote.id
+    # Dated today like a new invoice; due as the terms say when issued.
+    assert (invoice.content.issue_date, invoice.content.due_date) == (TODAY, None)
     converted = store.documents[quote.id].document
     assert converted.converted_to_id == invoice.id
     assert converted.events[-1] == DocumentEvent(NOW, EventKind.CONVERTED, str(invoice.id))
@@ -357,6 +359,7 @@ def test_duplicate(handlers: DocumentHandlers) -> None:
     assert copy.is_draft
     assert copy.type is DocumentType.INVOICE
     assert copy.content.subject == "A"
+    assert (copy.content.issue_date, copy.content.due_date) == (TODAY, None)
     assert isinstance(copy.id, UUID)
     assert copy.id != invoice.document.id
 

@@ -8,11 +8,6 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 ## [0.9.0] – 2026-10-30
 
 ### Neu
-- *Teilen* auf einem ausgestellten Dokument gibt sein PDF an das Teilen-Menü des Handys (und von
-  Safari auf dem Mac) weiter, etwa an Mail oder einen Messenger. Browser, die keine Dateien teilen
-  können, zeigen den Knopf nicht.
-
-### Neu
 - Das Bankkonto lässt sich pro Angebot und Rechnung wählen: Hat die Währung des Dokuments mehr
   als ein Konto, zeigt die Karte *Daten* im Editor die *Bankverbindung*, mit dem Standardkonto
   vorgewählt. Wiederkehrende Rechnungen geben die Wahl an ihre Rechnungen weiter. Entwürfe und
@@ -25,11 +20,15 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   Konto nur auf Dokumenten, die an es bezahlt werden.
 - *Einstellungen → Druckvorlage → Fusszeile*: Die Bankverbindung lässt sich weglassen (*Keine*).
   Zahlungsangaben und QR-Codes bleiben.
+- *Teilen* auf einem ausgestellten Dokument gibt sein PDF an das Teilen-Menü des Handys (und von
+  Safari auf dem Mac) weiter, etwa an Mail oder einen Messenger. Browser, die keine Dateien teilen
+  können, zeigen den Knopf nicht.
 
 ### Geändert
-- Ein neues Angebot und eine neue Rechnung beginnen mit heute als *Datum*. Das Feld bleibt
-  änderbar; geleert nimmt das Dokument wie bisher das Datum des Ausstellens. Entwürfe, Duplikate
-  und wiederkehrende Rechnungen behalten ihre Daten wie bisher.
+- Ein neues Angebot und eine neue Rechnung beginnen mit heute als *Datum*, ebenso Duplikate und
+  Rechnungen aus einem Angebot. Das Feld bleibt änderbar; geleert nimmt das Dokument wie bisher
+  das Datum des Ausstellens. Bestehende Entwürfe behalten ihre Daten, wiederkehrende Rechnungen
+  datiert ihr Plan.
 
 ## [0.8.8] – 2026-10-27
 

@@ -8,10 +8,6 @@ before 1.0, minor versions may contain breaking changes.
 ## [0.9.0] – 2026-10-30
 
 ### Added
-- *Share* on an issued document hands its PDF to the share sheet of the phone (and of Safari on a
-  Mac), e.g. to mail or a messenger. Browsers that cannot share files show no such button.
-
-### Added
 - Choose the bank account per quote or invoice: with more than one account in the document's
   currency, the editor's *Dates* card offers *Bank details*, the default account preselected.
   Recurring invoices carry the choice to the invoices they write. Drafts and plans whose account
@@ -22,11 +18,13 @@ before 1.0, minor versions may contain breaking changes.
   names the payee (BG-10). Such an account appears in the footer only on documents paid to it.
 - *Settings → Print template → Footer*: the bank details can be left out (*None*). The payment
   details and QR codes stay.
+- *Share* on an issued document hands its PDF to the share sheet of the phone (and of Safari on a
+  Mac), e.g. to mail or a messenger. Browsers that cannot share files show no such button.
 
 ### Changed
-- A new quote or invoice starts with today as its *Date*. The field stays editable; cleared, the
-  document takes the date of issuing as before. Drafts, duplicates and recurring invoices keep
-  their dates as they were.
+- A new quote or invoice starts with today as its *Date*, and so do duplicates and invoices made
+  from a quote. The field stays editable; cleared, the document takes the date of issuing as
+  before. Existing drafts keep their dates, recurring invoices are dated by their plan.
 
 ## [0.8.8] – 2026-10-27
 

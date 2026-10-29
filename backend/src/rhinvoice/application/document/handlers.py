@@ -313,7 +313,9 @@ class DocumentHandlers:
             source = self._require(uow, document_id)
             if source.type is DocumentType.CANCELLATION:
                 raise InvalidStateError("cancellation invoices cannot be duplicated")
-            copy = source.copy_as_draft(new_id(), source.type, self.clock.now())
+            copy = source.copy_as_draft(
+                new_id(), source.type, self.clock.now(), today=self.clock.today()
+            )
             view = self._save(uow, copy, new=True)
             uow.commit()
         return view
@@ -322,7 +324,9 @@ class DocumentHandlers:
         with self.uow() as uow:
             quote = self._require(uow, quote_id, for_update=True)
             quote.convert_check()
-            invoice = quote.copy_as_draft(new_id(), DocumentType.INVOICE, self.clock.now())
+            invoice = quote.copy_as_draft(
+                new_id(), DocumentType.INVOICE, self.clock.now(), today=self.clock.today()
+            )
             invoice = replace(
                 invoice,
                 content=_invoice_texts(

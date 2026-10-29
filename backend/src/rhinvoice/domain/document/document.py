@@ -407,13 +407,19 @@ class Document:
         document_id: UUID,
         document_type: DocumentType,
         now: datetime,
+        *,
+        today: date,
     ) -> Document:
-        """Duplicate or convert (quote → invoice): same content, new draft, fresh dates."""
+        """Duplicate or convert (quote → invoice): same content, a new draft dated ``today``.
+
+        Like a new document it opens with today's date; the due date follows the terms
+        when issuing.
+        """
         self._require_own("copied")
         content = replace(
             self.content,
             lines=tuple(replace(line, id=new_id(), tax_rate=None) for line in self.content.lines),
-            issue_date=None,
+            issue_date=today,
             due_date=None,
         )
         return replace(

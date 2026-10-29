@@ -65,7 +65,7 @@ Every invoice of a Swiss company gets the **QR-bill payment part** according to 
 | with a **QR-IBAN** | QR reference (QRR), 27 digits |
 | with an **IBAN** only | creditor reference (SCOR, ISO 11649), starting with `RF` |
 
-Rhinvoice builds both references from the invoice number, so you can match payments on your bank statement to the invoice. Each currency has one default account: an invoice in EUR uses your EUR account. Drafts show a placeholder in the same place, because the reference only exists once the number does.
+Rhinvoice builds both references from the invoice number, so you can match payments on your bank statement to the invoice. Each currency has one default account: an invoice in EUR uses your default EUR account, unless you choose another account in the editor. If the account belongs to a third party, such as a financial service provider, the QR-bill names its holder as creditor, with the third party's address ([bank accounts per invoice](/docs/invoices/bank-accounts/)). <Since version="0.9.0" /> Drafts show a placeholder in the same place, because the reference only exists once the number does.
 
 **Euro invoices to customers in the EEA** (EU, Iceland, Norway) also get the **EPC QR code** (GiroCode): banking apps there read it, but mostly not the QR-bill. For a Swiss account the EPC code needs the BIC; add it to the account, otherwise the code is left out.
 

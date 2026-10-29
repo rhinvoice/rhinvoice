@@ -7,6 +7,20 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [0.9.0] – 2026-10-29
 
+### Neu
+- Das Bankkonto lässt sich pro Angebot und Rechnung wählen: Hat die Währung des Dokuments mehr
+  als ein Konto, zeigt die Karte *Daten* im Editor die *Bankverbindung*, mit dem Standardkonto
+  vorgewählt. Wiederkehrende Rechnungen geben die Wahl an ihre Rechnungen weiter. Entwürfe und
+  Pläne, deren Konto gelöscht wird, nehmen wieder das Standardkonto; ausgestellte Dokumente
+  behalten ihres (#45).
+- Konten von Dritten, etwa eines Finanzdienstleisters, der die Zahlung einzieht: *Konto gehört
+  einem Dritten* ankreuzen und die Adresse des Kontoinhabers erfassen. Dokumente auf dieses Konto
+  drucken «Zahlung an:» mit dem Kontoinhaber, die QR-Rechnung nennt ihn mit dieser Adresse, die
+  E-Rechnung nennt ihn als Zahlungsempfänger (BG-10). In der Fusszeile erscheint ein solches
+  Konto nur auf Dokumenten, die an es bezahlt werden.
+- *Einstellungen → Druckvorlage → Fusszeile*: Die Bankverbindung lässt sich weglassen (*Keine*).
+  Zahlungsangaben und QR-Codes bleiben.
+
 ### Geändert
 - Ein neues Angebot und eine neue Rechnung beginnen mit heute als *Datum*. Das Feld bleibt
   änderbar; geleert nimmt das Dokument wie bisher das Datum des Ausstellens. Entwürfe, Duplikate

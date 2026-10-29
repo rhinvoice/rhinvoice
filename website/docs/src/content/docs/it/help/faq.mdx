@@ -34,6 +34,8 @@ faq:
     a: Sì, nella demo pubblica per la Svizzera (ch.rhinvoice.com), la Germania (de.rhinvoice.com) e l’Austria (at.rhinvoice.com). Si azzera ogni ora e non accetta caricamenti, quindi niente importazioni, niente logo e niente file. Non invia e-mail.
   - q: "Perché la mia app bancaria rifiuta il codice QR della demo?"
     a: "La demo usa conti di esempio ufficiali, non conti reali. Per le fatture svizzere in CHF è il QR-IBAN di esempio di SIX, il cui codice bancario non appartiene a nessuna banca; per questo le app bancarie rifiutano il codice QR. Gli altri codici QR si possono scansionare, ma portano anch’essi a conti di esempio: per favore non bonificare nulla. Nella vostra installazione il codice QR contiene il vostro conto, e i vostri clienti lo scansionano come sempre."
+  - q: Una fattura può essere pagata su un altro conto, per esempio quello di una società di factoring?
+    a: "Sì. Dalla versione 0.9.0 può avere più conti bancari per valuta e sceglierne uno per ogni fattura nell’editor. Un conto può essere segnato come conto di terzi, per esempio di un fornitore di servizi finanziari: la fattura stampa allora «Pagamento a:» con il titolare, e la fattura QR e la fattura elettronica lo indicano come beneficiario."
 ---
 
 import Faq from "../../../../components/Faq.astro";

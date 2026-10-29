@@ -1,0 +1,83 @@
+---
+title: Conto bancario per fattura e pagamento a terzi
+description: "Più conti bancari per valuta in Rhinvoice: uno predefinito, un altro a scelta per fattura. Anche il conto di un fornitore di servizi finanziari, con fattura QR."
+since: 0.9.0
+faq:
+  - q: Posso scegliere il conto bancario per ogni fattura?
+    a: Sì. Se una valuta ha più di un conto bancario, l’editor mostra il campo «Coordinate bancarie» nella scheda «Date». Il conto predefinito della valuta è preselezionato; per questa offerta o fattura ne sceglie un altro.
+  - q: Un fornitore di servizi finanziari può incassare il pagamento delle mie fatture?
+    a: Sì. Aggiunga il suo conto in «Impostazioni → Conti bancari» e spunti «Il conto appartiene a terzi (p. es. un fornitore di servizi finanziari)». Le fatture pagate su questo conto stampano «Pagamento a:» con il titolare, e la fattura QR e la fattura elettronica lo indicano come beneficiario.
+  - q: Che cosa succede alle mie fatture se elimino un conto bancario?
+    a: Le bozze e le fatture ricorrenti che lo usavano riprendono il conto predefinito della loro valuta. I documenti emessi mantengono il conto con cui sono stati emessi.
+  - q: Posso togliere le coordinate bancarie dal piè di pagina?
+    a: Sì. In «Impostazioni → Layout di stampa», scheda «Piè di pagina», scelga «Nessuna» per «Coordinate bancarie». I dati di pagamento e i codici QR restano sulla fattura.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice gestisce **più conti bancari per valuta**. Uno di essi è il conto predefinito della sua valuta, e ogni offerta e ogni fattura viene pagata su questo conto, a meno che Lei **ne scelga un altro nell’editor**. Un conto può anche **appartenere a terzi**, per esempio a un fornitore di servizi finanziari che incassa il pagamento per Lei: la fattura lo indica allora come beneficiario, anche nel codice QR e nella fattura elettronica.
+
+## Più conti, un conto predefinito per valuta
+
+Aggiunge i conti in *Impostazioni → Conti bancari → Aggiungi conto* con banca, titolare del conto, IBAN, BIC e valuta (vedi [primo avvio](/docs/it/getting-started/first-start/)). Per ogni valuta esattamente un conto è quello predefinito: vi spunti *Conto predefinito per questa valuta*. Un nuovo documento usa il conto predefinito della sua valuta, una fattura in EUR quindi il Suo conto predefinito in EUR.
+
+## Scegliere il conto per una fattura
+
+<Steps>
+
+1. Apra l’offerta o la fattura nell’editor.
+2. Nella scheda *Date*, sotto la data e la scadenza, scelga il conto in *Coordinate bancarie*. Il campo compare solo se la valuta del documento ha più di un conto.
+3. L’anteprima dal vivo mostra subito il conto scelto, nel piè di pagina e nei dati di pagamento. La fattura riceve il codice QR per questo conto all’emissione.
+
+</Steps>
+
+Ogni opzione mostra la banca (per i conti di terzi il titolare) e un IBAN abbreviato. Il conto predefinito è segnato con *(predefinito)*, i conti di terzi con *(conto di terzi)*. Il conto predefinito è preselezionato.
+
+- **Se cambia la valuta**, la scelta torna al conto predefinito della nuova valuta.
+- **Eliminare un conto** non blocca nulla: le bozze che lo usavano riprendono il conto predefinito della loro valuta.
+- **I documenti emessi** mantengono il conto con cui sono stati emessi, come tutto il loro contenuto ([emettere e stornare](/docs/it/invoices/issue-and-cancel/)).
+- **Le fatture ricorrenti** offrono la stessa scelta: nel piano, in *Altri dati*, accanto alla valuta. Ogni fattura che il piano scrive viene pagata su questo conto ([fatture ricorrenti](/docs/it/invoices/recurring/)).
+
+## Conti di terzi
+
+Alcune aziende fanno pagare le loro fatture a un fornitore di servizi finanziari, per esempio per il factoring. Questo conto appartiene al fornitore, non a Lei, e la fattura deve dirlo.
+
+<Steps>
+
+1. In *Impostazioni → Conti bancari* aggiunga il conto del fornitore, con lui come *Titolare del conto*.
+2. Spunti *Il conto appartiene a terzi (p. es. un fornitore di servizi finanziari)*.
+3. Compili l’*Indirizzo del titolare del conto*. Il numero postale e la località sono obbligatori.
+
+</Steps>
+
+L’elenco dei conti lo segna con *Conto di terzi*. Anche un conto di terzi può essere il conto predefinito della sua valuta. Rhinvoice non deduce mai dal nome del titolare se un conto appartiene a terzi: conta solo la casella.
+
+Che cosa cambia sui documenti pagati su un conto di terzi:
+
+| Dove | Che cosa vi figura |
+|---|---|
+| Dati di pagamento nel PDF | «Pagamento a:» con titolare, IBAN e BIC (in tedesco «Zahlung an:», in inglese «Pay to:», in francese «Paiement à :»), anche sui solleciti |
+| Fattura QR (CH, LI) | Il titolare come creditore, con l’indirizzo del terzo. I Suoi conti mantengono l’indirizzo della Sua azienda. |
+| Codice QR EPC (GiroCode) | Il titolare del conto come beneficiario, come per i Suoi conti |
+| Fattura elettronica (ZUGFeRD / Factur-X EN 16931, XRechnung) | Il conto scelto come conto di pagamento, e il terzo come beneficiario (Payee, BG-10, BT-59) |
+
+<Aside type="tip" title="La maggior parte delle fatture va al fornitore">
+Renda il conto del fornitore il conto predefinito della sua valuta, e le sue condizioni di pagamento il testo predefinito: in *Impostazioni → Testi* spunti *Inserisci nei nuovi documenti (predefinito)* sulle *Condizioni di pagamento* corrispondenti. Le nuove fatture iniziano allora con entrambi. Conti bancari e testi di pagamento non sono collegati di proposito: se sceglie un altro conto su una fattura, adatti lì anche le condizioni di pagamento.
+</Aside>
+
+## Coordinate bancarie nel piè di pagina
+
+In *Impostazioni → Layout di stampa*, scheda *Piè di pagina*, *Coordinate bancarie* determina quali conti indica il piè di pagina dei Suoi documenti:
+
+| *Coordinate bancarie* | Piè di pagina |
+|---|---|
+| *Solo valuta della fattura* (preimpostato) | Solo il conto su cui viene pagato il documento |
+| *Tutti i conti* | Tutti i Suoi conti, per esempio CHF ed EUR. Un conto di terzi si aggiunge solo sui documenti pagati a loro. |
+| *Nessuna* | Nessuna coordinata bancaria nel piè di pagina |
+
+Un conto di terzi non compare mai sui documenti che non vengono pagati a loro. I conti della stessa banca figurano insieme. L’impostazione cambia solo il piè di pagina: i dati di pagamento e i codici QR usano sempre il conto su cui viene pagata la fattura. I documenti emessi mantengono il loro PDF e il loro aspetto.
+
+## Domande frequenti
+
+<Faq />

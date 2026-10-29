@@ -19,7 +19,7 @@
 
 - **Documents:** quotes, invoices and cancellation invoices with a live paper preview; numbers assigned without gaps when a document is issued; issued documents cannot be changed (GoBD, Swiss OR 958f, Austrian BAO), corrections only by cancellation.
 - **VAT per country:** dated rates for CH, LI, DE and AT; the tax treatment (domestic, reverse charge, intra-Community supply of goods, export, small business, exempt) follows from the countries of company and customer, with the legally required notice on the invoice; goods and services are treated separately.
-- **Payment codes:** Swiss QR-bill (QR or creditor reference) for Switzerland and Liechtenstein; EPC QR code (GiroCode) for euro invoices.
+- **Payment codes and bank accounts:** Swiss QR-bill (QR or creditor reference) for Switzerland and Liechtenstein; EPC QR code (GiroCode) for euro invoices; several bank accounts per currency, one as default, another chosen per quote or invoice; an account can belong to a third party such as a financial service provider (factoring), which the PDF, the QR-bill and the e-invoice then name as payee.
 - **E-invoices:** ZUGFeRD / Factur-X (EN 16931) embedded in every PDF (PDF/A-3b); XRechnung 3.0 for German public authorities; validated with the KoSIT validator and Mustang.
 - **Payments and reminders:** partial payments, overdue invoices, three reminder levels with fees.
 - **Recurring invoices:** monthly, quarterly, half-yearly or yearly, as draft, issued, or issued and sent.
@@ -94,6 +94,7 @@ The user documentation, in English (https://rhinvoice.com/docs/) and German (htt
 - [Austria](https://rhinvoice.com/docs/countries/austria/): USt., § 11 UStG, small businesses, GiroCode
 - [More countries](https://rhinvoice.com/docs/countries/more-countries/): Rhinvoice is built to be extended; each company country is one country profile (rates, notices, mandatory details, sources), e.g. the Netherlands
 - [E-invoices](https://rhinvoice.com/docs/invoices/e-invoice/): ZUGFeRD / Factur-X and XRechnung
+- [Bank accounts per invoice](https://rhinvoice.com/docs/invoices/bank-accounts/): default account per currency, choice per invoice, third-party payees, bank details in the footer
 - [Taking over old invoices](https://rhinvoice.com/docs/moving/old-invoices/): from the previous program, with the original PDFs
 - [Backup and restore](https://rhinvoice.com/docs/operations/backup/)
 - [Backup in the program for Windows and Mac](https://rhinvoice.com/docs/operations/backup-desktop/)

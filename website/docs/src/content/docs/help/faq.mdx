@@ -34,6 +34,8 @@ faq:
     a: Yes, in the public demo for Switzerland (ch.rhinvoice.com), Germany (de.rhinvoice.com) and Austria (at.rhinvoice.com). It resets every hour and takes no uploads, so no imports, no logo and no files. It sends no e-mail.
   - q: "Why does my banking app reject the QR code from the demo?"
     a: "The demo uses official example accounts, not real ones. For Swiss invoices in CHF it is the example QR-IBAN from SIX, whose bank code belongs to no bank, so banking apps reject the QR code. The other QR codes scan, but they lead to example accounts too: please do not transfer anything. In your own installation the QR code carries your account, and your customers scan it as usual."
+  - q: Can invoices be paid to another account, for example a factoring company's?
+    a: "Yes. Since version 0.9.0 you can keep several bank accounts per currency and choose one per invoice in the editor. An account can be marked as a third party's, for example a financial service provider's: the invoice then prints \"Pay to:\" with the holder, and the QR-bill and e-invoice name it as payee."
 ---
 
 import Faq from "../../../components/Faq.astro";

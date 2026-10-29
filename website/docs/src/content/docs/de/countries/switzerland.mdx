@@ -65,7 +65,7 @@ Jede Rechnung einer Schweizer Firma bekommt den **QR-Zahlteil** nach den Impleme
 | mit **QR-IBAN** | QR-Referenz (QRR), 27 Ziffern |
 | nur mit **IBAN** | Creditor Reference (SCOR, ISO 11649), beginnt mit `RF` |
 
-Rhinvoice bildet beide Referenzen aus der Rechnungsnummer. So ordnen Sie Zahlungen auf dem Kontoauszug der Rechnung zu. Pro Währung ist ein Konto das Standardkonto: eine Rechnung in EUR nimmt Ihr EUR-Konto. Entwürfe zeigen an derselben Stelle einen Platzhalter, weil die Referenz erst mit der Nummer entsteht.
+Rhinvoice bildet beide Referenzen aus der Rechnungsnummer. So ordnen Sie Zahlungen auf dem Kontoauszug der Rechnung zu. Pro Währung ist ein Konto das Standardkonto: Eine Rechnung in EUR nimmt Ihr Standardkonto in EUR, ausser Sie wählen im Editor ein anderes Konto. Gehört das Konto einem Dritten, etwa einem Finanzdienstleister, nennt die QR-Rechnung dessen Kontoinhaber als Zahlungsempfänger, mit der Adresse des Dritten ([Bankkonto pro Rechnung](/docs/de/invoices/bank-accounts/)). <Since version="0.9.0" /> Entwürfe zeigen an derselben Stelle einen Platzhalter, weil die Referenz erst mit der Nummer entsteht.
 
 **Euro-Rechnungen an Kunden im EWR** (EU, Island, Norwegen) bekommen zusätzlich den **EPC-QR-Code** (GiroCode), weil Banking-Apps dort ihn lesen und die QR-Rechnung meist nicht. Für ein Schweizer Konto braucht der EPC-Code den BIC: Tragen Sie ihn beim Konto ein, sonst entfällt der Code.
 

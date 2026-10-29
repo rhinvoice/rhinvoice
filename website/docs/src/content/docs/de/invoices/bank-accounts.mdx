@@ -1,0 +1,83 @@
+---
+title: Bankkonto pro Rechnung und Zahlung an Dritte
+description: "Mehrere Bankkonten pro Währung in Rhinvoice: ein Standardkonto, pro Rechnung ein anderes. Auch das Konto eines Finanzdienstleisters, mit QR-Rechnung."
+since: 0.9.0
+faq:
+  - q: Kann ich das Bankkonto pro Rechnung wählen?
+    a: Ja. Hat eine Währung mehr als ein Bankkonto, zeigt der Editor in der Karte «Daten» das Feld «Bankverbindung». Das Standardkonto der Währung ist vorgewählt, für dieses Angebot oder diese Rechnung wählen Sie ein anderes.
+  - q: Kann ein Finanzdienstleister die Zahlung meiner Rechnungen einziehen?
+    a: Ja. Erfassen Sie sein Konto unter «Einstellungen → Bankkonten» und kreuzen Sie «Konto gehört einem Dritten (z. B. Finanzdienstleister)» an. Rechnungen auf dieses Konto drucken «Zahlung an:» mit dem Kontoinhaber, QR-Rechnung und E-Rechnung nennen ihn als Zahlungsempfänger.
+  - q: Was passiert mit meinen Rechnungen, wenn ich ein Bankkonto lösche?
+    a: Entwürfe und wiederkehrende Rechnungen, die es verwendet haben, nehmen wieder das Standardkonto ihrer Währung. Ausgestellte Dokumente behalten das Konto, mit dem sie ausgestellt wurden.
+  - q: Kann ich die Bankverbindung in der Fusszeile weglassen?
+    a: Ja. Unter «Einstellungen → Druckvorlage», Karte «Fusszeile», wählen Sie bei «Bankverbindung» die Option «Keine». Die Zahlungsangaben und die QR-Codes bleiben auf der Rechnung.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice verwaltet **mehrere Bankkonten pro Währung**. Eines davon ist das Standardkonto seiner Währung, und jedes Angebot und jede Rechnung wird auf dieses Konto bezahlt, ausser Sie **wählen im Editor ein anderes**. Ein Konto kann auch **einem Dritten** gehören, zum Beispiel einem Finanzdienstleister, der die Zahlung für Sie einzieht: Die Rechnung nennt ihn dann als Zahlungsempfänger, auch im QR-Code und in der E-Rechnung.
+
+## Mehrere Konten, ein Standardkonto pro Währung
+
+Konten erfassen Sie unter *Einstellungen → Bankkonten → Konto hinzufügen* mit Bank, Kontoinhaber, IBAN, BIC und Währung (siehe [erster Start](/docs/de/getting-started/first-start/)). Pro Währung ist genau ein Konto das Standardkonto: Kreuzen Sie dort *Standardkonto für diese Währung* an. Ein neues Dokument nimmt das Standardkonto seiner Währung, eine Rechnung in EUR also Ihr Standardkonto in EUR.
+
+## Das Konto für eine Rechnung wählen
+
+<Steps>
+
+1. Öffnen Sie das Angebot oder die Rechnung im Editor.
+2. In der Karte *Daten*, unter Datum und Fälligkeit, wählen Sie das Konto bei *Bankverbindung*. Das Feld erscheint nur, wenn die Währung des Dokuments mehr als ein Konto hat.
+3. Die Live-Vorschau zeigt das gewählte Konto sofort, in Fusszeile und Zahlungsangaben. Den QR-Code mit diesem Konto bekommt die Rechnung beim Ausstellen.
+
+</Steps>
+
+Jede Auswahl zeigt die Bank (bei Konten Dritter den Kontoinhaber) und eine gekürzte IBAN. Das Standardkonto ist mit *(Standard)* markiert, Konten Dritter mit *(Drittkonto)*. Vorgewählt ist das Standardkonto.
+
+- **Wechseln Sie die Währung**, springt die Auswahl auf das Standardkonto der neuen Währung zurück.
+- **Löschen Sie ein Konto**, blockiert das nichts: Entwürfe, die es verwendet haben, nehmen wieder das Standardkonto ihrer Währung.
+- **Ausgestellte Dokumente** behalten das Konto, mit dem sie ausgestellt wurden, wie ihren ganzen Inhalt ([Ausstellen und Storno](/docs/de/invoices/issue-and-cancel/)).
+- **Wiederkehrende Rechnungen** haben dieselbe Wahl: im Plan unter *Weitere Angaben*, neben der Währung. Jede Rechnung, die der Plan schreibt, wird auf dieses Konto bezahlt ([wiederkehrende Rechnungen](/docs/de/invoices/recurring/)).
+
+## Konten von Dritten
+
+Manche Firmen lassen ihre Rechnungen an einen Finanzdienstleister bezahlen, zum Beispiel beim Factoring. Dieses Konto gehört dem Dienstleister, nicht Ihnen, und die Rechnung muss das sagen.
+
+<Steps>
+
+1. Erfassen Sie unter *Einstellungen → Bankkonten* das Konto des Dienstleisters, mit ihm als *Kontoinhaber*.
+2. Kreuzen Sie *Konto gehört einem Dritten (z. B. Finanzdienstleister)* an.
+3. Füllen Sie die *Adresse des Kontoinhabers* aus. Postleitzahl und Ort sind Pflicht.
+
+</Steps>
+
+Die Kontenliste markiert es mit *Drittkonto*. Auch ein Konto eines Dritten kann das Standardkonto seiner Währung sein. Rhinvoice errät nie aus dem Namen des Kontoinhabers, ob ein Konto einem Dritten gehört: Es zählt nur das Häkchen.
+
+Was sich auf Dokumenten ändert, die auf ein Konto eines Dritten bezahlt werden:
+
+| Wo | Was steht dort |
+|---|---|
+| Zahlungsangaben im PDF | «Zahlung an:» mit Kontoinhaber, IBAN und BIC (englisch «Pay to:», französisch «Paiement à :», italienisch «Pagamento a:»), auch auf Mahnungen |
+| QR-Rechnung (CH, FL) | Der Kontoinhaber als Zahlungsempfänger, mit der Adresse des Dritten. Ihre eigenen Konten behalten die Adresse Ihrer Firma. |
+| EPC-QR-Code (GiroCode) | Der Kontoinhaber als Empfänger, wie bei Ihren eigenen Konten |
+| E-Rechnung (ZUGFeRD / Factur-X EN 16931, XRechnung) | Das gewählte Konto als Zahlungskonto und der Dritte als Zahlungsempfänger (Payee, BG-10, BT-59) |
+
+<Aside type="tip" title="Die meisten Rechnungen gehen an den Dienstleister">
+Machen Sie das Konto des Dienstleisters zum Standardkonto seiner Währung und seine Zahlungsbedingungen zum Standardtext: unter *Einstellungen → Texte* bei den passenden *Zahlungsbedingungen* das Häkchen *In neue Dokumente einsetzen (Standard)*. Neue Rechnungen beginnen dann mit beidem. Bankkonten und Zahlungstexte sind bewusst nicht verknüpft: Wählen Sie auf einer Rechnung ein anderes Konto, passen Sie dort auch die Zahlungsbedingungen an.
+</Aside>
+
+## Bankverbindung in der Fusszeile
+
+Unter *Einstellungen → Druckvorlage*, Karte *Fusszeile*, bestimmt *Bankverbindung*, welche Konten die Fusszeile Ihrer Dokumente nennt:
+
+| *Bankverbindung* | Fusszeile |
+|---|---|
+| *Nur Rechnungswährung* (voreingestellt) | Nur das Konto, auf das das Dokument bezahlt wird |
+| *Alle Konten* | Alle eigenen Konten, zum Beispiel CHF und EUR. Ein Konto eines Dritten kommt nur auf Dokumenten dazu, die an ihn bezahlt werden. |
+| *Keine* | Keine Bankverbindung in der Fusszeile |
+
+Ein Konto eines Dritten erscheint nie auf Dokumenten, die nicht an ihn bezahlt werden. Konten derselben Bank stehen zusammen. Die Einstellung ändert nur die Fusszeile: Zahlungsangaben und QR-Codes nehmen immer das Konto, auf das die Rechnung bezahlt wird. Ausgestellte Dokumente behalten ihr PDF und sehen aus wie bisher.
+
+## Häufige Fragen
+
+<Faq />

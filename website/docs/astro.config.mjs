@@ -112,6 +112,7 @@ export default defineConfig({
           page("invoices/issue-and-cancel", ["Issuing and cancelling", "Ausstellen und Storno", "Émettre et annuler", "Emettere e stornare"]),
           page("invoices/payments-and-reminders", ["Payments and reminders", "Zahlungen und Mahnungen", "Paiements et rappels", "Pagamenti e solleciti"]),
           page("invoices/write-off", ["Writing off invoices", "Rechnungen abschreiben", "Passer des factures en perte", "Stralciare fatture"]),
+          page("invoices/bank-accounts", ["Bank accounts and payees", "Bankkonten und Zahlungsempfänger", "Comptes bancaires et bénéficiaires", "Conti bancari e beneficiari"]),
           page("invoices/recurring", ["Recurring invoices", "Wiederkehrende Rechnungen", "Factures récurrentes", "Fatture ricorrenti"]),
           page("invoices/e-invoice", ["E-invoices", "E-Rechnung", "Factures électroniques", "Fatture elettroniche"]),
         ]),

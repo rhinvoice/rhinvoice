@@ -1,0 +1,83 @@
+---
+title: Compte bancaire par facture et paiement à un tiers
+description: "Plusieurs comptes bancaires par monnaie dans Rhinvoice : un par défaut, un autre au choix par facture. Aussi le compte d’un prestataire financier (affacturage)."
+since: 0.9.0
+faq:
+  - q: Puis-je choisir le compte bancaire par facture?
+    a: "Oui. Lorsqu’une monnaie a plus d’un compte bancaire, l’éditeur affiche le champ « Coordonnées bancaires » dans la carte « Dates ». Le compte par défaut de la monnaie est présélectionné; vous en choisissez un autre pour cette offre ou cette facture."
+  - q: Un prestataire financier peut-il encaisser le paiement de mes factures?
+    a: "Oui. Ajoutez son compte sous « Paramètres → Comptes bancaires » et cochez « Le compte appartient à un tiers (p. ex. un prestataire financier) ». Les factures payées sur ce compte impriment « Paiement à : » avec le titulaire, et la facture QR et la facture électronique le nomment comme bénéficiaire."
+  - q: Que deviennent mes factures si je supprime un compte bancaire?
+    a: "Les brouillons et les factures récurrentes qui l’utilisaient reprennent le compte par défaut de leur monnaie. Les documents émis gardent le compte avec lequel ils ont été émis."
+  - q: Puis-je retirer les coordonnées bancaires du pied de page?
+    a: "Oui. Sous « Paramètres → Mise en page d’impression », carte « Pied de page », choisissez « Aucune » pour « Coordonnées bancaires ». Les informations de paiement et les codes QR restent sur la facture."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice gère **plusieurs comptes bancaires par monnaie**. L’un d’eux est le compte par défaut de sa monnaie, et chaque offre et chaque facture est payée sur ce compte, sauf si vous **en choisissez un autre dans l’éditeur**. Un compte peut aussi **appartenir à un tiers**, par exemple un prestataire financier qui encaisse le paiement pour vous : la facture le nomme alors comme bénéficiaire, aussi dans le code QR et dans la facture électronique.
+
+## Plusieurs comptes, un compte par défaut par monnaie
+
+Vous ajoutez les comptes sous *Paramètres → Comptes bancaires → Ajouter un compte* avec la banque, le titulaire, l’IBAN, le BIC et la monnaie (voir [premier démarrage](/docs/fr/getting-started/first-start/)). Par monnaie, exactement un compte est le compte par défaut : cochez-y *Compte par défaut pour cette monnaie*. Un nouveau document prend le compte par défaut de sa monnaie, une facture en EUR donc votre compte par défaut en EUR.
+
+## Choisir le compte pour une facture
+
+<Steps>
+
+1. Ouvrez l’offre ou la facture dans l’éditeur.
+2. Dans la carte *Dates*, sous la date et l’échéance, choisissez le compte dans *Coordonnées bancaires*. Le champ n’apparaît que si la monnaie du document a plus d’un compte.
+3. L’aperçu en direct montre aussitôt le compte choisi, dans le pied de page et les informations de paiement. La facture reçoit son code QR pour ce compte à l’émission.
+
+</Steps>
+
+Chaque option montre la banque (pour les comptes de tiers, le titulaire) et un IBAN abrégé. Le compte par défaut est marqué *(par défaut)*, les comptes de tiers *(compte de tiers)*. Le compte par défaut est présélectionné.
+
+- **Si vous changez de monnaie**, le choix revient au compte par défaut de la nouvelle monnaie.
+- **Supprimer un compte** ne bloque rien : les brouillons qui l’utilisaient reprennent le compte par défaut de leur monnaie.
+- **Les documents émis** gardent le compte avec lequel ils ont été émis, comme tout leur contenu ([émettre et annuler](/docs/fr/invoices/issue-and-cancel/)).
+- **Les factures récurrentes** offrent le même choix : dans le plan, sous *Autres informations*, à côté de la monnaie. Chaque facture que le plan écrit est payée sur ce compte ([factures récurrentes](/docs/fr/invoices/recurring/)).
+
+## Comptes de tiers
+
+Certaines entreprises font payer leurs factures à un prestataire financier, par exemple pour l’affacturage. Ce compte appartient au prestataire, pas à vous, et la facture doit le dire.
+
+<Steps>
+
+1. Sous *Paramètres → Comptes bancaires*, ajoutez le compte du prestataire, avec lui comme *Titulaire du compte*.
+2. Cochez *Le compte appartient à un tiers (p. ex. un prestataire financier)*.
+3. Remplissez l’*Adresse du titulaire du compte*. Le code postal et la localité sont obligatoires.
+
+</Steps>
+
+La liste des comptes le marque avec *Compte de tiers*. Un compte de tiers peut aussi être le compte par défaut de sa monnaie. Rhinvoice ne devine jamais à partir du nom du titulaire si un compte appartient à un tiers : seule la case à cocher compte.
+
+Ce qui change sur les documents payés sur un compte de tiers :
+
+| Où | Ce qui y figure |
+|---|---|
+| Informations de paiement du PDF | « Paiement à : » avec le titulaire, l’IBAN et le BIC (en allemand « Zahlung an: », en anglais « Pay to: », en italien « Pagamento a: »), aussi sur les rappels |
+| Facture QR (CH, LI) | Le titulaire comme créancier, avec l’adresse du tiers. Vos propres comptes gardent l’adresse de votre entreprise. |
+| Code QR EPC (GiroCode) | Le titulaire du compte comme bénéficiaire, comme pour vos propres comptes |
+| Facture électronique (ZUGFeRD / Factur-X EN 16931, XRechnung) | Le compte choisi comme compte de paiement, et le tiers comme bénéficiaire (Payee, BG-10, BT-59) |
+
+<Aside type="tip" title="La plupart des factures vont au prestataire">
+Faites du compte du prestataire le compte par défaut de sa monnaie, et de ses conditions de paiement le texte par défaut : sous *Paramètres → Textes*, cochez *Insérer dans les nouveaux documents (par défaut)* sur les *Conditions de paiement* correspondantes. Les nouvelles factures commencent alors avec les deux. Les comptes bancaires et les textes de paiement ne sont volontairement pas liés : si vous choisissez un autre compte sur une facture, adaptez-y aussi les conditions de paiement.
+</Aside>
+
+## Coordonnées bancaires dans le pied de page
+
+Sous *Paramètres → Mise en page d’impression*, carte *Pied de page*, *Coordonnées bancaires* détermine quels comptes le pied de page de vos documents indique :
+
+| *Coordonnées bancaires* | Pied de page |
+|---|---|
+| *Seulement la monnaie de la facture* (préréglé) | Seulement le compte sur lequel le document est payé |
+| *Tous les comptes* | Tous vos propres comptes, par exemple CHF et EUR. Un compte de tiers ne s’ajoute que sur les documents payés à celui-ci. |
+| *Aucune* | Pas de coordonnées bancaires dans le pied de page |
+
+Un compte de tiers n’apparaît jamais sur les documents qui ne lui sont pas payés. Les comptes d’une même banque sont regroupés. Le réglage ne change que le pied de page : les informations de paiement et les codes QR utilisent toujours le compte sur lequel la facture est payée. Les documents émis gardent leur PDF et leur aspect.
+
+## Questions fréquentes
+
+<Faq />

@@ -46,6 +46,8 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 - Recurring invoices every month, quarter, half-year or year: as a draft, issued, or issued and
   sent by e-mail
 - Sending by e-mail through your own mail server, with the PDF and optionally the XRechnung
+- Export of a month, quarter, year or custom period for your bookkeeping as Excel, CSV or a
+  PDF list, optionally with every invoice PDF in one ZIP
 
 **Taxes and countries**
 - Dated VAT rates for CH, FL, DE and AT; the rate of the service date applies

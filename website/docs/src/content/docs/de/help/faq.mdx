@@ -36,6 +36,8 @@ faq:
     a: "Die Demo rechnet mit offiziellen Beispielkonten, nicht mit echten. Bei Schweizer Rechnungen in CHF ist es die Beispiel-QR-IBAN von SIX, deren Bankkennung zu keiner Bank gehört; Bank-Apps lehnen den QR-Code darum ab. Die übrigen QR-Codes lassen sich scannen, führen aber ebenfalls auf Beispielkonten: bitte nichts überweisen. In Ihrer eigenen Installation steht Ihr Konto im QR-Code, und Ihre Kunden können ihn wie gewohnt scannen."
   - q: Kann eine Rechnung auf ein anderes Konto bezahlt werden, etwa an eine Factoring-Firma?
     a: "Ja. Seit Version 0.9.0 erfassen Sie mehrere Bankkonten pro Währung und wählen im Editor pro Rechnung eines. Ein Konto lässt sich als Konto eines Dritten markieren, etwa eines Finanzdienstleisters: Die Rechnung nennt ihn dann als Zahlungsempfänger mit IBAN und BIC, QR-Rechnung und E-Rechnung nennen ihn als Zahlungsempfänger."
+  - q: Kann ich meine Rechnungen für die Buchhaltung exportieren?
+    a: "Ja. Seit Version 0.9.0 lädt «Rechnungen → Exportieren» die ausgestellten Rechnungen und Stornorechnungen eines Monats, Quartals, Jahres oder freien Zeitraums als Excel, CSV oder PDF herunter, mit Summen pro Währung. Auf Wunsch kommen alle Rechnungs-PDFs in einer ZIP-Datei mit."
 ---
 
 import Faq from "../../../../components/Faq.astro";

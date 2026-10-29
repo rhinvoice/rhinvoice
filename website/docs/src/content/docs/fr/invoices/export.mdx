@@ -1,0 +1,79 @@
+---
+title: Exporter les factures pour la comptabilité
+description: "Exporter les factures d’un mois, d’un trimestre ou d’une année depuis Rhinvoice en Excel, CSV ou PDF, au besoin avec tous les PDF des factures dans un ZIP."
+since: 0.9.0
+faq:
+  - q: Comment transmettre à ma fiduciaire les factures d’un mois?
+    a: "Sous « Factures », cliquez sur « Exporter », choisissez le mois et le format (Excel, CSV ou PDF) et cliquez sur « Télécharger ». Avec « Joindre les PDF des factures (ZIP) », les PDF de toutes les factures viennent dans le même fichier ZIP."
+  - q: Quelles factures l’export contient-il?
+    a: "Toutes les factures et notes de crédit émises dont la date de facture tombe dans la période choisie, y compris les factures reprises d’un ancien programme. Les brouillons et les offres n’y figurent pas."
+  - q: Pourquoi les notes de crédit sont-elles négatives?
+    a: "Une note de crédit (facture d’annulation) annule sa facture avec des montants négatifs, tels qu’elle a été émise. La facture et sa note de crédit donnent ensemble zéro; les totaux sont ainsi justes sans retouche."
+  - q: Existe-t-il un export pour DATEV ou BMD?
+    a: "Pas encore. Ces formats doivent d’abord être définis avec des fiduciaires et des conseillers fiscaux. D’ici là, les fichiers Excel et CSV se lisent dans la plupart des programmes de comptabilité."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Sous *Factures → Exporter*, vous téléchargez **toutes les factures et notes de crédit émises d’un mois, d’un trimestre, d’une année ou de jours choisis librement**: en **Excel**, **CSV** ou **PDF**, au besoin avec **tous les PDF des factures dans un fichier ZIP**. Votre comptabilité, votre fiduciaire ou votre conseiller fiscal reçoit ainsi les factures d’une période en une fois.
+
+## Exporter les factures
+
+<Steps>
+
+1. Ouvrez *Factures* et cliquez sur **Exporter**.
+2. Choisissez la *Période*: *Mois*, *Trimestre*, *Année* ou *Libre* avec *Du* et *Au*. Le dernier mois complet est présélectionné.
+3. Choisissez le *Format*: *Excel*, *CSV* ou *PDF*.
+4. Cochez *Joindre les PDF des factures (ZIP)* si les PDF doivent suivre.
+5. Cliquez sur **Télécharger**.
+
+</Steps>
+
+C’est la **date de la facture** qui compte. L’export contient les factures émises, les notes de crédit et les [factures reprises](/docs/fr/moving/old-invoices/) de votre ancien programme, mais ni brouillons ni offres. Une période libre couvre dix ans au plus. Les titres des colonnes sont dans la langue dans laquelle vous utilisez Rhinvoice.
+
+## Formats
+
+| Format | Contenu |
+|---|---|
+| Excel (.xlsx) | Feuille *Factures* avec une ligne par document, filtre et ligne de titre figée; feuille *Totaux* avec une ligne par monnaie. Les montants sont des nombres à deux décimales, les dates de vraies dates. |
+| CSV | UTF-8 avec BOM, point-virgule comme séparateur, dates au format `AAAA-MM-JJ`. Montants sans séparateur de milliers, avec un point (entreprise en Suisse ou au Liechtenstein) ou une virgule (entreprise en Allemagne ou en Autriche). Après une ligne vide suivent les totaux par monnaie. |
+| PDF | A4 paysage, avec l’entreprise, la période et les numéros de page, les totaux par monnaie à la fin. |
+
+Avec *Joindre les PDF des factures (ZIP)*, vous recevez un fichier ZIP avec la liste dans le format choisi et le PDF de chaque document. Les PDF portent leur numéro, p. ex. `R20260042.pdf`, et la colonne *Fichier* de la liste en donne le nom. Ce sont les PDF archivés, inchangés depuis l’émission. Les factures reprises apportent leur PDF d’origine; sans PDF, *Fichier* reste vide.
+
+<Aside type="caution">
+Lorsqu’un texte du fichier CSV commence par `=`, `+`, `-` ou `@`, Rhinvoice le fait précéder d’une apostrophe. Ainsi, un tableur ne l’exécute pas comme formule à l’ouverture. Le fichier Excel enregistre ces textes comme texte et les garde tels quels.
+</Aside>
+
+## Colonnes
+
+| Colonne | Signification |
+|---|---|
+| Numéro, Type | Numéro de facture ou de note de crédit; *Facture* ou *Note de crédit* |
+| Date | Date de la facture |
+| Prestation du, Prestation au | Période de prestation, si indiquée |
+| N° client, Client, Pays, N° TVA client | Le client tel qu’il était à l’émission |
+| Monnaie, Régime fiscal | P. ex. *National*, *Autoliquidation*, *Exportation*, *Petite entreprise* |
+| Net | Montant net du document |
+| Net x %, TVA x % | Une paire par taux de TVA présent dans l’export, y compris 0 % |
+| TVA, Brut | TVA totale et montant de la facture, arrondi compris |
+| Payé, Payé le | Somme des paiements; la date du dernier paiement dès que la facture est entièrement payée |
+| Ouvert | Ce qui reste ouvert |
+| Passé en perte | La perte d’une facture [passée en perte](/docs/fr/invoices/write-off/) |
+| Statut | P. ex. *Payée*, *En retard*, *Annulée* |
+| Fichier | Nom du PDF dans le fichier ZIP (seulement avec les PDF) |
+
+Les notes de crédit ont des **montants négatifs**, tels qu’elles ont été émises. Une facture annulée et sa note de crédit donnent ensemble zéro. Une note de crédit n’est jamais ouverte. Les factures reprises n’ont pas de colonnes par taux, car leurs positions n’ont pas été reprises; net, TVA et brut sont ceux de l’ancien programme.
+
+Les totaux sont **par monnaie**; francs et euros ne sont jamais additionnés.
+
+L’export choisit les documents selon la date de facture. Si vous décomptez la TVA selon les contre-prestations reçues, *Payé* et *Payé le* montrent ce qui est entré. Les paiements sur des factures d’une période antérieure figurent dans l’export de cette période.
+
+## DATEV et BMD
+
+Un export au format DATEV (Allemagne) ou BMD (Autriche) n’existe pas encore. Ces formats doivent d’abord être définis avec des fiduciaires et des conseillers fiscaux. D’ici là, les fichiers Excel et CSV se lisent dans la plupart des programmes de comptabilité.
+
+## Questions fréquentes
+
+<Faq />

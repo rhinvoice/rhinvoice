@@ -1,0 +1,79 @@
+---
+title: Rechnungen für die Buchhaltung exportieren
+description: "Rechnungen eines Monats, Quartals oder Jahres aus Rhinvoice als Excel, CSV oder PDF exportieren, auf Wunsch mit allen Rechnungs-PDFs als ZIP für die Treuhand."
+since: 0.9.0
+faq:
+  - q: Wie gebe ich meiner Buchhaltung oder Treuhand die Rechnungen eines Monats?
+    a: Unter «Rechnungen» klicken Sie auf «Exportieren», wählen den Monat und das Format (Excel, CSV oder PDF) und klicken auf «Herunterladen». Mit «Rechnungs-PDFs als ZIP beilegen» kommen die PDFs aller Rechnungen in derselben ZIP-Datei mit.
+  - q: Welche Rechnungen enthält der Export?
+    a: Alle ausgestellten Rechnungen und Stornorechnungen, deren Rechnungsdatum im gewählten Zeitraum liegt, auch aus einem früheren Programm übernommene Rechnungen. Entwürfe und Angebote sind nicht dabei.
+  - q: Warum sind Stornorechnungen negativ?
+    a: Eine Stornorechnung hebt ihre Rechnung mit negativen Beträgen auf, so wie sie ausgestellt wurde. Rechnung und Storno zusammen ergeben null; die Summen stimmen so ohne Nacharbeit.
+  - q: Gibt es einen Export für DATEV oder BMD?
+    a: Noch nicht. Die Formate sollen zuerst mit Treuhändern und Steuerberatern abgestimmt werden. Bis dahin lassen sich die Excel- und CSV-Dateien in die meisten Buchhaltungsprogramme einlesen.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Unter *Rechnungen → Exportieren* laden Sie **alle ausgestellten Rechnungen und Stornorechnungen eines Monats, Quartals, Jahres oder frei gewählter Tage** herunter: als **Excel**, **CSV** oder **PDF**, auf Wunsch zusammen mit **allen Rechnungs-PDFs in einer ZIP-Datei**. So erhält Ihre Buchhaltung, Treuhand oder Steuerberatung die Rechnungen einer Periode auf einmal.
+
+## Rechnungen exportieren
+
+<Steps>
+
+1. Öffnen Sie *Rechnungen* und klicken Sie auf **Exportieren**.
+2. Wählen Sie den *Zeitraum*: *Monat*, *Quartal*, *Jahr* oder *Frei* mit *Von* und *Bis*. Vorgewählt ist der letzte ganze Monat.
+3. Wählen Sie das *Format*: *Excel*, *CSV* oder *PDF*.
+4. Kreuzen Sie *Rechnungs-PDFs als ZIP beilegen* an, wenn die PDFs mitkommen sollen.
+5. Klicken Sie auf **Herunterladen**.
+
+</Steps>
+
+Ausschlaggebend ist das **Rechnungsdatum**. Der Export enthält ausgestellte Rechnungen, Stornorechnungen und [übernommene Rechnungen](/docs/de/moving/old-invoices/) aus Ihrem bisherigen Programm, aber keine Entwürfe und keine Angebote. Ein freier Zeitraum umfasst höchstens zehn Jahre. Die Spaltentitel stehen in der Sprache, in der Sie Rhinvoice gerade verwenden.
+
+## Formate
+
+| Format | Inhalt |
+|---|---|
+| Excel (.xlsx) | Blatt *Rechnungen* mit einer Zeile pro Beleg, Filter und fixierter Titelzeile; Blatt *Summen* mit einer Zeile pro Währung. Beträge sind Zahlen mit zwei Nachkommastellen, Daten echte Daten. |
+| CSV | UTF-8 mit BOM, Semikolon als Trennzeichen, Daten als `JJJJ-MM-TT`. Beträge ohne Tausendertrennzeichen, mit Punkt (Firma in der Schweiz oder in Liechtenstein) oder Komma (Firma in Deutschland oder Österreich). Nach einer Leerzeile folgen die Summen pro Währung. |
+| PDF | A4 quer, mit Firma, Zeitraum und Seitenzahlen, die Summen pro Währung am Schluss. |
+
+Mit *Rechnungs-PDFs als ZIP beilegen* erhalten Sie eine ZIP-Datei mit der Liste im gewählten Format und dem PDF jedes Belegs. Die PDFs heissen wie ihre Nummer, etwa `R20260042.pdf`, und die Spalte *Datei* der Liste nennt den Namen. Es sind die archivierten PDFs, unverändert seit dem Ausstellen. Übernommene Rechnungen bringen ihr Original-PDF mit; haben sie keines, bleibt *Datei* leer.
+
+<Aside type="caution">
+Beginnt ein Text in der CSV-Datei mit `=`, `+`, `-` oder `@`, setzt Rhinvoice ein Apostroph davor. So führt ein Tabellenprogramm ihn beim Öffnen nicht als Formel aus. In der Excel-Datei sind solche Texte als Text gespeichert und bleiben unverändert.
+</Aside>
+
+## Spalten
+
+| Spalte | Bedeutung |
+|---|---|
+| Nummer, Art | Rechnungs- oder Stornonummer; *Rechnung* oder *Storno* |
+| Datum | Rechnungsdatum |
+| Leistung von, Leistung bis | Leistungszeitraum, falls angegeben |
+| Kundennummer, Kunde, Land, UID/USt-IdNr. | Der Kunde, wie er beim Ausstellen war |
+| Währung, Steuerfall | Etwa *Inland*, *Reverse Charge*, *Export*, *Kleinunternehmer* |
+| Netto | Nettobetrag des Belegs |
+| Netto x %, Steuer x % | Ein Paar pro Steuersatz, der im Export vorkommt, auch 0 % |
+| Steuer, Brutto | Steuer total und der Rechnungsbetrag, mit Rappenrundung |
+| Bezahlt, Bezahlt am | Summe der Zahlungen; das Datum der letzten Zahlung, sobald die Rechnung ganz bezahlt ist |
+| Offen | Was noch offen ist |
+| Abgeschrieben | Der Verlust einer [abgeschriebenen](/docs/de/invoices/write-off/) Rechnung |
+| Status | Etwa *Bezahlt*, *Überfällig*, *Storniert* |
+| Datei | Name des PDFs in der ZIP-Datei (nur mit PDFs) |
+
+Stornorechnungen haben **negative Beträge**, so wie sie ausgestellt wurden. Eine stornierte Rechnung und ihr Storno ergeben zusammen null. Eine Stornorechnung ist nie offen. Übernommene Rechnungen haben keine Spalten pro Steuersatz, da ihre Positionen nicht übernommen wurden; Netto, Steuer und Brutto stehen wie aus dem bisherigen Programm.
+
+Die Summen gibt es **pro Währung**; Franken und Euro werden nie zusammengezählt.
+
+Der Export wählt die Belege nach Rechnungsdatum. Rechnen Sie die MWST bzw. USt. nach vereinnahmten Entgelten ab, zeigen *Bezahlt* und *Bezahlt am*, was eingegangen ist. Zahlungen auf Rechnungen einer früheren Periode stehen im Export jener Periode.
+
+## DATEV und BMD
+
+Einen Export im Format von DATEV (Deutschland) oder BMD (Österreich) gibt es noch nicht. Diese Formate sollen zuerst mit Treuhändern und Steuerberatern abgestimmt werden. Die Excel- und die CSV-Datei lassen sich bis dahin in die meisten Buchhaltungsprogramme einlesen.
+
+## Häufige Fragen
+
+<Faq />

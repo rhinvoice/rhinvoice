@@ -38,6 +38,7 @@ from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.country import CountryCode
 from rhinvoice.domain.shared.email import EmailAddress
 from rhinvoice.domain.shared.errors import ValidationError
+from rhinvoice.domain.shared.iban import Iban
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
@@ -684,3 +685,39 @@ def test_a_failing_plan_is_named_in_the_log(
     assert [record.getMessage() for record in caplog.records] == [
         f"recurring invoices of plan {plan.id} failed"
     ]
+
+
+def test_plans_carry_their_bank_account(
+    recurring: RecurringHandlers, store: Store, clock: FixedClock
+) -> None:
+    chosen = factories.bank_account(iban=Iban("CH5604835012345678009"))
+    store.bank_accounts[chosen.id] = chosen
+    template = replace(save().template, bank_account_id=chosen.id)
+    plan = recurring.create(save(template=template, action=PlanAction.DRAFT)).plan
+    assert plan.template.bank_account_id == chosen.id
+    assert plan_draft(plan).bank_account_id == chosen.id
+    [run] = recurring.run_due()
+    assert run.document_id is not None
+    assert store.documents[run.document_id].document.content.bank_account_id == chosen.id
+    # Moved to another currency or deleted since: the next invoice is paid to the default.
+    store.bank_accounts[chosen.id] = replace(chosen, currency=Currency.EUR)
+    assert recurring.get(plan.id).total is not None
+    del store.bank_accounts[chosen.id]
+    assert recurring.get(plan.id).total is not None
+    at(clock, TODAY + timedelta(days=31))
+    [later] = recurring.run_due()
+    assert later.document_id is not None
+    assert store.documents[later.document_id].document.content.bank_account_id is None
+
+
+def test_plans_check_their_bank_account(recurring: RecurringHandlers, store: Store) -> None:
+    euros = factories.bank_account(currency=Currency.EUR, is_default=True)
+    store.bank_accounts[euros.id] = euros
+    wrong = replace(save().template, bank_account_id=euros.id)
+    with raises_exactly(ValidationError, "the bank account is not in CHF"):
+        recurring.create(save(template=wrong))
+    plan = recurring.create(save()).plan
+    with raises_exactly(ValidationError, "the bank account does not exist"):
+        recurring.update(plan.id, save(template=replace(wrong, bank_account_id=new_id())))
+    with raises_exactly(ValidationError, "a plan names its currency"):
+        recurring.create(save(template=replace(wrong, currency=None)))

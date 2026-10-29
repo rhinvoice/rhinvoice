@@ -14,6 +14,7 @@ from rhinvoice.application.errors import NotFoundError
 from rhinvoice.application.numbering.handlers import allocate_number
 from rhinvoice.application.text.handlers import effective_notice
 from rhinvoice.domain.catalog.unit import Unit
+from rhinvoice.domain.company.bank_account import paying_account
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.document.attachment import Attachment
 from rhinvoice.domain.document.document import (
@@ -127,6 +128,8 @@ class DraftInput:
     intro_text: str = ""
     payment_text: str = ""
     closing_text: str = ""
+    bank_account_id: UUID | None = None
+    """The account to pay to; None: the default account of the currency."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -240,7 +243,7 @@ class DocumentHandlers:
         with self.uow() as uow:
             company = self._company(uow)
             customer = self._customer(uow, draft.customer_id)
-            content = self._content(company, customer, draft, previous=None)
+            content = self._content(uow, company, customer, draft, previous=None)
             document = Document.new_draft(
                 new_id(),
                 document_type,
@@ -263,7 +266,7 @@ class DocumentHandlers:
             company = self._company(uow)
             if customer is None:
                 customer = self._customer(uow, draft.customer_id)
-            content = self._content(company, customer, draft, previous=None)
+            content = self._content(uow, company, customer, draft, previous=None)
             document = Document.new_draft(new_id(), document_type, content, self.clock.now())
             rates = profile_of(company.country).rates_on(content.tax_date or self.clock.today())
             available: dict[TaxCategory, Decimal] = {}
@@ -275,10 +278,7 @@ class DocumentHandlers:
                 available[category] = rate if content.treatment.charges_vat else Decimal(0)
             view = replace(self._view(uow, document), customer=customer)
             blockers = document.issue_blockers(company, customer, view.totals.total)
-            if (
-                document_type is DocumentType.INVOICE
-                and self._account(uow, content.currency) is None
-            ):
+            if document_type is DocumentType.INVOICE and self._account(uow, content) is None:
                 blockers = ("bank_account_missing", *blockers)
             return DocumentPreview(
                 view=view,
@@ -294,7 +294,7 @@ class DocumentHandlers:
             document = self._require(uow, document_id, for_update=True)
             company = self._company(uow)
             customer = self._customer(uow, draft.customer_id)
-            content = self._content(company, customer, draft, previous=document.content)
+            content = self._content(uow, company, customer, draft, previous=document.content)
             document = document.edit(
                 content, self.clock.now(), override_reason=draft.override_reason
             )
@@ -544,7 +544,7 @@ class DocumentHandlers:
         company = self._company(uow)
         customer = self._customer(uow, document.content.customer_id)
         currency = document.content.currency
-        account = self._account(uow, currency)
+        account = self._account(uow, document.content)
         if account is None and document.type is DocumentType.INVOICE:
             raise ValidationError(
                 "currency",
@@ -603,6 +603,7 @@ class DocumentHandlers:
 
     def _content(
         self,
+        uow: UnitOfWork,
         company: Company,
         customer: Customer,
         draft: DraftInput,
@@ -639,6 +640,7 @@ class DocumentHandlers:
             intro_text=draft.intro_text,
             payment_text=draft.payment_text,
             closing_text=draft.closing_text,
+            bank_account_id=chosen_account(uow, draft.bank_account_id, currency),
         )
 
     def _view(self, uow: UnitOfWork, document: Document) -> DocumentView:
@@ -700,12 +702,9 @@ class DocumentHandlers:
         return customer
 
     @staticmethod
-    def _account(uow: UnitOfWork, currency: Currency) -> BankAccount | None:
-        """Find the default account in ``currency``, which invoices name for the payment."""
-        return next(
-            (a for a in uow.bank_accounts.list() if a.currency is currency and a.is_default),
-            None,
-        )
+    def _account(uow: UnitOfWork, content: DraftContent) -> BankAccount | None:
+        """Find the account the document is paid to: the chosen one, else the default."""
+        return paying_account(uow.bank_accounts.list(), content.currency, content.bank_account_id)
 
     @staticmethod
     def _require(uow: UnitOfWork, document_id: UUID, *, for_update: bool = False) -> Document:
@@ -713,6 +712,24 @@ class DocumentHandlers:
         if document is None:
             raise NotFoundError("document not found")
         return document
+
+
+def chosen_account(uow: UnitOfWork, account_id: UUID | None, currency: Currency) -> UUID | None:
+    """Check the account chosen for a document: it exists and is in the document's currency."""
+    if account_id is None:
+        return None
+    account = uow.bank_accounts.get(account_id)
+    if account is None:
+        raise ValidationError(
+            "bank_account_id", "the bank account does not exist", code="bank_account_unknown"
+        )
+    if account.currency is not currency:
+        raise ValidationError(
+            "bank_account_id",
+            f"the bank account is not in {currency}",
+            code="bank_account_currency",
+        )
+    return account_id
 
 
 def _tax_context(company: Company, customer: Customer) -> TaxContext:

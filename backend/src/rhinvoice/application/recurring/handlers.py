@@ -7,7 +7,7 @@ from dataclasses import dataclass, replace
 from enum import Enum
 from typing import TYPE_CHECKING, Final
 
-from rhinvoice.application.document.handlers import DraftInput, LineInput
+from rhinvoice.application.document.handlers import DraftInput, LineInput, chosen_account
 from rhinvoice.application.errors import NotFoundError
 from rhinvoice.application.mail.handlers import SendMail
 from rhinvoice.domain.document.document import DocumentType
@@ -103,6 +103,7 @@ class RecurringHandlers:
     def create(self, command: SavePlan) -> PlanView:
         with self.uow() as uow:
             _require_customer(uow, command.customer_id)
+            _check_account(uow, command.template)
             plan = RecurringPlan.new(
                 new_id(),
                 name=command.name,
@@ -123,6 +124,7 @@ class RecurringHandlers:
     def update(self, plan_id: UUID, command: SavePlan) -> PlanView:
         with self.uow() as uow:
             _require_customer(uow, command.customer_id)
+            _check_account(uow, command.template)
             plan = _require(uow, plan_id, for_update=True).change(
                 name=command.name,
                 customer_id=command.customer_id,
@@ -246,7 +248,7 @@ class RecurringHandlers:
         """Create, issue and send the invoice of one period, as far as the plan says."""
         first, last = plan.period()
         draft = replace(
-            plan_draft(plan),
+            self._draft(plan),
             service_from=first if plan.service_period else None,
             service_to=last if plan.service_period else None,
         )
@@ -296,11 +298,23 @@ class RecurringHandlers:
             uow.commit()
         return self.get(plan_id)
 
+    def _draft(self, plan: RecurringPlan) -> DraftInput:
+        """Return the plan's invoice; an account deleted since gives way to the default."""
+        draft = plan_draft(plan)
+        if draft.bank_account_id is None:
+            return draft
+        with self.uow() as uow:
+            account = uow.bank_accounts.get(draft.bank_account_id)
+        if account is None or account.currency is not draft.currency:
+            return replace(draft, bank_account_id=None)
+        return draft
+
     def _view(self, plan: RecurringPlan, runs: Sequence[PlanRun]) -> PlanView:
         with self.uow() as uow:
             customer = uow.customers.get(plan.customer_id)
         try:
-            total = self.documents.preview(DocumentType.INVOICE, plan_draft(plan)).view.totals.total
+            draft = self._draft(plan)
+            total = self.documents.preview(DocumentType.INVOICE, draft).view.totals.total
         except DomainError:
             total = None  # e.g. a tax category the country no longer has
         return PlanView(
@@ -332,6 +346,7 @@ def to_template(draft: DraftInput) -> InvoiceTemplate:
         intro_text=draft.intro_text,
         payment_text=draft.payment_text,
         closing_text=draft.closing_text,
+        bank_account_id=draft.bank_account_id,
     )
 
 
@@ -352,6 +367,7 @@ def plan_draft(plan: RecurringPlan) -> DraftInput:
         intro_text=template.intro_text,
         payment_text=template.payment_text,
         closing_text=template.closing_text,
+        bank_account_id=template.bank_account_id,
     )
 
 
@@ -380,6 +396,12 @@ def _require(uow: UnitOfWork, plan_id: UUID, *, for_update: bool = False) -> Rec
     if plan is None:
         raise NotFoundError("plan not found")
     return plan
+
+
+def _check_account(uow: UnitOfWork, template: DraftInput) -> None:
+    """Check a plan's account like a draft's: it exists and is in the plan's currency."""
+    if template.currency is not None:
+        chosen_account(uow, template.bank_account_id, template.currency)
 
 
 def _require_customer(uow: UnitOfWork, customer_id: UUID) -> None:

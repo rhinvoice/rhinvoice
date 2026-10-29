@@ -87,6 +87,8 @@ class InvoiceTemplate:
     intro_text: str = ""
     payment_text: str = ""
     closing_text: str = ""
+    bank_account_id: UUID | None = None
+    """The account the invoices are paid to; None or deleted: the currency's default."""
 
     def __post_init__(self) -> None:
         if not any(line.kind is LineKind.ITEM for line in self.lines):

@@ -49,6 +49,10 @@ class SaveBankAccount:
     qr_iban: str | None = None
     bic: str | None = None
     is_default: bool = False
+    third_party: bool = False
+    """The account belongs to someone else, e.g. a financial service provider."""
+    holder_address: AddressInput | None = None
+    """The third party's address; ignored for own accounts."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,6 +174,12 @@ class CompanyHandlers:
             qr_iban=None if not command.qr_iban else Iban.parse(command.qr_iban),
             bic=None if not command.bic else Bic.parse(command.bic),
             is_default=command.is_default,
+            third_party=command.third_party,
+            holder_address=(
+                None
+                if command.holder_address is None or not command.third_party
+                else command.holder_address.to_domain()
+            ),
         )
 
     @staticmethod

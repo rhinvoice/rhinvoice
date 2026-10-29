@@ -329,6 +329,7 @@ def test_currencies_are_kept_apart() -> None:
             discount=Money.zero(Currency.EUR),
             net=Money(Decimal("10.00"), Currency.EUR),
             tax=Money.zero(Currency.EUR),
+            pass_through=Money.zero(Currency.EUR),
             gross=Money(Decimal("10.00"), Currency.EUR),
             rounding=Money.zero(Currency.EUR),
             total=Money(Decimal("10.00"), Currency.EUR),

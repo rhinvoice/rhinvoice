@@ -366,6 +366,64 @@ def test_goods_lines_use_the_goods_treatment() -> None:
     assert with_text.treatments == (TaxTreatment.GOODS_EXPORT,)
 
 
+def test_pass_through_lines_have_no_treatment_of_their_own() -> None:
+    fee = line("1", "80", TaxCategory.PASS_THROUGH, supply=Supply.GOODS)
+    assert fee.is_pass_through
+    assert not line().is_pass_through
+    text = DocumentLine(
+        id=new_id(),
+        kind=LineKind.TEXT,
+        description="Gebühren",
+        tax_category=TaxCategory.PASS_THROUGH,
+    )
+    assert not text.is_pass_through
+    document = draft(lines=(line(), fee), goods_treatment=TaxTreatment.GOODS_EXPORT)
+    # The pass-through goods line adds no export notice: it is outside VAT.
+    assert document.content.treatments == (TaxTreatment.DOMESTIC,)
+    only = draft(lines=(fee,), goods_treatment=TaxTreatment.GOODS_EXPORT).content
+    assert only.treatments == (TaxTreatment.DOMESTIC,)
+    issued_one = draft(lines=(line(), fee)).issue(
+        number="R20260001",
+        issue_date=TODAY,
+        due_date=TODAY + timedelta(days=30),
+        snapshot=snapshot(),
+        now=NOW,
+    )
+    assert [item.tax_rate for item in issued_one.content.lines] == [Decimal("8.1"), Decimal(0)]
+    totals = issued_one.frozen_totals
+    assert (totals.net.amount, totals.pass_through.amount, totals.total.amount) == (
+        Decimal(1500),
+        Decimal(80),
+        Decimal("1701.50"),
+    )
+    # The customer owes the pass-through amount too.
+    assert issued_one.open_amount().amount == Decimal("1701.50")
+
+
+def test_files_are_added_to_and_removed_from_drafts() -> None:
+    document = draft().record_file("Notar.pdf", LATER)
+    assert (document.events[-1].at, document.events[-1].kind, document.events[-1].detail) == (
+        LATER,
+        EventKind.FILE_ADDED,
+        "Notar.pdf",
+    )
+    removed = document.remove_file("Notar.pdf", LATER)
+    assert (removed.events[-1].at, removed.events[-1].kind, removed.events[-1].detail) == (
+        LATER,
+        EventKind.FILE_REMOVED,
+        "Notar.pdf",
+    )
+    assert len(draft().remove_file("y" * 600, LATER).events[-1].detail) == 500
+    with raises_exactly(
+        InvalidStateError, "files are added to drafts and imported invoices only"
+    ) as added:
+        issued().record_file("x.pdf", NOW)
+    assert added.value.code == "attachments_frozen"
+    with raises_exactly(InvalidStateError, "attachments are removed from drafts only") as taken:
+        issued().remove_file("x.pdf", NOW)
+    assert taken.value.code == "attachments_frozen"
+
+
 def test_goods_treatments_are_not_a_document_treatment() -> None:
     with raises_exactly(
         ValidationError, "goods get this treatment from reverse charge or an export"

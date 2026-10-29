@@ -11,6 +11,8 @@ per rate → rounding of the payable amount.
 * Cash rounding (CHF 0.05) applies only to the payable total.
 * Goods lines may have a treatment of their own (export, intra-Community
   supply), so one document can hold taxed and exempt groups (ADR 0014).
+* Pass-through lines (paid in the customer's name) belong to no VAT group and
+  take no document discount; they count fully into the payable total (ADR 0039).
 See ADR 0005.
 """
 
@@ -62,6 +64,8 @@ class LineAmount:
     """Net amount in NET mode, gross amount in GROSS mode, after the line discount."""
     vat_code: VatCode
     tax_rate: Decimal
+    pass_through: bool = False
+    """Paid in the customer's name: outside every VAT group (ADR 0039)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,10 +89,15 @@ class Totals:
     lines: tuple[LineAmount, ...]
     groups: tuple[TaxGroup, ...]
     subtotal: Money
+    """The lines of the VAT groups before the document discount (no pass-through lines)."""
     discount: Money
     net: Money
+    """Of the taxed lines (and exempt ones) after the discount; never pass-through amounts."""
     tax: Money
+    pass_through: Money
+    """The sum of the pass-through lines, outside VAT and discount (ADR 0039)."""
     gross: Money
+    """net + tax + pass_through, before cash rounding."""
     rounding: Money
     """Cash rounding difference (total - gross)."""
     total: Money
@@ -125,6 +134,7 @@ def _rate_for_line(calculation: CalculationInput, line: DocumentLine) -> Decimal
     if not calculation.treatment_of(line).charges_vat or line.tax_category in {
         TaxCategory.ZERO,
         TaxCategory.EXEMPT,
+        TaxCategory.PASS_THROUGH,
     }:
         return Decimal(0)
     return calculation.rate_for(line)
@@ -139,13 +149,18 @@ def calculate(calculation: CalculationInput) -> Totals:
             amount=Money(round_half_up(line.raw_amount(), step), currency),
             vat_code=vat_code(calculation.treatment_of(line), line.tax_category),
             tax_rate=_rate_for_line(calculation, line),
+            pass_through=line.is_pass_through,
         )
         for line in calculation.lines
         if line.is_item
     )
     keys: list[tuple[VatCode, Decimal]] = []
     sums: dict[tuple[VatCode, Decimal], Decimal] = {}
+    pass_through = Decimal(0)
     for line in line_amounts:
+        if line.pass_through:
+            pass_through += line.amount.amount
+            continue
         key = _group_key(line)
         if key not in sums:
             keys.append(key)
@@ -179,7 +194,7 @@ def calculate(calculation: CalculationInput) -> Totals:
 
     net_total = sum((group.net.amount for group in groups), Decimal(0))
     tax_total = sum((group.tax.amount for group in groups), Decimal(0))
-    gross = net_total + tax_total
+    gross = net_total + tax_total + pass_through
     rounding_step = (
         CASH_ROUNDING_STEP if calculation.cash_rounding and currency.value == "CHF" else step
     )
@@ -192,6 +207,7 @@ def calculate(calculation: CalculationInput) -> Totals:
         discount=Money(sum(discounts, Decimal(0)), currency),
         net=Money(net_total, currency),
         tax=Money(tax_total, currency),
+        pass_through=Money(pass_through, currency),
         gross=Money(gross, currency),
         rounding=Money(total - gross, currency),
         total=Money(total, currency),

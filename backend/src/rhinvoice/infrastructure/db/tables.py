@@ -199,7 +199,7 @@ articles = Table(
     Column("description", Text, nullable=False, server_default=""),
     Column("article_group", String(50), nullable=False, server_default=""),
     Column("unit", String(3), nullable=False),
-    Column("tax_category", String(10), nullable=False),
+    Column("tax_category", String(20), nullable=False),
     Column("supply", String(10), nullable=False, server_default="service"),
     Column("archived", Boolean, nullable=False, server_default="false"),
     Column("created_at", DateTime(timezone=True), nullable=False),
@@ -294,7 +294,7 @@ document_lines = Table(
     Column("unit", String(3)),
     Column("unit_price", Numeric(14, 4), nullable=False),
     Column("discount_percent", Numeric(5, 2), nullable=False),
-    Column("tax_category", String(10), nullable=False),
+    Column("tax_category", String(20), nullable=False),
     Column("supply", String(10), nullable=False, server_default="service"),
     Column("tax_rate", Numeric(5, 2)),
     Column("article_id", Uuid(), ForeignKey("articles.id", ondelete="SET NULL")),
@@ -389,7 +389,8 @@ document_pdfs = Table(
     Column("e_invoice", LargeBinary),
 )
 
-# Further files of issued invoices (reminders, copies of another program); only added.
+# Further files: of imported invoices (reminders, copies of another program), and of drafts
+# (third-party invoices, ADR 0040), which may remove theirs; once issued only added.
 document_attachments = Table(
     "document_attachments",
     metadata,

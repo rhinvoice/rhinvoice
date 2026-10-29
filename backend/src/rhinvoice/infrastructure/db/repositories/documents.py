@@ -486,6 +486,10 @@ class SqlDocumentRepository:
         self._append_events(document, stored=stored_events)
 
     def delete(self, document_id: UUID) -> None:
+        # A draft's attachments go with it; the triggers refuse both for issued documents.
+        self._connection.execute(
+            delete(document_attachments).where(document_attachments.c.document_id == document_id)
+        )
         self._connection.execute(delete(documents).where(documents.c.id == document_id))
 
     def _insert_lines(self, document: Document) -> None:
@@ -631,7 +635,8 @@ class SqlDocumentRepository:
         )
 
     def add_attachment(self, attachment: Attachment, content: bytes) -> None:
-        # The trigger checks the content against the hash and refuses drafts.
+        # The trigger checks the content against the hash and refuses issued documents
+        # of this program.
         self._connection.execute(
             insert(document_attachments).values(
                 id=attachment.id,
@@ -641,6 +646,15 @@ class SqlDocumentRepository:
                 content=content,
                 added_at=attachment.added_at,
             ),
+        )
+
+    def remove_attachment(self, document_id: UUID, attachment_id: UUID) -> None:
+        # The trigger refuses it unless the document is a draft.
+        self._connection.execute(
+            delete(document_attachments).where(
+                document_attachments.c.id == attachment_id,
+                document_attachments.c.document_id == document_id,
+            )
         )
 
     def attachments(self, document_id: UUID) -> list[Attachment]:

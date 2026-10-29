@@ -16,6 +16,7 @@ from rhinvoice.application.document.handlers import (
 from rhinvoice.application.document.printing import PrintHandlers
 from rhinvoice.application.errors import ConflictError, NotFoundError
 from rhinvoice.domain.company.print_layout import PrintLayout
+from rhinvoice.domain.document.attachment import MAX_ATTACHMENTS
 from rhinvoice.domain.document.document import (
     Document,
     DocumentType,
@@ -192,15 +193,82 @@ def test_files_are_checked_before_they_are_added(
         handlers.add_file(new_id(), "x.pdf", PDF)
 
 
-def test_files_are_added_to_imported_invoices_only(store: Store, clock: FixedClock) -> None:
+def test_drafts_take_attachments_until_they_are_issued(store: Store, clock: FixedClock) -> None:
     store.company = factories.company()
+    account = factories.bank_account(is_default=True)
+    store.bank_accounts[account.id] = account
     handlers = DocumentHandlers(uow=lambda: InMemoryUnitOfWork(store), clock=clock)
     customer = factories.customer()
     store.customers[customer.id] = customer
     line = LineInput(kind=LineKind.ITEM, description="Beratung", quantity="1", unit_price="10")
     own = handlers.create(DocumentType.INVOICE, DraftInput(customer_id=customer.id, lines=(line,)))
-    with raises_exactly(InvalidStateError, "files are added to imported invoices only"):
-        handlers.add_file(own.document.id, "x.pdf", PDF)
+    document_id = own.document.id
+    locked: list[InMemoryUnitOfWork] = []
+
+    def recording() -> InMemoryUnitOfWork:
+        unit = InMemoryUnitOfWork(store)
+        locked.append(unit)
+        return unit
+
+    view = DocumentHandlers(uow=recording, clock=clock).add_file(
+        document_id, "C:\\Scans\\Notar: Gebühr.PDF", PDF
+    )
+    assert locked[0].documents.locked == [document_id]
+    # The draft's PDF is never archived by an attachment.
+    assert view.document.pdf_sha256 is None
+    assert document_id not in store.pdfs
+    [attachment] = handlers.attachments(document_id)
+    assert (attachment.file_name, attachment.size) == ("Notar_ Gebühr.pdf", len(PDF))
+    assert (view.document.events[-1].kind, view.document.events[-1].detail) == (
+        EventKind.FILE_ADDED,
+        "Notar_ Gebühr.pdf",
+    )
+
+    # Removed again while it is a draft.
+    removed = handlers.remove_file(document_id, attachment.id)
+    assert handlers.attachments(document_id) == []
+    assert (removed.document.events[-1].kind, removed.document.events[-1].detail) == (
+        EventKind.FILE_REMOVED,
+        "Notar_ Gebühr.pdf",
+    )
+    with raises_exactly(NotFoundError, "attachment not found"):
+        handlers.remove_file(document_id, attachment.id)
+    with pytest.raises(NotFoundError):
+        handlers.remove_file(new_id(), attachment.id)
+
+    # At most ten per draft.
+    for number in range(MAX_ATTACHMENTS):
+        handlers.add_file(document_id, f"Beleg {number}.pdf", PDF + str(number).encode())
+    with raises_exactly(ValidationError, "a draft has at most 10 attachments") as caught:
+        handlers.add_file(document_id, "one more.pdf", PDF)
+    assert caught.value.code == "too_many_attachments"
+
+    # Issued, the files stay as they are.
+    handlers.issue(document_id)
+    assert len(handlers.attachments(document_id)) == MAX_ATTACHMENTS
+    with raises_exactly(
+        InvalidStateError, "files are added to drafts and imported invoices only"
+    ) as frozen:
+        handlers.add_file(document_id, "x.pdf", PDF)
+    assert frozen.value.code == "attachments_frozen"
+    first = handlers.attachments(document_id)[0]
+    with raises_exactly(InvalidStateError, "attachments are removed from drafts only"):
+        handlers.remove_file(document_id, first.id)
+    assert len(handlers.attachments(document_id)) == MAX_ATTACHMENTS
+
+
+def test_a_deleted_draft_takes_its_attachments_along(store: Store, clock: FixedClock) -> None:
+    store.company = factories.company()
+    handlers = DocumentHandlers(uow=lambda: InMemoryUnitOfWork(store), clock=clock)
+    customer = factories.customer()
+    store.customers[customer.id] = customer
+    line = LineInput(kind=LineKind.ITEM, description="Beratung", quantity="1", unit_price="10")
+    kept = handlers.create(DocumentType.INVOICE, DraftInput(customer_id=customer.id, lines=(line,)))
+    gone = handlers.create(DocumentType.QUOTE, DraftInput(customer_id=customer.id, lines=(line,)))
+    handlers.add_file(kept.document.id, "a.pdf", PDF)
+    handlers.add_file(gone.document.id, "b.pdf", PDF)
+    handlers.delete(gone.document.id)
+    assert [item.file_name for item, _ in store.attachments.values()] == ["a.pdf"]
 
 
 def test_unknown_attachments_are_not_found(store: Store, clock: FixedClock) -> None:

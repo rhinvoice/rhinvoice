@@ -121,7 +121,9 @@ class EventKind(StrEnum):
     IMPORTED = "imported"
     """Taken over from a program used before; the detail names the original PDF."""
     FILE_ADDED = "file_added"
-    """A file of an imported invoice added afterwards; the detail is its name."""
+    """A file added to an imported invoice or to a draft; the detail is its name."""
+    FILE_REMOVED = "file_removed"
+    """An attachment taken off a draft; the detail is its name (ADR 0040)."""
     WRITTEN_OFF = "written_off"
     """The open rest was written off; the detail is "<amount> <date> <reason>"."""
     WRITE_OFF_REMOVED = "write_off_removed"
@@ -257,8 +259,15 @@ class DraftContent:
 
     @property
     def treatments(self) -> tuple[TaxTreatment, ...]:
-        """The treatments of the positions, the document's first; each with its notice."""
-        found = dict.fromkeys(self.treatment_of(line) for line in self.lines if line.is_item)
+        """The treatments of the positions, the document's first; each with its notice.
+
+        Pass-through lines have none: they lie outside VAT (ADR 0039).
+        """
+        found = dict.fromkeys(
+            self.treatment_of(line)
+            for line in self.lines
+            if line.is_item and not line.is_pass_through
+        )
         ordered = sorted(found, key=lambda treatment: treatment is not self.treatment)
         return tuple(ordered) or (self.treatment,)
 
@@ -378,6 +387,7 @@ class Document:
             discount=zero,
             net=net,
             tax=total - net,
+            pass_through=zero,
             gross=total,
             rounding=zero,
             total=total,
@@ -579,13 +589,28 @@ class Document:
         return replace(self, pdf_sha256=sha256)
 
     def record_file(self, file_name: str, now: datetime) -> Document:
-        """Note a file added to an imported invoice (its PDF or an attachment)."""
-        if not self.is_imported:
+        """Note a file added: to an imported invoice (its PDF or an attachment) or to a draft.
+
+        A draft's attachments (e.g. third-party invoices, ADR 0040) are frozen with it when
+        it is issued; issued documents of this program take no further files.
+        """
+        if not (self.is_imported or self.is_draft):
             raise InvalidStateError(
-                "files are added to imported invoices only", code="not_imported"
+                "files are added to drafts and imported invoices only", code="attachments_frozen"
             )
         return replace(
             self, events=self._with_event(now, EventKind.FILE_ADDED, file_name[:MAX_EVENT_DETAIL])
+        )
+
+    def remove_file(self, file_name: str, now: datetime) -> Document:
+        """Note an attachment taken off a draft; files of issued documents stay (GoBD, OR 958f)."""
+        if not self.is_draft:
+            raise InvalidStateError(
+                "attachments are removed from drafts only", code="attachments_frozen"
+            )
+        return replace(
+            self,
+            events=self._with_event(now, EventKind.FILE_REMOVED, file_name[:MAX_EVENT_DETAIL]),
         )
 
     def edit(self, content: DraftContent, now: datetime, *, override_reason: str = "") -> Document:

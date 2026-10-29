@@ -297,6 +297,7 @@ def totals_to_json(totals: Totals) -> Json:
                 "amount": money(line.amount),
                 "vat_code": line.vat_code.value,
                 "tax_rate": str(line.tax_rate),
+                "pass_through": line.pass_through,
             }
             for line in totals.lines
         ],
@@ -315,6 +316,7 @@ def totals_to_json(totals: Totals) -> Json:
         "discount": money(totals.discount),
         "net": money(totals.net),
         "tax": money(totals.tax),
+        "pass_through": money(totals.pass_through),
         "gross": money(totals.gross),
         "rounding": money(totals.rounding),
         "total": money(totals.total),
@@ -335,6 +337,7 @@ def totals_from_json(data: Json) -> Totals:
                 amount=money(line["amount"]),
                 vat_code=VatCode(line["vat_code"]),
                 tax_rate=Decimal(line["tax_rate"]),
+                pass_through=line.get("pass_through", False),
             )
             for line in data["lines"]
         ),
@@ -353,6 +356,12 @@ def totals_from_json(data: Json) -> Totals:
         discount=money(data["discount"]),
         net=money(data["net"]),
         tax=money(data["tax"]),
+        # Totals frozen before version 0.9 had no pass-through lines (ADR 0039).
+        pass_through=(
+            money(data["pass_through"])
+            if "pass_through" in data
+            else Money.zero(currency).round_to_minor()
+        ),
         gross=money(data["gross"]),
         rounding=money(data["rounding"]),
         total=money(data["total"]),

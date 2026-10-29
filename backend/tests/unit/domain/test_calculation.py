@@ -5,7 +5,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from rhinvoice.domain.catalog.unit import Unit
-from rhinvoice.domain.document.calculation import CalculationInput, Totals, calculate
+from rhinvoice.domain.document.calculation import CalculationInput, LineAmount, Totals, calculate
 from rhinvoice.domain.document.lines import (
     Discount,
     DiscountKind,
@@ -235,6 +235,93 @@ def test_text_lines_and_empty_documents() -> None:
     assert amount_discount.discount == chf("0")
 
 
+# --- Pass-through lines (ADR 0039) ------------------------------------------------
+
+PASS = TaxCategory.PASS_THROUGH
+
+
+def test_pass_through_lines_carry_no_vat_and_belong_to_no_group() -> None:
+    fee = item("1", "250.35", PASS)
+    totals = compute([item("10", "150"), fee, item("3", "12.35", TaxCategory.REDUCED)])
+    assert [(g.vat_code, g.rate, g.net) for g in totals.groups] == [
+        (VatCode.STANDARD, Decimal("8.1"), chf("1500")),
+        (VatCode.STANDARD, Decimal("2.6"), chf("37.05")),
+    ]
+    assert totals.lines[1] == LineAmount(
+        line_id=fee.id,
+        amount=chf("250.35"),
+        vat_code=VatCode.EXEMPT,
+        tax_rate=Decimal(0),
+        pass_through=True,
+    )
+    assert not totals.lines[0].pass_through
+    assert totals.subtotal == chf("1537.05")
+    assert totals.net == chf("1537.05")
+    assert totals.tax == chf("122.46")
+    assert totals.pass_through == chf("250.35")
+    assert totals.gross == chf("1909.86")
+    # Cash rounding only on the payable total, which includes the pass-through amount.
+    assert totals.rounding == chf("-0.01")
+    assert totals.total == chf("1909.85")
+
+
+def test_document_discount_never_touches_pass_through_lines() -> None:
+    lines = [item("1", "100"), item("1", "40", PASS)]
+    percent = compute(lines, discount=Discount(DiscountKind.PERCENT, Decimal(10)))
+    assert percent.discount == chf("10.00")
+    assert percent.net == chf("90.00")
+    assert percent.pass_through == chf("40")
+    assert percent.total == chf("137.30")  # 90 + 7.29 + 40 = 137.29, rounded to 0.05
+    amount = compute(lines, discount=Discount(DiscountKind.AMOUNT, Decimal(100)))
+    assert amount.net == chf("0")
+    assert amount.total == chf("40")
+    with pytest.raises(ValidationError):
+        compute(lines, discount=Discount(DiscountKind.AMOUNT, Decimal("100.01")))
+
+
+def test_a_document_of_pass_through_lines_only() -> None:
+    totals = compute(
+        [item("2", "12.50", PASS)], discount=Discount(DiscountKind.PERCENT, Decimal(50))
+    )
+    assert totals.groups == ()
+    assert (totals.subtotal, totals.discount, totals.net, totals.tax) == (
+        chf("0"),
+        chf("0"),
+        chf("0"),
+        chf("0"),
+    )
+    assert totals.pass_through == chf("25.00")
+    assert totals.total == chf("25.00")
+
+
+@pytest.mark.parametrize("mode", list(PriceMode))
+@pytest.mark.parametrize(
+    "treatment",
+    [
+        TaxTreatment.DOMESTIC,
+        TaxTreatment.SMALL_BUSINESS,
+        TaxTreatment.REVERSE_CHARGE,
+        TaxTreatment.EXPORT,
+        TaxTreatment.EXEMPT,
+    ],
+)
+def test_pass_through_lines_are_the_same_in_every_treatment(
+    treatment: TaxTreatment, mode: PriceMode
+) -> None:
+    totals = compute(
+        [item("1", "100.10", PASS, supply=Supply.GOODS)],
+        treatment=treatment,
+        goods_treatment=TaxTreatment.GOODS_EXPORT,
+        mode=mode,
+        currency=Currency.EUR,
+    )
+    assert [(line.vat_code, line.tax_rate) for line in totals.lines] == [
+        (VatCode.EXEMPT, Decimal(0))
+    ]
+    assert totals.groups == ()
+    assert totals.total == Money(Decimal("100.10"), Currency.EUR)
+
+
 def test_euro_has_no_cash_rounding() -> None:
     totals = compute([item("1", "10.01")], currency=Currency.EUR)
     assert totals.total.amount == Decimal("10.82")
@@ -327,7 +414,13 @@ quantities = st.decimals(min_value=Decimal("0.0001"), max_value=Decimal(10000), 
 prices = st.decimals(min_value=Decimal(0), max_value=Decimal(100000), places=4)
 percents = st.decimals(min_value=Decimal(0), max_value=Decimal(100), places=2)
 categories = st.sampled_from(
-    [TaxCategory.STANDARD, TaxCategory.REDUCED, TaxCategory.SPECIAL, TaxCategory.ZERO]
+    [
+        TaxCategory.STANDARD,
+        TaxCategory.REDUCED,
+        TaxCategory.SPECIAL,
+        TaxCategory.ZERO,
+        TaxCategory.PASS_THROUGH,
+    ]
 )
 
 
@@ -347,10 +440,14 @@ def test_totals_are_consistent(
     lines: list[DocumentLine], discount: Decimal, mode: PriceMode
 ) -> None:
     totals = compute(lines, discount=Discount(DiscountKind.PERCENT, discount), mode=mode)
-    assert totals.subtotal == sum((line.amount for line in totals.lines), chf("0"))
-    assert totals.net + totals.tax == totals.gross
+    taxed = [line.amount for line in totals.lines if not line.pass_through]
+    passed = [line.amount for line in totals.lines if line.pass_through]
+    assert totals.subtotal == sum(taxed, chf("0"))
+    assert totals.pass_through == sum(passed, chf("0"))
+    # The payable total is the taxed part plus the pass-through sum (rounded at the end).
+    assert totals.net + totals.tax + totals.pass_through == totals.gross
     assert totals.gross + totals.rounding == totals.total
-    assert sum((g.gross for g in totals.groups), chf("0")) == totals.gross
+    assert sum((g.gross for g in totals.groups), chf("0")) == totals.gross - totals.pass_through
     assert sum((g.discount for g in totals.groups), chf("0")) == totals.discount
     for group in totals.groups:
         assert group.amount - group.discount == (
@@ -358,6 +455,44 @@ def test_totals_are_consistent(
         )
     assert abs(totals.rounding.amount) <= Decimal("0.025")
     assert (totals.total.amount * 20) % 1 == 0
+
+
+@given(line_lists, line_lists, percents, st.sampled_from(list(DiscountKind)), modes)
+def test_the_discount_never_touches_pass_through_lines(
+    lines: list[DocumentLine],
+    more: list[DocumentLine],
+    value: Decimal,
+    kind: DiscountKind,
+    mode: PriceMode,
+) -> None:
+    """Adding pass-through lines changes nothing but the pass-through sum and the total."""
+    taxed = [line for line in lines if not line.is_pass_through]
+    passed = [
+        DocumentLine(
+            id=line.id,
+            kind=line.kind,
+            description=line.description,
+            quantity=line.quantity,
+            unit_price=line.unit_price,
+            tax_category=TaxCategory.PASS_THROUGH,
+        )
+        for line in more
+    ]
+    plain = compute(taxed, mode=mode)
+    value = min(value, abs(plain.subtotal.amount)) if kind is DiscountKind.AMOUNT else value
+    discount = Discount(kind, value)
+    without = compute(taxed, discount=discount, mode=mode)
+    mixed = compute([*passed, *taxed], discount=discount, mode=mode)
+    assert mixed.groups == without.groups
+    assert (mixed.subtotal, mixed.discount, mixed.net, mixed.tax) == (
+        without.subtotal,
+        without.discount,
+        without.net,
+        without.tax,
+    )
+    passed_sum = sum((line.amount for line in mixed.lines if line.pass_through), chf("0"))
+    assert mixed.pass_through == passed_sum
+    assert mixed.gross == without.gross + passed_sum
 
 
 @given(line_lists, percents)

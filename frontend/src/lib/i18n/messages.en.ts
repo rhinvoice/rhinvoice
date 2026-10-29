@@ -1697,7 +1697,7 @@ export const en: Catalog<MessageKey> = {
   "export.open": "Export",
   "export.title": "Export invoices",
   "export.description":
-    "The issued invoices and credit notes of a period, by invoice date – for your bookkeeping or tax adviser.",
+    "The issued invoices and credit notes of a period by invoice date, for your bookkeeping or tax adviser.",
   "export.period": "Period",
   "export.period.month": "Month",
   "export.period.quarter": "Quarter",
@@ -1723,4 +1723,5 @@ export const en: Catalog<MessageKey> = {
   "export.preparing": "Preparing …",
   "error.period_reversed": "The period ends before it starts.",
   "error.period_too_long": "A period spans at most ten years.",
+  "error.export_busy": "Another export is being prepared. Please try again in a moment.",
 };

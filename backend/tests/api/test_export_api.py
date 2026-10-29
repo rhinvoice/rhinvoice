@@ -11,6 +11,7 @@ from openpyxl import load_workbook
 
 from rhinvoice.api.container import Container
 from rhinvoice.infrastructure.export.writer import FileExportWriter
+from tests.api.conftest import CLIENT_HEADERS, EMAIL, PASSWORD, AppFactory
 from tests.api.test_documents_api import LINES, FakePdf, create, post
 
 PATH = "/api/exports/invoices"
@@ -123,3 +124,14 @@ def test_with_pdfs_a_zip_holds_the_list_and_the_pdfs(
     # The PDF was archived on the way: the document's own download returns the same.
     again = user_client.get(f"/api/documents/{invoice['id']}/pdf")
     assert again.content == f"%PDF-{invoice['number']} 1".encode()
+
+
+def test_the_demo_exports_lists_but_no_pdfs(app_factory: AppFactory, customer_id: str) -> None:
+    assert customer_id
+    with TestClient(app_factory(demo=True), headers=CLIENT_HEADERS) as demo:
+        login = demo.post("/api/auth/login", json={"email": EMAIL, "password": PASSWORD})
+        assert login.status_code == 200, login.text
+        refused = demo.get(PATH, params={**JANUARY, "pdfs": "true"})
+        assert refused.status_code == 403
+        assert refused.json()["error"]["code"] == "demo_locked"
+        assert demo.get(PATH, params=JANUARY).status_code == 200

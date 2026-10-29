@@ -443,3 +443,20 @@ def test_payment_dates_of_imported_invoices() -> None:
     payment = document.payments[0]
     assert isinstance(payment, Payment)
     assert export_row(document, TODAY).paid_on == TODAY
+
+
+def test_reserved_names_and_unicode_forms_are_taken() -> None:
+    composed = export_row(numbered("Ré1"), TODAY)
+    decomposed = export_row(numbered("Ré1"), TODAY)
+    listed = export_row(numbered("Rechnungen 2026-03"), TODAY)
+    named = with_file_names(
+        [(composed, True), (decomposed, True), (listed, True)],
+        reserved=["rechnungen 2026-03.PDF"],
+    )
+    assert [row.file_name for row in named] == [
+        "Ré1.pdf",
+        "Ré1 (2).pdf",
+        "Rechnungen 2026-03 (2).pdf",
+    ]
+    listing = export_listing(MARCH, [numbered("L")], TODAY, with_files=True, reserved=["L.pdf"])
+    assert listing.rows[0].file_name == "L (2).pdf"

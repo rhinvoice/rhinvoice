@@ -1750,7 +1750,7 @@ export const de = {
   "export.open": "Exportieren",
   "export.title": "Rechnungen exportieren",
   "export.description":
-    "Die ausgestellten Rechnungen und Stornorechnungen eines Zeitraums, nach Rechnungsdatum – für die Buchhaltung oder die Steuerberatung.",
+    "Die ausgestellten Rechnungen und Stornorechnungen eines Zeitraums nach Rechnungsdatum, für die Buchhaltung oder die Steuerberatung.",
   "export.period": "Zeitraum",
   "export.period.month": "Monat",
   "export.period.quarter": "Quartal",
@@ -1776,6 +1776,7 @@ export const de = {
   "export.preparing": "Wird erstellt …",
   "error.period_reversed": "Das Ende des Zeitraums liegt vor dem Anfang.",
   "error.period_too_long": "Ein Zeitraum umfasst höchstens zehn Jahre.",
+  "error.export_busy": "Ein anderer Export wird gerade erstellt. Bitte gleich nochmals versuchen.",
 } as const;
 
 export type MessageKey = keyof typeof de;

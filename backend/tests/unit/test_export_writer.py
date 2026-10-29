@@ -185,7 +185,14 @@ def test_formulas_are_neutralised(text: str) -> None:
     assert neutralised(text) == f"'{text}"
 
 
+@pytest.mark.parametrize("text", ["Muster,=HYPERLINK(1)", "a; +41", "x\t@SUM(A1)", "a, -5"])
+def test_formulas_after_a_separator_are_neutralised(text: str) -> None:
+    assert neutralised(text) == f"'{text}"
+
+
 def test_plain_text_stays() -> None:
+    assert neutralised("Müller, Meier & Co.") == "Müller, Meier & Co."
+    assert neutralised("1-2") == "1-2"
     assert neutralised("Beispiel AG") == "Beispiel AG"
     assert neutralised("") == ""
     assert neutralised("a=b") == "a=b"

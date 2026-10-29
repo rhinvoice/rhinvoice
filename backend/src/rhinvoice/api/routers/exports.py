@@ -15,6 +15,7 @@ from rhinvoice.application.document.export import (
     ExportFormat,
     ExportRequest,
 )
+from rhinvoice.application.errors import DemoLockedError
 from rhinvoice.domain.document.export import ExportPeriod
 from rhinvoice.domain.shared.language import Language
 
@@ -66,6 +67,9 @@ def export_invoices(
     container: ContainerDep,
 ) -> StreamingResponse:
     """Download the issued invoices and cancellations of a period for the bookkeeping."""
+    if params.pdfs and container.settings.demo:
+        # Many PDFs at once: too much load for a demo everyone shares.
+        raise DemoLockedError("this is not possible in the public demo")
     exported = container.exports.export(
         ExportRequest(
             period=ExportPeriod(params.start, params.end),

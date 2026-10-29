@@ -1783,7 +1783,7 @@ export const fr: Catalog<MessageKey> = {
   "export.open": "Exporter",
   "export.title": "Exporter les factures",
   "export.description":
-    "Les factures et notes de crédit émises d’une période, par date de facture – pour votre comptabilité ou votre fiduciaire.",
+    "Les factures et notes de crédit émises d’une période selon la date de facture, pour votre comptabilité ou votre fiduciaire.",
   "export.period": "Période",
   "export.period.month": "Mois",
   "export.period.quarter": "Trimestre",
@@ -1809,4 +1809,6 @@ export const fr: Catalog<MessageKey> = {
   "export.preparing": "Préparation …",
   "error.period_reversed": "La période se termine avant de commencer.",
   "error.period_too_long": "Une période couvre dix ans au plus.",
+  "error.export_busy":
+    "Un autre export est en cours de préparation. Veuillez réessayer dans un instant.",
 };

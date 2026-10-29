@@ -7,6 +7,7 @@ them for a formula (CSV).
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import TYPE_CHECKING
@@ -26,14 +27,16 @@ if TYPE_CHECKING:
 type Cell = str | int | Decimal | date | None
 
 CENT = Decimal("0.01")
-FORMULA_STARTS = ("=", "+", "-", "@", "\t", "\r")
-"""What makes Excel or LibreOffice read a cell as a formula (OWASP: CSV injection)."""
+FORMULA = re.compile(r"^[=+\-@\t\r]|[,;\t]\s*[=+\-@]")
+"""What makes Excel or LibreOffice read a cell as a formula (OWASP: CSV injection): at the
+start, or after a comma, semicolon or tab, where a spreadsheet with another separator
+splits the value."""
 TREATMENT_SEPARATOR = " / "
 
 
 def neutralised(text: str) -> str:
     """Prefix text a spreadsheet would run as a formula with an apostrophe."""
-    return f"'{text}" if text.startswith(FORMULA_STARTS) else text
+    return f"'{text}" if FORMULA.search(text) else text
 
 
 def decimal_separator(company: Company) -> str:

@@ -2,7 +2,7 @@
 
 import io
 from collections.abc import Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 from typing import IO
 from uuid import UUID
@@ -196,3 +196,37 @@ def test_the_company_must_be_set_up(exports: ExportHandlers, store: Store) -> No
     with raises_exactly(ConflictError, "set up the company before exporting") as error:
         exports.export(ExportRequest(MARCH, ExportFormat.CSV))
     assert error.value.code == "company_not_set_up"
+
+
+def test_one_export_at_a_time(exports: ExportHandlers) -> None:
+    exports.running.acquire()
+    try:
+        with raises_exactly(ConflictError, "another export is being prepared") as error:
+            exports.export(ExportRequest(MARCH, ExportFormat.CSV))
+        assert error.value.code == "export_busy"
+    finally:
+        exports.running.release()
+    assert exports.export(ExportRequest(MARCH, ExportFormat.CSV)).name.endswith(".csv")
+    assert not exports.running.locked()
+
+
+def test_a_failed_export_frees_the_next(exports: ExportHandlers, store: Store) -> None:
+    store.company = None
+    with pytest.raises(ConflictError):
+        exports.export(ExportRequest(MARCH, ExportFormat.CSV))
+    assert not exports.running.locked()
+
+
+def test_no_pdf_is_named_like_the_list(
+    exports: ExportHandlers, writer: RecordingWriter, store: Store
+) -> None:
+    document_id = add_imported(store, with_pdf=True)
+    stored = store.documents[document_id]
+    renamed = replace(stored.document, number="Rechnungen-fr 2026-03")
+    store.documents[document_id] = replace(stored, document=renamed)
+    exports.export(ExportRequest(MARCH, ExportFormat.PDF, with_pdfs=True))
+    [packed] = writer.archived
+    assert [name for name, _ in packed] == [
+        "Rechnungen-fr 2026-03.pdf",
+        "Rechnungen-fr 2026-03 (2).pdf",
+    ]

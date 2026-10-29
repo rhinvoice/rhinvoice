@@ -7,6 +7,7 @@ issued, so cancellations are negative. Sums are per currency: currencies are nev
 
 from __future__ import annotations
 
+import unicodedata
 from calendar import monthrange
 from dataclasses import dataclass, replace
 from datetime import date, timedelta
@@ -202,14 +203,20 @@ def _file_name(number: str) -> str:
     return "".join("-" if character in REFUSED_IN_FILE_NAMES else character for character in number)
 
 
-def with_file_names(rows: Iterable[tuple[ExportRow, bool]]) -> tuple[ExportRow, ...]:
+def with_file_names(
+    rows: Iterable[tuple[ExportRow, bool]], reserved: Iterable[str] = ()
+) -> tuple[ExportRow, ...]:
     """Name the PDF of each row that has one after its number, e.g. "R20260042.pdf".
 
     Invoices and cancellations are numbered apart, and imported invoices bring numbers of
-    their own: a name taken already (in any case, for file systems that ignore it) gets
-    " (2)", " (3)" and so on.
+    their own: a name taken already (in any case and Unicode form, for file systems that
+    ignore them) or ``reserved`` (the list beside the PDFs) gets " (2)", " (3)" and so on.
     """
-    taken: set[str] = set()
+
+    def key(name: str) -> str:
+        return unicodedata.normalize("NFC", name).casefold()
+
+    taken = {key(name) for name in reserved}
     named: list[ExportRow] = []
     for row, has_file in rows:
         if not has_file:
@@ -217,10 +224,10 @@ def with_file_names(rows: Iterable[tuple[ExportRow, bool]]) -> tuple[ExportRow, 
             continue
         base = _file_name(row.number)
         name, count = f"{base}.pdf", 1
-        while name.casefold() in taken:
+        while key(name) in taken:
             count += 1
             name = f"{base} ({count}).pdf"
-        taken.add(name.casefold())
+        taken.add(key(name))
         named.append(replace(row, file_name=name))
     return tuple(named)
 
@@ -298,9 +305,14 @@ def has_file(document: Document) -> bool:
 
 
 def export_listing(
-    period: ExportPeriod, documents: Iterable[Document], today: date, *, with_files: bool
+    period: ExportPeriod,
+    documents: Iterable[Document],
+    today: date,
+    *,
+    with_files: bool,
+    reserved: Iterable[str] = (),
 ) -> ExportListing:
-    """List the documents of the period by date, then number."""
+    """List the documents of the period by date, then number; no PDF is named ``reserved``."""
     rows = sorted(
         (
             (export_row(document, today), with_files and has_file(document))
@@ -309,4 +321,4 @@ def export_listing(
         ),
         key=lambda found: (found[0].issue_date, found[0].number),
     )
-    return ExportListing(period=period, rows=with_file_names(rows), with_files=with_files)
+    return ExportListing(period=period, rows=with_file_names(rows, reserved), with_files=with_files)

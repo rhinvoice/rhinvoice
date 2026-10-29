@@ -59,6 +59,12 @@ want a printable list and the PDFs.
   downloads, `Cache-Control: no-store`. A reversed or too long period is a 422 with the codes
   `period_reversed` / `period_too_long`; a PDF list or a ZIP needing a PDF without a PDF service
   is a 503.
+- **Load.** One export runs at a time per installation; a second one meanwhile gets 409
+  `export_busy`. A ZIP may render many PDFs, and GET requests are not rate limited. The public
+  demo refuses the ZIP option (`demo_locked`); lists stay available there.
+- **File names in the ZIP** are compared case-insensitively and in Unicode NFC, and never take the
+  list's name. CSV text is also neutralised when a formula character follows a comma, semicolon or
+  tab, since a spreadsheet using another separator splits the value there.
 - **No DATEV or BMD export yet.** Their formats (DATEV-Format "Buchungsstapel", BMD import) need
   account numbers, tax keys and a chart of accounts that Rhinvoice does not know. They come only
   after asking tax advisers which fields they expect; until then Excel and CSV are the exchange.

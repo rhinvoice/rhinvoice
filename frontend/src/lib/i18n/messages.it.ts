@@ -1760,7 +1760,7 @@ export const it: Catalog<MessageKey> = {
   "export.open": "Esporta",
   "export.title": "Esporta fatture",
   "export.description":
-    "Le fatture e note di credito emesse in un periodo, per data della fattura – per la contabilità o la fiduciaria.",
+    "Le fatture e note di credito emesse in un periodo secondo la data della fattura, per la contabilità o la fiduciaria.",
   "export.period": "Periodo",
   "export.period.month": "Mese",
   "export.period.quarter": "Trimestre",
@@ -1786,4 +1786,5 @@ export const it: Catalog<MessageKey> = {
   "export.preparing": "Preparazione …",
   "error.period_reversed": "Il periodo termina prima di iniziare.",
   "error.period_too_long": "Un periodo comprende al massimo dieci anni.",
+  "error.export_busy": "Un’altra esportazione è in preparazione. Riprovi tra un momento.",
 };

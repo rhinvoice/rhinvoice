@@ -7,7 +7,8 @@ archived PDF (archived now if it was not yet), imported invoices their original.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import threading
+from dataclasses import dataclass, field
 from enum import StrEnum
 from io import BytesIO
 from typing import TYPE_CHECKING, Protocol
@@ -88,8 +89,18 @@ class ExportHandlers:
     clock: Clock
     printing: PrintHandlers
     writer: ExportWriter
+    running: threading.Lock = field(default_factory=threading.Lock, compare=False)
+    """One export at a time: one with PDFs may render many of them (ADR 0038)."""
 
     def export(self, request: ExportRequest) -> ExportFile:
+        if not self.running.acquire(blocking=False):
+            raise ConflictError("another export is being prepared", code="export_busy")
+        try:
+            return self._export(request)
+        finally:
+            self.running.release()
+
+    def _export(self, request: ExportRequest) -> ExportFile:
         period = request.period
         with self.uow() as uow:
             company = uow.company.get()
@@ -97,12 +108,16 @@ class ExportHandlers:
         if company is None:
             raise ConflictError("set up the company before exporting", code="company_not_set_up")
         language = request.language or company.default_language
-        listing = export_listing(
-            period, documents, self.clock.today(), with_files=request.with_pdfs
-        )
-        content = self.writer.write(listing, company, request.format, language)
         name = f"{self.writer.title(language)} {period.label}"
         list_name = f"{name}.{request.format.value}"
+        listing = export_listing(
+            period,
+            documents,
+            self.clock.today(),
+            with_files=request.with_pdfs,
+            reserved=(list_name,),
+        )
+        content = self.writer.write(listing, company, request.format, language)
         if not request.with_pdfs:
             return ExportFile(list_name, request.format.media_type, BytesIO(content))
         archive = self.writer.archive(self._files(list_name, content, listing))

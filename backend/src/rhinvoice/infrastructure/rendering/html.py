@@ -120,6 +120,11 @@ def _fonts(font: PrintFont) -> tuple[FontFace, ...]:
     return inter
 
 
+def sans_fonts() -> tuple[FontFace, ...]:
+    """Return the faces of Inter, for other pages printed like the documents (lists)."""
+    return _fonts(PrintFont.SANS)
+
+
 @dataclass(frozen=True, slots=True)
 class PrintLine:
     kind: str

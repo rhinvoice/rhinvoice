@@ -41,3 +41,4 @@ Status: `accepted`, `superseded by NNNN` or `rejected`.
 - [0035 – Rhinvoice Beta updates between candidates of one version](0035-candidates-of-one-version.md)
 - [0036 – Signed programs for Windows and Mac](0036-signed-programs.md)
 - [0037 – Bank account per document and third-party payees](0037-bank-account-per-document-and-third-party-payees.md)
+- [0038 – Export for bookkeeping](0038-export-for-bookkeeping.md)

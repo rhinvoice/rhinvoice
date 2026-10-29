@@ -841,7 +841,6 @@ export const de = {
   "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDFs" },
   "documents.draftAttachmentsNote":
     "Zum Beispiel Fremdrechnungen durchlaufender Posten. Bis zum Ausstellen lassen sie sich entfernen; danach bleiben sie unverändert beim Dokument und gehen beim Versand per E-Mail nach dem PDF mit.",
-  "documents.attachmentsSaveFirst": "Speichern Sie den Entwurf, um PDFs anzuhängen.",
   "documents.attachmentsAdding": "Wird hochgeladen …",
   "documents.attachmentsAdded": { one: "PDF angehängt.", other: "{count} PDFs angehängt." },
   "documents.removeAttachment": "«{name}» entfernen",
@@ -1416,6 +1415,8 @@ export const de = {
   "error.attachments_frozen":
     "Anhänge lassen sich nur bei Entwürfen ändern; ausgestellte Dokumente behalten ihre Dateien.",
   "error.too_many_attachments": "Ein Entwurf hat höchstens 10 Anhänge.",
+  "error.mail_attachments_too_large":
+    "Die Anhänge sind zusammen größer als 20 MB; so viel nehmen viele Mailserver nicht an.",
   "error.too_many_rows":
     "Die Datei hat zu viele Zeilen. Bitte in Dateien mit höchstens zehntausend Zeilen teilen.",
   "error.too_many_columns": "Die Datei hat mehr als 100 Spalten.",

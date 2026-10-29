@@ -982,7 +982,8 @@ def attachment_file(
         media_type="application/pdf",
         headers={
             "Content-Disposition": file_disposition(attachment.file_name, download=download),
-            "Cache-Control": "private, max-age=31536000",
+            # A draft's file may be removed: revalidate instead of keeping a copy for a year.
+            "Cache-Control": "private, no-cache",
             "ETag": f'"{attachment.sha256}"',
         },
     )

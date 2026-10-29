@@ -429,7 +429,6 @@ def test_dashboard(user_client: TestClient, customer_id: str) -> None:
     ]
 
 
-
 def test_pass_through_items_are_owed_but_no_revenue(
     user_client: TestClient, customer_id: str
 ) -> None:
@@ -444,6 +443,7 @@ def test_pass_through_items_are_owed_but_no_revenue(
     assert overview["year_to_date"][0]["current"] == "1500.00"
     listed = user_client.get("/api/documents?type=invoice").json()
     assert listed["items"][0]["total"] == "1871.85"
+
 
 def test_preview_calculates_without_saving(user_client: TestClient, customer_id: str) -> None:
     body = {"type": "invoice", "customer_id": customer_id, "lines": LINES, "discount_value": "10"}

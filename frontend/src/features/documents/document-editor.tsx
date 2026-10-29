@@ -152,8 +152,8 @@ interface DocumentEditorProps<Saved> {
   readonly onSaved: (saved: Saved, issue: boolean) => Promise<unknown>;
   /** Edit the invoice of a recurring plan: no dates, no issuing, no autosave. */
   readonly plan?: PlanSlot | undefined;
-  /** The saved draft whose PDFs are attached (ADR 0040); null before the first save. */
-  readonly documentId?: string | null;
+  /** The saved draft whose PDFs are attached (ADR 0040); new drafts attach after saving. */
+  readonly documentId?: string | undefined;
 }
 
 /**

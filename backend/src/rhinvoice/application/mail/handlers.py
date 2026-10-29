@@ -74,6 +74,8 @@ class MailTemplateView:
 
 
 PDF = "application/pdf"
+MAX_ATTACHED_BYTES = 20 * 1024 * 1024
+"""The document's own files in one mail; mail servers often refuse more than 20 to 25 MB."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -268,10 +270,16 @@ class MailHandlers:
         return self.documents.attachments(view.document.id)
 
     def _attachments(self, view: DocumentView) -> tuple[Attachment, ...]:
-        """Load the files of a document written here, to send them."""
+        """Load the files of a document written here, to send them; refuse too many bytes."""
+        attached = self._attached(view)
+        if sum(attachment.size for attachment in attached) > MAX_ATTACHED_BYTES:
+            raise ValidationError(
+                "attachments",
+                "the attachments are larger than 20 MB together",
+                code="mail_attachments_too_large",
+            )
         found = (
-            self.documents.attachment(view.document.id, attachment.id)
-            for attachment in self._attached(view)
+            self.documents.attachment(view.document.id, attachment.id) for attachment in attached
         )
         return tuple(Attachment(item.file_name, content, PDF) for item, content in found)
 

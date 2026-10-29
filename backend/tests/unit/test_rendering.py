@@ -260,6 +260,15 @@ def test_a_document_of_pass_through_lines_only(printing: PrintHandlers) -> None:
     assert ">250.35<" in html
     empty = printing.preview_html(DocumentType.INVOICE, draft(lines=()))
     assert '<div class="totals">' not in empty
+    stamps = LineInput(
+        kind=LineKind.ITEM,
+        description="Stamps",
+        quantity="3",
+        unit_price="2",
+        tax_category=TaxCategory.PASS_THROUGH,
+    )
+    counted = printing.preview_html(DocumentType.INVOICE, draft(lines=(stamps,)))
+    assert f"<span>Stamps (3{NBSP}× 2.00)</span>" in counted
 
 
 @pytest.mark.parametrize(

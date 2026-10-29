@@ -844,7 +844,6 @@ export const it: Catalog<MessageKey> = {
   "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDF" },
   "documents.draftAttachmentsNote":
     "Per esempio le fatture di terzi delle spese anticipate. Si possono rimuovere fino all’emissione del documento; poi restano invariati con esso e vengono inviati dopo il suo PDF per e-mail.",
-  "documents.attachmentsSaveFirst": "Salvare la bozza per allegare dei PDF.",
   "documents.attachmentsAdding": "Caricamento …",
   "documents.attachmentsAdded": { one: "PDF allegato.", other: "{count} PDF allegati." },
   "documents.removeAttachment": "Rimuovere «{name}»",
@@ -1419,6 +1418,8 @@ export const it: Catalog<MessageKey> = {
   "error.attachments_frozen":
     "Gli allegati si modificano solo nelle bozze; i documenti emessi conservano i loro file.",
   "error.too_many_attachments": "Una bozza ha al massimo 10 allegati.",
+  "error.mail_attachments_too_large":
+    "Gli allegati superano insieme 20 MB; molti server di posta li rifiutano.",
   "error.too_many_rows":
     "Il file ha troppe righe. Lo suddivida in file di al massimo diecimila righe.",
   "error.too_many_columns": "Il file ha più di 100 colonne.",

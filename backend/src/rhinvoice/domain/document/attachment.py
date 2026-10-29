@@ -28,6 +28,13 @@ DEFAULT_STEM = "document"
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _UNSAFE = re.compile(r'[\x00-\x1f\x7f/\\:*?"<>|]')
 """Control characters and what Windows, macOS or a ZIP reader would take for a path."""
+_INVISIBLE = frozenset({"Cc", "Cf", "Zl", "Zp"})
+"""Unicode controls, format characters (bidi overrides, zero widths) and line separators:
+a name such as "Rechnung\u202eexe.pdf" would show as something it is not."""
+
+
+def _visible(name: str) -> str:
+    return "".join("_" if unicodedata.category(char) in _INVISIBLE else char for char in name)
 
 
 def upload_name(raw: str) -> str:
@@ -38,7 +45,7 @@ def upload_name(raw: str) -> str:
     name = unicodedata.normalize("NFC", raw.replace("\\", "/").rsplit("/", 1)[-1])
     if name.lower().endswith(PDF_SUFFIX):
         name = name[: -len(PDF_SUFFIX)]
-    stem = _UNSAFE.sub("_", name).strip(" .")
+    stem = _visible(_UNSAFE.sub("_", name)).strip(" .")
     stem = stem[: MAX_FILE_NAME - len(PDF_SUFFIX)].rstrip(" .") or DEFAULT_STEM
     return stem + PDF_SUFFIX
 

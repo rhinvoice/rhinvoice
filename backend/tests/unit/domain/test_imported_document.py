@@ -315,6 +315,8 @@ def test_attachments_are_checked() -> None:
         ("x" * 300 + ".pdf", "x" * 251 + ".pdf"),
         ("x" * 250 + " .pdf", "x" * 250 + ".pdf"),
         ("Rechnung.pdf.exe", "Rechnung.pdf.exe.pdf"),
+        ("Rechnung\u202eexe.pdf", "Rechnung_exe.pdf"),
+        ("a\u200bb\u2028c\x85d.pdf", "a_b_c_d.pdf"),
     ],
 )
 def test_upload_names_are_safe(raw: str, expected: str) -> None:

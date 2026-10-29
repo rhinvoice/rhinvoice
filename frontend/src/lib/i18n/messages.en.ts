@@ -806,7 +806,6 @@ export const en: Catalog<MessageKey> = {
   "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDFs" },
   "documents.draftAttachmentsNote":
     "For example third-party invoices of pass-through items. They can be removed until the document is issued; then they stay with it unchanged and are sent after its PDF by e-mail.",
-  "documents.attachmentsSaveFirst": "Save the draft to attach PDFs.",
   "documents.attachmentsAdding": "Uploading …",
   "documents.attachmentsAdded": { one: "PDF attached.", other: "{count} PDFs attached." },
   "documents.removeAttachment": "Remove “{name}”",
@@ -1372,6 +1371,8 @@ export const en: Catalog<MessageKey> = {
   "error.attachments_frozen":
     "Attachments can only be changed on drafts; issued documents keep their files.",
   "error.too_many_attachments": "A draft has at most 10 attachments.",
+  "error.mail_attachments_too_large":
+    "The attachments are larger than 20 MB together; many mail servers refuse that much.",
   "error.too_many_rows": "The file has more than 10,000 rows. Please split it into several files.",
   "error.too_many_columns": "The file has more than 100 columns.",
   "error.company_not_set_up": "Please set up the company first.",

@@ -10,6 +10,7 @@ import pytest
 from rhinvoice.application.document.handlers import DocumentHandlers, DraftInput, LineInput
 from rhinvoice.application.dunning.handlers import DunningHandlers
 from rhinvoice.application.errors import DeliveryError, NotFoundError, UnavailableError
+from rhinvoice.application.mail import handlers as mail_handlers
 from rhinvoice.application.mail.handlers import MailHandlers, SaveMailServer, SendMail
 from rhinvoice.application.mail.ports import Attachment, MailValues, OutgoingMail
 from rhinvoice.domain.document.document import DocumentOrigin, DocumentType, EventKind
@@ -355,7 +356,11 @@ def test_sending_a_document_attaches_it_and_notes_it(
 
 
 def test_the_files_of_the_draft_follow_the_pdf(
-    mail: MailHandlers, documents: DocumentHandlers, sender: FakeSender, store: Store
+    mail: MailHandlers,
+    documents: DocumentHandlers,
+    sender: FakeSender,
+    store: Store,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     created = documents.create(
         DocumentType.INVOICE, DraftInput(customer_id=CUSTOMER, lines=(LINE,))
@@ -376,6 +381,15 @@ def test_the_files_of_the_draft_follow_the_pdf(
         Attachment("Amt.pdf", b"%PDF-1.4 office", "application/pdf"),
         Attachment("Notar.pdf", b"%PDF-1.4 notary", "application/pdf"),
     )
+    # Too many bytes for one mail: nothing goes out.
+    monkeypatch.setattr(mail_handlers, "MAX_ATTACHED_BYTES", len(b"%PDF-1.4 office") * 2 - 1)
+    with raises_exactly(ValidationError, "the attachments are larger than 20 MB together") as big:
+        mail.send_document(invoice, SendMail(to=("a@example.com",), subject="x", body="y"))
+    assert big.value.code == "mail_attachments_too_large"
+    assert len(sender.sent) == 1
+    monkeypatch.setattr(mail_handlers, "MAX_ATTACHED_BYTES", len(b"%PDF-1.4 office") * 2)
+    mail.send_document(invoice, SendMail(to=("a@example.com",), subject="x", body="y"))
+    assert len(sender.sent) == 2
     # An imported invoice's files stay in the archive.
     imported = replace(
         store.documents[invoice],

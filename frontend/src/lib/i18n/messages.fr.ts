@@ -852,7 +852,6 @@ export const fr: Catalog<MessageKey> = {
   "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDF" },
   "documents.draftAttachmentsNote":
     "Par exemple les factures de tiers des débours. Ils peuvent être retirés jusqu’à l’émission du document ; ensuite, ils restent inchangés avec lui et sont envoyés après son PDF par e-mail.",
-  "documents.attachmentsSaveFirst": "Enregistrez le brouillon pour joindre des PDF.",
   "documents.attachmentsAdding": "Envoi en cours …",
   "documents.attachmentsAdded": { one: "{count} PDF joint.", other: "{count} PDF joints." },
   "documents.removeAttachment": "Retirer « {name} »",
@@ -1438,6 +1437,8 @@ export const fr: Catalog<MessageKey> = {
   "error.attachments_frozen":
     "Les pièces jointes ne se modifient que sur les brouillons ; les documents émis gardent leurs fichiers.",
   "error.too_many_attachments": "Un brouillon a au plus 10 pièces jointes.",
+  "error.mail_attachments_too_large":
+    "Les pièces jointes dépassent 20 Mo au total ; beaucoup de serveurs de messagerie les refusent.",
   "error.too_many_rows":
     "Le fichier contient trop de lignes. Veuillez le diviser en fichiers de dix mille lignes au maximum.",
   "error.too_many_columns": "Le fichier contient plus de 100 colonnes.",

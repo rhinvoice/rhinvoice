@@ -72,20 +72,17 @@ function AttachmentList({
  * They can be removed until the document is issued; then they are frozen with it and sent
  * after its PDF.
  */
-export function DraftAttachments({ documentId }: { readonly documentId: string | null }) {
+export function DraftAttachments({ documentId }: { readonly documentId: string }) {
   const { t } = useI18n();
   const errorMessage = useErrorMessage();
   const attachments = useDocumentAttachments(documentId);
-  const add = useAddAttachments(documentId ?? "");
-  const remove = useRemoveAttachment(documentId ?? "");
+  const add = useAddAttachments(documentId);
+  const remove = useRemoveAttachment(documentId);
   // The public demo takes no uploads (the server refuses, too).
   const demo = useQuery(demoQuery).data?.enabled === true;
   const fail = (caught: unknown) => {
     toast.error(errorMessage(caught) ?? t("error.generic"), { duration: Infinity });
   };
-  if (documentId === null) {
-    return <p className="text-sm text-muted-foreground">{t("documents.attachmentsSaveFirst")}</p>;
-  }
   const full = (attachments?.length ?? 0) >= MAX_ATTACHMENTS;
   return (
     <div className="flex flex-col gap-3">

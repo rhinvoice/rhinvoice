@@ -21,7 +21,14 @@ export type LineRequest = NonNullable<DraftRequest["lines"]>[number];
 export type UnitCode = NonNullable<LineRequest["unit"]>;
 export type Currency = "CHF" | "EUR";
 
-export const TAX_CATEGORIES = ["standard", "reduced", "special", "zero", "exempt"] as const;
+export const TAX_CATEGORIES = [
+  "standard",
+  "reduced",
+  "special",
+  "zero",
+  "exempt",
+  "pass_through",
+] as const;
 export const SUPPLIES = ["service", "goods"] as const;
 /** Treatments that can be chosen for a document; goods get theirs from it. */
 export const TREATMENTS = [

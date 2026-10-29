@@ -2,6 +2,7 @@ import {
   keepPreviousData,
   queryOptions,
   useMutation,
+  useQuery,
   useQueryClient,
   type QueryClient,
 } from "@tanstack/react-query";
@@ -425,7 +426,7 @@ export function remindersQuery(documentId: string) {
   });
 }
 
-/** Further files of an invoice taken over from another program. */
+/** Further files: of an invoice taken over from another program, or of a document written here. */
 export function attachmentsQuery(documentId: string) {
   return queryOptions({
     queryKey: ["documents", "attachments", documentId] as const,
@@ -436,6 +437,11 @@ export function attachmentsQuery(documentId: string) {
         }),
       ),
   });
+}
+
+/** The files of a document; none asked for while a draft was not saved yet (null). */
+export function useDocumentAttachments(documentId: string | null): Attachment[] | undefined {
+  return useQuery({ ...attachmentsQuery(documentId ?? ""), enabled: documentId !== null }).data;
 }
 
 export function attachmentUrl(documentId: string, attachmentId: string, download = false): string {
@@ -467,30 +473,61 @@ export function releaseDocumentPdf(client: QueryClient, documentId: string): voi
   client.removeQueries({ queryKey });
 }
 
+/** Send a PDF to a document (multipart: the generated client posts JSON only). */
+async function postFile(documentId: string, file: File): Promise<DocumentDetail> {
+  const body = new FormData();
+  body.append("file", file);
+  let response: Response;
+  try {
+    response = await fetch(`/api/documents/${encodeURIComponent(documentId)}/files`, {
+      method: "POST",
+      body,
+      credentials: "same-origin",
+      headers: { [CLIENT_HEADER]: "web" },
+    });
+  } catch {
+    throw toApiError(0, undefined);
+  }
+  if (!response.ok) {
+    throw toApiError(response.status, await response.json().catch(() => undefined));
+  }
+  return (await response.json()) as DocumentDetail;
+}
+
+/**
+ * Attach PDFs to a draft, one after the other (ADR 0040). Only the list of files is
+ * refreshed: the draft's form stays as it is while it is being edited.
+ */
+export function useAddAttachments(documentId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (files: readonly File[]) => {
+      for (const file of files) await postFile(documentId, file);
+    },
+    onSettled: () => client.invalidateQueries({ queryKey: attachmentsQuery(documentId).queryKey }),
+  });
+}
+
+/** Take an attachment off a draft; issued documents keep theirs. */
+export function useRemoveAttachment(documentId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (attachmentId: string) =>
+      unwrap(
+        api.DELETE("/api/documents/{document_id}/attachments/{attachment_id}", {
+          params: { path: { document_id: documentId, attachment_id: attachmentId } },
+        }),
+      ),
+    onSettled: () => client.invalidateQueries({ queryKey: attachmentsQuery(documentId).queryKey }),
+  });
+}
+
 /** Add a PDF to an imported invoice: its original when it has none, else an attachment. */
 export function useAddFile(documentId: string) {
   const onChanged = useOnChanged();
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async (file: File) => {
-      const body = new FormData();
-      body.append("file", file);
-      let response: Response;
-      try {
-        response = await fetch(`/api/documents/${encodeURIComponent(documentId)}/files`, {
-          method: "POST",
-          body,
-          credentials: "same-origin",
-          headers: { [CLIENT_HEADER]: "web" },
-        });
-      } catch {
-        throw toApiError(0, undefined);
-      }
-      if (!response.ok) {
-        throw toApiError(response.status, await response.json().catch(() => undefined));
-      }
-      return (await response.json()) as DocumentDetail;
-    },
+    mutationFn: (file: File) => postFile(documentId, file),
     onSuccess: (document) => {
       const before = client.getQueryData<DocumentDetail>(documentKeys.detail(documentId));
       onChanged(document);

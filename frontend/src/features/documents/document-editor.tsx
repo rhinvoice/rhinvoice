@@ -8,6 +8,7 @@ import {
   FileCheckIcon,
   InfoIcon,
   LandmarkIcon,
+  PaperclipIcon,
   PencilIcon,
   PrinterIcon,
   SlidersHorizontalIcon,
@@ -45,6 +46,7 @@ import {
   customerOptionsQuery,
   previewQuery,
   renderQuery,
+  useDocumentAttachments,
   type CreateRequest,
   type CustomerOption,
   type DocumentDetail,
@@ -71,6 +73,7 @@ import {
   TREATMENTS,
   type DocumentFormValues,
 } from "@/features/documents/document-form-model";
+import { DraftAttachments } from "@/features/documents/document-attachments";
 import { DocumentTextFields } from "@/features/documents/document-text-fields";
 import { switchLanguage } from "@/features/documents/document-texts";
 import { EInvoiceProblems } from "@/features/documents/e-invoice-card";
@@ -149,6 +152,8 @@ interface DocumentEditorProps<Saved> {
   readonly onSaved: (saved: Saved, issue: boolean) => Promise<unknown>;
   /** Edit the invoice of a recurring plan: no dates, no issuing, no autosave. */
   readonly plan?: PlanSlot | undefined;
+  /** The saved draft whose PDFs are attached (ADR 0040); null before the first save. */
+  readonly documentId?: string | null;
 }
 
 /**
@@ -164,6 +169,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
   onSave,
   onSaved,
   plan,
+  documentId,
 }: DocumentEditorProps<Saved>) {
   const { t, locale } = useI18n();
   const errorMessage = useErrorMessage();
@@ -184,6 +190,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
   const templates = useQuery(textTemplatesQuery).data ?? [];
   const values = useWatch({ control: form.control }) as DocumentFormValues;
   const tax = termsFor(company.profile, locale).tax_name;
+  const attachments = useDocumentAttachments(documentId ?? null);
 
   // Live totals and page: the last valid state of the form, from the server.
   // Debounced as a string: equal content must not count as a change.
@@ -719,6 +726,20 @@ export function DocumentEditor<Saved = DocumentDetail>({
                   plan={plan !== undefined}
                 />
               </Fold>
+              {documentId === undefined ? null : (
+                <Fold
+                  icon={<PaperclipIcon aria-hidden="true" />}
+                  title={t("documents.attachmentsTitle")}
+                  hint={
+                    attachments === undefined || attachments.length === 0
+                      ? t("documents.draftAttachmentsHint")
+                      : t("documents.attachmentsCount", { count: attachments.length })
+                  }
+                  forceOpen={false}
+                >
+                  <DraftAttachments documentId={documentId} />
+                </Fold>
+              )}
             </Card>
           </div>
 

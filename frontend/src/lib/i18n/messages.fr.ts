@@ -479,6 +479,8 @@ export const fr: Catalog<MessageKey> = {
   "tax.special": "Taux spécial",
   "tax.zero": "0 % (imposable)",
   "tax.exempt": "Exclu du champ de l’impôt",
+  "tax.pass_through": "Débours (sans {tax})",
+  "tax.name": "TVA",
   "supply.service": "Prestation de services",
   "supply.goods": "Marchandise",
   "settings.tabMail": "E-mail",
@@ -751,6 +753,7 @@ export const fr: Catalog<MessageKey> = {
   "event.reminded": "Rappel rédigé",
   "event.imported": "Repris d’un programme précédent",
   "event.file_added": "Fichier ajouté",
+  "event.file_removed": "Pièce jointe retirée",
   "event.written_off": "Passé en perte",
   "event.write_off_removed": "Passage en perte annulé",
 
@@ -845,6 +848,17 @@ export const fr: Catalog<MessageKey> = {
     "Aucun PDF n’a été trouvé pour cette facture lors de la reprise. Ajoutez-le pour qu’elle soit complète. Il ne pourra ensuite plus être remplacé.",
   "documents.addPdf": "Ajouter un PDF",
   "documents.attachmentsTitle": "Pièces jointes",
+  "documents.draftAttachmentsHint": "PDF envoyés avec le document",
+  "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDF" },
+  "documents.draftAttachmentsNote":
+    "Par exemple les factures de tiers des débours. Ils peuvent être retirés jusqu’à l’émission du document ; ensuite, ils restent inchangés avec lui et sont envoyés après son PDF par e-mail.",
+  "documents.attachmentsSaveFirst": "Enregistrez le brouillon pour joindre des PDF.",
+  "documents.attachmentsAdding": "Envoi en cours …",
+  "documents.attachmentsAdded": { one: "{count} PDF joint.", other: "{count} PDF joints." },
+  "documents.removeAttachment": "Retirer « {name} »",
+  "documents.attachmentRemoved": "« {name} » retiré.",
+  "documents.issuedAttachmentsHint":
+    "Émis avec le document et conservés inchangés ; ils sont envoyés avec lui par e-mail.",
   "documents.attachmentsHint": "Rappels, corrections et copies du programme précédent.",
   "documents.attachmentsEmpty": "Aucune pièce jointe.",
   "documents.addPdfTitle": "Ajouter un PDF ?",
@@ -1013,6 +1027,10 @@ export const fr: Catalog<MessageKey> = {
   "documents.totals": "Totaux",
   "documents.totalsPending": "Les totaux apparaissent dès que toutes les indications sont valides.",
   "documents.subtotal": "Sous-total",
+  "documents.passThrough": "Débours",
+  "documents.passThroughShort": "Débours",
+  "documents.passThroughHint":
+    "Uniquement si la facture du tiers est établie au nom de votre client.",
   "documents.documentDiscount": "Rabais",
   "documents.net": "Montant net",
   "documents.taxGroup": "{tax} {rate} sur {amount}",
@@ -1417,7 +1435,9 @@ export const fr: Catalog<MessageKey> = {
   "error.imported_without_pdf": "Il n’existe pas encore de PDF pour cette facture reprise.",
   "error.imported_document":
     "Une facture reprise se compose de son PDF ; cette action n’est pas possible pour elle.",
-  "error.not_imported": "Des fichiers ne peuvent être joints qu’aux factures reprises.",
+  "error.attachments_frozen":
+    "Les pièces jointes ne se modifient que sur les brouillons ; les documents émis gardent leurs fichiers.",
+  "error.too_many_attachments": "Un brouillon a au plus 10 pièces jointes.",
   "error.too_many_rows":
     "Le fichier contient trop de lignes. Veuillez le diviser en fichiers de dix mille lignes au maximum.",
   "error.too_many_columns": "Le fichier contient plus de 100 colonnes.",

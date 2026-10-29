@@ -471,6 +471,8 @@ export const de = {
   "tax.special": "Sondersatz",
   "tax.zero": "0 % (steuerbar)",
   "tax.exempt": "Von der Steuer ausgenommen",
+  "tax.pass_through": "Durchlaufender Posten (ohne {tax})",
+  "tax.name": "Steuer",
   "supply.service": "Dienstleistung",
   "supply.goods": "Ware",
   "settings.tabMail": "E-Mail",
@@ -740,6 +742,7 @@ export const de = {
   "event.reminded": "Mahnung geschrieben",
   "event.imported": "Aus früherem Programm übernommen",
   "event.file_added": "Datei hinzugefügt",
+  "event.file_removed": "Anhang entfernt",
   "event.written_off": "Abgeschrieben",
   "event.write_off_removed": "Abschreibung zurückgenommen",
 
@@ -834,6 +837,17 @@ export const de = {
     "Zu dieser Rechnung wurde beim Übernehmen kein PDF gefunden. Füge es hinzu, damit sie vollständig ist. Danach lässt es sich nicht mehr ersetzen.",
   "documents.addPdf": "PDF hinzufügen",
   "documents.attachmentsTitle": "Anhänge",
+  "documents.draftAttachmentsHint": "PDFs, die mit dem Dokument versendet werden",
+  "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDFs" },
+  "documents.draftAttachmentsNote":
+    "Zum Beispiel Fremdrechnungen durchlaufender Posten. Bis zum Ausstellen lassen sie sich entfernen; danach bleiben sie unverändert beim Dokument und gehen beim Versand per E-Mail nach dem PDF mit.",
+  "documents.attachmentsSaveFirst": "Speichern Sie den Entwurf, um PDFs anzuhängen.",
+  "documents.attachmentsAdding": "Wird hochgeladen …",
+  "documents.attachmentsAdded": { one: "PDF angehängt.", other: "{count} PDFs angehängt." },
+  "documents.removeAttachment": "«{name}» entfernen",
+  "documents.attachmentRemoved": "«{name}» entfernt.",
+  "documents.issuedAttachmentsHint":
+    "Mit dem Dokument ausgestellt und unverändert aufbewahrt; sie gehen beim Versand per E-Mail mit.",
   "documents.attachmentsHint": "Mahnungen, Korrekturen und Kopien aus dem früheren Programm.",
   "documents.attachmentsEmpty": "Keine Anhänge.",
   "documents.addPdfTitle": "PDF hinzufügen?",
@@ -998,6 +1012,9 @@ export const de = {
   "documents.totals": "Summen",
   "documents.totalsPending": "Die Summen erscheinen, sobald alle Angaben gültig sind.",
   "documents.subtotal": "Zwischensumme",
+  "documents.passThrough": "Durchlaufende Posten",
+  "documents.passThroughShort": "Durchlaufend",
+  "documents.passThroughHint": "Nur wenn die Fremdrechnung auf den Namen Ihres Kunden lautet.",
   "documents.documentDiscount": "Rabatt",
   "documents.net": "Netto",
   "documents.taxGroup": "{tax} {rate} auf {amount}",
@@ -1396,7 +1413,9 @@ export const de = {
   "error.imported_without_pdf": "Zu dieser übernommenen Rechnung gibt es noch kein PDF.",
   "error.imported_document":
     "Eine übernommene Rechnung besteht aus ihrem PDF; das geht mit ihr nicht.",
-  "error.not_imported": "Dateien lassen sich nur an übernommene Rechnungen anhängen.",
+  "error.attachments_frozen":
+    "Anhänge lassen sich nur bei Entwürfen ändern; ausgestellte Dokumente behalten ihre Dateien.",
+  "error.too_many_attachments": "Ein Entwurf hat höchstens 10 Anhänge.",
   "error.too_many_rows":
     "Die Datei hat zu viele Zeilen. Bitte in Dateien mit höchstens zehntausend Zeilen teilen.",
   "error.too_many_columns": "Die Datei hat mehr als 100 Spalten.",

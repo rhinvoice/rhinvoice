@@ -342,6 +342,7 @@ const DETAIL: DocumentDetail = {
     discount: "0.00",
     net: "0.00",
     tax: "0.00",
+    pass_through: "0.00",
     gross: "0.00",
     rounding: "0.00",
     total: "0.00",

@@ -475,6 +475,8 @@ export const it: Catalog<MessageKey> = {
   "tax.special": "Aliquota speciale",
   "tax.zero": "0 % (imponibile)",
   "tax.exempt": "Escluso dall’imposta",
+  "tax.pass_through": "Spesa anticipata (senza {tax})",
+  "tax.name": "IVA",
   "supply.service": "Servizio",
   "supply.goods": "Bene",
   "settings.tabMail": "E-mail",
@@ -744,6 +746,7 @@ export const it: Catalog<MessageKey> = {
   "event.reminded": "Sollecito redatto",
   "event.imported": "Ripreso dal programma precedente",
   "event.file_added": "File aggiunto",
+  "event.file_removed": "Allegato rimosso",
   "event.written_off": "Registrato come perdita",
   "event.write_off_removed": "Registrazione come perdita annullata",
 
@@ -837,6 +840,17 @@ export const it: Catalog<MessageKey> = {
     "Durante la ripresa non è stato trovato alcun PDF per questa fattura. Lo aggiunga affinché sia completa. In seguito non potrà più essere sostituito.",
   "documents.addPdf": "Aggiungi PDF",
   "documents.attachmentsTitle": "Allegati",
+  "documents.draftAttachmentsHint": "PDF inviati con il documento",
+  "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDF" },
+  "documents.draftAttachmentsNote":
+    "Per esempio le fatture di terzi delle spese anticipate. Si possono rimuovere fino all’emissione del documento; poi restano invariati con esso e vengono inviati dopo il suo PDF per e-mail.",
+  "documents.attachmentsSaveFirst": "Salvare la bozza per allegare dei PDF.",
+  "documents.attachmentsAdding": "Caricamento …",
+  "documents.attachmentsAdded": { one: "PDF allegato.", other: "{count} PDF allegati." },
+  "documents.removeAttachment": "Rimuovere «{name}»",
+  "documents.attachmentRemoved": "«{name}» rimosso.",
+  "documents.issuedAttachmentsHint":
+    "Emessi con il documento e conservati invariati; vengono inviati con esso per e-mail.",
   "documents.attachmentsHint": "Solleciti, correzioni e copie dal programma precedente.",
   "documents.attachmentsEmpty": "Nessun allegato.",
   "documents.addPdfTitle": "Aggiungere il PDF?",
@@ -1001,6 +1015,9 @@ export const it: Catalog<MessageKey> = {
   "documents.totals": "Totali",
   "documents.totalsPending": "I totali appaiono non appena tutti i dati sono validi.",
   "documents.subtotal": "Subtotale",
+  "documents.passThrough": "Spese anticipate",
+  "documents.passThroughShort": "Anticipata",
+  "documents.passThroughHint": "Solo se la fattura del terzo è intestata al cliente.",
   "documents.documentDiscount": "Sconto",
   "documents.net": "Netto",
   "documents.taxGroup": "{tax} {rate} su {amount}",
@@ -1399,7 +1416,9 @@ export const it: Catalog<MessageKey> = {
   "error.imported_without_pdf": "Per questa fattura importata non c’è ancora un PDF.",
   "error.imported_document":
     "Una fattura importata consiste nel suo PDF; con essa questa operazione non è possibile.",
-  "error.not_imported": "I file possono essere allegati solo alle fatture importate.",
+  "error.attachments_frozen":
+    "Gli allegati si modificano solo nelle bozze; i documenti emessi conservano i loro file.",
+  "error.too_many_attachments": "Una bozza ha al massimo 10 allegati.",
   "error.too_many_rows":
     "Il file ha troppe righe. Lo suddivida in file di al massimo diecimila righe.",
   "error.too_many_columns": "Il file ha più di 100 colonne.",

@@ -71,6 +71,7 @@ import { defaultTexts } from "@/features/documents/document-texts";
 import { DocumentEditor, type EditableType } from "@/features/documents/document-editor";
 import { documentToForm, emptyDocument } from "@/features/documents/document-form-model";
 import { DocumentView } from "@/features/documents/document-view";
+import { IssuedAttachments } from "@/features/documents/document-attachments";
 import { AttachmentsCard, ImportedPdf } from "@/features/documents/imported-document";
 import { PaperPreview } from "@/components/paper-preview";
 import { PaymentDialog } from "@/features/documents/payment-dialog";
@@ -176,6 +177,7 @@ export function NewDocumentPage({
           type={type}
           company={company}
           isNew
+          documentId={null}
           defaultValues={{
             // New documents start dated today; the date stays editable and may be cleared.
             ...emptyDocument(company, todayIso()),
@@ -273,6 +275,7 @@ function DraftPage({ document, company }: PageProps) {
         company={company}
         isNew={false}
         autosave
+        documentId={document.id}
         defaultValues={documentToForm(document, locale)}
         onSave={(draft) => update.mutateAsync(draft)}
         onSaved={async (saved, shouldIssue) => {
@@ -494,11 +497,13 @@ function IssuedPage({ document, company }: PageProps) {
           />
         </div>
       ) : null}
-      {document.imported ? (
-        <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto w-full max-w-3xl empty:hidden">
+        {document.imported ? (
           <AttachmentsCard document={document} />
-        </div>
-      ) : null}
+        ) : (
+          <IssuedAttachments documentId={document.id} />
+        )}
+      </div>
       {view === "details" ? (
         <DocumentView
           document={document}

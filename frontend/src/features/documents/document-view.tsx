@@ -159,9 +159,11 @@ export function DocumentView({ document, taxName, onRemovePayment }: DocumentVie
                         {money(line.unit_price, 4)}
                       </TableCell>
                       <TableCell className="hidden text-right tabular-nums lg:table-cell">
-                        {line.tax_rate === null
-                          ? t("common.none")
-                          : formatPercent(line.tax_rate, locale)}
+                        {line.tax_category === "pass_through"
+                          ? t("documents.passThroughShort")
+                          : line.tax_rate === null
+                            ? t("common.none")
+                            : formatPercent(line.tax_rate, locale)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {line.amount === null ? t("common.none") : money(line.amount)}

@@ -6,7 +6,7 @@ import type { Locale } from "@/lib/locale";
 /** What differs between the company countries; comes from the API, not from code here. */
 export type CountryProfile = components["schemas"]["CountryProfileResponse"];
 export type CountryTerms = components["schemas"]["CountryTermsResponse"];
-type TaxCategory = "standard" | "reduced" | "special" | "zero" | "exempt";
+type TaxCategory = "standard" | "reduced" | "special" | "zero" | "exempt" | "pass_through";
 
 /**
  * The country's words in the interface language (German for every German locale).
@@ -30,15 +30,21 @@ export function countrySummary(profile: CountryProfile, locale: Locale, t: T): s
   return [`${termsFor(profile, locale).tax_name} ${rates}`, ...codes, ...rounding].join(" · ");
 }
 
-/** The name of a tax category; the third rate is named by the country (e.g. accommodation). */
+/**
+ * The name of a tax category; the third rate is named by the country (e.g. accommodation),
+ * pass-through items name the country's tax ("ohne MWST", "ohne USt").
+ */
 export function taxCategoryLabel(
   category: TaxCategory,
   profile: CountryProfile | null | undefined,
   locale: Locale,
   t: T,
 ): string {
-  const special =
-    profile === null || profile === undefined ? null : termsFor(profile, locale).special_rate;
+  const terms = profile === null || profile === undefined ? null : termsFor(profile, locale);
+  if (category === "pass_through") {
+    return t("tax.pass_through", { tax: terms?.tax_name ?? t("tax.name") });
+  }
+  const special = terms?.special_rate ?? null;
   return category === "special" && special !== null ? special : t(`tax.${category}`);
 }
 

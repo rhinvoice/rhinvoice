@@ -78,6 +78,8 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 - First-start wizard and a setup checklist
 - Images for `linux/amd64` and `linux/arm64` (also Raspberry Pi 4/5)
 
+The complete list, group by group: [rhinvoice.com/docs/getting-started/features](https://rhinvoice.com/docs/getting-started/features/).
+
 ## Countries
 
 | | Switzerland | Liechtenstein | Germany | Austria |

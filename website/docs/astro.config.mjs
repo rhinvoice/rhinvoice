@@ -94,6 +94,7 @@ export default defineConfig({
       sidebar: [
         group(["Getting started", "Erste Schritte", "Premiers pas", "Primi passi"], [
           page("getting-started/what-is-rhinvoice", ["What is Rhinvoice?", "Was ist Rhinvoice?", "Qu’est-ce que Rhinvoice?", "Che cos’è Rhinvoice?"]),
+          page("getting-started/features", ["Features", "Funktionen", "Fonctions", "Funzioni"]),
           page("getting-started/installation", ["Installation", "Installation", "Installation", "Installazione"]),
           page("getting-started/install-desktop", ["Windows and Mac", "Windows und Mac", "Windows et Mac", "Windows e Mac"]),
           page("getting-started/first-start", ["First start", "Erster Start", "Premier démarrage", "Primo avvio"]),

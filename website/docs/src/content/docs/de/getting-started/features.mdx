@@ -1,0 +1,265 @@
+---
+title: Funktionen von Rhinvoice im Überblick
+description: "Alle Funktionen von Rhinvoice, dem kostenlosen Open-Source-Rechnungsprogramm für CH, FL, DE und AT: Rechnungen, MWST, QR-Rechnung, E-Rechnung, Mahnungen und Backup."
+faq:
+  - q: Kosten einzelne Funktionen von Rhinvoice extra?
+    a: "Nein. Alle Funktionen auf dieser Seite sind in Rhinvoice enthalten, kostenlos unter der AGPL. Es gibt keine Bezahlversion und keine Zusatzmodule."
+  - q: In welchen Währungen schreibt Rhinvoice Rechnungen?
+    a: "In Schweizer Franken (CHF) und Euro (EUR). Artikel haben einen Preis pro Währung, jedes Bankkonto hat eine Währung, und eine Rechnung nimmt das Standardkonto ihrer Währung."
+  - q: Was kann Rhinvoice nicht?
+    a: "Rhinvoice ist kein Buchhaltungsprogramm: keine Buchhaltung, kein Kontenplan, keine MWST- bzw. USt.-Abrechnung, kein Lohn. Es ist auch kein Cloud-Dienst, kein Webshop und keine Kasse."
+  - q: Wo sehe ich, was neu dazukommt?
+    a: "Diese Seite listet, was die aktuelle Version kann. Jede neue Version steht unter Neuigkeiten in der Dokumentation, Wünsche und Ideen sammelt das Projekt auf GitHub."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Rhinvoice schreibt **Angebote, Rechnungen, Stornorechnungen und Mahnungen** für Firmen in der Schweiz, in Liechtenstein, Deutschland und Österreich, mit den Steuersätzen, Pflichthinweisen, Zahlungs-QR-Codes und E-Rechnungsformaten des jeweiligen Landes. Diese Seite listet alle Funktionen der aktuellen Version als kurze Liste. Jede Gruppe verweist auf die ausführliche Anleitung.
+
+## Angebote und Rechnungen
+
+- Angebote, Rechnungen und Stornorechnungen in CHF oder EUR
+- Editor mit Formular links und Live-Vorschau auf Papier rechts
+- Entwürfe speichern sich automatisch; Entwürfe lassen sich löschen
+- Positionen mit Menge, Einheit, Preis, Rabatt und Steuersatz, dazu Textzeilen für Überschriften und Hinweise
+- Positionen per Ziehen oder mit Alt+↑ / Alt+↓ sortieren
+- Artikel werden beim Tippen in der Zeile vorgeschlagen; *Als Artikel speichern* übernimmt eine neue Position in die Artikel
+- Positionsrabatt und Gesamtrabatt in Prozent oder als Betrag, Netto- oder Bruttopreise
+- Betreff, Referenz, Leistungszeitraum, Fälligkeit und Zahlungsfrist pro Dokument
+- Neuen Kunden direkt aus der Rechnung anlegen, in einem Fenster neben der Rechnung
+- Was zum Ausstellen noch fehlt, steht oben im Editor, mit einem Knopf zum passenden Formular
+- Nummern werden erst beim Ausstellen vergeben, ohne Lücken und ohne Doppelte
+- Nummernkreise mit eigenem Muster (`{YYYY}`, `{YY}`, `{MM}`, `{NNNN}`), Jahreswechsel und Vorschau der nächsten Nummer
+- Ausgestellte Dokumente sind gesperrt, auch in der Datenbank, und das PDF wird mit seiner SHA-256-Prüfsumme aufbewahrt (Art. 958f OR, GoBD, BAO)
+- Korrekturen nur per Stornorechnung mit eigener Nummer
+- Angebote als versendet, angenommen oder abgelehnt markieren; nach der Gültigkeit (voreingestellt 30 Tage) gelten sie als abgelaufen
+- *In Rechnung umwandeln* macht aus einem Angebot einen Rechnungsentwurf
+- *Duplizieren* legt eine Kopie als Entwurf an
+- Verlauf pro Dokument, zum Beispiel Ausstellen, Zahlungen, Mahnungen, E-Mails und eine manuelle Wahl des Steuerfalls
+- Listen mit Ansichten (*Entwürfe*, *Offen*, *Überfällig*, *Bezahlt*, *Storniert*, *Abgeschrieben*), Filter nach Jahr und Kunde, Summen
+- Volltextsuche über Nummer, Kunde, Betreff und Positionen
+- PDF ansehen, herunterladen und drucken
+
+Anleitungen: [Die erste Rechnung](/docs/de/getting-started/first-invoice/), [Angebote](/docs/de/invoices/quotes/), [Ausstellen und Storno](/docs/de/invoices/issue-and-cancel/)
+
+## Zahlungen und Abschreibungen
+
+- Zahlungen mit Datum, Betrag und Notiz erfassen, auch Teilzahlungen
+- *Als bezahlt markieren* mit einem Klick, auch für mehrere Rechnungen auf einmal
+- *Rückgängig* direkt in der Meldung; erfasste Zahlungen lassen sich wieder entfernen
+- *Überfällig* wird jeden Tag aus der Fälligkeit abgeleitet, nicht gespeichert
+- Rechnungen abschreiben, die nicht bezahlt werden, mit Datum, Grund und Notiz; eine Abschreibung lässt sich zurücknehmen
+- Eine Zahlung nach der Abschreibung wird wie üblich erfasst
+- Ansicht *Abgeschrieben* mit den Verlusten pro Jahr und Währung und der darin enthaltenen Steuer
+
+Anleitungen: [Zahlungen und Mahnungen](/docs/de/invoices/payments-and-reminders/), [Rechnungen abschreiben](/docs/de/invoices/write-off/)
+
+## Steuern und Länder
+
+- Firmensitz in der Schweiz, in Liechtenstein, Deutschland oder Österreich; die Kunden können überall sein
+- Datierte Steuersätze; massgebend ist der Satz zum Leistungsdatum, ohne Leistungsdatum das Rechnungsdatum
+- Schweiz und Liechtenstein: 8.1 / 2.6 / 3.8 %, dazu die früheren Sätze seit 2011
+- Deutschland: 19 / 7 %, dazu 16 / 5 % für das zweite Halbjahr 2020
+- Österreich: 20 / 10 / 13 %
+- Steuerfall automatisch aus Firmenland, Kundenland und UID bzw. USt-IdNr.: Inland, Reverse Charge, innergemeinschaftliche Lieferung, Ausfuhrlieferung, Export, Kleinunternehmer, steuerbefreit
+- Manuelle Wahl des Steuerfalls mit Begründung, die im Verlauf steht
+- Waren und Dienstleistungen getrennt, auch auf gemischten Rechnungen, jeweils mit dem passenden Hinweis
+- Kleinunternehmer: Rechnungen ohne Steuer, mit dem Pflichthinweis des Landes (§ 19 UStG, § 6 Abs. 1 Z 27 UStG)
+- Pflichtangaben werden vor dem Ausstellen geprüft
+- Hinweis im Editor, wenn einem Firmenkunden in der EU die USt-IdNr. für Reverse Charge fehlt
+- Steuer pro Satz gruppiert berechnet, gerundet wird nur der Endbetrag
+- Rappenrundung auf CHF 0.05, abschaltbar
+- Begriffe pro Land: MWST und UID in der Schweiz und in Liechtenstein, USt. und USt-IdNr. in Deutschland, USt. und UID in Österreich
+- Weitere Länder lassen sich als eigenes Länderprofil ergänzen
+
+Anleitungen: [Schweiz](/docs/de/countries/switzerland/), [Liechtenstein](/docs/de/countries/liechtenstein/), [Deutschland](/docs/de/countries/germany/), [Österreich](/docs/de/countries/austria/), [Weitere Länder](/docs/de/countries/more-countries/)
+
+## Zahlungs-QR-Codes und Bankkonten
+
+- Swiss QR-Rechnung mit Zahlteil in CHF oder EUR, für Firmen in der Schweiz und in Liechtenstein
+- QR-Referenz mit QR-IBAN oder Creditor Reference (SCOR, ISO 11649) mit normaler IBAN
+- EPC-QR-Code (GiroCode) auf Euro-Rechnungen aus Deutschland und Österreich
+- EPC-QR-Code auch auf Euro-Rechnungen aus der Schweiz und Liechtenstein an Kunden im EWR, wenn das Euro-Konto eine BIC hat
+- Mehrere Bankkonten mit IBAN, QR-IBAN, BIC und Währung, ein Standardkonto pro Währung
+- Fusszeile mit allen Bankkonten oder nur dem Konto der Rechnungswährung
+
+Anleitungen: [Schweiz](/docs/de/countries/switzerland/), [Deutschland](/docs/de/countries/germany/)
+
+## E-Rechnung
+
+- ZUGFeRD / Factur-X (EN 16931) in jedem PDF einer ausgestellten Rechnung oder Stornorechnung, für alle vier Länder
+- Alle PDFs als PDF/A-3b
+- Die eingebettete E-Rechnung lässt sich in der Druckvorlage abschalten
+- XRechnung 3.0 (CII) als XML-Datei für deutsche Behörden
+- Leitweg-ID oder feste Käuferreferenz pro Kunde in Deutschland
+- Rhinvoice nennt vor dem Ausstellen, was für die E-Rechnung oder die XRechnung noch fehlt
+- Einheiten als UN/ECE-Codes (Empfehlung Nr. 20), wie EN 16931 sie verlangt
+- In den automatischen Tests mit dem KoSIT-Validator und Mustang geprüft
+
+Anleitung: [E-Rechnung](/docs/de/invoices/e-invoice/)
+
+## Kunden und Artikel
+
+- Kunden als Firma oder Person, mit Anrede, Kontaktperson, Adresse, E-Mail, Telefon und Gruppe
+- Kundennummer aus einem eigenen Nummernkreis oder von Hand
+- Pro Kunde: Standardwährung, Dokumentsprache, Zahlungsfrist, Standardrabatt, Steuerbefreiung, Lieferadresse und interne Notiz
+- UID bzw. USt-IdNr. des Kunden; in Deutschland die Leitweg-ID
+- Kundenseite mit «Kunde seit» und allen Dokumenten des Kunden
+- Artikel mit Nummer, Name, Beschreibung, Gruppe, Einheit, Steuersatz und der Angabe Ware oder Dienstleistung
+- Artikelpreise pro Währung (CHF und EUR)
+- Archivieren und wiederherstellen; Archiviertes erscheint nicht mehr in Auswahllisten
+- Suche nach Name, Nummer, Ort, E-Mail oder Beschreibung
+
+Anleitung: [Kunden und Artikel übernehmen](/docs/de/moving/customers-and-articles/)
+
+## Texte und Druckvorlage
+
+- Textbausteine für Einleitung, Zahlungsbedingungen und Schluss, pro Dokumentart, einer davon als Standard
+- Platzhalter in Texten: `{nummer}`, `{datum}`, `{faellig}`, `{kunde}`, `{betrag}`, `{waehrung}`, `{firma}`
+- Pflichthinweise des Landes als Vorschlag, auf Wunsch mit eigenem Wortlaut
+- Dokumente auf Deutsch, Englisch, Französisch oder Italienisch, wählbar pro Dokument, pro Kunde oder als Standard der Firma
+- Drei Druckvorlagen: *Klassisch*, *Modern*, *Schlicht*
+- Logo links oder rechts in drei Grössen, Schrift Inter oder Source Serif
+- Absenderzeile über der Adresse für das Fensterkuvert, Kontaktangaben im Kopf, Positionsnummern ein- oder ausschaltbar
+- Adressfeld nach DIN 5008 Form B für Fensterkuverts
+- Vorschau der Druckvorlage mit der letzten Rechnung
+- Ausgestellte Dokumente behalten ihr PDF, auch wenn sich die Druckvorlage ändert
+
+Anleitung: [Erster Start](/docs/de/getting-started/first-start/)
+
+## Mahnwesen
+
+- Liste aller überfälligen Rechnungen mit dem nächsten Schritt unter *Mahnwesen*
+- Drei Stufen: Zahlungserinnerung, 1. Mahnung, 2. Mahnung
+- Pro Stufe: Tage nach der Fälligkeit bzw. der letzten Frist, neue Zahlungsfrist, Mahngebühr
+- Mahntext pro Stufe auf Deutsch, Englisch, Französisch und Italienisch
+- Mahnung als PDF mit dem offenen Betrag plus Gebühr
+- Mahnungen per E-Mail senden
+- Abgeschriebene Rechnungen werden nicht gemahnt
+
+Anleitung: [Zahlungen und Mahnungen](/docs/de/invoices/payments-and-reminders/)
+
+## Wiederkehrende Rechnungen
+
+- Pläne monatlich, quartalsweise, halbjährlich oder jährlich
+- Am Stichtag: Entwurf anlegen, ausstellen, oder ausstellen und per E-Mail senden
+- Der abgedeckte Zeitraum kommt als Leistungszeitraum auf die Rechnung
+- Erste und letzte Rechnung festlegen, Plan pausieren und fortsetzen
+- Verpasste Termine werden nachgeholt, jeder Zeitraum nur einmal
+- Pro Plan eine Liste der geschriebenen Rechnungen mit Ergebnis
+- *Wiederkehrend machen* macht aus einer ausgestellten Rechnung einen Plan
+
+Anleitung: [Wiederkehrende Rechnungen](/docs/de/invoices/recurring/)
+
+## E-Mail-Versand
+
+- Rechnungen, Angebote, Stornorechnungen und Mahnungen per E-Mail mit dem PDF
+- Auf Wunsch die XRechnung als zweiten Anhang
+- Versand über Ihren eigenen Mailserver (SMTP) mit STARTTLS oder SSL/TLS
+- Absendername, Antwortadresse und eine Kopie jeder E-Mail an den Absender
+- Testmail unter *Einstellungen → E-Mail*
+- E-Mail-Vorlagen pro Dokumentart und Sprache, mit Platzhaltern
+- Mehrere Empfänger pro E-Mail
+- Jede E-Mail steht im Verlauf des Dokuments; lehnt der Server ab, zeigt Rhinvoice seine Antwort
+
+Anleitung: [Wiederkehrende Rechnungen](/docs/de/invoices/recurring/)
+
+## Umzug aus dem bisherigen Programm
+
+- Kunden und Artikel aus CSV, XLSX und XLS
+- Zeichensatz (UTF-8, Windows-1252) und Trennzeichen werden erkannt
+- Spaltenzuordnung, Testlauf mit Vorschau und Bericht als CSV
+- Bereits vorhandene Einträge überspringen, aktualisieren oder neu anlegen
+- Spaltenzuordnungen als Vorlage speichern
+- Alte Rechnungen mit ihren Original-PDFs: eine Liste plus PDF-Dateien, ein Ordner oder ZIP-Dateien
+- Übernommene Rechnungen sind gesperrt, als *Übernommen* markiert und erscheinen in Suche, Umsatz und Kundenverlauf
+- Offene übernommene Rechnungen lassen sich bezahlen und abschreiben
+- Der Nummernkreis läuft hinter den übernommenen Nummern weiter
+
+Anleitungen: [Kunden und Artikel übernehmen](/docs/de/moving/customers-and-articles/), [Alte Rechnungen übernehmen](/docs/de/moving/old-invoices/)
+
+## Übersicht
+
+- Umsatz des Jahres gegenüber dem Vorjahr, mit Verlauf pro Monat
+- Offene und überfällige Beträge pro Währung, nach Alter gestaffelt
+- Die am längsten überfälligen Rechnungen
+- Offene Angebote mit der Annahmequote des Jahres
+- Beste Kunden des Jahres und erwartete Zahlungen pro Woche
+- Letzte Aktivitäten und eine Checkliste für die Einrichtung
+
+## Backup
+
+- Mit Docker: ein eigener Backup-Container mit restic, verschlüsselt und dedupliziert
+- Täglich, nach dem Ausstellen oder Stornieren und auf Knopfdruck mit *Jetzt sichern*
+- Ziele: S3-kompatible Speicher, SFTP, ein Ordner, über rclone auch Dropbox, Google Drive und weitere
+- Unter Windows und Mac: Backup in einen Ordner wie OneDrive, Dropbox, iCloud Drive, Google Drive, ein Netzlaufwerk oder eine USB-Disk, mit Wiederherstellungsschlüssel
+- Aufbewahrt werden 7 tägliche, 4 wöchentliche, 12 monatliche und alle jährlichen Backups
+- *Einstellungen → Backup* zeigt die letzten Backups und warnt, wenn das letzte erfolgreiche älter als 24 Stunden ist
+- Wiederherstellen ist Schritt für Schritt beschrieben, auch auf einem neuen Rechner
+
+Anleitungen: [Backup und Wiederherstellen](/docs/de/operations/backup/), [Backup im Programm](/docs/de/operations/backup-desktop/), [Backup auf Google Drive](/docs/de/operations/backup-google-drive/)
+
+## Sicherheit
+
+- Anmeldung mit E-Mail-Adresse und Passwort; Passwörter werden mit argon2id gespeichert
+- Zwei-Faktor-Authentifizierung mit einer Authenticator-App (TOTP)
+- Sperre nach wiederholten Fehlversuchen, höchstens 10 Anmeldungen pro Minute und Adresse
+- Sitzungs-Cookie mit HttpOnly und SameSite=Strict, strenge Content-Security-Policy
+- Ein neues Passwort beendet die anderen Sitzungen des Kontos
+- *Passwort vergessen?*: auf dem Server per Befehl, unter Windows und Mac mit einem Einmalcode im Datenordner
+- Das Programm für Windows und Mac antwortet nur auf Anfragen an seine eigene Adresse (127.0.0.1 oder localhost)
+- Ihre Daten liegen in Ihrer eigenen Datenbank, auf Ihrem Rechner oder Server
+
+## Bedienung
+
+- Befehlspalette mit ⌘K bzw. Ctrl+K
+- Tastaturkürzel: **I** oder **N** neue Rechnung, **Q** neues Angebot, **C** neuer Kunde, **A** neuer Artikel, **P** Zahlung erfassen, **/** Suche, ⌘↵ speichern, ⌘Z rückgängig
+- **G** und ein Buchstabe öffnen eine Liste, zum Beispiel **G I** die Rechnungen; **?** zeigt alle Kürzel
+- Einzeltasten-Kürzel lassen sich unter *Einstellungen → Bedienung* abschalten
+- Heller und dunkler Modus oder nach Systemeinstellung
+- Oberfläche auf Deutsch (Schweiz, Deutschland, Österreich), Französisch, Italienisch und Englisch
+- Beträge und Daten im Format des Landes, zum Beispiel `CHF 1’234.50` oder `1.234,50 EUR`
+- Akzentfarbe der Oberfläche einstellbar, zum Beispiel in der Firmenfarbe
+- Auf dem Smartphone: Status prüfen, als bezahlt markieren, PDF ansehen
+- Vollständig per Tastatur bedienbar; die automatischen Oberflächentests prüfen die Seiten mit axe-core gegen WCAG 2.2 AA
+- Einrichtungsassistent beim ersten Start (Land, Firma) und eine Checkliste auf der Übersicht
+- *Über Rhinvoice* mit Version und *Problem melden*
+
+Anleitung: [Erster Start](/docs/de/getting-started/first-start/)
+
+## Installation und Updates
+
+- Programm für Windows 10/11 mit Setup, ohne Docker, die Datenbank ist dabei (Beta)
+- Programm für Macs mit Apple-Chip ab macOS 12 (Beta)
+- Die Setups sind signiert, die Mac-App ist zusätzlich von Apple notarisiert
+- Ihre Daten bleiben beim Deinstallieren erhalten
+- Mit Docker Compose auf einem Server, einem NAS, einem Raspberry Pi 4/5 oder dem eigenen Rechner; Images für `linux/amd64` und `linux/arm64`
+- Mit Docker auch mehrere Benutzerkonten, angelegt mit `rhinvoice user create`
+- Hinweis auf eine neue Version in der Seitenleiste und unter *Über Rhinvoice*
+- Unter Windows und Mac installiert ein Klick das Update; startet die neue Version nicht, kommt die vorherige mit ihrer Datenbank zurück
+- Mit Docker zeigt der Hinweis die Befehle für das Update
+- Die Update-Prüfung lässt sich abschalten
+- Testversionen kommen als eigenes Programm *Rhinvoice Beta*, mit eigenen Daten
+- Beispieldaten für eine Testinstallation mit `rhinvoice demo`
+
+Anleitungen: [Windows und Mac](/docs/de/getting-started/install-desktop/), [Installation mit Docker](/docs/de/getting-started/installation/), [Update](/docs/de/operations/update/), [Deinstallieren](/docs/de/operations/uninstall/)
+
+## Open Source und Kosten
+
+- Kostenlos, ohne Bezahlversion und ohne Zusatzmodule
+- Lizenz: GNU Affero General Public License v3.0 oder später (AGPL)
+- Quellcode auf [GitHub](https://github.com/rhinvoice/rhinvoice)
+- Kein Cloud-Dienst: Sie betreiben Rhinvoice selbst
+- Öffentliche Demos für die [Schweiz](https://ch.rhinvoice.com), [Deutschland](https://de.rhinvoice.com) und [Österreich](https://at.rhinvoice.com), jede Stunde zurückgesetzt
+- Dokumentation auf Deutsch, Englisch, Französisch und Italienisch
+
+Mehr dazu: [Was ist Rhinvoice?](/docs/de/getting-started/what-is-rhinvoice/)
+
+<Aside type="caution" title="Keine Steuerberatung">
+Rhinvoice ist in der Beta-Phase (0.x) und ersetzt keine Steuer- oder Rechtsberatung. Steuersätze und Regeln sind an amtlichen Quellen geprüft und ohne Gewähr.
+</Aside>
+
+## Häufige Fragen
+
+<Faq />

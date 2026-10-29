@@ -1,7 +1,7 @@
 """Exporting the issued invoices of a period: the list, its name and the ZIP with the PDFs."""
 
 import io
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from datetime import date
 from typing import IO
@@ -48,6 +48,8 @@ class RecordingWriter:
         default_factory=list[tuple[ExportListing, Company, ExportFormat, Language]]
     )
     archived: list[list[tuple[str, bytes]]] = field(default_factory=list[list[tuple[str, bytes]]])
+    meanwhile: Callable[[], None] | None = None
+    """Something that happens after the first file was packed."""
 
     def title(self, language: Language) -> str:
         return f"Rechnungen-{language.value}"
@@ -63,7 +65,12 @@ class RecordingWriter:
         return f"list {export_format.value}".encode()
 
     def archive(self, files: Iterable[tuple[str, bytes]]) -> IO[bytes]:
-        packed = list(files)
+        packed: list[tuple[str, bytes]] = []
+        for file in files:
+            packed.append(file)
+            if self.meanwhile is not None:
+                self.meanwhile()
+                self.meanwhile = None
         self.archived.append(packed)
         return io.BytesIO(b"PK zip")
 
@@ -222,11 +229,14 @@ def test_the_zip_adds_the_attachments_after_each_pdf(
     assert len(writer.archived) == 1
     # One that vanished on the way (issued documents keep theirs) is left out.
     [first, _] = documents.attachments(draft.document.id)
-    del store.attachments[first.id]
-    listing = writer.lists[0][0]
-    files = list(exports._files("x.csv", b"", listing))  # noqa: SLF001 - the generator itself
-    assert [name for name, _ in files] == [
-        "x.csv",
+
+    def vanish() -> None:
+        del store.attachments[first.id]
+
+    writer.meanwhile = vanish
+    exports.export(ExportRequest(MARCH, ExportFormat.CSV, with_pdfs=True))
+    assert [name for name, _ in writer.archived[-1]] == [
+        "Rechnungen-fr 2026-03.csv",
         "R20260001.pdf",
         "R20260001_Notar.pdf",
         "R20260002.pdf",

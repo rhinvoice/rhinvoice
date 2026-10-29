@@ -12,7 +12,7 @@ from rhinvoice.application.dunning.handlers import DunningHandlers
 from rhinvoice.application.errors import DeliveryError, NotFoundError, UnavailableError
 from rhinvoice.application.mail.handlers import MailHandlers, SaveMailServer, SendMail
 from rhinvoice.application.mail.ports import Attachment, MailValues, OutgoingMail
-from rhinvoice.domain.document.document import DocumentType, EventKind
+from rhinvoice.domain.document.document import DocumentOrigin, DocumentType, EventKind
 from rhinvoice.domain.document.lines import LineKind
 from rhinvoice.domain.dunning.reminder import Reminder
 from rhinvoice.domain.mail.server import MailSecurity, MailServer
@@ -352,6 +352,39 @@ def test_sending_a_document_attaches_it_and_notes_it(
         NOW + timedelta(minutes=5),
     )
     assert documents.get(invoice).document.events[-1] == event
+
+
+def test_the_files_of_the_draft_follow_the_pdf(
+    mail: MailHandlers, documents: DocumentHandlers, sender: FakeSender, store: Store
+) -> None:
+    created = documents.create(
+        DocumentType.INVOICE, DraftInput(customer_id=CUSTOMER, lines=(LINE,))
+    )
+    invoice = created.document.id
+    documents.add_file(invoice, "Notar.pdf", b"%PDF-1.4 notary")
+    documents.add_file(invoice, "Amt.pdf", b"%PDF-1.4 office")
+    documents.issue(invoice)
+    assert mail.document_draft(invoice).attachments == ("Amt.pdf", "Notar.pdf")
+    configure(mail)
+    mail.send_document(
+        invoice, SendMail(to=("a@example.com",), subject="x", body="y", xrechnung=True)
+    )
+    [(_, sent)] = sender.sent
+    assert sent.attachments == (
+        PDF,
+        XML,
+        Attachment("Amt.pdf", b"%PDF-1.4 office", "application/pdf"),
+        Attachment("Notar.pdf", b"%PDF-1.4 notary", "application/pdf"),
+    )
+    # An imported invoice's files stay in the archive.
+    imported = replace(
+        store.documents[invoice],
+        document=replace(store.documents[invoice].document, origin=DocumentOrigin.IMPORTED),
+    )
+    store.documents[invoice] = imported
+    assert mail.document_draft(invoice).attachments == ()
+    assert issued(documents) != invoice
+    assert mail.document_draft(issued(documents)).attachments == ()
 
 
 def test_the_sender_gets_no_copy_of_a_mail_to_itself(

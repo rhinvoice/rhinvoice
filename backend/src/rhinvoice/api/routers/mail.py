@@ -147,6 +147,8 @@ class MailDraftResponse(ApiModel):
     """The name of the attached PDF."""
     copy_to: str | None
     """The sender address that gets a blind copy, if any."""
+    attachments: list[str] = Field(default_factory=list[str])
+    """The names of the document's own attachments, sent after the PDF."""
 
     @classmethod
     def of(cls, draft: MailDraft) -> Self:
@@ -156,6 +158,7 @@ class MailDraftResponse(ApiModel):
             body=draft.body,
             attachment=draft.attachment,
             copy_to=draft.copy_to,
+            attachments=list(draft.attachments),
         )
 
 

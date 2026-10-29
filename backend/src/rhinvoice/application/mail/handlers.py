@@ -6,7 +6,7 @@ from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
 from rhinvoice.application.errors import DeliveryError, NotFoundError, UnavailableError
-from rhinvoice.application.mail.ports import OutgoingMail
+from rhinvoice.application.mail.ports import Attachment, OutgoingMail
 from rhinvoice.domain.document.document import (
     MAX_EVENT_DETAIL,
     OPEN_INVOICE_STATUSES,
@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     )
     from rhinvoice.application.uow import UnitOfWork, UnitOfWorkFactory
     from rhinvoice.domain.company.company import Company
+    from rhinvoice.domain.document.attachment import Attachment as DocumentAttachment
     from rhinvoice.domain.dunning.reminder import Reminder
     from rhinvoice.domain.shared.clock import Clock
 
@@ -72,6 +73,9 @@ class MailTemplateView:
     customized: bool
 
 
+PDF = "application/pdf"
+
+
 @dataclass(frozen=True, slots=True)
 class MailDraft:
     """A mail ready to send, for the person to check and change."""
@@ -83,6 +87,8 @@ class MailDraft:
     """The name of the attached PDF."""
     copy_to: str | None
     """The sender address that gets a blind copy, if the server is set up so."""
+    attachments: tuple[str, ...] = ()
+    """The names of the document's own attachments, sent after the PDF (ADR 0040)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -194,10 +200,15 @@ class MailHandlers:
         view = self._sendable(document_id)
         kind = MailKind.of_document(view.document.type)
         values = self.content.document_values(view)
-        return self._draft(view, kind, values)
+        names = tuple(attachment.file_name for attachment in self._attached(view))
+        return replace(self._draft(view, kind, values), attachments=names)
 
     def send_document(self, document_id: UUID, command: SendMail) -> DocumentView:
-        """Send an issued document with its PDF and note it in the document's history."""
+        """Send an issued document and note it in the document's history.
+
+        The PDF comes first, then the XRechnung if asked for, then the files attached to the
+        document while it was a draft (e.g. third-party invoices, ADR 0040).
+        """
         view = self._sendable(document_id)
         if command.xrechnung and view.document.type is DocumentType.QUOTE:
             raise ValidationError("xrechnung", "quotes are no e-invoices")
@@ -205,7 +216,10 @@ class MailHandlers:
         mail = _mail(to, command)
         with self.uow() as uow:
             server = _require_server(uow)
-        files = self.content.document_files(document_id, xrechnung=command.xrechnung)
+        files = (
+            *self.content.document_files(document_id, xrechnung=command.xrechnung),
+            *self._attachments(view),
+        )
         accepted, refused = self._send(server, replace(mail, attachments=files))
         view = self._record(document_id, EventKind.EMAILED, _names(accepted, MAX_EVENT_DETAIL))
         _report_refused(refused)
@@ -246,6 +260,20 @@ class MailHandlers:
                 "document", "drafts are not sent; issue the document first", code="mail_draft"
             )
         return view
+
+    def _attached(self, view: DocumentView) -> list[DocumentAttachment]:
+        """List the files of a document written here; an imported invoice's stay archived."""
+        if view.document.is_imported:
+            return []
+        return self.documents.attachments(view.document.id)
+
+    def _attachments(self, view: DocumentView) -> tuple[Attachment, ...]:
+        """Load the files of a document written here, to send them."""
+        found = (
+            self.documents.attachment(view.document.id, attachment.id)
+            for attachment in self._attached(view)
+        )
+        return tuple(Attachment(item.file_name, content, PDF) for item, content in found)
 
     def _open_invoice(self, reminder: Reminder) -> DocumentView:
         """Reminders only go out while their invoice is still open (not paid, not cancelled)."""

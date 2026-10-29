@@ -18,6 +18,8 @@ before 1.0, minor versions may contain breaking changes.
   names the payee (BG-10). Such an account appears in the footer only on documents paid to it.
 - *Settings → Print template → Footer*: the bank details can be left out (*None*). The payment
   details and QR codes stay.
+- *Share* on an issued document hands its PDF to the share sheet of the phone (and of Safari on a
+  Mac), e.g. to mail or a messenger. Browsers that cannot share files show no such button.
 
 ### Changed
 - A new quote or invoice starts with today as its *Date*, and so do duplicates and invoices made

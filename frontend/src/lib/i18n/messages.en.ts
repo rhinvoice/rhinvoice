@@ -784,6 +784,7 @@ export const en: Catalog<MessageKey> = {
   "documents.pdf": "PDF",
   "documents.download": "Download",
   "documents.print": "Print",
+  "documents.share": "Share",
   "documents.viewMode": "Display",
   "documents.viewDocument": "Document",
   "documents.viewDetails": "Details",

@@ -20,6 +20,9 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   Konto nur auf Dokumenten, die an es bezahlt werden.
 - *Einstellungen → Druckvorlage → Fusszeile*: Die Bankverbindung lässt sich weglassen (*Keine*).
   Zahlungsangaben und QR-Codes bleiben.
+- *Teilen* auf einem ausgestellten Dokument gibt sein PDF an das Teilen-Menü des Handys (und von
+  Safari auf dem Mac) weiter, etwa an Mail oder einen Messenger. Browser, die keine Dateien teilen
+  können, zeigen den Knopf nicht.
 
 ### Geändert
 - Ein neues Angebot und eine neue Rechnung beginnen mit heute als *Datum*, ebenso Duplikate und

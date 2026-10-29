@@ -222,6 +222,12 @@ _TAX_CATEGORIES = {
         TaxCategory.SPECIAL: ("sondersatz", "special", "beherbergung"),
         TaxCategory.ZERO: ("null", "zero", "0"),
         TaxCategory.EXEMPT: ("befreit", "steuerfrei", "exempt", "frei"),
+        TaxCategory.PASS_THROUGH: (
+            "durchlaufend",
+            "durchlaufender posten",
+            "pass-through",
+            "pass_through",
+        ),
     }.items()
     for name in names
 }

@@ -207,6 +207,10 @@ def test_unknown_units_are_rejected() -> None:
         (Country.CH, "0", TaxCategory.ZERO),
         (Country.CH, "0.0", TaxCategory.ZERO),
         (Country.CH, "steuerfrei", TaxCategory.EXEMPT),
+        (Country.CH, "Durchlaufender Posten", TaxCategory.PASS_THROUGH),
+        (Country.DE, "durchlaufend", TaxCategory.PASS_THROUGH),
+        (Country.AT, "pass-through", TaxCategory.PASS_THROUGH),
+        (Country.LI, "pass_through", TaxCategory.PASS_THROUGH),
         (Country.DE, "19%", TaxCategory.STANDARD),
         (Country.DE, "7", TaxCategory.REDUCED),
         # The rates of the second half of 2020.

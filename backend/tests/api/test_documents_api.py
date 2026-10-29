@@ -429,6 +429,22 @@ def test_dashboard(user_client: TestClient, customer_id: str) -> None:
     ]
 
 
+
+def test_pass_through_items_are_owed_but_no_revenue(
+    user_client: TestClient, customer_id: str
+) -> None:
+    invoice = create(user_client, customer_id, lines=[LINES[0], PASS_THROUGH])
+    post(user_client, f"/api/documents/{invoice['id']}/issue")
+    overview = user_client.get("/api/dashboard").json()
+    # 1500 + 121.50 VAT + 250.35 pass-through = 1871.85 owed, of which 1500 are revenue.
+    assert overview["figures"][0]["open"] == "1871.85"
+    assert overview["aging"][0]["not_due"] == "1871.85"
+    assert overview["revenue"] == [{"month": "2026-01-01", "currency": "CHF", "net": "1500.00"}]
+    assert overview["top_customers"][0]["net"] == "1500.00"
+    assert overview["year_to_date"][0]["current"] == "1500.00"
+    listed = user_client.get("/api/documents?type=invoice").json()
+    assert listed["items"][0]["total"] == "1871.85"
+
 def test_preview_calculates_without_saving(user_client: TestClient, customer_id: str) -> None:
     body = {"type": "invoice", "customer_id": customer_id, "lines": LINES, "discount_value": "10"}
     preview = post(user_client, "/api/documents/preview", body)

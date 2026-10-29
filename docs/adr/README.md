@@ -42,3 +42,5 @@ Status: `accepted`, `superseded by NNNN` or `rejected`.
 - [0036 – Signed programs for Windows and Mac](0036-signed-programs.md)
 - [0037 – Bank account per document and third-party payees](0037-bank-account-per-document-and-third-party-payees.md)
 - [0038 – Export for bookkeeping](0038-export-for-bookkeeping.md)
+- [0039 – Pass-through items](0039-pass-through-items.md)
+- [0040 – Attachments of own documents](0040-attachments-of-own-documents.md)

@@ -33,7 +33,7 @@ want a printable list and the PDFs.
     day of payment under what was paid) so that every column of the table fits.
   - *ZIP* (option "Rechnungs-PDFs als ZIP beilegen"): the list in the chosen format first, then
     the PDF of every document. Own documents add their archived PDF (archived now if it was not
-    yet, as on a download); imported invoices their original. The files are named after the
+    yet, as on a download), then their attachments (ADR 0040); imported invoices their original. The files are named after the
     number with the characters `/\:*?"<>|` replaced; a name taken already (case-insensitive)
     gets " (2)", " (3)" … The column *Datei* exists only in ZIP exports, where it names
     something. An imported invoice without PDF leaves it empty. The ZIP is written into a
@@ -44,7 +44,8 @@ want a printable list and the PDFs.
 - **Columns.** Nummer, Art, Datum, Leistung von, Leistung bis, Kundennummer, Kunde, Land,
   UID/USt-IdNr., Währung, Steuerfall, Netto, a pair *Netto x %* / *Steuer x %* per VAT rate that
   occurs in the export (0 % included: exempt revenue is what accountants ask for), Steuer,
-  Brutto, Bezahlt, Bezahlt am, Offen, Abgeschrieben, Status, Datei. Headers follow the language of
+  *Durchlaufende Posten* when the export holds some (ADR 0039; neither net nor tax, part of the
+  gross), Brutto, Bezahlt, Bezahlt am, Offen, Abgeschrieben, Status, Datei. Headers follow the language of
   the program's interface (`language` parameter; the company's language by default).
   - Customer data are taken from the issue snapshot, as printed.
   - Amounts are as issued: cancellations are negative. *Brutto* is the payable total, Swiss

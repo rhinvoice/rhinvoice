@@ -231,25 +231,23 @@ function ExportForm({ years, onCancel, onDone }: ExportFormProps) {
         </div>
       </fieldset>
 
-      <div className="flex items-start gap-3">
-        <input
-          id="export-pdfs"
-          type="checkbox"
-          checked={choice.withPdfs}
-          className="mt-1 size-4 cursor-pointer accent-primary"
-          aria-describedby="export-pdfs-hint"
-          onChange={(event) => {
-            change({ withPdfs: event.target.checked });
-          }}
-        />
-        <div className="flex flex-col gap-0.5">
-          <label htmlFor="export-pdfs" className="cursor-pointer text-sm font-medium">
-            {t("export.withPdfs")}
-          </label>
-          <p id="export-pdfs-hint" className="text-sm text-muted-foreground">
-            {t("export.withPdfsHint")}
-          </p>
-        </div>
+      <div className="flex flex-col gap-1">
+        {/* The label is the target (WCAG 2.5.8), not the small box. */}
+        <label className="flex min-h-6 cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={choice.withPdfs}
+            className="mt-1 size-4 accent-primary"
+            aria-describedby="export-pdfs-hint"
+            onChange={(event) => {
+              change({ withPdfs: event.target.checked });
+            }}
+          />
+          <span className="text-sm font-medium">{t("export.withPdfs")}</span>
+        </label>
+        <p id="export-pdfs-hint" className="pl-7 text-sm text-muted-foreground">
+          {t("export.withPdfsHint")}
+        </p>
       </div>
 
       <DialogFooter>

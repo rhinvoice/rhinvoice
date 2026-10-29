@@ -23,7 +23,7 @@ from jinja2 import (
 )
 from markupsafe import Markup
 
-from rhinvoice.domain.company.print_layout import FooterAccounts, PrintFont, PrintTemplate
+from rhinvoice.domain.company.print_layout import PrintFont, PrintTemplate, accounts_in_footer
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.document.document import DocumentType
 from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
@@ -245,6 +245,7 @@ def _context(model: PrintModel) -> dict[str, object]:
         # Themes written before 0.4 print one notice: all of them, one per line.
         "notice": model.view.notice,
         "payment": fill_placeholders(content.payment_text, values),
+        "payee": _payee(model, labels),
         "closing": fill_placeholders(content.closing_text, values),
         "footer": _footer(model, language),
         "footer_boxes": _footer_boxes(_footer(model, language)),
@@ -525,6 +526,17 @@ def _register_lines(register: str, label: str) -> list[str]:
     return parts if named else [f"{label} {parts[0]}", *parts[1:]]
 
 
+def _payee(model: PrintModel, labels: dict[str, str]) -> str:
+    """Name the third party that collects the payment, with its IBAN; "" for own accounts."""
+    account = model.bank_account
+    if account is None or not account.third_party:
+        return ""
+    parts = [f"{labels['pay_to']} {account.holder}", f"IBAN {account.iban.formatted()}"]
+    if account.bic is not None:
+        parts.append(f"BIC {account.bic.value}")
+    return SEPARATOR.join(parts)
+
+
 def _bank_columns(model: PrintModel, labels: dict[str, str]) -> list[list[str]]:
     """List the bank details as one footer column, short enough for the bottom margin.
 
@@ -532,11 +544,10 @@ def _bank_columns(model: PrintModel, labels: dict[str, str]) -> list[list[str]]:
     banks are listed one after the other, each in two to four lines.
     """
     company = model.company
-    if model.layout.footer_accounts is FooterAccounts.ALL and model.accounts:
-        accounts = list(model.accounts)
-    elif model.bank_account is not None:
-        accounts = [model.bank_account]
-    else:
+    accounts = list(
+        accounts_in_footer(model.layout.footer_accounts, model.bank_account, model.accounts)
+    )
+    if not accounts:
         return []
     banks: dict[tuple[str, str], list[BankAccount]] = {}
     for account in accounts:

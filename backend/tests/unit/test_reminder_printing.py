@@ -49,10 +49,10 @@ def store() -> Store:
 
 
 def setup(
-    store: Store, language: Language = Language.DE, paid: str | None = None
+    store: Store, language: Language = Language.DE, paid: str | None = None, **account_fields: object
 ) -> tuple[PrintHandlers, UUID]:
     store.company = factories.company()
-    account = factories.bank_account(is_default=True)
+    account = factories.bank_account(is_default=True, **account_fields)
     store.bank_accounts[account.id] = account
     store.customers[CUSTOMER] = factories.customer(id=CUSTOMER)
     clock = FixedClock(NOW)
@@ -121,6 +121,16 @@ def test_a_dunning_letter(store: Store) -> None:
     assert '<span class="value grand">128.10</span>' in html
     assert '<div class="qr-bill"><svg' in html
     assert "128.10" in html[html.index('<div class="qr-bill">') :]
+
+
+def test_a_reminder_names_the_third_party_that_collects(store: Store) -> None:
+    printing, reminder_id = setup(
+        store, holder="Inkasso AG", third_party=True, holder_address=factories.address()
+    )
+    html = printing.reminder_html(reminder_id)
+    assert (
+        '<p class="text payee">Zahlung an: Inkasso AG · IBAN CH93 0076 2011 6238 5295 7</p>' in html
+    )
 
 
 def test_a_payment_reminder_in_english_without_fee(store: Store) -> None:

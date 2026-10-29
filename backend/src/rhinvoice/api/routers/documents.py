@@ -123,6 +123,8 @@ class DraftRequest(ApiModel):
     intro_text: str = text(4000)
     payment_text: str = text(4000)
     closing_text: str = text(4000)
+    bank_account_id: UUID | None = None
+    """The account to pay to; None: the default account of the currency."""
 
     def to_input(self) -> DraftInput:
         return DraftInput(
@@ -144,6 +146,7 @@ class DraftRequest(ApiModel):
             intro_text=self.intro_text,
             payment_text=self.payment_text,
             closing_text=self.closing_text,
+            bank_account_id=self.bank_account_id,
         )
 
 
@@ -316,6 +319,9 @@ class DocumentResponse(ApiModel):
     intro_text: str
     payment_text: str
     closing_text: str
+    bank_account_id: UUID | None
+    """The account chosen for a draft; None: the default of the currency (issued documents
+    print the account they were issued with)."""
     notice: str
     """Legal notices of the treatments, one per line; frozen once issued."""
     lines: list[LineResponse]
@@ -383,6 +389,7 @@ class DocumentResponse(ApiModel):
             intro_text=content.intro_text,
             payment_text=content.payment_text,
             closing_text=content.closing_text,
+            bank_account_id=content.bank_account_id,
             notice=view.notice,
             lines=[
                 LineResponse(

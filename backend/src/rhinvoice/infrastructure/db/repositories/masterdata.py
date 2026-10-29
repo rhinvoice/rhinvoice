@@ -212,6 +212,10 @@ def _bank_account_from_row(row: RowMapping) -> BankAccount:
         qr_iban=_optional(row["qr_iban"], Iban),
         bic=_optional(row["bic"], Bic),
         is_default=row["is_default"],
+        third_party=row["third_party"],
+        holder_address=(
+            None if row["holder_postal_code"] is None else _address_from_row(row, "holder_")
+        ),
     )
 
 
@@ -225,6 +229,8 @@ def _bank_account_values(account: BankAccount) -> dict[str, Any]:
         "qr_iban": None if account.qr_iban is None else account.qr_iban.value,
         "bic": None if account.bic is None else account.bic.value,
         "is_default": account.is_default,
+        "third_party": account.third_party,
+        **_address_values(account.holder_address, "holder_"),
     }
 
 

@@ -50,9 +50,14 @@
   {% endif %}
 
   {% for notice in notices %}<p class="notice">{{ notice }}</p>{% endfor %}
-  {% if payment or epc_qr or epc_pending %}
+  {% if payment or payee or epc_qr or epc_pending %}
   <div class="payment">
-    {% if payment %}<p class="text">{{ payment }}</p>{% endif %}
+    {% if payee %}
+    <div class="text payee-block">
+      {% if payment %}<p class="payment-text">{{ payment }}</p>{% endif %}
+      <p class="payee">{{ payee }}</p>
+    </div>
+    {% elif payment %}<p class="text">{{ payment }}</p>{% endif %}
     {% if epc_qr %}
     <figure class="epc">
       {{ epc_qr }}

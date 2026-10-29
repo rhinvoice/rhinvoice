@@ -189,10 +189,15 @@ def bank_account_to_json(account: BankAccount) -> Json:
         "qr_iban": _opt(account.qr_iban),
         "bic": _opt(account.bic),
         "is_default": account.is_default,
+        "third_party": account.third_party,
+        "holder_address": (
+            None if account.holder_address is None else address_to_json(account.holder_address)
+        ),
     }
 
 
 def bank_account_from_json(data: Json) -> BankAccount:
+    holder_address = data.get("holder_address")
     return BankAccount(
         id=_uuid(data["id"]),
         currency=Currency(data["currency"]),
@@ -202,6 +207,9 @@ def bank_account_from_json(data: Json) -> BankAccount:
         qr_iban=None if data["qr_iban"] is None else Iban(data["qr_iban"]),
         bic=None if data["bic"] is None else Bic(data["bic"]),
         is_default=data["is_default"],
+        # Accounts frozen before version 0.9 are the company's own.
+        third_party=data.get("third_party", False),
+        holder_address=None if holder_address is None else address_from_json(holder_address),
     )
 
 
@@ -351,6 +359,10 @@ def _uuid(value: str) -> UUID:
     return UUID(value)
 
 
+def _optional_uuid(value: str | None) -> UUID | None:
+    return None if value is None else UUID(value)
+
+
 def template_to_json(template: InvoiceTemplate) -> Json:
     discount = template.discount
     return {
@@ -367,6 +379,7 @@ def template_to_json(template: InvoiceTemplate) -> Json:
         "intro_text": template.intro_text,
         "payment_text": template.payment_text,
         "closing_text": template.closing_text,
+        "bank_account_id": _opt(template.bank_account_id),
         "lines": [
             {
                 "id": str(line.id),
@@ -402,6 +415,8 @@ def template_from_json(data: Json) -> InvoiceTemplate:
         intro_text=data["intro_text"],
         payment_text=data["payment_text"],
         closing_text=data["closing_text"],
+        # Plans saved before version 0.9 name no account.
+        bank_account_id=_optional_uuid(data.get("bank_account_id")),
         lines=tuple(
             DocumentLine(
                 id=_uuid(line["id"]),

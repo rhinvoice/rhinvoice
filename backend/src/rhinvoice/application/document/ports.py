@@ -160,6 +160,13 @@ class DocumentRepository(Protocol):
         ...
 
     def search(self, query: DocumentQuery) -> Page[DocumentSummary]: ...
+    def issued_between(self, start: date, end: date) -> list[Document]:
+        """Issued invoices and cancellations (also imported ones) dated in the days.
+
+        Never drafts or quotes; the order is left to the caller.
+        """
+        ...
+
     def facets(self, query: DocumentQuery) -> DocumentFacets: ...
     def get_pdf(self, document_id: UUID) -> bytes | None:
         """Return the archived PDF of an issued document, if there is one."""

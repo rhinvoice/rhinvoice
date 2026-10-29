@@ -295,6 +295,36 @@ def test_latest_issue_date(
         assert uow.documents.latest_issue_date(DocumentType.QUOTE) is None
 
 
+def test_issued_between_selects_invoices_and_cancellations_of_the_days(
+    engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
+) -> None:
+    handlers, customer, _ = setup
+    handlers.create(DocumentType.INVOICE, draft(customer, issue_date=date(2026, 1, 5)))
+    quote = handlers.create(DocumentType.QUOTE, draft(customer, issue_date=date(2026, 1, 5)))
+    handlers.issue(quote.document.id)
+    issued = [
+        handlers.issue(
+            handlers.create(DocumentType.INVOICE, draft(customer, issue_date=day)).document.id
+        ).document
+        for day in (date(2025, 12, 31), date(2026, 1, 1), date(2026, 1, 31), date(2026, 2, 1))
+    ]
+    cancelled = handlers.cancel(issued[1].id).document
+    with SqlUnitOfWork(engine) as uow:
+        found = uow.documents.issued_between(date(2026, 1, 1), date(2026, 1, 31))
+        # The cancellation is dated the day it was issued.
+        march = uow.documents.issued_between(TODAY, TODAY)
+        assert uow.documents.issued_between(date(2027, 1, 1), date(2027, 1, 31)) == []
+    assert [(document.type, document.id) for document in found] == [
+        (DocumentType.INVOICE, issued[1].id),
+        (DocumentType.INVOICE, issued[2].id),
+    ]
+    assert [(document.type, document.id) for document in march] == [
+        (DocumentType.CANCELLATION, cancelled.cancelled_by_id),
+    ]
+    assert found[0].status is DocumentStatus.CANCELLED
+    assert found[0].issued_totals is not None
+
+
 def test_drafts_can_be_changed_and_deleted(
     engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
 ) -> None:

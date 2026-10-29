@@ -54,6 +54,11 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    """Undo the columns; one way in practice once documents were issued with them.
+
+    Issued documents keep their frozen snapshots: one with the footer "none" or a third
+    party's account cannot be printed again by a version before 0.9.
+    """
     op.drop_constraint(
         op.f("fk_documents_bank_account_id_bank_accounts"), "documents", type_="foreignkey"
     )

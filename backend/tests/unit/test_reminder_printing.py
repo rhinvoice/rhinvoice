@@ -49,7 +49,10 @@ def store() -> Store:
 
 
 def setup(
-    store: Store, language: Language = Language.DE, paid: str | None = None, **account_fields: object
+    store: Store,
+    language: Language = Language.DE,
+    paid: str | None = None,
+    **account_fields: object,
 ) -> tuple[PrintHandlers, UUID]:
     store.company = factories.company()
     account = factories.bank_account(is_default=True, **account_fields)

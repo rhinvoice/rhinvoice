@@ -48,6 +48,7 @@ from rhinvoice.domain.document.calculation import Totals
 from rhinvoice.domain.document.document import (
     MAX_LINES,
     DisplayStatus,
+    Document,
     DocumentStatus,
     DocumentType,
     EventKind,
@@ -293,6 +294,13 @@ class RecipientResponse(ApiModel):
     vat_number: str | None
 
 
+def _paid_to(document: Document) -> UUID | None:
+    if document.snapshot is None:
+        return document.content.bank_account_id
+    account = document.snapshot.bank_account
+    return None if account is None else account.id
+
+
 class DocumentResponse(ApiModel):
     id: UUID
     type: DocumentType
@@ -320,8 +328,8 @@ class DocumentResponse(ApiModel):
     payment_text: str
     closing_text: str
     bank_account_id: UUID | None
-    """The account chosen for a draft; None: the default of the currency (issued documents
-    print the account they were issued with)."""
+    """Drafts: the chosen account, None for the default of the currency. Issued documents:
+    the account frozen when issuing (None when it had none, e.g. cancellations)."""
     notice: str
     """Legal notices of the treatments, one per line; frozen once issued."""
     lines: list[LineResponse]
@@ -389,7 +397,7 @@ class DocumentResponse(ApiModel):
             intro_text=content.intro_text,
             payment_text=content.payment_text,
             closing_text=content.closing_text,
-            bank_account_id=content.bank_account_id,
+            bank_account_id=_paid_to(document),
             notice=view.notice,
             lines=[
                 LineResponse(

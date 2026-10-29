@@ -142,7 +142,7 @@ function PrintLayoutForm({ saved }: { readonly saved: PrintLayout }) {
             legend={t("printLayout.footerAccounts")}
             name="footer_accounts"
             value={layout.footer_accounts}
-            options={(["all", "invoice_currency"] as const).map((value) => [
+            options={(["all", "invoice_currency", "none"] as const).map((value) => [
               value,
               t(`printLayout.footerAccounts.${value}`),
             ])}

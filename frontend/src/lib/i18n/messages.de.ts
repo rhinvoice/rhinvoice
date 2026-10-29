@@ -239,6 +239,10 @@ export const de = {
     "Diese Aktion ist im aktuellen Status nicht möglich. Bitte laden Sie die Seite neu.",
   "error.bank_account_missing":
     "Für diese Währung ist kein Bankkonto erfasst. Bitte legen Sie es unter Einstellungen → Bankkonten an.",
+  "error.bank_account_unknown":
+    "Dieses Bankkonto gibt es nicht mehr. Bitte wählen Sie ein anderes.",
+  "error.bank_account_currency": "Das Bankkonto ist in einer anderen Währung als das Dokument.",
+  "error.holder_address_missing": "Ein Konto eines Dritten braucht die Adresse des Kontoinhabers.",
   "error.no_positions": "Das Dokument braucht mindestens eine Position mit Betrag.",
   "error.non_positive_total":
     "Das Total einer Rechnung muss größer als null sein. Gutschriften entstehen durch Stornieren.",
@@ -582,6 +586,11 @@ export const de = {
     "Nötig für den EPC-QR-Code auf Euro-Rechnungen an Kunden in der EU: Ohne BIC entfällt er.",
   "bank.currency": "Währung",
   "bank.isDefault": "Standardkonto für diese Währung",
+  "bank.thirdParty": "Konto gehört einem Dritten (z. B. Finanzdienstleister)",
+  "bank.thirdPartyHint":
+    "Dokumente, die auf dieses Konto bezahlt werden, nennen den Kontoinhaber als Zahlungsempfänger. Seine Adresse steht im QR-Zahlteil.",
+  "bank.thirdPartyBadge": "Drittkonto",
+  "bank.holderAddress": "Adresse des Kontoinhabers",
   "bank.saved": "Bankkonto gespeichert.",
   "bank.deleteTitle": "Bankkonto löschen?",
   "bank.deleteDescription":
@@ -916,6 +925,10 @@ export const de = {
   "documents.issueDate": "Datum",
   "documents.issueDateHint": "Leer lassen für das Datum des Ausstellens.",
   "documents.dueDate": "Fällig am",
+  "documents.bankAccount": "Bankverbindung",
+  "documents.bankAccountHint": "Das Konto, auf das dieses Dokument bezahlt wird.",
+  "documents.bankAccountDefault": "(Standard)",
+  "documents.bankAccountThirdParty": "(Drittkonto)",
   "documents.dueDateHint": "Leer lassen für die Zahlungsfrist des Kunden bzw. der Firma.",
   "documents.validUntil": "Gültig bis",
   "documents.validUntilHint": "Leer lassen für 30 Tage ab Datum.",
@@ -1470,8 +1483,9 @@ export const de = {
   "printLayout.footerAccounts": "Bankverbindung",
   "printLayout.footerAccounts.all": "Alle Konten",
   "printLayout.footerAccounts.invoice_currency": "Nur Rechnungswährung",
+  "printLayout.footerAccounts.none": "Keine",
   "printLayout.footerHint":
-    "Konten derselben Bank stehen zusammen. Der Zahlungs-QR-Code nimmt immer das Konto der Rechnungswährung.",
+    "Konten derselben Bank stehen zusammen. Konten Dritter erscheinen nur auf Dokumenten, die an sie bezahlt werden. Der Zahlungs-QR-Code nimmt immer das Konto, an das die Rechnung bezahlt wird.",
   "printLayout.reset": "Zurücksetzen",
   "printLayout.issuedStay": "Gilt für neue PDFs. Ausgestellte Dokumente behalten ihr PDF.",
   "printLayout.preview": "Vorschau der Druckvorlage",

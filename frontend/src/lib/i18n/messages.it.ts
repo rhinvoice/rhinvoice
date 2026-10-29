@@ -241,6 +241,11 @@ export const it: Catalog<MessageKey> = {
   "error.invalid_state": "Questa azione non è possibile nello stato attuale. Ricarichi la pagina.",
   "error.bank_account_missing":
     "Per questa valuta non è registrato alcun conto bancario. Lo aggiunga in Impostazioni → Conti bancari.",
+  "error.bank_account_unknown":
+    "Questo conto bancario non esiste più. La preghiamo di sceglierne un altro.",
+  "error.bank_account_currency":
+    "Il conto bancario è in una valuta diversa da quella del documento.",
+  "error.holder_address_missing": "Il conto di terzi richiede l’indirizzo del titolare.",
   "error.no_positions": "Il documento richiede almeno una posizione con un importo.",
   "error.non_positive_total":
     "Il totale di una fattura deve essere maggiore di zero. Le note di credito nascono stornando.",
@@ -586,6 +591,11 @@ export const it: Catalog<MessageKey> = {
     "Necessario per il codice QR EPC sulle fatture in euro ai clienti nell’UE: senza BIC non viene stampato.",
   "bank.currency": "Valuta",
   "bank.isDefault": "Conto predefinito per questa valuta",
+  "bank.thirdParty": "Il conto appartiene a terzi (p. es. un fornitore di servizi finanziari)",
+  "bank.thirdPartyHint":
+    "I documenti pagati su questo conto indicano il titolare come beneficiario. Il suo indirizzo figura nella sezione pagamento QR.",
+  "bank.thirdPartyBadge": "Conto di terzi",
+  "bank.holderAddress": "Indirizzo del titolare del conto",
   "bank.saved": "Conto bancario salvato.",
   "bank.deleteTitle": "Eliminare il conto bancario?",
   "bank.deleteDescription":
@@ -915,6 +925,10 @@ export const it: Catalog<MessageKey> = {
   "documents.issueDate": "Data",
   "documents.issueDateHint": "Lasciare vuoto per usare la data di emissione.",
   "documents.dueDate": "Scadenza il",
+  "documents.bankAccount": "Coordinate bancarie",
+  "documents.bankAccountHint": "Il conto su cui viene pagato questo documento.",
+  "documents.bankAccountDefault": "(predefinito)",
+  "documents.bankAccountThirdParty": "(conto di terzi)",
   "documents.dueDateHint":
     "Lasciare vuoto per usare il termine di pagamento del cliente o dell’azienda.",
   "documents.validUntil": "Valida fino al",
@@ -1474,8 +1488,9 @@ export const it: Catalog<MessageKey> = {
   "printLayout.footerAccounts": "Coordinate bancarie",
   "printLayout.footerAccounts.all": "Tutti i conti",
   "printLayout.footerAccounts.invoice_currency": "Solo valuta della fattura",
+  "printLayout.footerAccounts.none": "Nessuna",
   "printLayout.footerHint":
-    "I conti della stessa banca figurano insieme. Il codice QR di pagamento usa sempre il conto nella valuta della fattura.",
+    "I conti della stessa banca figurano insieme. I conti di terzi appaiono solo sui documenti pagati a loro. Il codice QR di pagamento usa sempre il conto su cui viene pagata la fattura.",
   "printLayout.reset": "Ripristina",
   "printLayout.issuedStay": "Vale per i nuovi PDF. I documenti emessi mantengono il loro PDF.",
   "printLayout.preview": "Anteprima del layout di stampa",

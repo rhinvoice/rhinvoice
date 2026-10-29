@@ -225,6 +225,10 @@ export const en: Catalog<MessageKey> = {
     "This action is not possible in the current status. Please reload the page.",
   "error.bank_account_missing":
     "There is no bank account for this currency. Please add one under Settings → Bank accounts.",
+  "error.bank_account_unknown": "This bank account no longer exists. Please choose another one.",
+  "error.bank_account_currency": "The bank account is in a different currency than the document.",
+  "error.holder_address_missing":
+    "A third party's account needs the address of the account holder.",
   "error.no_positions": "The document needs at least one line with an amount.",
   "error.non_positive_total":
     "The total of an invoice must be greater than zero. Credits are created by cancelling.",
@@ -556,6 +560,11 @@ export const en: Catalog<MessageKey> = {
     "Needed for the EPC QR code on euro invoices to customers in the EU: without the BIC there is none.",
   "bank.currency": "Currency",
   "bank.isDefault": "Default account for this currency",
+  "bank.thirdParty": "Account belongs to a third party (e.g. a financial service provider)",
+  "bank.thirdPartyHint":
+    "Documents paid to this account name the account holder as payee. Their address appears on the QR payment part.",
+  "bank.thirdPartyBadge": "Third-party account",
+  "bank.holderAddress": "Address of the account holder",
   "bank.saved": "Bank account saved.",
   "bank.deleteTitle": "Delete bank account?",
   "bank.deleteDescription":
@@ -876,6 +885,10 @@ export const en: Catalog<MessageKey> = {
   "documents.issueDate": "Date",
   "documents.issueDateHint": "Leave empty to use the date of issue.",
   "documents.dueDate": "Due date",
+  "documents.bankAccount": "Bank details",
+  "documents.bankAccountHint": "The account this document is paid to.",
+  "documents.bankAccountDefault": "(default)",
+  "documents.bankAccountThirdParty": "(third party)",
   "documents.dueDateHint": "Leave empty to use the payment terms of the customer or company.",
   "documents.validUntil": "Valid until",
   "documents.validUntilHint": "Leave empty for 30 days from the date.",
@@ -1424,8 +1437,9 @@ export const en: Catalog<MessageKey> = {
   "printLayout.footerAccounts": "Bank details",
   "printLayout.footerAccounts.all": "All accounts",
   "printLayout.footerAccounts.invoice_currency": "Invoice currency only",
+  "printLayout.footerAccounts.none": "None",
   "printLayout.footerHint":
-    "Accounts of one bank are listed together. The payment QR code always uses the account of the invoice currency.",
+    "Accounts of one bank are listed together. Third-party accounts appear only on documents paid to them. The payment QR code always uses the account the invoice is paid to.",
   "printLayout.reset": "Reset",
   "printLayout.issuedStay": "Applies to new PDFs. Issued documents keep their PDF.",
   "printLayout.preview": "Preview of the print template",

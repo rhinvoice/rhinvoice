@@ -51,6 +51,12 @@ import {
   type DraftRequest,
   type TaxTreatment,
 } from "@/features/documents/api";
+import {
+  accountLabel,
+  accountsFor,
+  offersAccountChoice,
+  validAccountChoice,
+} from "@/features/documents/bank-account-choice-model";
 import { CustomerPicker } from "@/features/documents/customer-picker";
 import {
   customerDefaults,
@@ -76,7 +82,7 @@ import {
 import { LineItems } from "@/features/documents/line-items";
 import { PaperPreview } from "@/components/paper-preview";
 import { printPage } from "@/features/documents/print-page";
-import type { Company } from "@/features/shared/company-api";
+import { bankAccountsQuery, type Company } from "@/features/shared/company-api";
 import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import { useEditorSheets } from "@/features/shared/editor-sheets";
 import { FormAlert } from "@/features/shared/form-alert";
@@ -203,6 +209,15 @@ export function DocumentEditor<Saved = DocumentDetail>({
   const xrechnungProblems = xrechnungOnly(preview.data?.xrechnung_problems ?? [], eInvoiceProblems);
   const page = useQuery(renderQuery(body));
   const amounts = preview.data?.line_amounts ?? [];
+
+  // A chosen account gives way to the default when the currency changes or it is gone.
+  const bankAccounts = useQuery(bankAccountsQuery).data;
+  useEffect(() => {
+    const valid = validAccountChoice(values.bank_account_id, bankAccounts, values.currency);
+    if (valid !== values.bank_account_id) {
+      form.setValue("bank_account_id", valid, { shouldDirty: true });
+    }
+  }, [bankAccounts, values.bank_account_id, values.currency, form]);
 
   // What is missing (a customer, a bank account, a tax ID) is filled in on top of the
   // editor, never by leaving it: "never a dead end" (chosen 2026-10-23).
@@ -637,6 +652,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
                     ) : null}
                   </div>
                 </div>
+                <BankAccountChoice />
               </Card>
             ) : null}
 
@@ -940,6 +956,34 @@ interface MoreFieldsProps {
   readonly autoTreatment: TaxTreatment | undefined;
 }
 
+/**
+ * The account the document is paid to, offered only when its currency has several
+ * (the default preselected as ""). The paper preview follows the choice.
+ */
+function BankAccountChoice({ className }: { readonly className?: string }) {
+  const { t } = useI18n();
+  const { register, formState, control } = useFormContext<DocumentFormValues>();
+  const currency = useWatch({ control, name: "currency" });
+  const accounts = useQuery(bankAccountsQuery).data ?? [];
+  if (!offersAccountChoice(accounts, currency)) return null;
+  return (
+    <Field
+      className={className}
+      label={t("documents.bankAccount")}
+      description={t("documents.bankAccountHint")}
+      error={formState.errors.bank_account_id?.message}
+    >
+      <NativeSelect id={fieldId("bank_account_id")} {...register("bank_account_id")}>
+        {accountsFor(accounts, currency).map((account) => (
+          <option key={account.id} value={account.is_default ? "" : account.id}>
+            {accountLabel(account, t)}
+          </option>
+        ))}
+      </NativeSelect>
+    </Field>
+  );
+}
+
 /** Subject, reference, service period, currency, language, prices, discount, tax treatment. */
 function MoreFields({ tax, autoTreatment, plan }: MoreFieldsProps) {
   const { t } = useI18n();
@@ -987,6 +1031,8 @@ function MoreFields({ tax, autoTreatment, plan }: MoreFieldsProps) {
           </NativeSelect>
         </Field>
       </div>
+      {/* Plans have no dates card: their account is chosen here, next to the currency. */}
+      {plan ? <BankAccountChoice className="@md:col-span-2" /> : null}
       {plan ? null : (
         <>
           <Field

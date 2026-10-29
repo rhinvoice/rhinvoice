@@ -196,6 +196,11 @@ class DraftContent:
     closing_text: str = ""
     goods_treatment: TaxTreatment | None = None
     """Treatment of the goods lines; None: the document's (documents before 0.4)."""
+    bank_account_id: UUID | None = None
+    """The account to pay to; None: the default account of the currency (ADR 0037).
+
+    Issuing freezes the account itself in the snapshot.
+    """
 
     def __post_init__(self) -> None:
         if self.treatment.goods_only:

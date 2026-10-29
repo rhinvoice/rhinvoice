@@ -24,6 +24,7 @@ from rhinvoice.application.document.einvoice import (
 from rhinvoice.application.document.handlers import DraftInput, LineInput
 from rhinvoice.application.document.ports import DocumentQuery
 from rhinvoice.application.errors import ConflictError, NotFoundError, UnavailableError
+from rhinvoice.domain.company.bank_account import paying_account
 from rhinvoice.domain.company.print_layout import PrintLayout
 from rhinvoice.domain.customer.customer import Customer, CustomerKind
 from rhinvoice.domain.document.document import DocumentOrigin, DocumentType, default_due_date
@@ -89,7 +90,7 @@ class PrintModel:
     recipient: Customer | None
     """As issued (snapshot), the current customer for drafts."""
     bank_account: BankAccount | None
-    """The account to pay to: as issued, the default of the currency for drafts."""
+    """The account to pay to: as issued, the chosen one (or the currency's default) for drafts."""
     logo: Logo | None
     issue_date: date
     """The document date; for drafts without a date the day it would be issued."""
@@ -408,14 +409,7 @@ class PrintHandlers:
                     accounts=accounts if snapshot.accounts is None else snapshot.accounts,
                 )
             company = view.company
-            account = next(
-                (
-                    account
-                    for account in accounts
-                    if account.currency is content.currency and account.is_default
-                ),
-                None,
-            )
+            account = paying_account(accounts, content.currency, content.bank_account_id)
         issue_date = content.issue_date or self.clock.today()
         terms = None if view.customer is None else view.customer.payment_terms_days
         due_date = content.due_date or default_due_date(

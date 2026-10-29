@@ -45,6 +45,8 @@ class InvoiceTemplateRequest(ApiModel):
     intro_text: str = text(4000)
     payment_text: str = text(4000)
     closing_text: str = text(4000)
+    bank_account_id: UUID | None = None
+    """None: the default account of the currency."""
 
 
 class PlanRequest(ApiModel):
@@ -81,6 +83,7 @@ class PlanRequest(ApiModel):
                 intro_text=template.intro_text,
                 payment_text=template.payment_text,
                 closing_text=template.closing_text,
+                bank_account_id=template.bank_account_id,
             ),
         )
 
@@ -110,6 +113,7 @@ class InvoiceTemplateResponse(ApiModel):
     intro_text: str
     payment_text: str
     closing_text: str
+    bank_account_id: UUID | None
 
     @classmethod
     def of(cls, plan: RecurringPlan) -> Self:
@@ -140,6 +144,7 @@ class InvoiceTemplateResponse(ApiModel):
             intro_text=draft.intro_text,
             payment_text=draft.payment_text,
             closing_text=draft.closing_text,
+            bank_account_id=draft.bank_account_id,
         )
 
 

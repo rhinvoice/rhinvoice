@@ -10,6 +10,7 @@ import pytest
 from rhinvoice.application.company.handlers import CompanyHandlers
 from rhinvoice.application.document.printing import sample_customer
 from rhinvoice.application.errors import ConflictError
+from rhinvoice.domain.company.bank_account import BankAccount
 from rhinvoice.domain.company.print_layout import (
     FooterAccounts,
     LogoPosition,
@@ -242,3 +243,58 @@ def test_documents_issued_before_layouts_existed_use_the_current_one(store: Stor
     )
     store.print_layout = PrintLayout(template=PrintTemplate.PLAIN)
     assert "template-plain" in printing.html(issued.id)
+
+
+def _provider(store: Store, **overrides: object) -> BankAccount:
+    provider = factories.bank_account(
+        iban=Iban.parse("CH5800791123000889012"),
+        holder="Inkasso AG",
+        third_party=True,
+        holder_address=factories.address(street="Zahlweg", postal_code="4001", city="Basel"),
+        **overrides,
+    )
+    store.bank_accounts[provider.id] = provider
+    return provider
+
+
+def test_the_footer_can_list_no_account(store: Store) -> None:
+    text = footer(render(store, PrintLayout(footer_accounts=FooterAccounts.NONE)))
+    assert "IBAN" not in text
+    assert "Bankverbindung" not in text
+
+
+def test_all_accounts_are_the_own_ones(store: Store) -> None:
+    _provider(store)
+    text = footer(render(store, ALL))
+    assert "CH93 0076" in text
+    assert "CH56 0483" in text
+    assert "Inkasso AG" not in text
+    assert "CH58" not in text
+
+
+def test_a_document_paid_to_a_third_party_names_it(store: Store) -> None:
+    provider = _provider(store, bic=Bic.parse("UBSWCHZH80A"))
+    store.print_layout = ALL
+    printing = printing_for(store)
+    html = printing.preview_html(DocumentType.INVOICE, draft(bank_account_id=provider.id))
+    assert (
+        '<p class="payee">Zahlung an: Inkasso AG · IBAN CH58 0079 1123 0008 8901 2'
+        " · BIC UBSWCHZH80A</p>" in html
+    )
+    # Listed after the own accounts, only on documents paid to it.
+    assert "Inkasso AG" in footer(html)
+    assert footer(html).index("CH56 0483") < footer(html).index("CH58 0079")
+    store.print_layout = PrintLayout()
+    paid_to_it = printing.preview_html(
+        DocumentType.INVOICE, draft(bank_account_id=provider.id, payment_text="")
+    )
+    assert '<p class="payee">Zahlung an: Inkasso AG' in paid_to_it
+    assert '<p class="payment-text">' not in paid_to_it
+    assert "CH93" not in footer(paid_to_it)
+    assert "Zahlung an" not in printing.preview_html(DocumentType.INVOICE, draft())
+
+
+def test_own_accounts_name_no_payee(store: Store) -> None:
+    html = render(store, PrintLayout())
+    assert "Zahlung an" not in html
+    assert 'class="payee' not in html

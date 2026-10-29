@@ -129,6 +129,10 @@ class BankAccountRequest(ApiModel):
     qr_iban: str | None = Field(default=None, max_length=42)
     bic: str | None = Field(default=None, max_length=14)
     is_default: bool = False
+    third_party: bool = False
+    """The account belongs to someone else who collects the payment (ADR 0037)."""
+    holder_address: AddressSchema | None = None
+    """The third party's address; required for third parties, ignored otherwise."""
 
     def to_command(self) -> SaveBankAccount:
         return SaveBankAccount(
@@ -139,6 +143,8 @@ class BankAccountRequest(ApiModel):
             qr_iban=self.qr_iban,
             bic=self.bic,
             is_default=self.is_default,
+            third_party=self.third_party,
+            holder_address=None if self.holder_address is None else self.holder_address.to_input(),
         )
 
 
@@ -152,6 +158,8 @@ class BankAccountResponse(ApiModel):
     qr_iban: str | None
     bic: str | None
     is_default: bool
+    third_party: bool
+    holder_address: AddressSchema | None
 
     @classmethod
     def of(cls, account: BankAccount) -> Self:
@@ -165,6 +173,10 @@ class BankAccountResponse(ApiModel):
             qr_iban=None if account.qr_iban is None else account.qr_iban.value,
             bic=None if account.bic is None else account.bic.value,
             is_default=account.is_default,
+            third_party=account.third_party,
+            holder_address=(
+                None if account.holder_address is None else AddressSchema.of(account.holder_address)
+            ),
         )
 
 

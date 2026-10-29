@@ -272,6 +272,25 @@ table.lines {
   flex: 1;
 }
 
+/* A third party collects the payment: its name next to the IBAN (ADR 0037). */
+.payment .payee-block {
+  white-space: normal;
+}
+
+.payment .payment-text {
+  margin: 0 0 2mm;
+  white-space: pre-line;
+}
+
+.payment .payee {
+  margin-top: 0;
+  font-weight: 500;
+}
+
+.payment .payee-block .payee {
+  margin: 0;
+}
+
 .epc {
   flex: none;
   margin: 0 0 4mm;

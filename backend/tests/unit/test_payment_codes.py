@@ -519,3 +519,50 @@ def test_the_date_of_supply_is_printed(store: Store) -> None:
     assert cancellation.view.document.type is DocumentType.CANCELLATION
     later = replace(cancellation, issue_date=date(2026, 5, 1))
     assert "<dt>Leistungsdatum</dt><dd>09.03.2026</dd>" in renderer.html(later)
+
+
+def test_the_qr_bill_pays_a_third_party_at_its_address(store: Store) -> None:
+    provider = factories.bank_account(
+        iban=Iban.parse("CH5800791123000889012"),
+        holder="Inkasso AG",
+        third_party=True,
+        holder_address=factories.address(
+            street="Zahlweg", house_number="3", postal_code="4001", city="Basel"
+        ),
+    )
+    store.bank_accounts[provider.id] = provider
+    bill = qr_svg(issued(store, bank_account_id=provider.id))
+    assert "Inkasso AG" in bill
+    assert "Zahlweg 3" in bill
+    assert "4001 Basel" in bill
+    assert "Bahnhofstrasse" not in bill
+    # Own accounts keep the company's address.
+    own = qr_svg(issued(store))
+    assert "Bahnhofstrasse 1" in own
+    assert "Zahlweg" not in own
+
+
+def test_the_epc_qr_pays_a_third_party(german: Store, monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[dict[str, Any]] = []
+    real = segno_helpers.make_epc_qr
+
+    def spy(**values: Any) -> Any:  # noqa: ANN401 - segno's own types
+        calls.append(values)
+        return real(**values)
+
+    monkeypatch.setattr(segno_helpers, "make_epc_qr", spy)
+    provider = factories.bank_account(
+        currency=Currency.EUR,
+        iban=Iban.parse("AT611904300234573201"),
+        holder="Factoring Beispiel GmbH",
+        third_party=True,
+        holder_address=factories.address(
+            postal_code="10117", city="Berlin", country=CountryCode("DE")
+        ),
+    )
+    german.bank_accounts[provider.id] = provider
+    model = issued(german, currency=Currency.EUR, bank_account_id=provider.id)
+    assert epc_qr(model, "Rechnung R20260001") is not None
+    assert [(call["name"], call["iban"]) for call in calls] == [
+        ("Factoring Beispiel GmbH", "AT611904300234573201")
+    ]

@@ -2096,6 +2096,7 @@ export interface components {
             currency: components["schemas"]["Currency"];
             /** Holder */
             holder: string;
+            holder_address?: components["schemas"]["AddressSchema"] | null;
             /** Iban */
             iban: string;
             /**
@@ -2105,6 +2106,11 @@ export interface components {
             is_default: boolean;
             /** Qr Iban */
             qr_iban?: string | null;
+            /**
+             * Third Party
+             * @default false
+             */
+            third_party: boolean;
         };
         /** BankAccountResponse */
         BankAccountResponse: {
@@ -2115,6 +2121,7 @@ export interface components {
             currency: components["schemas"]["Currency"];
             /** Holder */
             holder: string;
+            holder_address: components["schemas"]["AddressSchema"] | null;
             /** Iban */
             iban: string;
             /** Iban Formatted */
@@ -2128,6 +2135,8 @@ export interface components {
             is_default: boolean;
             /** Qr Iban */
             qr_iban: string | null;
+            /** Third Party */
+            third_party: boolean;
         };
         /** Body_company_upload_logo */
         Body_company_upload_logo: {
@@ -2372,6 +2381,8 @@ export interface components {
         };
         /** CreateRequest */
         CreateRequest: {
+            /** Bank Account Id */
+            bank_account_id?: string | null;
             /**
              * Closing Text
              * @default
@@ -2715,6 +2726,8 @@ export interface components {
         };
         /** DocumentResponse */
         DocumentResponse: {
+            /** Bank Account Id */
+            bank_account_id: string | null;
             /** Cancelled By Id */
             cancelled_by_id: string | null;
             /** Closing Text */
@@ -2810,6 +2823,8 @@ export interface components {
         DocumentType: "quote" | "invoice" | "cancellation";
         /** DraftRequest */
         DraftRequest: {
+            /** Bank Account Id */
+            bank_account_id?: string | null;
             /**
              * Closing Text
              * @default
@@ -3001,7 +3016,7 @@ export interface components {
          * FooterAccounts
          * @enum {string}
          */
-        FooterAccounts: "invoice_currency" | "all";
+        FooterAccounts: "invoice_currency" | "all" | "none";
         /** Health */
         Health: {
             /** Database */
@@ -3117,6 +3132,8 @@ export interface components {
          * @description The invoice every period starts with.
          */
         InvoiceTemplateRequest: {
+            /** Bank Account Id */
+            bank_account_id?: string | null;
             /**
              * Closing Text
              * @default
@@ -3155,6 +3172,8 @@ export interface components {
         };
         /** InvoiceTemplateResponse */
         InvoiceTemplateResponse: {
+            /** Bank Account Id */
+            bank_account_id: string | null;
             /** Closing Text */
             closing_text: string;
             currency: components["schemas"]["Currency"];

@@ -31,12 +31,15 @@
     <span class="value {{ 'grand' if row.emphasis else '' }}">{{ row.value }}</span>
     {% endfor %}
   </div>
-  {% if epc_qr %}
+  {% if epc_qr or payee %}
   <div class="payment">
+    {% if payee %}<p class="text payee">{{ payee }}</p>{% endif %}
+    {% if epc_qr %}
     <figure class="epc">
       {{ epc_qr }}
       <figcaption>{{ labels.epc_caption }}</figcaption>
     </figure>
+    {% endif %}
   </div>
   {% endif %}
 {% endblock %}

@@ -168,6 +168,8 @@ class Payment:
     bic: str | None
     remittance: str
     """BT-83: the QR or creditor reference of the payment part, else the number."""
+    payee: str | None = None
+    """BT-59: the name of a third party paid instead of the seller (BG-10, BR-17)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -272,6 +274,7 @@ def _payment(model: PrintModel, profile: EInvoiceProfile) -> Payment | None:
         holder=account.holder,
         bic=None if account.bic is None else account.bic.value,
         remittance=reference or number,
+        payee=account.holder if account.third_party else None,
     )
 
 

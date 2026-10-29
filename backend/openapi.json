@@ -881,6 +881,16 @@
             "title": "Holder",
             "type": "string"
           },
+          "holder_address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AddressSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "iban": {
             "maxLength": 42,
             "title": "Iban",
@@ -902,6 +912,11 @@
               }
             ],
             "title": "Qr Iban"
+          },
+          "third_party": {
+            "default": false,
+            "title": "Third Party",
+            "type": "boolean"
           }
         },
         "required": [
@@ -938,6 +953,16 @@
             "title": "Holder",
             "type": "string"
           },
+          "holder_address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AddressSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "iban": {
             "title": "Iban",
             "type": "string"
@@ -965,6 +990,10 @@
               }
             ],
             "title": "Qr Iban"
+          },
+          "third_party": {
+            "title": "Third Party",
+            "type": "boolean"
           }
         },
         "required": [
@@ -976,7 +1005,9 @@
           "iban_formatted",
           "qr_iban",
           "bic",
-          "is_default"
+          "is_default",
+          "third_party",
+          "holder_address"
         ],
         "title": "BankAccountResponse",
         "type": "object"
@@ -1571,6 +1602,18 @@
       "CreateRequest": {
         "additionalProperties": false,
         "properties": {
+          "bank_account_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Account Id"
+          },
           "closing_text": {
             "default": "",
             "maxLength": 4000,
@@ -2560,6 +2603,18 @@
       "DocumentResponse": {
         "additionalProperties": false,
         "properties": {
+          "bank_account_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Account Id"
+          },
           "cancelled_by_id": {
             "anyOf": [
               {
@@ -2838,6 +2893,7 @@
           "intro_text",
           "payment_text",
           "closing_text",
+          "bank_account_id",
           "notice",
           "lines",
           "totals",
@@ -2897,6 +2953,18 @@
       "DraftRequest": {
         "additionalProperties": false,
         "properties": {
+          "bank_account_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Account Id"
+          },
           "closing_text": {
             "default": "",
             "maxLength": 4000,
@@ -3454,7 +3522,8 @@
       "FooterAccounts": {
         "enum": [
           "invoice_currency",
-          "all"
+          "all",
+          "none"
         ],
         "title": "FooterAccounts",
         "type": "string"
@@ -3819,6 +3888,18 @@
         "additionalProperties": false,
         "description": "The invoice every period starts with.",
         "properties": {
+          "bank_account_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Account Id"
+          },
           "closing_text": {
             "default": "",
             "maxLength": 4000,
@@ -3900,6 +3981,18 @@
       "InvoiceTemplateResponse": {
         "additionalProperties": false,
         "properties": {
+          "bank_account_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Account Id"
+          },
           "closing_text": {
             "title": "Closing Text",
             "type": "string"
@@ -3969,7 +4062,8 @@
           "reference",
           "intro_text",
           "payment_text",
-          "closing_text"
+          "closing_text",
+          "bank_account_id"
         ],
         "title": "InvoiceTemplateResponse",
         "type": "object"

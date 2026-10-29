@@ -34,6 +34,8 @@ faq:
     a: Ja, in der öffentlichen Demo für die Schweiz (ch.rhinvoice.com), Deutschland (de.rhinvoice.com) und Österreich (at.rhinvoice.com). Sie setzt sich jede Stunde zurück und nimmt keine Uploads an, also keine Importe, kein Logo und keine Dateien. E-Mails verschickt sie nicht.
   - q: "Warum lehnt meine Bank-App den QR-Code aus der Demo ab?"
     a: "Die Demo rechnet mit offiziellen Beispielkonten, nicht mit echten. Bei Schweizer Rechnungen in CHF ist es die Beispiel-QR-IBAN von SIX, deren Bankkennung zu keiner Bank gehört; Bank-Apps lehnen den QR-Code darum ab. Die übrigen QR-Codes lassen sich scannen, führen aber ebenfalls auf Beispielkonten: bitte nichts überweisen. In Ihrer eigenen Installation steht Ihr Konto im QR-Code, und Ihre Kunden können ihn wie gewohnt scannen."
+  - q: Kann eine Rechnung auf ein anderes Konto bezahlt werden, etwa an eine Factoring-Firma?
+    a: "Ja. Seit Version 0.9.0 erfassen Sie mehrere Bankkonten pro Währung und wählen im Editor pro Rechnung eines. Ein Konto lässt sich als Konto eines Dritten markieren, etwa eines Finanzdienstleisters: Die Rechnung druckt dann «Zahlung an:» mit dem Kontoinhaber, QR-Rechnung und E-Rechnung nennen ihn als Zahlungsempfänger."
 ---
 
 import Faq from "../../../../components/Faq.astro";

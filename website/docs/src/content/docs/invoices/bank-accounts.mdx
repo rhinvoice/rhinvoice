@@ -1,0 +1,83 @@
+---
+title: Bank accounts per invoice and third-party payees
+description: "Several bank accounts per currency in Rhinvoice: one default, another chosen per invoice. Also a financial service provider's account, on QR-bill and e-invoice."
+since: 0.9.0
+faq:
+  - q: Can I choose the bank account per invoice?
+    a: Yes. When a currency has more than one bank account, the editor shows the field "Bank details" in the "Dates" card. The default account of the currency is preselected; you can pick another one for this quote or invoice.
+  - q: Can a financial service provider collect the payment for my invoices?
+    a: Yes. Add the provider's account under "Settings → Bank accounts" and tick "Account belongs to a third party (e.g. a financial service provider)". Invoices paid to it print "Pay to:" with the holder, and the QR-bill and e-invoice name the provider as payee.
+  - q: What happens to my invoices when I delete a bank account?
+    a: Drafts and recurring plans that used it fall back to the default account of their currency. Issued documents keep the account they were issued with.
+  - q: Can I leave the bank details out of the footer?
+    a: Yes. Under "Settings → Print template", card "Footer", choose "None" for "Bank details". The payment details above and the QR codes stay on the invoice.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Rhinvoice can hold **several bank accounts per currency**. One of them is the default of its currency, and every quote and invoice is paid to that account unless you **choose another one in the editor**. An account can also belong to **a third party**, for example a financial service provider that collects the payment for you: the invoice then names that third party as payee, also in the QR code and the e-invoice.
+
+## Several accounts, one default per currency
+
+You add accounts under *Settings → Bank accounts → Add account* with bank, account holder, IBAN, BIC and currency (see [first start](/docs/getting-started/first-start/)). Exactly one account per currency is the default: tick *Default account for this currency* on it. A new document uses the default account of its currency, for example an invoice in EUR your default EUR account.
+
+## Choosing the account for one invoice
+
+<Steps>
+
+1. Open the quote or invoice in the editor.
+2. In the card *Dates*, below date and due date, choose the account under *Bank details*. The field only appears when the document's currency has more than one account.
+3. The live preview shows the chosen account at once, in the footer and the payment details. The invoice gets its QR code for this account when it is issued.
+
+</Steps>
+
+Each option shows the bank (for third-party accounts the holder) and a shortened IBAN. The default account is marked *(default)*, accounts of third parties *(third party)*. The default is preselected.
+
+- **Changing the currency** sets the choice back to the default account of the new currency.
+- **Deleting an account** never blocks: drafts that used it fall back to the default account of their currency.
+- **Issued documents** keep the account they were issued with, like all their content ([issuing and cancelling](/docs/invoices/issue-and-cancel/)).
+- **Recurring invoices** have the same choice: in the plan, under *More details*, next to the currency. Every invoice the plan writes is paid to that account ([recurring invoices](/docs/invoices/recurring/)).
+
+## Accounts of a third party
+
+Some businesses have their invoices paid to a financial service provider, for example for factoring. That account belongs to the provider, not to you, and the invoice must say so.
+
+<Steps>
+
+1. Under *Settings → Bank accounts*, add the provider's account with the provider as *Account holder*.
+2. Tick *Account belongs to a third party (e.g. a financial service provider)*.
+3. Fill in the *Address of the account holder*. Postal code and city are required.
+
+</Steps>
+
+The list of accounts marks it with the badge *Third-party account*. A third-party account can also be the default of its currency. Rhinvoice never guesses from the holder's name whether an account is a third party's: only the checkbox counts.
+
+What changes on documents paid to a third-party account:
+
+| Where | What it shows |
+|---|---|
+| Payment details on the PDF | "Pay to:" with the holder, IBAN and BIC (in German "Zahlung an:", in French "Paiement à :", in Italian "Pagamento a:"), also on payment reminders |
+| Swiss QR-bill (CH, LI) | The holder as creditor, with the third party's address. Your own accounts keep your company's address. |
+| EPC QR code (GiroCode) | The account holder as beneficiary, as with your own accounts |
+| E-invoice (ZUGFeRD / Factur-X EN 16931, XRechnung) | The chosen account as payment account, and the third party as payee (BG-10, BT-59) |
+
+<Aside type="tip" title="Most invoices go to the provider">
+Make the provider's account the default of its currency, and its payment terms the default text: under *Settings → Texts*, tick *Insert into new documents (default)* on the matching *Payment terms*. New invoices then start with both. Bank accounts and payment texts are deliberately not linked: if you choose another account on one invoice, adjust the payment terms there too.
+</Aside>
+
+## Bank details in the footer
+
+Under *Settings → Print template*, card *Footer*, *Bank details* sets which accounts the footer of your documents lists:
+
+| *Bank details* | Footer |
+|---|---|
+| *Invoice currency only* (preset) | Only the account the document is paid to |
+| *All accounts* | All your own accounts, for example CHF and EUR. A third party's account is added only on documents paid to it. |
+| *None* | No bank details in the footer |
+
+A third party's account never appears on documents that are not paid to it. Accounts of the same bank are listed together. The setting only changes the footer: the payment details and the QR codes always use the account the invoice is paid to. Issued documents keep their PDF and look as before.
+
+## Questions
+
+<Faq />

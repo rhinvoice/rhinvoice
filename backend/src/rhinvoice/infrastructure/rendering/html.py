@@ -59,6 +59,7 @@ if TYPE_CHECKING:
     from rhinvoice.domain.company.company import Company
     from rhinvoice.domain.country.profile import CountryTerms
     from rhinvoice.domain.customer.customer import Customer
+    from rhinvoice.domain.document.lines import DocumentLine
     from rhinvoice.domain.shared.address import Address
 
 # Static weights, not the variable font: Chromium embeds variable fonts as Type 3
@@ -77,6 +78,7 @@ FONT_SUBSETS = {
 }
 SEPARATOR = " " + chr(0x00B7) + " "
 EN_DASH = " " + chr(0x2013) + " "
+TIMES = chr(0x00D7)
 
 
 @dataclass(frozen=True, slots=True)
@@ -137,6 +139,8 @@ class PrintLine:
     rate: str
     amount: str
     line_id: str
+    index: int
+    """Of the line in the document; the editor's preview selects the line by it."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -144,6 +148,10 @@ class TotalRow:
     label: str
     value: str
     emphasis: bool = False
+    kind: str = ""
+    """"" for amounts, "pass_through_title" and "pass_through" for the block (ADR 0039)."""
+    index: int | None = None
+    """Of a pass-through line in the document (the editor's preview selects it)."""
 
 
 _BLANK_LINES = re.compile(r"\n[ \t]*\n\s*")
@@ -257,6 +265,7 @@ def _context(model: PrintModel) -> dict[str, object]:
         "labels": labels,
         "show_rate": content.charges_vat,
         "lines": _lines(model, setting),
+        "pass_through": any(line.is_pass_through for line in content.lines),
         "prices_gross": labels["prices_gross"].format(tax=setting.tax) if gross else "",
         "totals": _totals(model, setting),
         "notices": [text for _, text in model.view.notices if text],
@@ -369,15 +378,20 @@ def _service(start: date | None, end: date | None, setting: _Setting) -> list[tu
 
 
 def _lines(model: PrintModel, setting: _Setting) -> list[PrintLine]:
+    """List the positions; pass-through lines are printed in their own block (ADR 0039)."""
     content = model.view.document.content
     amounts = {line.line_id: line for line in model.view.totals.lines}
     lines: list[PrintLine] = []
     position = 0
-    for line in content.lines:
+    for index, line in enumerate(content.lines):
         if line.kind is LineKind.TEXT:
             lines.append(
-                PrintLine("text", "", line.description, line.details, "", "", "", "", str(line.id))
+                PrintLine(
+                    "text", "", line.description, line.details, "", "", "", "", str(line.id), index
+                )
             )
+            continue
+        if line.is_pass_through:
             continue
         position += 1
         calculated = amounts[line.id]
@@ -385,22 +399,57 @@ def _lines(model: PrintModel, setting: _Setting) -> list[PrintLine]:
         if line.discount_percent:
             discount = percent(line.discount_percent, setting.locale)
             details.append(setting.labels["discount_line"].format(percent=discount))
-        unit = "" if line.unit is None else line.unit.label(setting.language)
-        quantity = number(line.quantity, setting.locale)
         lines.append(
             PrintLine(
                 kind="item",
                 position=str(position),
                 description=line.description,
                 details="\n".join(details),
-                quantity=f"{quantity}{NO_BREAK_SPACE}{unit}" if unit else quantity,
+                quantity=_quantity(line, setting),
                 price=unit_price(line.unit_price, setting.locale),
                 rate=(percent(calculated.tax_rate, setting.locale) if content.charges_vat else ""),
                 amount=setting.amount(calculated.amount.amount),
                 line_id=str(line.id),
+                index=index,
             ),
         )
     return lines
+
+
+def _quantity(line: DocumentLine, setting: _Setting) -> str:
+    unit = "" if line.unit is None else line.unit.label(setting.language)
+    quantity = number(line.quantity, setting.locale)
+    return f"{quantity}{NO_BREAK_SPACE}{unit}" if unit else quantity
+
+
+def _pass_through(model: PrintModel, setting: _Setting) -> list[TotalRow]:
+    """Build the block of pass-through lines: a title, then each with its amount (ADR 0039).
+
+    In CH and LI such amounts stay outside the taxable amount only when shown separately
+    (Art. 24 Abs. 6 lit. b MWSTG), so they never mix with the positions.
+    """
+    content = model.view.document.content
+    amounts = {line.line_id: line.amount for line in model.view.totals.lines}
+    rows: list[TotalRow] = []
+    for index, line in enumerate(content.lines):
+        if not line.is_pass_through:
+            continue
+        label = line.description
+        if line.quantity != 1 or line.discount_percent:
+            price = unit_price(line.unit_price, setting.locale)
+            label += f" ({_quantity(line, setting)}{NO_BREAK_SPACE}{TIMES} {price}"
+            if line.discount_percent:
+                discount = percent(line.discount_percent, setting.locale)
+                label += ", " + setting.labels["discount_line"].format(percent=discount)
+            label += ")"
+        rows.append(
+            TotalRow(
+                label, setting.amount(amounts[line.id].amount), kind="pass_through", index=index
+            )
+        )
+    if rows:
+        rows.insert(0, TotalRow(setting.labels["pass_through"], "", kind="pass_through_title"))
+    return rows
 
 
 def _totals(model: PrintModel, setting: _Setting) -> list[TotalRow]:
@@ -431,6 +480,7 @@ def _totals(model: PrintModel, setting: _Setting) -> list[TotalRow]:
             for group in totals.groups
             if group.rate
         )
+    rows.extend(_pass_through(model, setting))
     if totals.rounding.amount:
         rows.append(TotalRow(labels["rounding"], setting.amount(totals.rounding.amount)))
     total_label = f"{labels['total']} {totals.currency.value}"

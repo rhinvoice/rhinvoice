@@ -188,6 +188,94 @@ def test_blank_lines_split_texts_into_paragraphs(printing: PrintHandlers) -> Non
     assert '<div class="text"><p>Freundliche Grüsse</p></div>' in html
 
 
+FEE = LineInput(
+    kind=LineKind.ITEM,
+    description="Gebühr Handelsregister",
+    quantity="1",
+    unit_price="250.37",
+    tax_category=TaxCategory.PASS_THROUGH,
+)
+COPIES = LineInput(
+    kind=LineKind.ITEM,
+    description="Grundbuchauszüge",
+    quantity="2",
+    unit="C62",
+    unit_price="20",
+    discount_percent="10",
+    tax_category=TaxCategory.PASS_THROUGH,
+)
+
+
+def test_pass_through_lines_print_in_their_own_block(printing: PrintHandlers) -> None:
+    html = printing.preview_html(
+        DocumentType.INVOICE,
+        draft(
+            lines=(HOURS, FEE, TITLE, FOOD, COPIES),
+            discount_kind=DiscountKind.PERCENT,
+            discount_value="5",
+        ),
+    )
+    # Not in the positions table: the positions keep their numbers and indexes.
+    assert "Gebühr Handelsregister</td>" not in html
+    assert '<tr data-line="' in html
+    assert 'data-index="0"' in html
+    assert '<tr class="text" data-line="' in html
+    assert '<td class="pos">2</td>' in html
+    assert '<td class="pos">3</td>' not in html
+    title = "Durchlaufende Posten (im Namen und auf Rechnung des Kunden bezahlt)"
+    assert f'<span class="pass-through-title">{title}</span>' in html
+    assert (
+        '<div class="pass-through" data-index="1"><span>Gebühr Handelsregister</span>'
+        '<span class="value">250.37</span></div>'
+    ) in html
+    assert (
+        f'<div class="pass-through" data-index="4"><span>Grundbuchauszüge (2{NBSP}Stk.{NBSP}'
+        f"× 20.00, abzüglich 10{NBSP}% Rabatt)</span>"
+        '<span class="value">36.00</span></div>'
+    ) in html
+    # After the tax, before the rounding and the total; the discount leaves them alone.
+    labels = [
+        "Zwischensumme",
+        f"Rabatt 5{NBSP}%",
+        "Total netto",
+        f"MWST 2.6{NBSP}% auf 35.20",
+        title,
+        "Gebühr Handelsregister",
+        "Rundung",
+        "Total CHF",
+    ]
+    positions = [html.index(f">{label}") for label in labels]
+    assert positions == sorted(positions)
+    # 13'899.95 + 250.37 + 36.00 = 14'186.32, rounded to 5 centimes.
+    assert ">14’186.30<" in html
+
+
+def test_a_document_of_pass_through_lines_only(printing: PrintHandlers) -> None:
+    html = printing.preview_html(DocumentType.INVOICE, draft(lines=(FEE,), language=Language.EN))
+    assert '<table class="lines">' not in html
+    title = "Pass-through items (paid in the name and for the account of the customer)"
+    assert f'<span class="pass-through-title">{title}</span>' in html
+    assert ">Total CHF<" in html
+    assert html.count(">250.37<") == 1
+    assert ">250.35<" in html
+    empty = printing.preview_html(DocumentType.INVOICE, draft(lines=()))
+    assert '<div class="totals">' not in empty
+
+
+@pytest.mark.parametrize(
+    ("language", "title"),
+    [
+        (Language.FR, "Débours (payés au nom et pour le compte du client)"),
+        (Language.IT, "Spese anticipate (pagate in nome e per conto del cliente)"),
+    ],
+)
+def test_the_pass_through_block_in_french_and_italian(
+    printing: PrintHandlers, language: Language, title: str
+) -> None:
+    html = printing.preview_html(DocumentType.INVOICE, draft(lines=(HOURS, FEE), language=language))
+    assert f'<span class="pass-through-title">{title}</span>' in html
+
+
 @pytest.mark.parametrize(
     ("register", "language", "lines"),
     [

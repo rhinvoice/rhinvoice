@@ -6,6 +6,7 @@
   {% if cancels %}<p class="cancels">{{ cancels }}</p>{% endif %}
   {% if intro %}<div class="text">{% for part in intro_paragraphs %}<p>{{ part }}</p>{% endfor %}</div>{% endif %}
 
+  {% if lines or pass_through %}
   {% if lines %}
   <table class="lines">
     <thead>
@@ -21,13 +22,13 @@
     <tbody>
       {% for line in lines %}
       {% if line.kind == "text" %}
-      <tr class="text" data-line="{{ line.line_id }}" data-index="{{ loop.index0 }}">
+      <tr class="text" data-line="{{ line.line_id }}" data-index="{{ line.index }}">
         {% if position_numbers %}<td></td>{% endif %}
         <td colspan="{{ 4 if show_rate else 3 }}">{{ line.description }}{% if line.details %}<span class="details">{{ line.details }}</span>{% endif %}</td>
         <td></td>
       </tr>
       {% else %}
-      <tr data-line="{{ line.line_id }}" data-index="{{ loop.index0 }}">
+      <tr data-line="{{ line.line_id }}" data-index="{{ line.index }}">
         {% if position_numbers %}<td class="pos">{{ line.position }}</td>{% endif %}
         <td>{{ line.description }}{% if line.details %}<span class="details">{{ line.details }}</span>{% endif %}</td>
         <td class="num">{{ line.quantity }}</td>
@@ -39,11 +40,18 @@
       {% endfor %}
     </tbody>
   </table>
+  {% endif %}
 
   <div class="totals">
     {% for row in totals %}
+    {% if row.kind == "pass_through_title" %}
+    <span class="pass-through-title">{{ row.label }}</span>
+    {% elif row.kind == "pass_through" %}
+    <div class="pass-through" data-index="{{ row.index }}"><span>{{ row.label }}</span><span class="value">{{ row.value }}</span></div>
+    {% else %}
     <span class="{{ 'grand' if row.emphasis else '' }}">{{ row.label }}</span>
     <span class="value {{ 'grand' if row.emphasis else '' }}">{{ row.value }}</span>
+    {% endif %}
     {% endfor %}
   </div>
   {% if prices_gross %}<p class="prices-gross">{{ prices_gross }}</p>{% endif %}

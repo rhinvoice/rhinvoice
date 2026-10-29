@@ -296,6 +296,7 @@ const DETAIL: DocumentDetail = {
   intro_text: "Hallo",
   payment_text: "Sofort",
   closing_text: "Danke",
+  bank_account_id: "b1",
   notice: "",
   lines: [
     {
@@ -367,7 +368,9 @@ describe("conversion", () => {
       discount_value: "50",
       treatment: "export",
       override_reason: "",
+      bank_account_id: "b1",
     });
+    expect(documentToForm({ ...DETAIL, bank_account_id: null }, "de-DE").bank_account_id).toBe("");
     expect(form.lines).toEqual([
       {
         key: "l1",
@@ -481,6 +484,7 @@ describe("conversion", () => {
       discount_value: "50",
       treatment_override: "export",
       override_reason: "Ausfuhr",
+      bank_account_id: "b1",
     });
     expect(draft.lines).toEqual([
       {
@@ -519,6 +523,7 @@ describe("conversion", () => {
       discount_value: "0",
       treatment_override: null,
       override_reason: "",
+      bank_account_id: null,
     });
     expect(plain.lines?.[0]).toMatchObject({ unit: null, unit_price: "0", discount_percent: "0" });
   });

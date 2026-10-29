@@ -83,6 +83,7 @@ const PLAN: Plan = {
     intro_text: "Hallo",
     payment_text: "Zahlbar",
     closing_text: "Danke",
+    bank_account_id: "b1",
   },
   runs: [],
 };
@@ -140,6 +141,7 @@ describe("recurring plans", () => {
       discount_value: "5",
       issue_date: "",
       treatment: "",
+      bank_account_id: "b1",
     });
     expect(form.lines.map((line) => [line.description, line.unit_price])).toEqual([
       ["Hosting", "29.00"],
@@ -150,6 +152,8 @@ describe("recurring plans", () => {
       "de-CH",
     );
     expect([withoutDiscount.language, withoutDiscount.discount_value]).toEqual(["en", ""]);
+    const ownDefault = { ...PLAN, template: { ...PLAN.template, bank_account_id: null } };
+    expect(planToForm(ownDefault, COMPANY, "de-CH").bank_account_id).toBe("");
     const zero = { ...PLAN, template: { ...PLAN.template, discount_value: "0" } };
     expect(planToForm(zero, COMPANY, "de-CH").discount_value).toBe("");
   });
@@ -193,6 +197,7 @@ describe("recurring plans", () => {
         intro_text: "Hallo",
         payment_text: "Zahlbar",
         closing_text: "Danke",
+        bank_account_id: "b1",
       },
     });
     expect(
@@ -252,6 +257,7 @@ describe("recurring plans", () => {
       language: null,
       lines: [],
       discount_value: null,
+      bank_account_id: null,
     });
   });
 

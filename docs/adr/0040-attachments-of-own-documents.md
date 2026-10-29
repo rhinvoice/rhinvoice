@@ -14,7 +14,9 @@ files (ADR 0019); documents written here had none.
   removes one while the document is a draft. The same checks as for imported invoices: PDF
   magic bytes (`%PDF-`), at most 20 MB per file (the body limit of the path stays 21 MB), at
   most ten attachments per draft. Names lose folders, control characters and the characters
-  `/\:*?"<>|`, are NFC-normalised and end in `.pdf` (`upload_name`). The public demo refuses
+  `/\:*?"<>|` as well as Unicode format characters (bidi overrides, zero widths) and line
+  separators, are NFC-normalised and end in `.pdf` (`upload_name`). Downloads revalidate
+  (`Cache-Control: private, no-cache` with the hash as ETag), since a draft's file may go. The public demo refuses
   uploads and removals, as before.
 - **Frozen when issued.** From issuing on the files are only ever added to imported invoices,
   never to issued documents written here, and never changed or removed (GoBD, OR 958f). The
@@ -29,7 +31,8 @@ files (ADR 0019); documents written here had none.
   (the editor then continues on the draft's page); recurring plans have none. Issued documents
   show their files in a card *Anhänge* when they have some.
 - **Mail.** Sending a document attaches its PDF, then the XRechnung if chosen, then the files
-  in the order of their names. The mail dialog lists them. An imported invoice's files stay
+  in the order of their names, at most 20 MB of them together (`mail_attachments_too_large`):
+  mail servers often refuse more. The mail dialog lists them. An imported invoice's files stay
   in the archive.
 - **Export (ADR 0038).** The ZIP adds each own document's files right after its PDF, named
   after the number and the file's own name: `R20260042_Handelsregister.pdf`. The number sorts
@@ -41,5 +44,4 @@ files (ADR 0019); documents written here had none.
 
 ## Consequences
 - The proof of a pass-through item travels with the invoice by mail and to the bookkeeper.
-- Large attachments make large mails; mail servers often refuse more than 20–25 MB. Rhinvoice
-  reports the server's refusal as for any mail.
+- Large attachments make large mails: more than 20 MB together are refused before sending.

@@ -488,7 +488,10 @@ def test_documents_are_paid_to_the_chosen_account(
     draft = create(user_client, customer_id, bank_account_id=account["id"])
     assert draft["bank_account_id"] == account["id"]
     issued = create(user_client, customer_id, bank_account_id=account["id"])
-    post(user_client, f"/api/documents/{issued['id']}/issue")
+    assert (
+        post(user_client, f"/api/documents/{issued['id']}/issue")["bank_account_id"]
+        == (account["id"])
+    )
     html = user_client.get(f"/api/documents/{issued['id']}/html").text
     assert "Zahlung an: Inkasso AG" in html
 
@@ -503,3 +506,6 @@ def test_documents_are_paid_to_the_chosen_account(
     assert user_client.delete(f"/api/bank-accounts/{account['id']}").status_code == 204
     assert user_client.get(f"/api/documents/{draft['id']}").json()["bank_account_id"] is None
     assert "Zahlung an: Inkasso AG" in user_client.get(f"/api/documents/{issued['id']}/html").text
+    # The issued invoice names the account frozen with it.
+    frozen = user_client.get(f"/api/documents/{issued['id']}").json()
+    assert frozen["bank_account_id"] == account["id"]

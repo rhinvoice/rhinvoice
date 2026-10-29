@@ -191,6 +191,48 @@ def test_with_pdfs_a_zip_holds_the_list_and_every_pdf(
     assert original in store.pdfs
 
 
+def test_the_zip_adds_the_attachments_after_each_pdf(
+    exports: ExportHandlers,
+    documents: DocumentHandlers,
+    writer: RecordingWriter,
+    store: Store,
+) -> None:
+    draft = documents.create(
+        DocumentType.INVOICE,
+        DraftInput(customer_id=CUSTOMER, lines=(HOURS,), issue_date=TODAY),
+    )
+    documents.add_file(draft.document.id, "Notar.pdf", b"%PDF-1.4 notary")
+    documents.add_file(draft.document.id, "Amt.pdf", b"%PDF-1.4 office")
+    documents.issue(draft.document.id)
+    later = invoice(documents)
+    exports.export(ExportRequest(MARCH, ExportFormat.CSV, with_pdfs=True))
+    [packed] = writer.archived
+    assert [name for name, _ in packed] == [
+        "Rechnungen-fr 2026-03.csv",
+        "R20260001.pdf",
+        "R20260001_Amt.pdf",
+        "R20260001_Notar.pdf",
+        "R20260002.pdf",
+    ]
+    assert packed[2][1] == b"%PDF-1.4 office"
+    assert packed[3][1] == b"%PDF-1.4 notary"
+    assert later in store.pdfs
+    # Without the PDFs the attachments are not even looked up.
+    exports.export(ExportRequest(MARCH, ExportFormat.CSV))
+    assert len(writer.archived) == 1
+    # One that vanished on the way (issued documents keep theirs) is left out.
+    [first, _] = documents.attachments(draft.document.id)
+    del store.attachments[first.id]
+    listing = writer.lists[0][0]
+    files = list(exports._files("x.csv", b"", listing))  # noqa: SLF001 - the generator itself
+    assert [name for name, _ in files] == [
+        "x.csv",
+        "R20260001.pdf",
+        "R20260001_Notar.pdf",
+        "R20260002.pdf",
+    ]
+
+
 def test_the_company_must_be_set_up(exports: ExportHandlers, store: Store) -> None:
     store.company = None
     with raises_exactly(ConflictError, "set up the company before exporting") as error:

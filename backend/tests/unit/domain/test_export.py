@@ -8,6 +8,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from rhinvoice.domain.document.attachment import Attachment
 from rhinvoice.domain.document.document import (
     DisplayStatus,
     Document,
@@ -460,3 +461,69 @@ def test_reserved_names_and_unicode_forms_are_taken() -> None:
     ]
     listing = export_listing(MARCH, [numbered("L")], TODAY, with_files=True, reserved=["L.pdf"])
     assert listing.rows[0].file_name == "L (2).pdf"
+
+
+# --- Pass-through items and attachments (ADR 0039, 0040) ------------------------------
+
+
+def test_pass_through_items_are_neither_net_nor_tax() -> None:
+    fee = line("1", "250.35", TaxCategory.PASS_THROUGH)
+    invoice = issued(lines=(line(), fee))
+    row = export_row(invoice, TODAY)
+    assert row.net == chf("1500.00")
+    assert row.tax == chf("121.50")
+    assert row.pass_through == chf("250.35")
+    assert row.total == chf("1871.85")
+    assert row.rates == (RateAmounts(Decimal("8.1"), chf("1500.00"), chf("121.50")),)
+    plain = issued()
+    listing = export_listing(MARCH, [plain, invoice], TODAY, with_files=False)
+    assert listing.has_pass_through
+    [franc] = listing.sums
+    assert franc.pass_through == chf("250.35")
+    assert franc.total == chf("1659.50") + chf("1871.85")
+    assert not export_listing(MARCH, [plain], TODAY, with_files=False).has_pass_through
+    assert export_row(plain, TODAY).pass_through == chf("0")
+
+
+def test_attachments_follow_the_pdf_named_after_the_number() -> None:
+    invoice = numbered("R20260042")
+    other = numbered("R20260043")
+    old = imported(issue_date=TODAY, due_date=TODAY).archive_pdf("a" * 64)
+
+    def attachment(document: Document, name: str) -> Attachment:
+        return Attachment(
+            id=new_id(),
+            document_id=document.id,
+            file_name=name,
+            sha256="b" * 64,
+            size=1,
+            added_at=NOW,
+        )
+
+    notary, office, twice = (
+        attachment(invoice, "Notar.pdf"),
+        attachment(invoice, "Amt: 3.pdf"),
+        attachment(invoice, "notar.pdf"),
+    )
+    reminder = attachment(old, "Mahnung.pdf")
+    listing = export_listing(
+        MARCH,
+        [invoice, other, old],
+        TODAY,
+        with_files=True,
+        attachments={invoice.id: [notary, office, twice], old.id: [reminder]},
+    )
+    rows = {row.number: row for row in listing.rows}
+    assert rows["R20260042"].file_name == "R20260042.pdf"
+    assert rows["R20260042"].attachment_files == (
+        (notary.id, "R20260042_Notar.pdf"),
+        (office.id, "R20260042_Amt- 3.pdf"),
+        (twice.id, "R20260042_notar (2).pdf"),
+    )
+    assert rows["R20260043"].attachment_files == ()
+    # An imported invoice's further files stay in the archive.
+    assert rows["R20150001"].attachment_files == ()
+    without = export_listing(MARCH, [invoice], TODAY, with_files=True)
+    assert without.rows[0].attachment_files == ()
+    no_files = with_file_names([(export_row(invoice, TODAY), False)], (), {invoice.id: [notary]})
+    assert no_files[0].attachment_files == ()

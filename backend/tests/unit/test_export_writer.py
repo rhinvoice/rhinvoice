@@ -19,6 +19,7 @@ from rhinvoice.domain.shared.country import CountryCode
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
+from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.infrastructure.export.table import neutralised, rate_text
 from rhinvoice.infrastructure.export.writer import FileExportWriter
 from tests.helpers import raises_exactly
@@ -348,3 +349,53 @@ def test_a_file_that_cannot_be_had_ends_the_zip() -> None:
 
     with raises_exactly(UnavailableError, "the PDF service (Gotenberg) is not reachable"):
         FileExportWriter().archive(files())
+
+
+# --- Pass-through items (ADR 0039) ---------------------------------------------------------
+
+
+def with_pass_through() -> ExportListing:
+    fee = line("1", "250.35", TaxCategory.PASS_THROUGH)
+    return export_listing(MARCH, [issued(lines=(line(), fee)), issued()], TODAY, with_files=False)
+
+
+def test_pass_through_items_have_a_column_when_there_are_some() -> None:
+    content = FileExportWriter().write(with_pass_through(), SWISS, ExportFormat.CSV, Language.DE)
+    header, first, second, _, total = rows(content)
+    at = header.index("Durchlaufende Posten")
+    assert header[at - 1 : at + 2] == ["Steuer", "Durchlaufende Posten", "Brutto"]
+    assert (first[11], first[at - 1], first[at], first[at + 1]) == (
+        "1500.00",
+        "121.50",
+        "250.35",
+        "1871.85",
+    )
+    assert second[at] == "0.00"
+    assert (total[at], total[at + 1]) == ("250.35", "3531.35")
+    workbook = load_workbook(
+        io.BytesIO(
+            FileExportWriter().write(with_pass_through(), SWISS, ExportFormat.XLSX, Language.EN)
+        )
+    )
+    sums = workbook.worksheets[1]
+    titles = [cell.value for cell in sums[1]]
+    assert titles[titles.index("Pass-through items") + 1] == "Gross"
+    assert sums.cell(2, titles.index("Pass-through items") + 1).value == pytest.approx(250.35)
+    # Without pass-through items the list stays as it was.
+    plain = FileExportWriter().write(listing(), SWISS, ExportFormat.CSV, Language.DE)
+    assert "Durchlaufende Posten" not in rows(plain)[0]
+
+
+@pytest.mark.parametrize(
+    ("language", "title"),
+    [(Language.FR, "Débours"), (Language.IT, "Spese anticipate")],
+)
+def test_the_printed_list_with_pass_through_items(language: Language, title: str) -> None:
+    printer = RecordingPrinter()
+    FileExportWriter(printer).write(with_pass_through(), SWISS, ExportFormat.PDF, language)
+    [page] = printer.pages
+    assert page.count(f'<th scope="col" class="amount">{title}</th>') == 2
+    assert page.count(">250.35<") == 2  # the invoice and the sum of the francs
+    printer = RecordingPrinter()
+    FileExportWriter(printer).write(listing(), SWISS, ExportFormat.PDF, language)
+    assert title not in printer.pages[0]

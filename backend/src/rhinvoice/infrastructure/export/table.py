@@ -105,7 +105,9 @@ def table(listing: ExportListing, company: Company, language: Language) -> Table
             "net",
         )
     ]
-    amounts = [*columns.rate_headers(), labels["tax"], labels["total"], labels["paid"]]
+    # Pass-through items get a column only when the export holds some (ADR 0039).
+    passed = [labels["pass_through"]] if listing.has_pass_through else []
+    amounts = [*columns.rate_headers(), labels["tax"], *passed, labels["total"], labels["paid"]]
     tail = [labels["paid_on"], labels["open"], labels["written_off"], labels["status"]]
     header = [*lead, *amounts, *tail] + ([labels["file"]] if listing.with_files else [])
     first_amount = len(lead) - 1
@@ -124,6 +126,7 @@ def table(listing: ExportListing, company: Company, language: Language) -> Table
             labels["net"],
             *columns.rate_headers(),
             labels["tax"],
+            *passed,
             labels["total"],
             labels["paid"],
             labels["open"],
@@ -140,6 +143,10 @@ def _rate_cells(row: ExportRow | CurrencySum, listing: ExportListing) -> list[Ce
         found = row.at_rate(rate)
         cells += [None, None] if found is None else [_amount(found.net), _amount(found.tax)]
     return cells
+
+
+def _pass_through(row: ExportRow | CurrencySum, listing: ExportListing) -> list[Cell]:
+    return [_amount(row.pass_through)] if listing.has_pass_through else []
 
 
 def _row(row: ExportRow, listing: ExportListing, language: Language) -> tuple[Cell, ...]:
@@ -161,6 +168,7 @@ def _row(row: ExportRow, listing: ExportListing, language: Language) -> tuple[Ce
         _amount(row.net),
         *_rate_cells(row, listing),
         _amount(row.tax),
+        *_pass_through(row, listing),
         _amount(row.total),
         _amount(row.paid),
         row.paid_on,
@@ -182,6 +190,7 @@ def _sum_row(found: CurrencySum, listing: ExportListing, label: str) -> tuple[Ce
         _amount(found.net),
         *_rate_cells(found, listing),
         _amount(found.tax),
+        *_pass_through(found, listing),
         _amount(found.total),
         _amount(found.paid),
         None,
@@ -201,6 +210,7 @@ def _sum(found: CurrencySum, listing: ExportListing) -> tuple[Cell, ...]:
         _amount(found.net),
         *_rate_cells(found, listing),
         _amount(found.tax),
+        *_pass_through(found, listing),
         _amount(found.total),
         _amount(found.paid),
         _amount(found.open),

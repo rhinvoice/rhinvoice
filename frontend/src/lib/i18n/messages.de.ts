@@ -923,7 +923,7 @@ export const de = {
   "documents.language": "Sprache",
   "documents.sectionDates": "Daten",
   "documents.issueDate": "Datum",
-  "documents.issueDateHint": "Leer lassen für das Datum des Ausstellens.",
+  "documents.issueDateHint": "Vorbelegt mit heute. Leer lassen für das Datum des Ausstellens.",
   "documents.dueDate": "Fällig am",
   "documents.bankAccount": "Bankverbindung",
   "documents.bankAccountHint": "Das Konto, auf das dieses Dokument bezahlt wird.",

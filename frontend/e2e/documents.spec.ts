@@ -117,8 +117,9 @@ test("create, issue, pay and cancel an invoice", async ({ page, isMobile }, test
   await expect(page.locator("#payment_text")).toHaveValue(/Zahlbar prompt und ohne Abzug\./);
   await expectAccessible(page);
   await expect(page).toHaveScreenshot("invoice-editor.png", {
-    // The customer number, the draft dates and the texts' order depend on other tests.
-    mask: [customerCard, paper.locator(".meta")],
+    // The customer number, the draft dates and the texts' order depend on other tests;
+    // the date is today's.
+    mask: [customerCard, paper.locator(".meta"), page.locator("#issue_date")],
   });
 
   // ⌘↵ / Ctrl+↵ saves the draft; the editor continues on the draft's page.

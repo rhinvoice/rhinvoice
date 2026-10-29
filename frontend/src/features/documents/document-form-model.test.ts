@@ -107,7 +107,13 @@ function issues(values: DocumentFormValues): Record<string, string> {
 describe("document form", () => {
   it("starts with the company defaults and one empty line", () => {
     const empty = emptyDocument({ ...COMPANY, default_currency: "EUR", default_language: "en" });
-    expect(empty).toMatchObject({ currency: "EUR", language: "en", customer_id: "" });
+    expect(empty).toMatchObject({
+      currency: "EUR",
+      language: "en",
+      customer_id: "",
+      issue_date: "",
+    });
+    expect(emptyDocument(COMPANY, "2026-10-29").issue_date).toBe("2026-10-29");
     expect(empty.lines).toHaveLength(1);
     expect(emptyLine()).toMatchObject({ kind: "item", quantity: "1", unit: "C62" });
     expect(emptyLine("text")).toMatchObject({ kind: "text", quantity: "", unit: "" });

@@ -175,7 +175,8 @@ export function NewDocumentPage({
           company={company}
           isNew
           defaultValues={{
-            ...emptyDocument(company),
+            // New documents start dated today; the date stays editable and may be cleared.
+            ...emptyDocument(company, todayIso()),
             ...defaultTexts(templates.data ?? [], type, company.default_language),
             customer_id: customerId ?? "",
           }}

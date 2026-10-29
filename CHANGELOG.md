@@ -5,6 +5,13 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.9.0] – 2026-10-29
+
+### Changed
+- A new quote or invoice starts with today as its *Date*. The field stays editable; cleared, the
+  document takes the date of issuing as before. Drafts, duplicates and recurring invoices keep
+  their dates as they were.
+
 ## [0.8.8] – 2026-10-27
 
 ### Fixed

@@ -883,7 +883,7 @@ export const en: Catalog<MessageKey> = {
   "documents.language": "Language",
   "documents.sectionDates": "Dates",
   "documents.issueDate": "Date",
-  "documents.issueDateHint": "Leave empty to use the date of issue.",
+  "documents.issueDateHint": "Set to today. Leave empty to use the date of issue.",
   "documents.dueDate": "Due date",
   "documents.bankAccount": "Bank details",
   "documents.bankAccountHint": "The account this document is paid to.",

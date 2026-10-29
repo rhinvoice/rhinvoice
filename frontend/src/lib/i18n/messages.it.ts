@@ -923,7 +923,8 @@ export const it: Catalog<MessageKey> = {
   "documents.language": "Lingua",
   "documents.sectionDates": "Date",
   "documents.issueDate": "Data",
-  "documents.issueDateHint": "Lasciare vuoto per usare la data di emissione.",
+  "documents.issueDateHint":
+    "Precompilata con la data di oggi. Lasciare vuoto per usare la data di emissione.",
   "documents.dueDate": "Scadenza il",
   "documents.bankAccount": "Coordinate bancarie",
   "documents.bankAccountHint": "Il conto su cui viene pagato questo documento.",

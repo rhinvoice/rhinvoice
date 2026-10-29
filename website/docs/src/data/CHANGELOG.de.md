@@ -5,6 +5,13 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.9.0] – 2026-10-29
+
+### Geändert
+- Ein neues Angebot und eine neue Rechnung beginnen mit heute als *Datum*. Das Feld bleibt
+  änderbar; geleert nimmt das Dokument wie bisher das Datum des Ausstellens. Entwürfe, Duplikate
+  und wiederkehrende Rechnungen behalten ihre Daten wie bisher.
+
 ## [0.8.8] – 2026-10-27
 
 ### Behoben

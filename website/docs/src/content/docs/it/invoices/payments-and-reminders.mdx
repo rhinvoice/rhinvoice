@@ -13,6 +13,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 In Rhinvoice registra i pagamenti su ogni fattura emessa con **data e importo**, pagamenti parziali compresi, e segna una o più fatture come pagate in una volta. Una fattura ancora aperta dopo la scadenza è *Scaduta* e si può sollecitare in **tre livelli**.
@@ -90,7 +91,7 @@ Rhinvoice salva il testo con il sollecito, quindi il PDF appare sempre come quan
 
 ## Inviare fatture e solleciti per e-mail
 
-Quando un server di posta è configurato in *Impostazioni → E-mail*, **Invia per e-mail** invia fatture emesse e solleciti scritti direttamente da Rhinvoice, con il PDF allegato. Prima di ogni e-mail controlla destinatari, oggetto e testo; l’indirizzo del cliente è precompilato e sono possibili fino a cinque destinatari. Ogni e-mail viene annotata nella cronologia della fattura. Se il server di posta rifiuta, Rhinvoice mostra la sua risposta. Senza server di posta, scarichi il PDF e lo invii Lei stesso.
+Quando un server di posta è configurato in *Impostazioni → E-mail*, **Invia per e-mail** invia fatture emesse e solleciti scritti direttamente da Rhinvoice, con il PDF allegato. Gli allegati di un documento seguono il suo PDF, dopo la XRechnung se la sceglie; la finestra di invio li elenca ([spese anticipate](/docs/it/invoices/pass-through/)). <Since version="0.9.0" /> Prima di ogni e-mail controlla destinatari, oggetto e testo; l’indirizzo del cliente è precompilato e sono possibili fino a cinque destinatari. Ogni e-mail viene annotata nella cronologia della fattura. Se il server di posta rifiuta, Rhinvoice mostra la sua risposta. Senza server di posta, scarichi il PDF e lo invii Lei stesso.
 
 ## Domande frequenti
 

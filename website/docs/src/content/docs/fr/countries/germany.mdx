@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside } from "@astrojs/starlight/components";
 
 Une facture allemande de Rhinvoice porte **19 % ou 7 % de TVA** (§ 12 UStG) à la date de la prestation, votre **numéro fiscal ou numéro de TVA** (§ 14 Abs. 4 Nr. 2 UStG), la date de la prestation, la mention légale pour l’autoliquidation, les petites entreprises ou les livraisons exonérées, un **GiroCode** (code QR EPC) et une **facture électronique** intégrée (ZUGFeRD). Pour les administrations publiques, Rhinvoice établit aussi la **XRechnung**.
@@ -34,6 +35,8 @@ Une facture allemande de Rhinvoice porte **19 % ou 7 % de TVA** (§ 12 UStG) à 
 Source : § 12 UStG; les taux de 2020 proviennent du Zweites Corona-Steuerhilfegesetz.
 
 Le taux à la **date de la prestation** s’applique : la fin de la période de prestation, sinon son début, sinon la date de la facture. À l’émission, Rhinvoice fige le taux de chaque ligne.
+
+Les montants que vous payez au nom et pour le compte de votre client, comme un émolument du registre du commerce, sont des **débours** (durchlaufende Posten) et ne font pas partie de la base imposable (§ 10 Abs. 1 Satz 4 UStG). Rhinvoice les indique sans TVA dans un bloc propre: [débours](/docs/fr/invoices/pass-through/). <Since version="0.9.0" />
 
 ## Mentions obligatoires selon le § 14 UStG
 

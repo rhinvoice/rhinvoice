@@ -35,6 +35,17 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   Steuer pro Satz, Zahlungen, offenen und abgeschriebenen Beträgen und Summen pro Währung.
   *Rechnungs-PDFs als ZIP beilegen* legt jedes PDF mit seiner Nummer als Namen neben die Liste.
   Aus einem früheren Programm übernommene Rechnungen sind mit ihrem Original-PDF dabei (#47).
+- Durchlaufende Posten, etwa im Namen und für Rechnung des Kunden bezahlte Gebühren: Der
+  *Steuersatz* einer Position und eines Artikels bietet *Durchlaufender Posten (ohne MWST)* bzw.
+  *(ohne USt.)*, nur für Fremdrechnungen auf den Namen des Kunden. Solche Positionen haben keine
+  Steuer und keinen Rabatt auf das Dokument, zählen voll zu Total, QR-Codes, Zahlungen und
+  Mahnungen und stehen in einem eigenen Block nach den Steuerzeilen. Im Dashboard sind sie kein
+  Umsatz; der Export zeigt sie in einer eigenen Spalte, die E-Rechnung als Kategorie E mit
+  VATEX-EU-79-C. Der Artikelimport liest «durchlaufend» und «pass-through» (#46).
+- *Anhänge* an gespeicherten Entwürfen von Rechnungen und Angeboten: *PDF hinzufügen* hängt bis zu
+  10 PDFs mit je bis zu 20 MB an, etwa die Fremdrechnung eines durchlaufenden Postens. Das
+  Ausstellen friert sie mit dem Dokument ein. Per E-Mail gehen sie nach PDF und XRechnung mit, und
+  die ZIP-Datei des Exports legt sie neben das PDF des Dokuments (#46).
 
 ### Geändert
 - Im Editor angekreuzte Textbausteine sind durch eine Leerzeile getrennt, und eine Leerzeile in

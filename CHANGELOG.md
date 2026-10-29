@@ -32,6 +32,17 @@ before 1.0, minor versions may contain breaking changes.
   written-off amounts and totals per currency. *Add the invoice PDFs as a ZIP* puts every PDF
   next to the list, named after its number. Invoices taken over from a previous program are
   included with their original PDF (#47).
+- Pass-through items, such as fees paid in the customer's name and for their account: a line's or
+  an article's *Tax rate* offers *Pass-through item (no VAT)*, for third-party invoices made out in
+  the customer's name only. Such lines carry no VAT and no document discount, count in full in the
+  total, QR codes, payments and reminders, and print in a block of their own after the VAT lines.
+  They are not revenue on the dashboard; the export shows them in a column of their own, the
+  e-invoice as category E with VATEX-EU-79-C. The article import reads "durchlaufend" and
+  "pass-through" (#46).
+- *Attachments* on saved drafts of invoices and quotes: *Add PDF* attaches up to 10 PDFs of up to
+  20 MB each, such as the third-party invoice of a pass-through item. Issuing freezes them with the
+  document. They go out by e-mail after the PDF and the XRechnung, and the export's ZIP puts them
+  next to the document's PDF (#46).
 
 ### Changed
 - Text templates ticked in the editor are separated by a blank line, and a blank line in a text

@@ -40,7 +40,7 @@ Ausschlaggebend ist das **Rechnungsdatum**. Der Export enthält ausgestellte Rec
 | CSV | UTF-8 mit BOM, Semikolon als Trennzeichen, Daten als `JJJJ-MM-TT`. Beträge ohne Tausendertrennzeichen, mit Punkt (Firma in der Schweiz oder in Liechtenstein) oder Komma (Firma in Deutschland oder Österreich). Nach einer Leerzeile folgen die Summen pro Währung. |
 | PDF | A4 quer, mit Firma, Zeitraum und Seitenzahlen, die Summen pro Währung am Schluss. |
 
-Mit *Rechnungs-PDFs als ZIP beilegen* erhalten Sie eine ZIP-Datei mit der Liste im gewählten Format und dem PDF jedes Belegs. Die PDFs heissen wie ihre Nummer, etwa `R20260042.pdf`, und die Spalte *Datei* der Liste nennt den Namen. Es sind die archivierten PDFs, unverändert seit dem Ausstellen. Übernommene Rechnungen bringen ihr Original-PDF mit; haben sie keines, bleibt *Datei* leer. Es läuft jeweils ein Export auf einmal; die öffentliche Demo bietet die Listen, aber keine ZIP-Datei mit PDFs.
+Mit *Rechnungs-PDFs als ZIP beilegen* erhalten Sie eine ZIP-Datei mit der Liste im gewählten Format und dem PDF jedes Belegs. Die PDFs heissen wie ihre Nummer, etwa `R20260042.pdf`, und die Spalte *Datei* der Liste nennt den Namen. Es sind die archivierten PDFs, unverändert seit dem Ausstellen. Übernommene Rechnungen bringen ihr Original-PDF mit; haben sie keines, bleibt *Datei* leer. Die Anhänge eines Dokuments, etwa die Fremdrechnung eines [durchlaufenden Postens](/docs/de/invoices/pass-through/), folgen auf sein PDF, benannt nach der Nummer und ihrem eigenen Namen: `R20260042_Handelsregister.pdf`. Es läuft jeweils ein Export auf einmal; die öffentliche Demo bietet die Listen, aber keine ZIP-Datei mit PDFs.
 
 <Aside type="caution">
 Beginnt ein Text in der CSV-Datei mit `=`, `+`, `-` oder `@`, setzt Rhinvoice ein Apostroph davor. So führt ein Tabellenprogramm ihn beim Öffnen nicht als Formel aus. In der Excel-Datei sind solche Texte als Text gespeichert und bleiben unverändert.
@@ -58,6 +58,7 @@ Beginnt ein Text in der CSV-Datei mit `=`, `+`, `-` oder `@`, setzt Rhinvoice ei
 | Netto | Nettobetrag des Belegs |
 | Netto x %, Steuer x % | Ein Paar pro Steuersatz, der im Export vorkommt, auch 0 % |
 | Steuer, Brutto | Steuer total und der Rechnungsbetrag, mit Rappenrundung |
+| Durchlaufende Posten | Die [durchlaufenden Posten](/docs/de/invoices/pass-through/) des Belegs, nur wenn der Zeitraum solche enthält. *Netto* und *Steuer* lassen sie aus, *Brutto* enthält sie |
 | Bezahlt, Bezahlt am | Summe der Zahlungen; das Datum der letzten Zahlung, sobald die Rechnung ganz bezahlt ist |
 | Offen | Was noch offen ist |
 | Abgeschrieben | Der Verlust einer [abgeschriebenen](/docs/de/invoices/write-off/) Rechnung |

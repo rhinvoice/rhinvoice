@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside } from "@astrojs/starlight/components";
 
 Una fattura tedesca di Rhinvoice riporta l’**IVA al 19 % o al 7 %** (§ 12 UStG) alla data della prestazione, il Suo **numero fiscale o numero di partita IVA** (§ 14 Abs. 4 Nr. 2 UStG), la data della prestazione, l’indicazione legale per l’inversione contabile (reverse charge), le piccole imprese o le cessioni esenti, un **GiroCode** (codice QR EPC) e una **fattura elettronica** integrata (ZUGFeRD). Per le autorità pubbliche Rhinvoice scrive anche la **XRechnung**.
@@ -34,6 +35,8 @@ Stato: ottobre 2026. Aliquote e regole sono verificate nella UStG e nella UStDV,
 Fonte: § 12 UStG; le aliquote del 2020 provengono dallo Zweites Corona-Steuerhilfegesetz.
 
 Vale l’aliquota alla **data della prestazione**: la fine del periodo della prestazione, altrimenti il suo inizio, altrimenti la data della fattura. All’emissione Rhinvoice fissa l’aliquota di ogni posizione.
+
+Gli importi che paga in nome e per conto del Suo cliente, come un emolumento del registro di commercio, sono **spese anticipate** (durchlaufende Posten) e non fanno parte della base imponibile (§ 10 Abs. 1 Satz 4 UStG). Rhinvoice le indica senza IVA in un blocco a sé: [spese anticipate](/docs/it/invoices/pass-through/). <Since version="0.9.0" />
 
 ## Indicazioni obbligatorie secondo il § 14 UStG
 

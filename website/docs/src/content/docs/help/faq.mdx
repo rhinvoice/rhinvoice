@@ -38,6 +38,8 @@ faq:
     a: "Yes. Since version 0.9.0 you can keep several bank accounts per currency and choose one per invoice in the editor. An account can be marked as a third party's, for example a financial service provider's: the invoice then names it as payee with IBAN and BIC, and the QR-bill and e-invoice name it as payee."
   - q: Can I export my invoices for my accountant?
     a: "Yes. Since version 0.9.0, \"Invoices → Export\" downloads the issued invoices and credit notes of a month, quarter, year or custom period as Excel, CSV or PDF, with totals per currency. Optionally every invoice PDF comes along in one ZIP file."
+  - q: How do I charge on a fee I paid in my customer's name?
+    a: "As a pass-through item. Since version 0.9.0 you choose \"Pass-through item (no VAT)\" as the line's tax rate: it gets no VAT, no document discount and a block of its own on the PDF, and you attach the third-party invoice as a PDF. This only applies when the third-party invoice is made out in your customer's name."
 ---
 
 import Faq from "../../../components/Faq.astro";

@@ -112,6 +112,8 @@ Rhinvoice gives each tax group a category according to UNCL 5305:
 | G | export and export delivery |
 | O | not subject to VAT: small businesses without VAT number and tax number (Switzerland, Liechtenstein) |
 
+[Pass-through items](/docs/invoices/pass-through/) are exempt, category E, with the exemption reason code VATEX-EU-79-C (repayment of expenditure, Art. 79 lit. c of the VAT Directive) and a short reason text, in a VAT breakdown of their own. <Since version="0.9.0" />
+
 A Swiss UID identifies the company in the e-invoice (scheme 0183) and, for VAT registered companies, is its VAT number at the same time. German tax numbers have a field of their own.
 
 ## Validated with KoSIT and Mustang

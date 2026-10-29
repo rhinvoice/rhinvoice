@@ -1,0 +1,90 @@
+---
+title: "Pass-through items: fees without VAT on the invoice"
+description: "Charge on fees paid in your customer's name, such as a commercial register fee, as pass-through items without VAT, with the third-party invoice attached."
+since: 0.9.0
+faq:
+  - q: What is a pass-through item?
+    a: An amount you pay in your customer's name and for their account, such as a commercial register or land register fee, and charge on unchanged. It is not part of your taxable amount, so no VAT is due on it (DE § 10 Abs. 1 Satz 4 UStG, AT § 4 Abs. 3 UStG 1994, CH and LI Art. 24 para. 6 lit. b MWSTG).
+  - q: Can I charge on something I bought in my own name as a pass-through item?
+    a: No. A pass-through item needs the third-party invoice to be made out in your customer's name. If it is made out in yours, you charge the amount on as a normal line with VAT.
+  - q: Does the document discount reduce pass-through items?
+    a: No. The document discount applies to the taxed lines only. Pass-through items always count in full in the total, and so in the QR-bill or EPC QR code, payments and reminders.
+  - q: How do I send the third-party invoice along with my invoice?
+    a: Save the draft, open the section "Attachments" in the editor and click "Add PDF". The PDF goes out after your invoice's PDF when you send it by e-mail, and it is frozen with the invoice when you issue it.
+  - q: How do pass-through items appear in the e-invoice?
+    a: As exempt lines, VAT category E, with the exemption reason code VATEX-EU-79-C and a short reason text, in a VAT breakdown of their own. Rhinvoice's samples pass the KoSIT validator and Mustang.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+A **pass-through item** is an amount you paid **in the name and for the account of your customer**, such as a commercial register fee, and charge on unchanged. In Rhinvoice you choose *Pass-through item (no VAT)* as a line's *Tax rate*: the line gets no VAT, the document discount leaves it alone, and the PDF lists it in a block of its own before the total. It only applies when the **third-party invoice is made out in your customer's name**.
+
+<Aside type="caution" title="Only in your customer's name">
+If you buy something in your own name and charge it on, it is a normal line with VAT, even when you charge it at cost. A pass-through item needs the third-party invoice addressed to your customer. The legal basis: Germany § 10 Abs. 1 Satz 4 UStG, Austria § 4 Abs. 3 UStG 1994, Switzerland and Liechtenstein Art. 24 para. 6 lit. b MWSTG, where the amount must be shown separately (Rhinvoice always does). Rhinvoice gives no tax advice: ask your fiduciary or tax adviser when in doubt.
+</Aside>
+
+## Marking a line as a pass-through item
+
+<Steps>
+
+1. In the editor, add the line with the description and amount of the third-party invoice, such as "Commercial register fee".
+2. Under *Tax rate*, choose **Pass-through item (no VAT)**. Below it, the editor reminds you: "Only if the third-party invoice is made out in your customer's name." The choice between goods and services disappears for this line.
+3. Attach the third-party invoice as a PDF (see [below](#attaching-the-third-party-invoice)).
+
+</Steps>
+
+An article can be a pass-through item too: choose it as the article's *Tax rate*. When you [import articles](/docs/moving/customers-and-articles/) from CSV or Excel, the tax column understands "durchlaufend", "durchlaufender Posten" and "pass-through".
+
+## How Rhinvoice calculates them
+
+- **No VAT.** The line is in no VAT line and adds no notice, in every tax treatment: domestic, reverse charge, export or small business.
+- **No document discount.** The discount of the document applies to the taxed lines only. An amount discount cannot be larger than those lines.
+- **In the total.** The amount counts in full in the total, so in the Swiss QR-bill, the EPC QR code, payments, open amounts and reminders.
+- **Rounding at the end.** The Swiss 5-centime rounding applies to the final total only.
+
+## Example
+
+A fiduciary charges 4 hours of work at CHF 120.00 and the fee of the commercial register office, CHF 250.35, paid in the customer's name. 5-centime rounding is switched on.
+
+| | CHF |
+|---|---|
+| Work, 4 h × 120.00 | 480.00 |
+| MWST 8.1 % on 480.00 | 38.88 |
+| *Pass-through items:* commercial register fee | 250.35 |
+| Rounding | 0.02 |
+| **Total** | **769.25** |
+
+The QR-bill asks for CHF 769.25. VAT is only due on CHF 480.00.
+
+## On the PDF
+
+Pass-through items are not in the table of positions. They follow the VAT lines, before the rounding and the total, under the title **"Pass-through items (paid in the name and for the account of the customer)"**, each with its description and amount. In French it reads "Débours (payés au nom et pour le compte du client)", in Italian "Spese anticipate (pagate in nome e per conto del cliente)", in German "Durchlaufende Posten (im Namen und auf Rechnung des Kunden bezahlt)". This is the separate statement the Swiss VAT Act asks for. Documents without pass-through items look exactly as before.
+
+## Attaching the third-party invoice
+
+Your customer usually needs the third-party invoice with yours. Every saved draft, invoice or quote, has a folded section **Attachments** below *More details*:
+
+<Steps>
+
+1. Save the draft. A new document can take attachments after its first save.
+2. Open *Attachments* and click **Add PDF**. You can choose several files at once.
+3. Open a file to check it, or remove it, as long as the document is a draft.
+
+</Steps>
+
+A draft holds at most **10 PDFs of up to 20 MB each**; other file types are refused. When you [issue](/docs/invoices/issue-and-cancel/) the document, its attachments are frozen with it, like the PDF: they are never changed or removed again (GoBD, Art. 958f CO). Issued documents show them in a card *Attachments*. The document's own PDF stays as it is; the attachments are separate files. Deleting a draft deletes its attachments; duplicates and cancellation invoices do not copy them. The public demo takes no uploads.
+
+## Sending by e-mail
+
+*Send by e-mail* attaches the document's PDF, then the XRechnung if you choose it, then the attachments. The mail dialog lists them all. Many mail servers refuse mails above 20 to 25 MB; Rhinvoice then shows the server's answer.
+
+## Dashboard, export and e-invoice
+
+- **Dashboard:** pass-through items are not revenue. The revenue chart, the year to date and the best customers leave them out; open and overdue amounts include them, since your customer owes them.
+- **[Export for bookkeeping](/docs/invoices/export/):** a column *Pass-through items* between *Tax* and *Gross*, also in the totals, when the period has such items. *Net* and *Tax* leave them out, *Gross* includes them. With the ZIP, each document's attachments follow its PDF, named after the number and their own name, such as `R20260042_Handelsregister.pdf`.
+- **[E-invoice](/docs/invoices/e-invoice/):** pass-through lines are exempt, category E, with the exemption reason code VATEX-EU-79-C and a short reason text, in a VAT breakdown of their own. Rhinvoice's samples pass the official KoSIT validator and Mustang.
+
+## Questions
+
+<Faq />

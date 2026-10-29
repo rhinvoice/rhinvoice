@@ -13,6 +13,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Beim **Ausstellen** bekommt eine Rechnung in Rhinvoice ihre endgültige Nummer, lückenlos und ohne Doppel. Ab dann sind Inhalt und PDF gesperrt. Ändern lässt sich eine ausgestellte Rechnung nicht mehr, korrigieren nur mit einer **Stornorechnung**, die eine eigene Nummer bekommt.
@@ -43,6 +44,7 @@ Die Nummer folgt dem Nummernkreis unter *Einstellungen → Nummernkreise*. Vorei
 - **Inhalt und Steuersätze.** Positionen, Beträge und der Steuersatz jeder Position werden eingefroren. Massgebend ist der Satz zum Leistungsdatum. Spätere Satzänderungen wirken nicht zurück.
 - **Absender, Empfänger und Bankkonto.** Rhinvoice speichert Firma, Kunde und Bankkonto so, wie sie beim Ausstellen waren. Ändern Sie später die Adresse eines Kunden, bleibt die Rechnung unverändert. Auch die Druckvorlage und das Logo des Tages bleiben erhalten.
 - **Das PDF.** Die Rechnung behält ihr erstes PDF, gespeichert mit seinem SHA-256-Prüfwert.
+- **Die Anhänge.** PDFs, die am Entwurf hängen, etwa die Fremdrechnung eines [durchlaufenden Postens](/docs/de/invoices/pass-through/), bleiben beim Dokument und werden nie geändert oder entfernt. Duplikate und Stornorechnungen übernehmen sie nicht. <Since version="0.9.0" />
 
 Diese Sperre gilt nicht nur in der Oberfläche: Die Datenbank selbst verbietet Änderungen am Inhalt und das Löschen ausgestellter Dokumente. Erlaubt bleiben Statusänderungen wie Zahlungen und Storno. Der *Verlauf* jeder Rechnung hält fest, wann sie erstellt, ausgestellt, bezahlt oder storniert wurde.
 

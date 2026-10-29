@@ -1,0 +1,90 @@
+---
+title: "Débours: refacturer des frais sans TVA"
+description: "Refacturer sans TVA les frais payés au nom de votre client, comme un émolument du registre du commerce, en tant que débours, avec la facture du tiers jointe."
+since: 0.9.0
+faq:
+  - q: Qu’est-ce qu’un débours?
+    a: Un montant que vous payez au nom et pour le compte de votre client, comme un émolument du registre du commerce ou du registre foncier, et que vous refacturez tel quel. Il ne fait pas partie de votre contre-prestation, aucune TVA n’est donc due (CH et LI art. 24, al. 6, let. b LTVA, DE § 10 Abs. 1 Satz 4 UStG, AT § 4 Abs. 3 UStG 1994).
+  - q: Puis-je refacturer comme débours un achat fait en mon propre nom?
+    a: Non. Un débours suppose que la facture du tiers soit établie au nom de votre client. Si elle est établie à votre nom, vous refacturez le montant comme une ligne normale avec TVA.
+  - q: Le rabais sur le document réduit-il les débours?
+    a: Non. Le rabais sur le document ne s’applique qu’aux lignes imposées. Les débours comptent toujours en entier dans le total, et donc dans la facture QR ou le code QR EPC, les paiements et les rappels.
+  - q: Comment envoyer la facture du tiers avec ma facture?
+    a: Enregistrez le brouillon, ouvrez la section «Pièces jointes» dans l’éditeur et cliquez sur «Ajouter un PDF». Lors de l’envoi par e-mail, le PDF part après celui de votre facture, et il est figé avec la facture lors de l’émission.
+  - q: Comment les débours apparaissent-ils dans la facture électronique?
+    a: Comme lignes exonérées, catégorie E, avec le code de motif d’exonération VATEX-EU-79-C et un court texte de motif, dans une ventilation de TVA propre. Les factures d’exemple de Rhinvoice passent le validateur KoSIT et Mustang.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Un **débours** est un montant que vous avez payé **au nom et pour le compte de votre client**, comme un émolument du registre du commerce, et que vous refacturez tel quel. Dans Rhinvoice, vous choisissez *Débours (sans TVA)* comme *Taux de TVA* d’une ligne: la ligne n’a pas de TVA, le rabais sur le document ne la touche pas, et le PDF l’indique dans un bloc propre avant le total. Cela ne vaut que si la **facture du tiers est établie au nom de votre client**.
+
+<Aside type="caution" title="Seulement au nom de votre client">
+Si vous achetez quelque chose en votre propre nom et le refacturez, c’est une ligne normale avec TVA, même au prix coûtant. Un débours exige une facture du tiers adressée à votre client. Base légale: Suisse et Liechtenstein art. 24, al. 6, let. b LTVA, à condition que le montant soit indiqué séparément (Rhinvoice l’indique toujours séparément), Allemagne § 10 Abs. 1 Satz 4 UStG, Autriche § 4 Abs. 3 UStG 1994. Rhinvoice ne fournit pas de conseil fiscal: en cas de doute, demandez à votre fiduciaire ou à votre conseiller fiscal.
+</Aside>
+
+## Marquer une ligne comme débours
+
+<Steps>
+
+1. Dans l’éditeur, saisissez la ligne avec la désignation et le montant de la facture du tiers, p. ex. «Émolument du registre du commerce».
+2. Sous *Taux de TVA*, choisissez **Débours (sans TVA)**. En dessous, l’éditeur rappelle: «Uniquement si la facture du tiers est établie au nom de votre client.» Le choix entre biens et services disparaît pour cette ligne.
+3. Joignez la facture du tiers en PDF (voir [plus bas](#joindre-la-facture-du-tiers)).
+
+</Steps>
+
+Un article peut aussi être un débours: choisissez-le comme *Taux de TVA* de l’article. Lors de l’[import d’articles](/docs/fr/moving/customers-and-articles/) depuis CSV ou Excel, la colonne du taux de TVA comprend «durchlaufend», «durchlaufender Posten» et «pass-through».
+
+## Comment Rhinvoice les calcule
+
+- **Pas de TVA.** La ligne n’appartient à aucune ligne de TVA et n’ajoute aucune mention, quel que soit le régime fiscal: national, autoliquidation, exportation ou petite entreprise.
+- **Pas de rabais sur le document.** Le rabais sur le document ne s’applique qu’aux lignes imposées. Un rabais en montant ne peut pas dépasser ces lignes.
+- **Dans le total.** Le montant compte en entier dans le total, et donc dans la facture QR, le code QR EPC, les paiements, les montants ouverts et les rappels.
+- **Arrondi à la fin.** L’arrondi à 5 centimes ne s’applique qu’au montant final.
+
+## Exemple
+
+Une fiduciaire facture 4 heures de travail à CHF 120.00 et l’émolument du registre du commerce de CHF 250.35, payé au nom du client. L’arrondi à 5 centimes est activé.
+
+| | CHF |
+|---|---|
+| Travail, 4 h × 120.00 | 480.00 |
+| TVA 8.1 % sur 480.00 | 38.88 |
+| *Débours:* émolument du registre du commerce | 250.35 |
+| Arrondi | 0.02 |
+| **Total** | **769.25** |
+
+La facture QR demande CHF 769.25. La TVA n’est due que sur CHF 480.00.
+
+## Sur le PDF
+
+Les débours ne figurent pas dans le tableau des lignes. Ils suivent les lignes de TVA, avant l’arrondi et le total, sous le titre **«Débours (payés au nom et pour le compte du client)»**, chacun avec sa désignation et son montant. En allemand, le titre est «Durchlaufende Posten (im Namen und auf Rechnung des Kunden bezahlt)», en italien «Spese anticipate (pagate in nome e per conto del cliente)», en anglais «Pass-through items (paid in the name and for the account of the customer)». C’est l’indication séparée que demande la LTVA. Les documents sans débours restent exactement comme avant.
+
+## Joindre la facture du tiers
+
+Votre client a en général besoin de la facture du tiers avec la vôtre. Chaque brouillon enregistré, facture ou offre, a sous *Autres informations* une section repliée **Pièces jointes**:
+
+<Steps>
+
+1. Enregistrez le brouillon. Un nouveau document accepte des pièces jointes après son premier enregistrement.
+2. Ouvrez *Pièces jointes* et cliquez sur **Ajouter un PDF**. Vous pouvez choisir plusieurs fichiers à la fois.
+3. Ouvrez un fichier pour le vérifier, ou retirez-le, tant que le document est un brouillon.
+
+</Steps>
+
+Un brouillon contient au plus **10 PDF de 20 Mo chacun au maximum**; les autres types de fichiers sont refusés. Lors de l’[émission](/docs/fr/invoices/issue-and-cancel/), les pièces jointes sont figées avec le document, comme le PDF: elles ne sont plus jamais modifiées ni retirées (GoBD, art. 958f CO). Les documents émis les montrent dans une carte *Pièces jointes*. Le PDF du document lui-même reste tel quel; les pièces jointes sont des fichiers distincts. Supprimer un brouillon supprime ses pièces jointes; les duplicatas et les factures d’annulation ne les reprennent pas. La démo publique n’accepte pas de téléversement.
+
+## Envoyer par e-mail
+
+*Envoyer par e-mail* joint le PDF du document, puis la XRechnung si vous la choisissez, puis les pièces jointes. La fenêtre d’envoi les liste toutes. Beaucoup de serveurs de messagerie refusent les e-mails de plus de 20 à 25 Mo; Rhinvoice affiche alors la réponse du serveur.
+
+## Tableau de bord, export et facture électronique
+
+- **Tableau de bord:** les débours ne sont pas du chiffre d’affaires. Le graphique du chiffre d’affaires, le cumul annuel et les meilleurs clients les laissent de côté; les montants ouverts et en retard les comprennent, car votre client les doit.
+- **[Export pour la comptabilité](/docs/fr/invoices/export/):** une colonne *Débours* entre *TVA* et *Brut*, aussi dans les totaux, lorsque la période contient de tels montants. *Net* et *TVA* les laissent de côté, *Brut* les comprend. Avec le ZIP, les pièces jointes de chaque document suivent son PDF, nommées d’après le numéro et leur propre nom, p. ex. `R20260042_Handelsregister.pdf`.
+- **[Facture électronique](/docs/fr/invoices/e-invoice/):** les débours sont exonérés, catégorie E, avec le code de motif d’exonération VATEX-EU-79-C et un court texte de motif, dans une ventilation de TVA propre. Les factures d’exemple de Rhinvoice passent le validateur officiel KoSIT et Mustang.
+
+## Questions fréquentes
+
+<Faq />

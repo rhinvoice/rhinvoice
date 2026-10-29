@@ -1,0 +1,90 @@
+---
+title: "Spese anticipate: rifatturare spese senza IVA"
+description: "Rifatturare senza IVA le spese pagate in nome del Suo cliente, come un emolumento del registro di commercio, con la fattura del terzo allegata."
+since: 0.9.0
+faq:
+  - q: Che cos’è una spesa anticipata?
+    a: Un importo che paga in nome e per conto del Suo cliente, come un emolumento del registro di commercio o del registro fondiario, e che rifattura invariato. Non fa parte della Sua controprestazione, quindi non è dovuta IVA (CH e LI art. 24 cpv. 6 lett. b LIVA, DE § 10 Abs. 1 Satz 4 UStG, AT § 4 Abs. 3 UStG 1994).
+  - q: Posso rifatturare come spesa anticipata un acquisto fatto a mio nome?
+    a: No. Una spesa anticipata presuppone che la fattura del terzo sia intestata al Suo cliente. Se è intestata a Lei, rifatturi l’importo come posizione normale con IVA.
+  - q: Lo sconto sul documento riduce le spese anticipate?
+    a: No. Lo sconto sul documento vale solo per le posizioni imponibili. Le spese anticipate contano sempre per intero nel totale, quindi nella fattura QR o nel codice QR EPC, nei pagamenti e nei solleciti.
+  - q: Come invio la fattura del terzo insieme alla mia fattura?
+    a: Salvi la bozza, apra nell’editor la sezione «Allegati» e clicchi su «Aggiungi PDF». Nell’invio per e-mail il PDF parte dopo quello della Sua fattura, e all’emissione viene bloccato con la fattura.
+  - q: Come compaiono le spese anticipate nella fattura elettronica?
+    a: Come posizioni esenti, categoria E, con il codice del motivo di esenzione VATEX-EU-79-C e un breve testo del motivo, in un riepilogo IVA a sé. Le fatture di esempio di Rhinvoice superano il validatore KoSIT e Mustang.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Una **spesa anticipata** è un importo che ha pagato **in nome e per conto del Suo cliente**, come un emolumento del registro di commercio, e che rifattura invariato. In Rhinvoice sceglie *Spesa anticipata (senza IVA)* come *Aliquota* di una posizione: la posizione non ha IVA, lo sconto sul documento non la tocca e il PDF la indica in un blocco a sé prima del totale. Vale solo se la **fattura del terzo è intestata al Suo cliente**.
+
+<Aside type="caution" title="Solo a nome del Suo cliente">
+Se acquista qualcosa a proprio nome e lo rifattura, si tratta di una posizione normale con IVA, anche a prezzo di costo. Una spesa anticipata richiede una fattura del terzo intestata al Suo cliente. Base legale: Svizzera e Liechtenstein art. 24 cpv. 6 lett. b LIVA, purché l’importo sia indicato separatamente (Rhinvoice lo indica sempre separatamente), Germania § 10 Abs. 1 Satz 4 UStG, Austria § 4 Abs. 3 UStG 1994. Rhinvoice non fornisce consulenza fiscale: in caso di dubbio chieda alla Sua fiduciaria, al Suo fiduciario o al Suo consulente fiscale.
+</Aside>
+
+## Segnare una posizione come spesa anticipata
+
+<Steps>
+
+1. Nell’editor inserisca la posizione con la descrizione e l’importo della fattura del terzo, p. es. «Emolumento del registro di commercio».
+2. In *Aliquota* scelga **Spesa anticipata (senza IVA)**. Sotto, l’editor ricorda: «Solo se la fattura del terzo è intestata al cliente.» La scelta tra beni e servizi scompare per questa posizione.
+3. Alleghi la fattura del terzo in PDF (vedi [sotto](#allegare-la-fattura-del-terzo)).
+
+</Steps>
+
+Anche un articolo può essere una spesa anticipata: la scelga come *Aliquota IVA* dell’articolo. Nell’[importazione di articoli](/docs/it/moving/customers-and-articles/) da CSV o Excel, la colonna dell’aliquota IVA riconosce «durchlaufend», «durchlaufender Posten» e «pass-through».
+
+## Come le calcola Rhinvoice
+
+- **Nessuna IVA.** La posizione non appartiene a nessuna riga IVA e non aggiunge avvertenze, in ogni regime fiscale: nazionale, inversione contabile, esportazione o piccola impresa.
+- **Nessuno sconto sul documento.** Lo sconto sul documento vale solo per le posizioni imponibili. Uno sconto in importo non può superare queste posizioni.
+- **Nel totale.** L’importo conta per intero nel totale, quindi nella fattura QR, nel codice QR EPC, nei pagamenti, negli importi aperti e nei solleciti.
+- **Arrotondamento alla fine.** L’arrotondamento ai 5 centesimi vale solo per l’importo finale.
+
+## Esempio
+
+Una fiduciaria fattura 4 ore di lavoro a CHF 120.00 e l’emolumento del registro di commercio di CHF 250.35, pagato in nome del cliente. L’arrotondamento ai 5 centesimi è attivo.
+
+| | CHF |
+|---|---|
+| Lavoro, 4 h × 120.00 | 480.00 |
+| IVA 8.1 % su 480.00 | 38.88 |
+| *Spese anticipate:* emolumento del registro di commercio | 250.35 |
+| Arrotondamento | 0.02 |
+| **Totale** | **769.25** |
+
+La fattura QR chiede CHF 769.25. L’IVA è dovuta solo su CHF 480.00.
+
+## Sul PDF
+
+Le spese anticipate non figurano nella tabella delle posizioni. Seguono le righe IVA, prima dell’arrotondamento e del totale, sotto il titolo **«Spese anticipate (pagate in nome e per conto del cliente)»**, ognuna con descrizione e importo. In tedesco il titolo è «Durchlaufende Posten (im Namen und auf Rechnung des Kunden bezahlt)», in francese «Débours (payés au nom et pour le compte du client)», in inglese «Pass-through items (paid in the name and for the account of the customer)». È l’indicazione separata richiesta dalla LIVA. I documenti senza spese anticipate restano esattamente come prima.
+
+## Allegare la fattura del terzo
+
+Il Suo cliente di solito ha bisogno della fattura del terzo insieme alla Sua. Ogni bozza salvata, fattura od offerta, ha sotto *Altri dati* una sezione chiusa **Allegati**:
+
+<Steps>
+
+1. Salvi la bozza. Un nuovo documento accetta allegati dopo il primo salvataggio.
+2. Apra *Allegati* e clicchi su **Aggiungi PDF**. Può scegliere più file alla volta.
+3. Apra un file per controllarlo, oppure lo rimuova, finché il documento è una bozza.
+
+</Steps>
+
+Una bozza contiene al massimo **10 PDF di 20 MB ciascuno al massimo**; altri tipi di file vengono rifiutati. All’[emissione](/docs/it/invoices/issue-and-cancel/) gli allegati vengono bloccati con il documento, come il PDF: non vengono mai più modificati né rimossi (GoBD, art. 958f CO). I documenti emessi li mostrano in una scheda *Allegati*. Il PDF del documento stesso resta com’è; gli allegati sono file separati. Eliminando una bozza si eliminano i suoi allegati; duplicati e fatture di storno non li riprendono. La demo pubblica non accetta caricamenti.
+
+## Inviare per e-mail
+
+*Invia per e-mail* allega il PDF del documento, poi la XRechnung se la sceglie, poi gli allegati. La finestra di invio li elenca tutti. Molti server di posta rifiutano e-mail oltre 20–25 MB; Rhinvoice mostra allora la risposta del server.
+
+## Dashboard, esportazione e fattura elettronica
+
+- **Dashboard:** le spese anticipate non sono fatturato. Il grafico del fatturato, il progressivo annuo e i migliori clienti le escludono; gli importi aperti e scaduti le comprendono, perché il Suo cliente le deve.
+- **[Esportazione per la contabilità](/docs/it/invoices/export/):** una colonna *Spese anticipate* tra *IVA* e *Lordo*, anche nei totali, quando il periodo contiene tali importi. *Netto* e *IVA* le escludono, *Lordo* le comprende. Con lo ZIP, gli allegati di ogni documento seguono il suo PDF, con il numero e il loro nome, p. es. `R20260042_Handelsregister.pdf`.
+- **[Fattura elettronica](/docs/it/invoices/e-invoice/):** le spese anticipate sono esenti, categoria E, con il codice del motivo di esenzione VATEX-EU-79-C e un breve testo del motivo, in un riepilogo IVA a sé. Le fatture di esempio di Rhinvoice superano il validatore ufficiale KoSIT e Mustang.
+
+## Domande frequenti
+
+<Faq />

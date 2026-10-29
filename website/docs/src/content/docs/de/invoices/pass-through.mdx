@@ -1,0 +1,90 @@
+---
+title: "Durchlaufende Posten: Gebühren ohne MWST weiterverrechnen"
+description: "Im Namen des Kunden bezahlte Gebühren, etwa fürs Handelsregister, als durchlaufende Posten ohne MWST oder USt. verrechnen, mit der Fremdrechnung als Anhang."
+since: 0.9.0
+faq:
+  - q: Was ist ein durchlaufender Posten?
+    a: Ein Betrag, den Sie im Namen und für Rechnung Ihres Kunden bezahlen, etwa eine Gebühr des Handelsregisters oder des Grundbuchamts, und unverändert weiterverrechnen. Er gehört nicht zu Ihrem Entgelt, darauf fällt keine Steuer an (DE § 10 Abs. 1 Satz 4 UStG, AT § 4 Abs. 3 UStG 1994, CH und FL Art. 24 Abs. 6 lit. b MWSTG).
+  - q: Kann ich einen Einkauf in meinem eigenen Namen als durchlaufenden Posten verrechnen?
+    a: Nein. Ein durchlaufender Posten setzt voraus, dass die Fremdrechnung auf den Namen Ihres Kunden lautet. Lautet sie auf Ihren Namen, verrechnen Sie den Betrag als normale Position mit MWST bzw. USt.
+  - q: Mindert der Rabatt auf das Dokument durchlaufende Posten?
+    a: Nein. Der Rabatt auf das Dokument gilt nur für die besteuerten Positionen. Durchlaufende Posten zählen immer voll zum Total und damit zur QR-Rechnung oder zum EPC-QR-Code, zu Zahlungen und Mahnungen.
+  - q: Wie schicke ich die Fremdrechnung mit meiner Rechnung mit?
+    a: Speichern Sie den Entwurf, öffnen Sie im Editor den Bereich «Anhänge» und klicken Sie auf «PDF hinzufügen». Beim Versand per E-Mail geht das PDF nach dem PDF Ihrer Rechnung mit, und beim Ausstellen wird es mit der Rechnung eingefroren.
+  - q: Wie stehen durchlaufende Posten in der E-Rechnung?
+    a: Als steuerbefreite Positionen der Kategorie E mit dem Befreiungsgrund-Code VATEX-EU-79-C und einem kurzen Grundtext, in einer eigenen Steueraufschlüsselung. Die Musterrechnungen von Rhinvoice bestehen den KoSIT-Validator und Mustang.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Ein **durchlaufender Posten** ist ein Betrag, den Sie **im Namen und für Rechnung Ihres Kunden** bezahlt haben, etwa eine Gebühr des Handelsregisters, und unverändert weiterverrechnen. In Rhinvoice wählen Sie als *Steuersatz* einer Position *Durchlaufender Posten (ohne MWST)* bzw. *(ohne USt.)*: Die Position hat keine Steuer, der Rabatt auf das Dokument lässt sie aus, und das PDF zeigt sie in einem eigenen Block vor dem Total. Das gilt nur, wenn die **Fremdrechnung auf den Namen Ihres Kunden lautet**.
+
+<Aside type="caution" title="Nur auf den Namen Ihres Kunden">
+Kaufen Sie etwas in Ihrem eigenen Namen ein und verrechnen es weiter, ist das eine normale Position mit Steuer, auch wenn Sie es zum Einstandspreis weitergeben. Ein durchlaufender Posten braucht eine Fremdrechnung, die auf Ihren Kunden lautet. Rechtsgrundlage: Deutschland § 10 Abs. 1 Satz 4 UStG, Österreich § 4 Abs. 3 UStG 1994, Schweiz und Liechtenstein Art. 24 Abs. 6 lit. b MWSTG, sofern der Betrag gesondert ausgewiesen ist (Rhinvoice weist ihn immer gesondert aus). Rhinvoice ist keine Steuerberatung: Fragen Sie im Zweifel Ihre Treuhänderin, Ihren Treuhänder oder Ihre Steuerberatung.
+</Aside>
+
+## Position als durchlaufenden Posten markieren
+
+<Steps>
+
+1. Erfassen Sie im Editor die Position mit Bezeichnung und Betrag der Fremdrechnung, etwa «Gebühr Handelsregisteramt».
+2. Wählen Sie unter *Steuersatz* **Durchlaufender Posten (ohne MWST)**, in Deutschland und Österreich *(ohne USt.)*. Darunter erinnert der Editor: «Nur wenn die Fremdrechnung auf den Namen Ihres Kunden lautet.» Die Wahl zwischen Ware und Dienstleistung entfällt für diese Position.
+3. Hängen Sie die Fremdrechnung als PDF an (siehe [unten](#fremdrechnung-anhängen)).
+
+</Steps>
+
+Auch ein Artikel kann ein durchlaufender Posten sein: Wählen Sie es als *Steuersatz* des Artikels. Beim [Import von Artikeln](/docs/de/moving/customers-and-articles/) aus CSV oder Excel versteht die Spalte für den Steuersatz «durchlaufend», «durchlaufender Posten» und «pass-through».
+
+## Wie Rhinvoice sie berechnet
+
+- **Keine Steuer.** Die Position gehört zu keiner Steuerzeile und bringt keinen Hinweis mit, in jedem Steuerfall: Inland, Reverse Charge, Export oder Kleinunternehmer.
+- **Kein Rabatt auf das Dokument.** Der Rabatt auf das Dokument gilt nur für die besteuerten Positionen. Ein Betragsrabatt darf nicht grösser sein als diese.
+- **Im Total.** Der Betrag zählt voll zum Total und damit zur QR-Rechnung, zum EPC-QR-Code, zu Zahlungen, offenen Beträgen und Mahnungen.
+- **Gerundet am Schluss.** Die Rappenrundung gilt nur für den Endbetrag.
+
+## Beispiel
+
+Eine Treuhänderin verrechnet 4 Stunden Arbeit zu CHF 120.00 und die Gebühr des Handelsregisteramts von CHF 250.35, im Namen des Kunden bezahlt. Die Rappenrundung ist eingeschaltet.
+
+| | CHF |
+|---|---|
+| Arbeit, 4 Std. × 120.00 | 480.00 |
+| MWST 8.1 % auf 480.00 | 38.88 |
+| *Durchlaufende Posten:* Gebühr Handelsregisteramt | 250.35 |
+| Rundung | 0.02 |
+| **Total** | **769.25** |
+
+Die QR-Rechnung verlangt CHF 769.25. MWST schuldet die Treuhänderin nur auf CHF 480.00.
+
+## Auf dem PDF
+
+Durchlaufende Posten stehen nicht in der Positionstabelle. Sie folgen auf die Steuerzeilen, vor Rundung und Total, unter dem Titel **«Durchlaufende Posten (im Namen und auf Rechnung des Kunden bezahlt)»**, jeder mit Bezeichnung und Betrag. Auf Französisch heisst er «Débours (payés au nom et pour le compte du client)», auf Italienisch «Spese anticipate (pagate in nome e per conto del cliente)», auf Englisch «Pass-through items (paid in the name and for the account of the customer)». Das ist der gesonderte Ausweis, den das MWSTG verlangt. Dokumente ohne durchlaufende Posten sehen genau aus wie bisher.
+
+## Fremdrechnung anhängen
+
+Ihr Kunde braucht die Fremdrechnung meist zusammen mit Ihrer Rechnung. Jeder gespeicherte Entwurf, ob Rechnung oder Angebot, hat unter *Weitere Angaben* einen zugeklappten Bereich **Anhänge**:
+
+<Steps>
+
+1. Speichern Sie den Entwurf. Ein neues Dokument nimmt Anhänge nach dem ersten Speichern an.
+2. Öffnen Sie *Anhänge* und klicken Sie auf **PDF hinzufügen**. Sie können mehrere Dateien auf einmal wählen.
+3. Öffnen Sie eine Datei zur Kontrolle oder entfernen Sie sie, solange das Dokument ein Entwurf ist.
+
+</Steps>
+
+Ein Entwurf hat höchstens **10 PDFs mit je bis zu 20 MB**; andere Dateitypen lehnt Rhinvoice ab. Beim [Ausstellen](/docs/de/invoices/issue-and-cancel/) werden die Anhänge wie das PDF mit dem Dokument eingefroren: Sie werden nie mehr geändert oder entfernt (GoBD, Art. 958f OR). Ausgestellte Dokumente zeigen sie in der Karte *Anhänge*. Das PDF des Dokuments selbst bleibt, wie es ist; die Anhänge sind eigene Dateien. Wird ein Entwurf gelöscht, sind seine Anhänge mit weg; Duplikate und Stornorechnungen übernehmen sie nicht. Die öffentliche Demo nimmt keine Uploads an.
+
+## Per E-Mail senden
+
+*Per E-Mail senden* hängt das PDF des Dokuments an, dann die XRechnung, falls gewählt, dann die Anhänge. Der Mail-Dialog listet sie alle auf. Viele Mailserver lehnen Mails über 20 bis 25 MB ab; Rhinvoice zeigt dann die Antwort des Servers.
+
+## Dashboard, Export und E-Rechnung
+
+- **Dashboard:** Durchlaufende Posten sind kein Umsatz. Umsatzdiagramm, Jahr bis heute und beste Kunden lassen sie aus; offene und überfällige Beträge enthalten sie, denn Ihr Kunde schuldet sie.
+- **[Export für die Buchhaltung](/docs/de/invoices/export/):** eine Spalte *Durchlaufende Posten* zwischen *Steuer* und *Brutto*, auch in den Summen, wenn der Zeitraum solche Posten enthält. *Netto* und *Steuer* lassen sie aus, *Brutto* enthält sie. Mit der ZIP-Datei folgen die Anhänge jedes Dokuments auf sein PDF, benannt nach der Nummer und ihrem eigenen Namen, etwa `R20260042_Handelsregister.pdf`.
+- **[E-Rechnung](/docs/de/invoices/e-invoice/):** Durchlaufende Posten sind steuerbefreit, Kategorie E, mit dem Befreiungsgrund-Code VATEX-EU-79-C und einem kurzen Grundtext, in einer eigenen Steueraufschlüsselung. Die Musterrechnungen von Rhinvoice bestehen den offiziellen KoSIT-Validator und Mustang.
+
+## Häufige Fragen
+
+<Faq />

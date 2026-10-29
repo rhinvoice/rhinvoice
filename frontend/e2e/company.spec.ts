@@ -1,4 +1,33 @@
-import { expect, expectAccessible, openApp, test } from "./fixtures";
+import type { Page } from "@playwright/test";
+
+import {
+  createCustomer,
+  expect,
+  expectAccessible,
+  HEADERS,
+  openApp,
+  test,
+  unique,
+} from "./fixtures";
+
+/**
+ * Remove the CHF accounts a test added: with one CHF account the editor offers no
+ * choice, which other tests (and their screenshots) expect.
+ */
+async function removeAddedAccounts(page: Page): Promise<void> {
+  const accounts = (await (await page.request.get("/api/bank-accounts")).json()) as {
+    id: string;
+    currency: string;
+    bank_name: string;
+    qr_iban: string | null;
+    third_party: boolean;
+  }[];
+  for (const account of accounts) {
+    if (account.currency === "CHF" && (account.qr_iban !== null || account.third_party)) {
+      await page.request.delete(`/api/bank-accounts/${account.id}`, { headers: HEADERS });
+    }
+  }
+}
 
 const PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAwS2OUAAAAABJRU5ErkJggg==",
@@ -70,6 +99,54 @@ test("bank accounts validate the IBAN", async ({ page }) => {
   await dialog.getByRole("button", { name: "Speichern" }).click();
   await expect(page.getByText("Bankkonto gespeichert.")).toBeVisible();
   await expect(page.getByText("CH93 0076 2011 6238 5295 7").first()).toBeVisible();
+  await removeAddedAccounts(page);
+});
+
+test("a third party's account is chosen per invoice and named on it", async ({
+  page,
+  isMobile,
+}, testInfo) => {
+  const suffix = unique(testInfo.project.name);
+  const customerId = await createCustomer(page, `Drittkunde ${suffix} AG`);
+  try {
+    await openApp(page, "/settings?tab=bank-accounts", "Einstellungen");
+    await page.getByRole("button", { name: "Konto hinzufügen" }).first().click();
+    const dialog = page.getByRole("dialog", { name: /Konto hinzufügen/ });
+    await dialog.getByLabel("Bank", { exact: true }).fill("Inkassobank");
+    await dialog.getByLabel("Kontoinhaber", { exact: true }).fill("Inkasso AG");
+    await dialog.getByLabel("IBAN", { exact: true }).fill("CH58 0079 1123 0008 8901 2");
+    // The holder's address appears only for a third party's account, and is required there.
+    await expect(dialog.getByLabel("PLZ", { exact: true })).toHaveCount(0);
+    await dialog.getByLabel(/Konto gehört einem Dritten/).check();
+    await dialog.getByRole("button", { name: "Speichern" }).click();
+    await expect(dialog.getByLabel("PLZ", { exact: true })).toHaveAttribute("aria-invalid", "true");
+    await dialog.getByLabel(/^Strasse/).fill("Zahlweg");
+    await dialog.getByLabel("PLZ", { exact: true }).fill("4001");
+    await dialog.getByLabel("Ort", { exact: true }).fill("Basel");
+    await expectAccessible(page);
+    await dialog.getByRole("button", { name: "Speichern" }).click();
+    await expect(page.getByText("Bankkonto gespeichert.")).toBeVisible();
+    await expect(page.getByText("Drittkonto", { exact: true })).toBeVisible();
+
+    await openApp(page, `/invoices/new?customer=${customerId}`, "Neue Rechnung");
+    const choice = page.getByLabel("Bankverbindung");
+    await expect(choice).toHaveValue("");
+    await expect(choice.locator("option")).toHaveText([
+      "Musterbank · CH93 0076 … (Standard)",
+      "Inkasso AG · CH58 0079 … (Drittkonto)",
+    ]);
+    await choice.selectOption({ label: "Inkasso AG · CH58 0079 … (Drittkonto)" });
+    await page.locator("#lines-0-description").fill("Beratung");
+    await page.locator("#lines-0-unit_price").fill("100");
+    await expectAccessible(page);
+    if (isMobile) await page.getByRole("button", { name: "Vorschau" }).click();
+    const paper = page.frameLocator('iframe[title="Vorschau: Rechnung"]');
+    await expect(
+      paper.getByText(/^Zahlung an: Inkasso AG · IBAN CH58 0079 1123 0008 8901 2$/),
+    ).toBeVisible();
+  } finally {
+    await removeAddedAccounts(page);
+  }
 });
 
 test("number sequences show a live preview", async ({ page }) => {

@@ -545,7 +545,7 @@ export const en: Catalog<MessageKey> = {
   "language.it": "Italian",
   "bank.title": "Bank accounts",
   "bank.description":
-    "Accounts for payment details and QR codes. One account per currency is the default.",
+    "Accounts for payment details and QR codes. One account per currency is the default; a document can choose another.",
   "bank.add": "Add account",
   "bank.edit": "Edit account",
   "bank.emptyTitle": "No bank account yet",
@@ -568,7 +568,7 @@ export const en: Catalog<MessageKey> = {
   "bank.saved": "Bank account saved.",
   "bank.deleteTitle": "Delete bank account?",
   "bank.deleteDescription":
-    "Issued documents keep their account details. New documents will use another account.",
+    "Issued documents keep their account details. Drafts and new documents use the default account of their currency.",
   "bank.deleted": "Bank account deleted.",
   "numbering.title": "Number sequences",
   "numbering.description": "Invoice numbers are assigned only when issuing – gapless and unique.",

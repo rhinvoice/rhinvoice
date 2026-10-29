@@ -571,7 +571,7 @@ export const de = {
   "language.it": "Italienisch",
   "bank.title": "Bankkonten",
   "bank.description":
-    "Konten für Zahlungsangaben und QR-Codes. Pro Währung ist ein Konto das Standardkonto.",
+    "Konten für Zahlungsangaben und QR-Codes. Pro Währung ist ein Konto das Standardkonto; im Dokument können Sie ein anderes wählen.",
   "bank.add": "Konto hinzufügen",
   "bank.edit": "Konto bearbeiten",
   "bank.emptyTitle": "Noch kein Bankkonto",
@@ -594,7 +594,7 @@ export const de = {
   "bank.saved": "Bankkonto gespeichert.",
   "bank.deleteTitle": "Bankkonto löschen?",
   "bank.deleteDescription":
-    "Bereits ausgestellte Dokumente behalten ihre Kontoangaben. Neue Dokumente verwenden ein anderes Konto.",
+    "Bereits ausgestellte Dokumente behalten ihre Kontoangaben. Entwürfe und neue Dokumente nehmen das Standardkonto ihrer Währung.",
   "bank.deleted": "Bankkonto gelöscht.",
   "numbering.title": "Nummernkreise",
   "numbering.description":

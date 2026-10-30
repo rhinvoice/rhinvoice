@@ -1,0 +1,265 @@
+---
+title: Le funzioni di Rhinvoice in sintesi
+description: "Tutte le funzioni di Rhinvoice, il programma di fatturazione gratuito e open source per CH, LI, DE e AT: fatture, IVA, fattura QR, fattura elettronica, solleciti."
+faq:
+  - q: Alcune funzioni di Rhinvoice sono a pagamento?
+    a: "No. Tutte le funzioni di questa pagina fanno parte di Rhinvoice, gratis sotto l’AGPL. Non esiste una versione a pagamento né moduli aggiuntivi."
+  - q: In quali valute Rhinvoice emette fatture?
+    a: "In franchi svizzeri (CHF) e in euro (EUR). Gli articoli hanno un prezzo per valuta, ogni conto bancario ha una valuta e una fattura usa il conto predefinito della sua valuta."
+  - q: Che cosa non fa Rhinvoice?
+    a: "Rhinvoice non è un programma di contabilità: niente contabilità, piano dei conti, rendiconto IVA o salari. Non è nemmeno un servizio in hosting, un negozio online o una cassa."
+  - q: Dove vedo le novità?
+    a: "Questa pagina elenca ciò che fa la versione attuale. Ogni nuova versione è descritta sotto Novità nella documentazione; il progetto raccoglie desideri e idee su GitHub."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Rhinvoice scrive **offerte, fatture, fatture di storno e solleciti** per aziende in Svizzera, Liechtenstein, Germania e Austria, con le aliquote IVA, le indicazioni legali, i codici QR di pagamento e i formati di fattura elettronica di ogni paese. Questa pagina elenca tutte le funzioni della versione attuale in una breve lista. Ogni gruppo rimanda alla guida dettagliata.
+
+## Offerte e fatture
+
+- Offerte, fatture e fatture di storno in CHF o EUR
+- Editor con il modulo a sinistra e un’anteprima su carta dal vivo a destra
+- Le bozze si salvano da sole; le bozze si possono eliminare
+- Posizioni con quantità, unità, prezzo, sconto e aliquota IVA, più righe di testo per titoli e note
+- Riordinare le posizioni trascinandole o con Alt+↑ / Alt+↓
+- Gli articoli vengono proposti mentre si digita nella riga; *Salva come articolo* tiene una nuova posizione come articolo
+- Sconto per posizione e sconto sul documento in percentuale o come importo, prezzi netti o lordi
+- Oggetto, riferimento, periodo della prestazione, scadenza e termine di pagamento per documento
+- Creare un nuovo cliente direttamente dalla fattura, in un pannello accanto
+- Ciò che manca ancora per l’emissione appare in alto nell’editor, con un pulsante verso il modulo giusto
+- I numeri vengono assegnati solo all’emissione, senza lacune e senza doppioni
+- Numerazioni con un modello proprio (`{YYYY}`, `{YY}`, `{MM}`, `{NNNN}`), azzeramento annuale e anteprima del prossimo numero
+- I documenti emessi sono bloccati, anche nella banca dati, e il PDF viene conservato con la sua somma di controllo SHA-256 (art. 958f CO, GoBD, BAO)
+- Correzioni solo con una fattura di storno con un proprio numero
+- Segnare le offerte come inviate, accettate o rifiutate; dopo la validità (30 giorni per impostazione predefinita) risultano scadute
+- *Converti in fattura* crea una bozza di fattura da un’offerta
+- *Duplica* crea una copia come bozza
+- Cronologia per documento, per esempio emissione, pagamenti, solleciti, e-mail e scelta manuale del trattamento fiscale
+- Elenchi con viste (*Bozze*, *Aperti*, *Scaduti*, *Pagati*, *Stornati*, *Registrati come perdita*), filtri per anno e cliente, totali
+- Ricerca a testo pieno su numero, cliente, oggetto e posizioni
+- Visualizzare, scaricare e stampare il PDF
+
+Guide: [La prima fattura](/docs/it/getting-started/first-invoice/), [Offerte](/docs/it/invoices/quotes/), [Emettere e stornare](/docs/it/invoices/issue-and-cancel/)
+
+## Pagamenti e perdite
+
+- Registrare pagamenti con data, importo e nota, anche pagamenti parziali
+- *Segna come pagata* con un clic, anche per più fatture insieme
+- *Annulla* direttamente nel messaggio; i pagamenti registrati si possono rimuovere
+- *Scaduta* viene dedotto ogni giorno dalla scadenza, non salvato
+- Registrare come perdita le fatture che non verranno pagate, con data, motivo e nota; la registrazione si può annullare
+- Un pagamento dopo la registrazione come perdita viene registrato normalmente
+- La vista *Registrati come perdita* mostra le perdite per anno e valuta e l’IVA che contengono
+
+Guide: [Pagamenti e solleciti](/docs/it/invoices/payments-and-reminders/), [Stralciare fatture](/docs/it/invoices/write-off/)
+
+## Imposte e paesi
+
+- Sede dell’azienda in Svizzera, Liechtenstein, Germania o Austria; i clienti possono essere ovunque
+- Aliquote IVA datate; vale l’aliquota della data della prestazione, senza data della prestazione quella della data della fattura
+- Svizzera e Liechtenstein: 8.1 / 2.6 / 3.8 %, più le aliquote precedenti dal 2011
+- Germania: 19 / 7 %, più 16 / 5 % per il secondo semestre 2020
+- Austria: 20 / 10 / 13 %
+- Trattamento fiscale determinato dal paese dell’azienda, dal paese del cliente e dal suo numero IVA: nazionale, inversione contabile, cessione intracomunitaria, cessione all’esportazione, esportazione, piccola impresa, esente
+- Scelta manuale del trattamento fiscale con un motivo che finisce nella cronologia
+- Beni e servizi tenuti separati, anche nelle fatture miste, ognuno con la sua indicazione
+- Piccole imprese: fatture senza IVA, con l’indicazione richiesta dal paese (§ 19 UStG, § 6 Abs. 1 Z 27 UStG)
+- Le indicazioni obbligatorie vengono controllate prima dell’emissione
+- Un avviso nell’editor quando manca il numero IVA di un cliente aziendale nell’UE per l’inversione contabile
+- L’IVA viene calcolata per aliquota; si arrotonda solo il totale
+- Arrotondamento svizzero a CHF 0.05, disattivabile
+- Termini per paese: IVA e IDI in Svizzera e Liechtenstein, USt. e USt-IdNr. in Germania, USt. e UID in Austria
+- Altri paesi si possono aggiungere come profilo di paese proprio
+
+Guide: [Svizzera](/docs/it/countries/switzerland/), [Liechtenstein](/docs/it/countries/liechtenstein/), [Germania](/docs/it/countries/germany/), [Austria](/docs/it/countries/austria/), [Altri paesi](/docs/it/countries/more-countries/)
+
+## Codici QR di pagamento e conti bancari
+
+- Fattura QR svizzera con sezione pagamento in CHF o EUR, per aziende in Svizzera e Liechtenstein
+- Riferimento QR con un QR-IBAN, oppure riferimento del creditore (SCOR, ISO 11649) con un IBAN normale
+- Codice QR EPC (GiroCode) sulle fatture in euro da Germania e Austria
+- Codice QR EPC anche sulle fatture in euro da Svizzera e Liechtenstein a clienti nel SEE, se il conto in euro ha un BIC
+- Più conti bancari con IBAN, QR-IBAN, BIC e valuta, un conto predefinito per valuta
+- Piè di pagina con tutti i conti o solo con il conto della valuta della fattura
+
+Guide: [Svizzera](/docs/it/countries/switzerland/), [Germania](/docs/it/countries/germany/)
+
+## Fattura elettronica
+
+- ZUGFeRD / Factur-X (EN 16931) integrato nel PDF di ogni fattura e fattura di storno emessa, per tutti e quattro i paesi
+- Tutti i PDF sono PDF/A-3b
+- La fattura elettronica integrata si può disattivare nel modello di stampa
+- XRechnung 3.0 (CII) come file XML per le autorità pubbliche tedesche
+- Leitweg-ID o riferimento fisso dell’acquirente per cliente in Germania
+- Prima dell’emissione Rhinvoice indica ciò che manca ancora per la fattura elettronica o la XRechnung
+- Unità come codici UN/ECE (raccomandazione n. 20), come richiede EN 16931
+- Verificata nei test automatici con il validatore KoSIT e Mustang
+
+Guida: [Fatture elettroniche](/docs/it/invoices/e-invoice/)
+
+## Clienti e articoli
+
+- Clienti come azienda o persona, con appellativo, persona di contatto, indirizzo, e-mail, telefono e gruppo
+- Numero cliente da una numerazione propria o inserito a mano
+- Per cliente: valuta predefinita, lingua dei documenti, termine di pagamento, sconto predefinito, esenzione, indirizzo di consegna e nota interna
+- Numero IVA del cliente; in Germania la Leitweg-ID
+- Pagina del cliente con «cliente dal» e tutti i documenti del cliente
+- Articoli con numero, nome, descrizione, gruppo, unità, aliquota IVA e l’indicazione bene o servizio
+- Prezzi degli articoli per valuta (CHF ed EUR)
+- Archiviare e ripristinare; gli elementi archiviati non compaiono più negli elenchi di selezione
+- Ricerca per nome, numero, località, e-mail o descrizione
+
+Guida: [Clienti e articoli](/docs/it/moving/customers-and-articles/)
+
+## Testi e modello di stampa
+
+- Modelli di testo per introduzione, condizioni di pagamento e chiusura, per tipo di documento, uno dei quali predefinito
+- Segnaposto nei testi: `{nummer}`, `{datum}`, `{faellig}`, `{kunde}`, `{betrag}`, `{waehrung}`, `{firma}`
+- Le indicazioni legali del paese come proposta, con una formulazione propria se lo desidera
+- Documenti in tedesco, inglese, francese o italiano, a scelta per documento, per cliente o come impostazione predefinita dell’azienda
+- Tre modelli di stampa: *Classico*, *Moderno*, *Sobrio*
+- Logo a sinistra o a destra in tre dimensioni, carattere Inter o Source Serif
+- Riga del mittente sopra l’indirizzo per la busta con finestra, recapiti nell’intestazione, numeri di posizione attivabili
+- Campo indirizzo secondo DIN 5008 forma B per buste con finestra
+- Anteprima del modello di stampa con l’ultima fattura
+- I documenti emessi conservano il loro PDF quando il modello di stampa cambia
+
+Guida: [Primo avvio](/docs/it/getting-started/first-start/)
+
+## Solleciti
+
+- Tutte le fatture scadute con il passo successivo sotto *Solleciti*
+- Tre livelli: promemoria di pagamento, 1° sollecito, 2° sollecito
+- Per livello: giorni dopo la scadenza o l’ultimo termine, nuovo termine di pagamento, spese di sollecito
+- Testo del sollecito per livello in tedesco, inglese, francese e italiano
+- Sollecito in PDF con l’importo aperto più le spese
+- Inviare i solleciti per e-mail
+- Le fatture registrate come perdita non vengono sollecitate
+
+Guida: [Pagamenti e solleciti](/docs/it/invoices/payments-and-reminders/)
+
+## Fatture ricorrenti
+
+- Piani mensili, trimestrali, semestrali o annuali
+- Alla data: creare una bozza, emettere, oppure emettere e inviare per e-mail
+- Il periodo coperto va sulla fattura come periodo della prestazione
+- Fissare la prima e l’ultima fattura, sospendere e riprendere un piano
+- Le date mancate vengono recuperate, ogni periodo una sola volta
+- Per ogni piano un elenco delle fatture scritte con il loro esito
+- *Rendi ricorrente* trasforma una fattura emessa in un piano
+
+Guida: [Fatture ricorrenti](/docs/it/invoices/recurring/)
+
+## Invio per e-mail
+
+- Fatture, offerte, fatture di storno e solleciti per e-mail con il loro PDF
+- A scelta la XRechnung come secondo allegato
+- Invio tramite il Suo server di posta (SMTP) con STARTTLS o SSL/TLS
+- Nome del mittente, indirizzo di risposta e una copia di ogni e-mail al mittente
+- E-mail di prova sotto *Impostazioni → E-mail*
+- Modelli di e-mail per tipo di documento e lingua, con segnaposto
+- Più destinatari per e-mail
+- Ogni e-mail figura nella cronologia del documento; se il server la rifiuta, Rhinvoice mostra la sua risposta
+
+Guida: [Fatture ricorrenti](/docs/it/invoices/recurring/)
+
+## Passaggio dal programma precedente
+
+- Clienti e articoli da CSV, XLSX e XLS
+- Set di caratteri (UTF-8, Windows-1252) e separatore vengono riconosciuti
+- Assegnazione delle colonne, prova con anteprima e rapporto in CSV
+- Voci già presenti: saltare, aggiornare o creare di nuovo
+- Salvare le assegnazioni delle colonne come modello
+- Fatture precedenti con i loro PDF originali: un elenco più file PDF, una cartella o file ZIP
+- Le fatture riprese sono bloccate, segnate *Ripreso* e compaiono nella ricerca, nel fatturato e nella cronologia del cliente
+- Le fatture riprese aperte si possono pagare e registrare come perdita
+- La numerazione prosegue dopo i numeri ripresi
+
+Guide: [Clienti e articoli](/docs/it/moving/customers-and-articles/), [Fatture precedenti](/docs/it/moving/old-invoices/)
+
+## Panoramica
+
+- Fatturato dell’anno rispetto all’anno precedente, con un andamento per mese
+- Importi aperti e scaduti per valuta, per anzianità
+- Le fatture scadute da più tempo
+- Offerte aperte con il tasso di accettazione dell’anno
+- Migliori clienti dell’anno e pagamenti attesi per settimana
+- Attività recenti e una lista di controllo per la configurazione
+
+## Backup
+
+- Con Docker: un container di backup proprio con restic, cifrato e deduplicato
+- Ogni giorno, dopo l’emissione o lo storno e su richiesta con *Esegui backup ora*
+- Destinazioni: storage compatibile S3, SFTP, una cartella e tramite rclone Dropbox, Google Drive e altri
+- Su Windows e Mac: backup in una cartella come OneDrive, Dropbox, iCloud Drive, Google Drive, un’unità di rete o un disco USB, con una chiave di ripristino
+- Si conservano 7 backup giornalieri, 4 settimanali, 12 mensili e tutti quelli annuali
+- *Impostazioni → Backup* mostra gli ultimi backup e avvisa quando l’ultimo riuscito ha più di 24 ore
+- Il ripristino è descritto passo per passo, anche su un nuovo computer
+
+Guide: [Backup e ripristino](/docs/it/operations/backup/), [Backup nel programma](/docs/it/operations/backup-desktop/), [Backup su Google Drive](/docs/it/operations/backup-google-drive/)
+
+## Sicurezza
+
+- Accesso con indirizzo e-mail e password; le password vengono salvate con argon2id
+- Autenticazione a due fattori con un’app di autenticazione (TOTP)
+- Blocco dopo ripetuti tentativi falliti, al massimo 10 accessi al minuto per indirizzo
+- Cookie di sessione HttpOnly e SameSite=Strict, Content-Security-Policy rigorosa
+- Una nuova password chiude le altre sessioni dell’account
+- *Password dimenticata?*: su un server con un comando, su Windows e Mac con un codice monouso nella cartella dei dati
+- Il programma per Windows e Mac risponde solo alle richieste al proprio indirizzo (127.0.0.1 o localhost)
+- I Suoi dati stanno nella Sua banca dati, sul Suo computer o server
+
+## Utilizzo
+
+- Palette dei comandi con ⌘K o Ctrl+K
+- Scorciatoie da tastiera: **I** o **N** nuova fattura, **Q** nuova offerta, **C** nuovo cliente, **A** nuovo articolo, **P** registrare un pagamento, **/** ricerca, ⌘↵ salvare, ⌘Z annullare
+- **G** seguito da una lettera apre un elenco, per esempio **G I** le fatture; **?** mostra tutte le scorciatoie
+- Le scorciatoie a un tasto si disattivano sotto *Impostazioni → Utilizzo*
+- Modo chiaro e scuro, o secondo il sistema
+- Interfaccia in tedesco (Svizzera, Germania, Austria), francese, italiano e inglese
+- Importi e date nel formato del paese, per esempio `CHF 1’234.50` o `1.234,50 EUR`
+- Colore d’accento dell’interfaccia regolabile, per esempio sul colore dell’azienda
+- Sullo smartphone: controllare lo stato, segnare come pagata, vedere il PDF
+- Utilizzabile interamente da tastiera; i test automatici dell’interfaccia controllano le pagine con axe-core secondo WCAG 2.2 AA
+- Assistente di configurazione al primo avvio (paese, azienda) e una lista di controllo nella panoramica
+- *Informazioni su Rhinvoice* con la versione e *Segnala un problema*
+
+Guida: [Primo avvio](/docs/it/getting-started/first-start/)
+
+## Installazione e aggiornamenti
+
+- Programma per Windows 10/11 con un setup, senza Docker, banca dati inclusa (beta)
+- Programma per Mac con chip Apple, macOS 12 o successivo (beta)
+- I setup sono firmati; l’app per Mac è inoltre notarizzata da Apple
+- I Suoi dati restano quando disinstalla
+- Con Docker Compose su un server, un NAS, un Raspberry Pi 4/5 o il proprio computer; immagini per `linux/amd64` e `linux/arm64`
+- Con Docker anche più account utente, creati con `rhinvoice user create`
+- Un avviso di nuova versione nella barra laterale e sotto *Informazioni su Rhinvoice*
+- Su Windows e Mac un clic installa l’aggiornamento; se la nuova versione non parte, torna la precedente con la sua banca dati
+- Con Docker l’avviso mostra i comandi per l’aggiornamento
+- La ricerca di aggiornamenti si può disattivare
+- Le versioni di prova arrivano come programma separato, *Rhinvoice Beta*, con dati propri
+- Dati di esempio per un’installazione di prova con `rhinvoice demo`
+
+Guide: [Windows e Mac](/docs/it/getting-started/install-desktop/), [Installazione con Docker](/docs/it/getting-started/installation/), [Aggiornamento](/docs/it/operations/update/), [Disinstallazione](/docs/it/operations/uninstall/)
+
+## Open source e costi
+
+- Gratuito, senza versione a pagamento né moduli aggiuntivi
+- Licenza: GNU Affero General Public License v3.0 o successiva (AGPL)
+- Codice sorgente su [GitHub](https://github.com/rhinvoice/rhinvoice)
+- Nessun servizio in hosting: Rhinvoice lo gestisce Lei
+- Demo pubbliche per la [Svizzera](https://ch.rhinvoice.com), la [Germania](https://de.rhinvoice.com) e l’[Austria](https://at.rhinvoice.com), azzerate ogni ora
+- Documentazione in tedesco, inglese, francese e italiano
+
+Per saperne di più: [Che cos’è Rhinvoice?](/docs/it/getting-started/what-is-rhinvoice/)
+
+<Aside type="caution" title="Nessuna consulenza fiscale">
+Rhinvoice è in versione beta (0.x) e non sostituisce una consulenza fiscale o legale. Aliquote e regole sono verificate sulle fonti ufficiali e fornite senza garanzia.
+</Aside>
+
+## Domande frequenti
+
+<Faq />

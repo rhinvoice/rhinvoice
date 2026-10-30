@@ -380,8 +380,13 @@ def test_pass_through_lines_have_no_treatment_of_their_own() -> None:
     document = draft(lines=(line(), fee), goods_treatment=TaxTreatment.GOODS_EXPORT)
     # The pass-through goods line adds no export notice: it is outside VAT.
     assert document.content.treatments == (TaxTreatment.DOMESTIC,)
-    only = draft(lines=(fee,), goods_treatment=TaxTreatment.GOODS_EXPORT).content
-    assert only.treatments == (TaxTreatment.DOMESTIC,)
+    # Pass-through lines alone: no treatment, so no notice and no VAT rows.
+    only = draft(lines=(fee, text), goods_treatment=TaxTreatment.GOODS_EXPORT).content
+    assert only.treatments == ()
+    assert not only.charges_vat
+    # Without any position yet, the document's treatment stands for those to come.
+    assert draft(lines=(text,)).content.treatments == (TaxTreatment.DOMESTIC,)
+    assert draft(lines=()).content.treatments == (TaxTreatment.DOMESTIC,)
     issued_one = draft(lines=(line(), fee)).issue(
         number="R20260001",
         issue_date=TODAY,
@@ -859,6 +864,21 @@ def test_issue_blockers_name_all_missing_party_details_at_once() -> None:
         "company_vat_id_missing",
         "customer_vat_id_missing",
     )
+
+
+def test_pass_through_lines_alone_need_no_reverse_charge_details() -> None:
+    company = factories.company(address=factories.address(country=CountryCode("DE")))
+    customer = factories.customer(address=factories.address(country=CountryCode("AT")))
+    total = Money(Decimal(80), Currency.EUR)
+    fee = line("1", "80", TaxCategory.PASS_THROUGH)
+    reverse = TaxTreatment.REVERSE_CHARGE
+    only = draft(lines=(fee,), currency=Currency.EUR, treatment=reverse)
+    assert only.issue_blockers(company, customer, total) == ()
+    mixed = draft(lines=(line(), fee), currency=Currency.EUR, treatment=reverse)
+    assert mixed.issue_blockers(company, customer, total) == ("reverse_charge_needs_vat_number",)
+    # Without any position yet, the editor already names what reverse charge needs.
+    empty = draft(lines=(), currency=Currency.EUR, treatment=reverse)
+    assert empty.issue_blockers(company, customer, total) == ("reverse_charge_needs_vat_number",)
 
 
 def test_issue_blockers_are_empty_when_the_details_are_complete() -> None:

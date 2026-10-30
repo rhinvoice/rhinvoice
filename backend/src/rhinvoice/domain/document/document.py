@@ -261,15 +261,15 @@ class DraftContent:
     def treatments(self) -> tuple[TaxTreatment, ...]:
         """The treatments of the positions, the document's first; each with its notice.
 
-        Pass-through lines have none: they lie outside VAT (ADR 0039).
+        Pass-through lines have none: they lie outside VAT (ADR 0039), so a document of
+        pass-through lines alone has no treatment, no notice and no VAT rows. Without any
+        position yet, the document's treatment stands for the ones to come.
         """
-        found = dict.fromkeys(
-            self.treatment_of(line)
-            for line in self.lines
-            if line.is_item and not line.is_pass_through
-        )
-        ordered = sorted(found, key=lambda treatment: treatment is not self.treatment)
-        return tuple(ordered) or (self.treatment,)
+        items = [line for line in self.lines if line.is_item]
+        if not items:
+            return (self.treatment,)
+        found = dict.fromkeys(self.treatment_of(line) for line in items if not line.is_pass_through)
+        return tuple(sorted(found, key=lambda treatment: treatment is not self.treatment))
 
     @property
     def charges_vat(self) -> bool:
@@ -955,7 +955,12 @@ class Document:
 def _reverse_charge_problems(
     content: DraftContent, customer: Customer
 ) -> Iterator[ValidationError]:
-    if content.treatment is TaxTreatment.REVERSE_CHARGE and customer.vat_number is None:
+    # Pass-through lines alone are no reverse-charge supply (ADR 0039).
+    if (
+        content.treatment is TaxTreatment.REVERSE_CHARGE
+        and content.treatments
+        and customer.vat_number is None
+    ):
         yield ValidationError(
             "treatment",
             "reverse charge needs the customer's VAT number",

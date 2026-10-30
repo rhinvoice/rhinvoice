@@ -258,6 +258,9 @@ def test_a_document_of_pass_through_lines_only(printing: PrintHandlers) -> None:
     assert ">Total CHF<" in html
     assert html.count(">250.37<") == 1
     assert ">250.35<" in html
+    # Outside VAT: no net total, no VAT rows, no rate column.
+    assert ">Net total<" not in html
+    assert f"%{NBSP}on " not in html
     empty = printing.preview_html(DocumentType.INVOICE, draft(lines=()))
     assert '<div class="totals">' not in empty
     stamps = LineInput(
@@ -269,6 +272,16 @@ def test_a_document_of_pass_through_lines_only(printing: PrintHandlers) -> None:
     )
     counted = printing.preview_html(DocumentType.INVOICE, draft(lines=(stamps,)))
     assert f"<span>Stamps (3{NBSP}× 2.00)</span>" in counted
+
+
+def test_pass_through_lines_alone_print_no_notice(printing: PrintHandlers, store: Store) -> None:
+    assert store.company is not None
+    store.company = replace(store.company, small_business=True)
+    alone = printing.preview_html(DocumentType.INVOICE, draft(lines=(FEE,)))
+    assert 'class="notice"' not in alone
+    # A taxed line brings the small business notice back.
+    mixed = printing.preview_html(DocumentType.INVOICE, draft(lines=(HOURS, FEE)))
+    assert 'class="notice"' in mixed
 
 
 @pytest.mark.parametrize(

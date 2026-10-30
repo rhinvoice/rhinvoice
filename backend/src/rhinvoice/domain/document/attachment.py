@@ -17,7 +17,7 @@ from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.text import clean_text
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
     from datetime import datetime
     from uuid import UUID
 
@@ -52,6 +52,22 @@ def upload_name(raw: str) -> str:
     stem = _visible(_UNSAFE.sub("_", name)).strip(" .")
     stem = stem[: MAX_FILE_NAME - len(PDF_SUFFIX)].rstrip(" .") or DEFAULT_STEM
     return stem + PDF_SUFFIX
+
+
+def unique_name(name: str, taken: Iterable[str]) -> str:
+    """Keep the names of one document's files apart, in any case.
+
+    A second "Notar.pdf" becomes "Notar (2).pdf", a third "Notar (3).pdf"; the name is
+    shortened where the number would make it too long.
+    """
+    used = {existing.casefold() for existing in taken}
+    stem = name.removesuffix(PDF_SUFFIX)
+    candidate, count = name, 1
+    while candidate.casefold() in used:
+        count += 1
+        suffix = f" ({count}){PDF_SUFFIX}"
+        candidate = stem[: MAX_FILE_NAME - len(suffix)].rstrip(" .") + suffix
+    return candidate
 
 
 def check_room(attached: Sequence[Attachment], size: int) -> None:

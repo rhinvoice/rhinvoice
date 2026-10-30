@@ -250,8 +250,12 @@ function MailForm({ subject, draft, xrechnung, warning, onDone }: MailFormProps)
           </div>
         ) : null}
         {/* The files attached to the draft go after the PDF (and the XRechnung). */}
-        {(draft.attachments ?? []).map((name) => (
-          <span key={name} className="inline-flex items-center gap-1.5 text-muted-foreground">
+        {/* Keyed by position: two files may carry the same name. */}
+        {(draft.attachments ?? []).map((name, index) => (
+          <span
+            key={`${String(index)}:${name}`}
+            className="inline-flex items-center gap-1.5 text-muted-foreground"
+          >
             <PaperclipIcon className="size-4" aria-hidden="true" />
             {name}
           </span>

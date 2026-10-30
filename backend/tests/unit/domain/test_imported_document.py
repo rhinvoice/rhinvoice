@@ -12,6 +12,7 @@ from rhinvoice.domain.document.attachment import (
     MAX_FILE_NAME,
     Attachment,
     check_room,
+    unique_name,
     upload_name,
 )
 from rhinvoice.domain.document.document import (
@@ -323,6 +324,22 @@ def test_attachments_are_checked() -> None:
 def test_upload_names_are_safe(raw: str, expected: str) -> None:
     assert upload_name(raw) == expected
     assert len(upload_name(raw)) <= MAX_FILE_NAME
+
+
+@pytest.mark.parametrize(
+    ("name", "taken", "expected"),
+    [
+        ("Notar.pdf", [], "Notar.pdf"),
+        ("Notar.pdf", ["Amt.pdf", "2016/Notar.pdf"], "Notar.pdf"),
+        ("Notar.pdf", ["notar.PDF"], "Notar (2).pdf"),
+        ("Notar.pdf", ["Notar.pdf", "Notar (2).pdf", "NOTAR (3).pdf"], "Notar (4).pdf"),
+        ("x" * 251 + ".pdf", ["x" * 251 + ".pdf"], "x" * 247 + " (2).pdf"),
+        ("x" * 246 + " y.pdf", ["x" * 246 + " y.pdf"], "x" * 246 + " (2).pdf"),
+    ],
+)
+def test_names_of_one_document_stay_apart(name: str, taken: list[str], expected: str) -> None:
+    assert unique_name(name, taken) == expected
+    assert len(unique_name(name, taken)) <= MAX_FILE_NAME
 
 
 def stored(size: int) -> Attachment:

@@ -276,10 +276,12 @@ def test_the_attachments_of_a_draft_stay_within_one_mail(
     ) as caught:
         handlers.add_file(draft.document.id, "b.pdf", PDF + b"x")
     assert caught.value.code == "attachments_too_large"
-    handlers.add_file(draft.document.id, "b.pdf", PDF)
+    # The same name again: numbered, in the history too.
+    view = handlers.add_file(draft.document.id, "A.PDF", PDF)
+    assert view.document.events[-1].detail == "A (2).pdf"
     assert [item.file_name for item in handlers.attachments(draft.document.id)] == [
+        "A (2).pdf",
         "a.pdf",
-        "b.pdf",
     ]
     # An imported invoice keeps every file it came with.
     document = imported(store)

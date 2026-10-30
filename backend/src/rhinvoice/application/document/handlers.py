@@ -16,7 +16,12 @@ from rhinvoice.application.text.handlers import effective_notice
 from rhinvoice.domain.catalog.unit import Unit
 from rhinvoice.domain.company.bank_account import paying_account
 from rhinvoice.domain.country.registry import profile_of
-from rhinvoice.domain.document.attachment import Attachment, check_room, upload_name
+from rhinvoice.domain.document.attachment import (
+    Attachment,
+    check_room,
+    unique_name,
+    upload_name,
+)
 from rhinvoice.domain.document.document import (
     DisplayStatus,
     Document,
@@ -501,7 +506,8 @@ class DocumentHandlers:
 
         Drafts take attachments, such as the third-party invoices of pass-through items
         (ADR 0040); they are removed again while the document is a draft. From issuing on
-        no file can be replaced or removed (GoBD, OR 958f).
+        no file can be replaced or removed (GoBD, OR 958f). A name the document's files carry
+        already gets " (2)", " (3)" and so on.
         """
         if not content.startswith(b"%PDF-"):
             raise ValidationError("file", "the file is no PDF", code="not_a_pdf")
@@ -511,14 +517,17 @@ class DocumentHandlers:
         sha256 = hashlib.sha256(content).hexdigest()
         now = self.clock.now()
         with self.uow() as uow:
-            document = self._require(uow, document_id, for_update=True).record_file(name, now)
+            document = self._require(uow, document_id, for_update=True)
             if document.is_imported and document.pdf_sha256 is None:
-                document = document.archive_pdf(sha256)
+                document = document.record_file(name, now).archive_pdf(sha256)
                 view = self._save(uow, document, new=False)
                 uow.documents.archive_pdf(document, content)
             else:
+                attached = uow.documents.attachments(document_id)
                 if document.is_draft:
-                    check_room(uow.documents.attachments(document_id), len(content))
+                    check_room(attached, len(content))
+                name = unique_name(name, (attachment.file_name for attachment in attached))
+                document = document.record_file(name, now)
                 view = self._save(uow, document, new=False)
                 attachment = Attachment(
                     id=new_id(),

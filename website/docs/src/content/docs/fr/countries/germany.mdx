@@ -11,7 +11,7 @@ faq:
   - q: À partir de quand les entreprises allemandes doivent-elles émettre des factures électroniques?
     a: "Les entreprises doivent pouvoir les recevoir depuis 2025. Elles doivent les émettre pour les factures B2B nationales dès 2027 si leur chiffre d’affaires de l’année précédente dépassait EUR 800’000, et dès 2028 toutes (§ 27 Abs. 38 UStG). Les petites entreprises en sont dispensées. Rhinvoice intègre la facture électronique (ZUGFeRD) dans le PDF de chaque facture émise, pour autant que les données nécessaires soient complètes."
   - q: Rhinvoice respecte-t-il les GoBD?
-    a: "Rhinvoice met en œuvre l’inaltérabilité. Les factures émises sont verrouillées avec leur PDF, aussi dans la base de données, le PDF est conservé avec son SHA-256, et les corrections se font uniquement par une facture d’annulation avec son propre numéro. Si votre comptabilité dans son ensemble respecte les GoBD, c’est à voir avec votre conseiller fiscal."
+    a: "Les factures émises sont verrouillées avec leur PDF, aussi dans la base de données, les numéros sont attribués sans lacune seulement à l’émission, et les corrections se font uniquement par une facture d’annulation avec son propre numéro. Il n’existe pas de certificat GoBD officiel, et Rhinvoice n’a pas d’attestation logicielle (Testat). Les GoBD portent sur l’ensemble de votre procédure, y compris votre documentation de procédure (Verfahrensdokumentation); voyez cela avec votre conseiller fiscal."
 ---
 
 import Faq from "../../../../components/Faq.astro";
@@ -93,14 +93,22 @@ Rhinvoice intègre par défaut une **facture ZUGFeRD / Factur-X** (profil EN 169
 
 ## GoBD et conservation
 
-Conservez les factures **dix ans** (§ 147 AO). Rhinvoice les rend inaltérables :
+Conservez les factures **huit ans** (§ 14b Abs. 1 UStG, § 147 Abs. 3 AO), à compter de la fin de l’année civile au cours de laquelle elles ont été émises. La quatrième loi d’allègement bureaucratique (Viertes Bürokratieentlastungsgesetz) a réduit le délai de dix à huit ans pour tous les délais qui n’étaient pas encore échus le 31 décembre 2024. Les livres, les enregistrements et les comptes annuels se conservent toujours **dix ans** (§ 147 Abs. 1 Nr. 1 AO).
+
+Rhinvoice rend les factures inaltérables :
 
 - Dès l’émission, le contenu et le PDF sont verrouillés, directement dans la base de données aussi.
 - Le PDF est conservé avec son empreinte SHA-256.
+- Rhinvoice attribue le numéro de facture seulement à l’émission, dans la même transaction de base de données. Il n’y a ainsi ni lacunes ni doublons.
 - Les corrections se font uniquement par une [facture d’annulation](/docs/fr/invoices/issue-and-cancel/) avec son propre numéro. Les brouillons peuvent être supprimés, les factures émises jamais.
 - Chaque changement (émission, paiement, annulation, traitement fiscal) figure dans l’historique avec un horodatage.
+- La [sauvegarde](/docs/fr/operations/backup/) est chiffrée, quotidienne et faite environ deux minutes après l’émission. Les sauvegardes annuelles ne sont jamais supprimées.
 
-Protégez les données avec une [sauvegarde](/docs/fr/operations/backup/). Essayez tout dans la démo sur [de.rhinvoice.com](https://de.rhinvoice.com).
+### Existe-t-il un certificat GoBD?
+
+Il n’existe pas de certificat GoBD officiel, et Rhinvoice n’a pas d’attestation logicielle (Testat). Les GoBD portent sur l’ensemble de la procédure dans votre entreprise, y compris la documentation de procédure (Verfahrensdokumentation). Vous la rédigez vous-même et la conservez dix ans (§ 147 Abs. 1 Nr. 1 AO). Si votre procédure respecte les GoBD, c’est à voir avec votre conseiller fiscal. Comme Rhinvoice est open source, la mise en œuvre des points ci-dessus est [consultable librement](https://github.com/rhinvoice/rhinvoice).
+
+Essayez tout dans la démo sur [de.rhinvoice.com](https://de.rhinvoice.com).
 
 Le pays de votre entreprise manque? Rhinvoice peut être étendu : [Ajouter d’autres pays](/docs/fr/countries/more-countries/).
 

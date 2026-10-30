@@ -15,7 +15,7 @@ faq:
   - q: Dove sono conservati i miei dati?
     a: Sul Suo server o sul Suo computer, nel database PostgreSQL di Rhinvoice. Contiene clienti, articoli, documenti e i PDF archiviati. Rhinvoice non è un servizio cloud; i dati restano da Lei. Il programma per Windows e Mac li conserva nella Sua cartella utente.
   - q: Rhinvoice rispetta le regole di immodificabilità della GoBD, dell’art. 958f CO e della BAO?
-    a: Rhinvoice le applica. Dall’emissione in poi contenuto e PDF di una fattura sono bloccati, anche direttamente nel database, e il PDF viene conservato con il suo SHA-256. Le correzioni si fanno solo con una fattura di storno con un proprio numero. Se la Sua contabilità nel suo insieme rispetta le regole va chiarito con il Suo consulente fiscale o fiduciario.
+    a: Dall’emissione in poi contenuto e PDF di una fattura sono bloccati, anche direttamente nel database, il PDF viene conservato con il suo SHA-256 e le correzioni si fanno solo con una fattura di storno con un proprio numero. Non esiste un certificato GoBD ufficiale e Rhinvoice non ha un’attestazione del software (Testat). Se la Sua contabilità nel suo insieme, compresa la documentazione della procedura, rispetta le regole va chiarito con il Suo consulente fiscale o fiduciario.
   - q: Come fa Rhinvoice il backup dei miei dati?
     a: Con restic, cifrato e deduplicato, ogni giorno e circa due minuti dopo l’emissione o lo storno di documenti. Le destinazioni sono storage compatibili con S3, SFTP, una cartella, Dropbox, Google Drive e altre; il programma per Windows e Mac salva in una cartella come OneDrive o iCloud Drive. Rhinvoice conserva 7 backup giornalieri, 4 settimanali, 12 mensili e tutti quelli annuali.
   - q: Rhinvoice può creare fatture elettroniche?

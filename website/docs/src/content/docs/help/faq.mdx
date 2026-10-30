@@ -15,7 +15,7 @@ faq:
   - q: Where are my data kept?
     a: On your own server or computer, in Rhinvoice's PostgreSQL database. It holds customers, articles, documents and the archived PDFs. Rhinvoice is not a cloud service; the data stay with you. The program for Windows and Mac keeps them in your user folder.
   - q: Does Rhinvoice meet the immutability rules of the GoBD, Art. 958f CO and the BAO?
-    a: Rhinvoice implements them. From issuing on, an invoice's content and PDF are locked, directly in the database too, and the PDF is kept with its SHA-256. Corrections are made only by a cancellation invoice with its own number. Whether your bookkeeping as a whole meets the rules is something to settle with your tax adviser or fiduciary.
+    a: From issuing on, an invoice's content and PDF are locked, directly in the database too, the PDF is kept with its SHA-256, and corrections are made only by a cancellation invoice with its own number. There is no official GoBD certificate, and Rhinvoice has no software attestation (Testat). Whether your bookkeeping as a whole, including your process documentation, meets the rules is something to settle with your tax adviser or fiduciary.
   - q: How does Rhinvoice back up my data?
     a: With restic, encrypted and deduplicated, daily and about two minutes after documents were issued or cancelled. Targets are S3-compatible storage, SFTP, a folder, Dropbox, Google Drive and others; the program for Windows and Mac backs up into a folder such as OneDrive or iCloud Drive. Rhinvoice keeps 7 daily, 4 weekly, 12 monthly and every yearly backup.
   - q: Can Rhinvoice create e-invoices?

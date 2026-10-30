@@ -1,13 +1,13 @@
 ---
 title: Rhinvoice vollständig deinstallieren
-description: "Rhinvoice mit Containern, Daten-Volumes und Images entfernen. Sichern Sie vorher die Rechnungs-PDFs oder ein Backup: Rechnungen sind zehn Jahre aufzubewahren."
+description: "Rhinvoice mit Containern, Daten-Volumes und Images entfernen. Sichern Sie vorher die Rechnungs-PDFs oder ein Backup: Rechnungen sind jahrelang aufzubewahren."
 faq:
   - q: Wie entferne ich Rhinvoice vollständig?
     a: Führen Sie im Ordner mit compose.yml und .env den Befehl docker compose down --volumes --rmi all aus und löschen Sie danach den Ordner. Damit verschwinden Container, Netzwerk, Daten-Volumes und Images.
   - q: Werden meine Backups beim Deinstallieren gelöscht?
     a: Backups im lokalen Standard-Volume von Docker werden mitgelöscht. Ein Ordner als BACKUP_LOCAL_DIR, S3, SFTP und Cloud-Ziele bleiben unberührt. Diese löschen Sie selbst, wenn Sie sie nicht mehr brauchen.
   - q: Was muss ich vor dem Deinstallieren tun?
-    a: Bewahren Sie die PDFs Ihrer ausgestellten Rechnungen oder ein Backup ausserhalb von Docker auf. Ausgestellte Rechnungen müssen in der Regel zehn Jahre aufbewahrt werden.
+    a: Bewahren Sie die PDFs Ihrer ausgestellten Rechnungen oder ein Backup ausserhalb von Docker auf. Ausgestellte Rechnungen müssen je nach Land sieben bis zehn Jahre aufbewahrt werden.
 ---
 
 import Faq from "../../../../components/Faq.astro";
@@ -16,7 +16,7 @@ import { Aside } from "@astrojs/starlight/components";
 Um Rhinvoice zu entfernen, führen Sie in seinem Ordner `docker compose down --volumes --rmi all` aus und löschen den Ordner. Damit sind alle Rechnungen, Kunden und Einstellungen endgültig gelöscht. Bewahren Sie deshalb vorher die PDFs Ihrer ausgestellten Rechnungen oder ein Backup ausserhalb von Docker auf.
 
 <Aside type="caution" title="Zuerst die Rechnungen sichern">
-Ausgestellte Rechnungen müssen in der Regel zehn Jahre aufbewahrt werden (Schweiz: Art. 958f OR, Deutschland: § 147 AO, Österreich: § 132 BAO). Beim Entfernen von Rhinvoice sind sie endgültig weg.
+Ausgestellte Rechnungen müssen je nach Land sieben bis zehn Jahre aufbewahrt werden (Schweiz: Art. 958f OR, Deutschland: § 14b UStG, § 147 AO, Österreich: § 132 BAO). Beim Entfernen von Rhinvoice sind sie endgültig weg.
 </Aside>
 
 ## 1. Ein letztes Backup

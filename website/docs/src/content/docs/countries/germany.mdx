@@ -11,7 +11,7 @@ faq:
   - q: From when must German companies issue e-invoices?
     a: Businesses must be able to receive them since 2025. They must issue them for domestic B2B invoices from 2027 if their turnover in the previous year was above EUR 800,000, and from 2028 all of them (§ 27 Abs. 38 UStG). Small businesses are exempt. Rhinvoice embeds the e-invoice (ZUGFeRD) in the PDF of every issued invoice, as long as the details it needs are complete.
   - q: Does Rhinvoice meet the GoBD?
-    a: Rhinvoice implements the immutability. Issued invoices are locked with their PDF, in the database too, the PDF is kept with its SHA-256, and corrections are made only by a cancellation invoice with its own number. Whether your bookkeeping as a whole meets the GoBD is something to settle with your tax adviser.
+    a: Issued invoices are locked with their PDF, in the database too, numbers are assigned without gaps only on issuing, and corrections are made only by a cancellation invoice with its own number. There is no official GoBD certificate, and Rhinvoice has no software attestation (Testat). The GoBD apply to your whole procedure, including your process documentation (Verfahrensdokumentation); settle that with your tax adviser.
 ---
 
 import Faq from "../../../components/Faq.astro";
@@ -93,14 +93,22 @@ Rhinvoice embeds a **ZUGFeRD / Factur-X invoice** (profile EN 16931) in the PDF 
 
 ## GoBD and keeping invoices
 
-Keep invoices for **ten years** (§ 147 AO). Rhinvoice makes them immutable:
+Keep invoices for **eight years** (§ 14b Abs. 1 UStG, § 147 Abs. 3 AO), counted from the end of the calendar year in which they were issued. The Fourth Bureaucracy Relief Act (Viertes Bürokratieentlastungsgesetz) shortened the period from ten to eight years for every period that had not expired on 31 December 2024. Books, records and annual accounts are still kept for **ten years** (§ 147 Abs. 1 Nr. 1 AO).
+
+Rhinvoice makes invoices immutable:
 
 - From issuing on, content and PDF are locked, directly in the database too.
 - The PDF is kept with its SHA-256 hash.
+- Rhinvoice assigns the invoice number only on issuing, in the same database transaction. So there are neither gaps nor duplicates.
 - Corrections are made only by a [cancellation invoice](/docs/invoices/issue-and-cancel/) with its own number. Drafts can be deleted, issued invoices never.
 - Every change (issued, payment, cancellation, tax treatment) is in the history with a timestamp.
+- The [backup](/docs/operations/backup/) runs encrypted, daily and about two minutes after issuing. Yearly backups are never deleted.
 
-Protect the data with a [backup](/docs/operations/backup/). Try everything in the demo at [de.rhinvoice.com](https://de.rhinvoice.com).
+### Is there a GoBD certificate?
+
+There is no official GoBD certificate, and Rhinvoice has no software attestation (Testat). The GoBD apply to the whole procedure in your business, including the process documentation (Verfahrensdokumentation). You write it yourself and keep it for ten years (§ 147 Abs. 1 Nr. 1 AO). Whether your procedure meets the GoBD is something to settle with your tax adviser. Because Rhinvoice is open source, how the points above are implemented is [open to view](https://github.com/rhinvoice/rhinvoice).
+
+Try everything in the demo at [de.rhinvoice.com](https://de.rhinvoice.com).
 
 Your company's country is missing? Rhinvoice can be extended: [Adding more countries](/docs/countries/more-countries/).
 

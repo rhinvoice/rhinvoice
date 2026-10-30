@@ -5,7 +5,7 @@ faq:
   - q: À quelle fréquence Rhinvoice fait-il une sauvegarde?
     a: "Chaque jour, par défaut à 02:00, et environ deux minutes après l’émission ou l’annulation de documents. Paramètres, Sauvegarde, Sauvegarder maintenant en demande une immédiatement."
   - q: Combien de temps les sauvegardes sont-elles conservées?
-    a: "7 quotidiennes, 4 hebdomadaires, 12 mensuelles et toutes les sauvegardes annuelles. Les sauvegardes annuelles ne sont jamais supprimées, car les factures doivent être conservées dix ans."
+    a: "7 quotidiennes, 4 hebdomadaires, 12 mensuelles et toutes les sauvegardes annuelles. Les sauvegardes annuelles ne sont jamais supprimées, car les factures doivent être conservées sept à dix ans selon le pays."
   - q: Rhinvoice peut-il sauvegarder sur Dropbox ou Google Drive?
     a: "Oui, via rclone, qui fait partie du conteneur de sauvegarde. Les sauvegardes sont chiffrées avant de quitter la machine, si bien que le fournisseur cloud ne stocke que des blocs illisibles."
   - q: Que se passe-t-il si je perds le mot de passe de sauvegarde?
@@ -22,7 +22,7 @@ Cette page traite de l’installation avec Docker. Le programme pour Windows et 
 ## Quand et combien de temps
 
 - **Quand :** chaque jour (par défaut à 02:00, `BACKUP_DAILY_AT`) et environ deux minutes après l’émission ou l’annulation de documents (plusieurs à la suite donnent une seule sauvegarde). *Paramètres → Sauvegarde → Sauvegarder maintenant* en demande une immédiatement.
-- **Conservées :** 7 quotidiennes, 4 hebdomadaires, 12 mensuelles et **toutes les annuelles**. Les factures doivent être conservées dix ans (art. 958f CO, GoBD, BAO); les sauvegardes annuelles ne sont jamais supprimées. Les anciennes sauvegardes sont supprimées le dimanche, jour où un échantillon de 5 % des données est aussi vérifié.
+- **Conservées :** 7 quotidiennes, 4 hebdomadaires, 12 mensuelles et **toutes les annuelles**. Les factures doivent être conservées sept à dix ans selon le pays (Suisse : art. 958f CO, Allemagne : § 14b UStG, § 147 AO, Autriche : § 132 BAO); les sauvegardes annuelles ne sont jamais supprimées. Les anciennes sauvegardes sont supprimées le dimanche, jour où un échantillon de 5 % des données est aussi vérifié.
 - **Pas sauvegardée :** une installation sans données d’entreprise (une installation neuve). Sa base de données vide ne doit jamais devenir la dernière sauvegarde.
 - **Affiché :** l’aperçu avertit lorsque la dernière sauvegarde réussie date de plus de 24 heures ou que la sauvegarde n’est pas configurée. *Paramètres → Sauvegarde* liste les dernières sauvegardes.
 

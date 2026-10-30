@@ -1414,6 +1414,8 @@ export const de = {
     "Eine übernommene Rechnung besteht aus ihrem PDF; das geht mit ihr nicht.",
   "error.attachments_frozen":
     "Anhänge lassen sich nur bei Entwürfen ändern; ausgestellte Dokumente behalten ihre Dateien.",
+  "error.discount_on_pass_through_only":
+    "Durchlaufende Posten erhalten keinen Rabatt; ohne andere Positionen bleibt er wirkungslos.",
   "error.too_many_attachments": "Ein Entwurf hat höchstens 10 Anhänge.",
   "error.attachments_too_large":
     "Die Anhänge eines Entwurfs sind zusammen höchstens 20 MB groß, damit sie in eine E-Mail passen.",

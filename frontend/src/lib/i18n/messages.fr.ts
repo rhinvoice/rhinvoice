@@ -1436,6 +1436,8 @@ export const fr: Catalog<MessageKey> = {
     "Une facture reprise se compose de son PDF ; cette action n’est pas possible pour elle.",
   "error.attachments_frozen":
     "Les pièces jointes ne se modifient que sur les brouillons ; les documents émis gardent leurs fichiers.",
+  "error.discount_on_pass_through_only":
+    "Les débours ne reçoivent pas de rabais ; sans autres positions, il resterait sans effet.",
   "error.too_many_attachments": "Un brouillon a au plus 10 pièces jointes.",
   "error.attachments_too_large":
     "Les pièces jointes d’un brouillon font au plus 20 Mo au total, pour tenir dans un seul e-mail.",

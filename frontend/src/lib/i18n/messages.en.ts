@@ -1370,6 +1370,8 @@ export const en: Catalog<MessageKey> = {
     "A taken over invoice consists of its PDF; this is not possible with it.",
   "error.attachments_frozen":
     "Attachments can only be changed on drafts; issued documents keep their files.",
+  "error.discount_on_pass_through_only":
+    "Pass-through items take no discount; without other items it would reduce nothing.",
   "error.too_many_attachments": "A draft has at most 10 attachments.",
   "error.attachments_too_large":
     "The attachments of a draft are at most 20 MB together, so that they fit into one e-mail.",

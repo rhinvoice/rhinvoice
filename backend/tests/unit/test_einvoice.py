@@ -740,11 +740,13 @@ def drafts(draw: st.DrawFn) -> DraftInput:
         for index in range(draw(st.integers(min_value=1, max_value=6)))
     )
     sample = samples()["ch-domestic"].draft
+    taxed = any(line.tax_category is not TaxCategory.PASS_THROUGH for line in lines)
     return replace(
         sample,
         lines=lines,
         price_mode=draw(st.sampled_from(PriceMode)),
-        discount_value=str(draw(DISCOUNTS)),
+        # Pass-through items alone take no document discount.
+        discount_value=str(draw(DISCOUNTS)) if taxed else "0",
         reference="",
         service_from=None,
         service_to=None,
@@ -981,7 +983,10 @@ def test_outside_vat_the_pass_through_lines_join_the_only_breakdown() -> None:
 
 def test_pass_through_lines_alone() -> None:
     sample = samples()["de-pass-through"]
-    only = replace(sample, draft=replace(sample.draft, lines=(sample.draft.lines[1],)))
+    # Without the document discount, which pass-through items alone do not take.
+    only = replace(
+        sample, draft=replace(sample.draft, lines=(sample.draft.lines[1],), discount_value="0")
+    )
     printed = model(only)
     assert problems(printed, EInvoiceProfile.EN16931) == ()
     root = fromstring(WRITER.xml(printed, EInvoiceProfile.EN16931))  # noqa: S314 - our own
@@ -1000,7 +1005,8 @@ def test_pass_through_lines_alone() -> None:
 
 def test_pass_through_lines_need_the_sellers_tax_id() -> None:
     sample = samples()["de-pass-through"]
-    printed = model(replace(sample, draft=replace(sample.draft, lines=(sample.draft.lines[1],))))
+    draft = replace(sample.draft, lines=(sample.draft.lines[1],), discount_value="0")
+    printed = model(replace(sample, draft=draft))
     company = replace(printed.company, vat_number=None, tax_number="")
     assert problems(replace(printed, company=company), EInvoiceProfile.EN16931) == (
         EInvoiceProblem.SELLER_TAX_ID_MISSING,

@@ -20,6 +20,7 @@ from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.supply import Supply
 from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.tax.vat_code import VatCode
+from tests.helpers import raises_exactly
 
 SWISS_RATES = {
     TaxCategory.STANDARD: Decimal("8.1"),
@@ -281,7 +282,7 @@ def test_document_discount_never_touches_pass_through_lines() -> None:
 
 def test_a_document_of_pass_through_lines_only() -> None:
     totals = compute(
-        [item("2", "12.50", PASS)], discount=Discount(DiscountKind.PERCENT, Decimal(50))
+        [item("2", "12.50", PASS)], discount=Discount(DiscountKind.PERCENT, Decimal(0))
     )
     assert totals.groups == ()
     assert (totals.subtotal, totals.discount, totals.net, totals.tax) == (
@@ -292,6 +293,20 @@ def test_a_document_of_pass_through_lines_only() -> None:
     )
     assert totals.pass_through == chf("25.00")
     assert totals.total == chf("25.00")
+    # A discount would find nothing to reduce: refused, not lost without a word.
+    for discount in (
+        Discount(DiscountKind.PERCENT, Decimal(50)),
+        Discount(DiscountKind.AMOUNT, Decimal("0.01")),
+    ):
+        with raises_exactly(ValidationError, "pass-through items take no discount") as caught:
+            compute([item("2", "12.50", PASS)], discount=discount)
+        assert (caught.value.field, caught.value.code) == (
+            "discount",
+            "discount_on_pass_through_only",
+        )
+    # Without any position there is nothing to refuse.
+    empty = compute([], discount=Discount(DiscountKind.AMOUNT, Decimal(5)))
+    assert (empty.discount, empty.total) == (chf("0"), chf("0"))
 
 
 @pytest.mark.parametrize("mode", list(PriceMode))
@@ -439,6 +454,8 @@ modes = st.sampled_from(list(PriceMode))
 def test_totals_are_consistent(
     lines: list[DocumentLine], discount: Decimal, mode: PriceMode
 ) -> None:
+    if all(line.is_pass_through for line in lines):
+        discount = Decimal(0)  # refused on pass-through items alone
     totals = compute(lines, discount=Discount(DiscountKind.PERCENT, discount), mode=mode)
     taxed = [line.amount for line in totals.lines if not line.pass_through]
     passed = [line.amount for line in totals.lines if line.pass_through]
@@ -480,6 +497,8 @@ def test_the_discount_never_touches_pass_through_lines(
     ]
     plain = compute(taxed, mode=mode)
     value = min(value, abs(plain.subtotal.amount)) if kind is DiscountKind.AMOUNT else value
+    if not taxed:
+        value = Decimal(0)  # refused on pass-through items alone
     discount = Discount(kind, value)
     without = compute(taxed, discount=discount, mode=mode)
     mixed = compute([*passed, *taxed], discount=discount, mode=mode)
@@ -497,6 +516,8 @@ def test_the_discount_never_touches_pass_through_lines(
 
 @given(line_lists, percents)
 def test_group_tax_is_within_half_a_cent(lines: list[DocumentLine], discount: Decimal) -> None:
+    if all(line.is_pass_through for line in lines):
+        discount = Decimal(0)  # refused on pass-through items alone
     totals = compute(lines, discount=Discount(DiscountKind.PERCENT, discount))
     for group in totals.groups:
         exact = group.net.amount * group.rate / 100

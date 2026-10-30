@@ -1417,6 +1417,8 @@ export const it: Catalog<MessageKey> = {
     "Una fattura importata consiste nel suo PDF; con essa questa operazione non è possibile.",
   "error.attachments_frozen":
     "Gli allegati si modificano solo nelle bozze; i documenti emessi conservano i loro file.",
+  "error.discount_on_pass_through_only":
+    "Le spese anticipate non ricevono sconti; senza altre posizioni non avrebbe alcun effetto.",
   "error.too_many_attachments": "Una bozza ha al massimo 10 allegati.",
   "error.attachments_too_large":
     "Gli allegati di una bozza non superano insieme 20 MB, così entrano in un’unica e-mail.",

@@ -113,6 +113,16 @@ export function documentSchema(t: T, locale: Locale) {
         const percent = Number(toApiDecimal(values.discount_value, locale));
         if (percent > 100) issue("discount_value", t("validation.percent"));
       }
+      // Pass-through items take no discount: alone, it would reduce nothing (ADR 0039).
+      const items = values.lines.filter((line) => line.kind === "item");
+      if (
+        values.discount_value !== "" &&
+        Number(toApiDecimal(values.discount_value, locale)) > 0 &&
+        items.length > 0 &&
+        items.every((line) => line.tax_category === "pass_through")
+      ) {
+        issue("discount_value", t("error.discount_on_pass_through_only"));
+      }
       if (values.treatment !== "" && values.override_reason === "") {
         issue("override_reason", t("documents.overrideReasonRequired"));
       }

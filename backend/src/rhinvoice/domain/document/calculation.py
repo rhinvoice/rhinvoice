@@ -167,6 +167,13 @@ def calculate(calculation: CalculationInput) -> Totals:
             sums[key] = Decimal(0)
         sums[key] += line.amount.amount
     subtotal = sum(sums.values(), Decimal(0))
+    if not keys and line_amounts and calculation.discount.value > 0:
+        # Pass-through items take no discount (ADR 0039): it would be lost without a word.
+        raise ValidationError(
+            "discount",
+            "pass-through items take no discount",
+            code="discount_on_pass_through_only",
+        )
     discounts = (
         _allocate_discount([sums[key] for key in keys], calculation, subtotal) if keys else []
     )

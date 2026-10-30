@@ -11,7 +11,7 @@ faq:
   - q: Da quando le aziende tedesche devono emettere fatture elettroniche?
     a: Dal 2025 le imprese devono poterle ricevere. Devono emetterle per le fatture B2B nazionali dal 2027 se il loro fatturato dell’anno precedente superava EUR 800’000, e dal 2028 tutte (§ 27 Abs. 38 UStG). Le piccole imprese sono esentate. Rhinvoice integra la fattura elettronica (ZUGFeRD) nel PDF di ogni fattura emessa, purché i dati necessari siano completi.
   - q: Rhinvoice rispetta i GoBD?
-    a: Rhinvoice realizza l’immodificabilità. Le fatture emesse sono bloccate con il loro PDF, anche nella banca dati, il PDF viene conservato con il suo SHA-256 e le correzioni si fanno solo con una fattura di storno con un proprio numero. Se la Sua contabilità nel suo insieme rispetta i GoBD va chiarito con il Suo consulente fiscale.
+    a: Le fatture emesse sono bloccate con il loro PDF, anche nella banca dati, i numeri vengono assegnati senza lacune solo all’emissione e le correzioni si fanno solo con una fattura di storno con un proprio numero. Non esiste un certificato GoBD ufficiale e Rhinvoice non ha un’attestazione del software (Testat). I GoBD riguardano l’intera procedura, compresa la Sua documentazione della procedura (Verfahrensdokumentation); lo chiarisca con il Suo consulente fiscale.
 ---
 
 import Faq from "../../../../components/Faq.astro";
@@ -93,14 +93,22 @@ Rhinvoice integra per impostazione predefinita una **fattura ZUGFeRD / Factur-X*
 
 ## GoBD e conservazione delle fatture
 
-Le fatture vanno conservate per **dieci anni** (§ 147 AO). Rhinvoice le rende immodificabili:
+Le fatture vanno conservate per **otto anni** (§ 14b Abs. 1 UStG, § 147 Abs. 3 AO), dalla fine dell’anno civile in cui sono state emesse. La quarta legge di sgravio burocratico (Viertes Bürokratieentlastungsgesetz) ha ridotto il termine da dieci a otto anni per tutti i termini non ancora scaduti al 31 dicembre 2024. Libri, registrazioni e conti annuali vanno conservati ancora per **dieci anni** (§ 147 Abs. 1 Nr. 1 AO).
+
+Rhinvoice rende le fatture immodificabili:
 
 - Dall’emissione in poi contenuto e PDF sono bloccati, anche direttamente nella banca dati.
 - Il PDF viene conservato con il suo hash SHA-256.
+- Rhinvoice assegna il numero di fattura solo all’emissione, nella stessa transazione della banca dati. Così non ci sono né lacune né doppioni.
 - Le correzioni si fanno solo con una [fattura di storno](/docs/it/invoices/issue-and-cancel/) con un proprio numero. Le bozze si possono eliminare, le fatture emesse mai.
 - Ogni modifica (emissione, pagamento, storno, trattamento fiscale) figura nello storico con data e ora.
+- Il [backup](/docs/it/operations/backup/) è cifrato, giornaliero e viene eseguito circa due minuti dopo l’emissione. I backup annuali non vengono mai cancellati.
 
-Protegga i dati con un [backup](/docs/it/operations/backup/). Provi tutto nella demo su [de.rhinvoice.com](https://de.rhinvoice.com).
+### Esiste un certificato GoBD?
+
+Non esiste un certificato GoBD ufficiale e Rhinvoice non ha un’attestazione del software (Testat). I GoBD riguardano l’intera procedura nella Sua azienda, compresa la documentazione della procedura (Verfahrensdokumentation). La redige Lei e la conserva per dieci anni (§ 147 Abs. 1 Nr. 1 AO). Se la Sua procedura rispetta i GoBD va chiarito con il Suo consulente fiscale. Poiché Rhinvoice è open source, il modo in cui sono realizzati i punti qui sopra è [liberamente consultabile](https://github.com/rhinvoice/rhinvoice).
+
+Provi tutto nella demo su [de.rhinvoice.com](https://de.rhinvoice.com).
 
 Manca il paese della Sua azienda? Rhinvoice si può estendere: [Aggiungere altri paesi](/docs/it/countries/more-countries/).
 

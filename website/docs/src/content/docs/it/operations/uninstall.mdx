@@ -1,13 +1,13 @@
 ---
 title: Disinstallare Rhinvoice completamente
-description: Rimuovere Rhinvoice con container, volumi di dati e immagini. Prima conservi i PDF delle fatture o un backup, perché le fatture emesse vanno conservate dieci anni.
+description: Rimuovere Rhinvoice con container, volumi di dati e immagini. Prima conservi i PDF delle fatture o un backup, perché le fatture emesse vanno conservate per anni.
 faq:
   - q: Come rimuovo Rhinvoice completamente?
     a: Nella cartella con compose.yml e .env esegua docker compose down --volumes --rmi all, poi elimini la cartella. Così rimuove i container, la rete, i volumi di dati e le immagini.
   - q: I miei backup vengono cancellati quando disinstallo Rhinvoice?
     a: I backup nel volume Docker locale predefinito vengono cancellati con esso. Una cartella impostata come BACKUP_LOCAL_DIR e le destinazioni S3, SFTP e cloud non vengono toccate; le elimini Lei quando non le servono più.
   - q: Che cosa devo fare prima di disinstallare?
-    a: Conservi i PDF delle Sue fatture emesse o un backup al di fuori di Docker. Le fatture emesse vanno di solito conservate per dieci anni.
+    a: Conservi i PDF delle Sue fatture emesse o un backup al di fuori di Docker. Le fatture emesse vanno conservate da sette a dieci anni a seconda del paese.
 ---
 
 import Faq from "../../../../components/Faq.astro";
@@ -16,7 +16,7 @@ import { Aside } from "@astrojs/starlight/components";
 Per rimuovere Rhinvoice, esegua `docker compose down --volumes --rmi all` nella sua cartella ed elimini la cartella. Questo cancella definitivamente tutte le fatture, i clienti e le impostazioni, quindi prima conservi i PDF delle Sue fatture emesse o un backup al di fuori di Docker.
 
 <Aside type="caution" title="Prima conservi le Sue fatture">
-Le fatture emesse vanno di solito conservate per dieci anni (Svizzera: art. 958f CO, Germania: § 147 AO, Austria: § 132 BAO). Rimuovere Rhinvoice le cancella definitivamente.
+Le fatture emesse vanno conservate da sette a dieci anni a seconda del paese (Svizzera: art. 958f CO, Germania: § 14b UStG, § 147 AO, Austria: § 132 BAO). Rimuovere Rhinvoice le cancella definitivamente.
 </Aside>
 
 ## 1. Un ultimo backup

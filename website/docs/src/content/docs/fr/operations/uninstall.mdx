@@ -1,13 +1,13 @@
 ---
 title: Désinstaller complètement Rhinvoice
-description: "Supprimer Rhinvoice avec ses conteneurs, volumes de données et images. Conservez d’abord les PDF des factures ou une sauvegarde : les factures se gardent dix ans."
+description: "Supprimer Rhinvoice avec ses conteneurs, volumes de données et images. Conservez d’abord les PDF des factures ou une sauvegarde : les factures se gardent des années."
 faq:
   - q: Comment supprimer complètement Rhinvoice?
     a: "Dans le dossier contenant compose.yml et .env, lancez docker compose down --volumes --rmi all, puis supprimez le dossier. Cela supprime les conteneurs, le réseau, les volumes de données et les images."
   - q: Mes sauvegardes sont-elles supprimées lorsque je désinstalle Rhinvoice?
     a: "Les sauvegardes dans le volume Docker local par défaut sont supprimées avec lui. Un dossier défini comme BACKUP_LOCAL_DIR, les destinations S3, SFTP et cloud ne sont pas touchés; supprimez-les vous-même lorsque vous n’en avez plus besoin."
   - q: Que dois-je faire avant de désinstaller?
-    a: "Conservez les PDF de vos factures émises ou une sauvegarde en dehors de Docker. Les factures émises doivent en général être conservées dix ans."
+    a: "Conservez les PDF de vos factures émises ou une sauvegarde en dehors de Docker. Les factures émises doivent être conservées sept à dix ans selon le pays."
 ---
 
 import Faq from "../../../../components/Faq.astro";
@@ -16,7 +16,7 @@ import { Aside } from "@astrojs/starlight/components";
 Pour supprimer Rhinvoice, lancez `docker compose down --volumes --rmi all` dans son dossier et supprimez le dossier. Cela efface définitivement toutes les factures, tous les clients et tous les réglages; conservez donc d’abord les PDF de vos factures émises ou une sauvegarde en dehors de Docker.
 
 <Aside type="caution" title="Conservez d’abord vos factures">
-Les factures émises doivent en général être conservées dix ans (Suisse : art. 958f CO, Allemagne : § 147 AO, Autriche : § 132 BAO). Supprimer Rhinvoice les efface définitivement.
+Les factures émises doivent être conservées sept à dix ans selon le pays (Suisse : art. 958f CO, Allemagne : § 14b UStG, § 147 AO, Autriche : § 132 BAO). Supprimer Rhinvoice les efface définitivement.
 </Aside>
 
 ## 1. Une dernière sauvegarde

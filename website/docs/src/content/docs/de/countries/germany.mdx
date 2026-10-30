@@ -11,7 +11,7 @@ faq:
   - q: Ab wann müssen deutsche Firmen E-Rechnungen ausstellen?
     a: Empfangen müssen Unternehmen sie seit 2025. Ausstellen müssen sie inländische B2B-Rechnungen ab 2027, wenn der Umsatz im Vorjahr über 800.000 EUR lag, und ab 2028 alle (§ 27 Abs. 38 UStG). Kleinunternehmer sind ausgenommen. Rhinvoice bettet die E-Rechnung (ZUGFeRD) in das PDF jeder ausgestellten Rechnung ein, sofern die nötigen Angaben vollständig sind.
   - q: Ist Rhinvoice GoBD-konform?
-    a: Rhinvoice setzt die Unveränderbarkeit um. Ausgestellte Rechnungen sind samt PDF gesperrt, auch in der Datenbank, das PDF wird mit SHA-256 gespeichert, und Korrekturen gehen nur per Stornorechnung mit eigener Nummer. Ob Ihre Buchführung insgesamt den GoBD entspricht, klären Sie mit Ihrer Steuerberatung.
+    a: Ausgestellte Rechnungen sind samt PDF gesperrt, auch in der Datenbank, Nummern werden erst beim Ausstellen lückenlos vergeben, und Korrekturen gehen nur per Stornorechnung mit eigener Nummer. Ein amtliches GoBD-Zertifikat gibt es nicht, und Rhinvoice hat kein Software-Testat. GoBD-konform ist immer das ganze Verfahren samt Ihrer Verfahrensdokumentation; klären Sie das mit Ihrer Steuerberatung.
 ---
 
 import Faq from "../../../../components/Faq.astro";
@@ -93,14 +93,22 @@ Rhinvoice bettet standardmässig in das PDF jeder ausgestellten Rechnung eine **
 
 ## GoBD und Aufbewahrung
 
-Rechnungen bewahren Sie **zehn Jahre** auf (§ 147 AO). Rhinvoice sorgt für die Unveränderbarkeit:
+Rechnungen bewahren Sie **acht Jahre** auf (§ 14b Abs. 1 UStG, § 147 Abs. 3 AO), ab dem Ende des Kalenderjahres, in dem sie ausgestellt wurden. Das Vierte Bürokratieentlastungsgesetz hat die Frist von zehn auf acht Jahre verkürzt, für alle Fristen, die am 31. Dezember 2024 noch nicht abgelaufen waren. Bücher, Aufzeichnungen und Jahresabschlüsse bewahren Sie weiterhin **zehn Jahre** auf (§ 147 Abs. 1 Nr. 1 AO).
+
+Rhinvoice sorgt für die Unveränderbarkeit:
 
 - Ab dem Ausstellen sind Inhalt und PDF gesperrt, auch direkt in der Datenbank.
 - Das PDF wird mit seinem SHA-256-Hash gespeichert.
+- Die Rechnungsnummer vergibt Rhinvoice erst beim Ausstellen, in derselben Datenbank-Transaktion. So entstehen weder Lücken noch Doppel.
 - Korrekturen gehen nur über eine [Stornorechnung](/docs/de/invoices/issue-and-cancel/) mit eigener Nummer. Entwürfe können Sie löschen, ausgestellte Rechnungen nie.
 - Jede Änderung (ausgestellt, Zahlung, Storno, Steuerfall) steht mit Zeitstempel im Verlauf.
+- Das [Backup](/docs/de/operations/backup/) läuft verschlüsselt, täglich und etwa zwei Minuten nach dem Ausstellen. Jährliche Backups werden nie gelöscht.
 
-Sichern Sie die Daten mit einem [Backup](/docs/de/operations/backup/). Probieren Sie alles in der Demo [de.rhinvoice.com](https://de.rhinvoice.com) aus.
+### Gibt es ein GoBD-Zertifikat?
+
+Ein amtliches GoBD-Zertifikat gibt es nicht, und Rhinvoice hat kein Software-Testat. Die GoBD gelten für das ganze Verfahren in Ihrem Betrieb, auch für die Verfahrensdokumentation. Diese erstellen Sie selbst und bewahren sie zehn Jahre auf (§ 147 Abs. 1 Nr. 1 AO). Ob Ihr Verfahren den GoBD entspricht, klären Sie mit Ihrer Steuerberatung. Weil Rhinvoice Open Source ist, ist [offen einsehbar](https://github.com/rhinvoice/rhinvoice), wie die Punkte oben umgesetzt sind.
+
+Probieren Sie alles in der Demo [de.rhinvoice.com](https://de.rhinvoice.com) aus.
 
 Ihr Firmenland fehlt? Rhinvoice ist erweiterbar: [Weitere Länder hinzufügen](/docs/de/countries/more-countries/).
 

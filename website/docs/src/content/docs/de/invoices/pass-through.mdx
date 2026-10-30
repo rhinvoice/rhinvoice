@@ -12,7 +12,7 @@ faq:
   - q: Wie schicke ich die Fremdrechnung mit meiner Rechnung mit?
     a: Speichern Sie den Entwurf, öffnen Sie im Editor den Bereich «Anhänge» und klicken Sie auf «PDF hinzufügen». Beim Versand per E-Mail geht das PDF nach dem PDF Ihrer Rechnung mit, und beim Ausstellen wird es mit der Rechnung eingefroren.
   - q: Wie stehen durchlaufende Posten in der E-Rechnung?
-    a: Als steuerbefreite Positionen der Kategorie E mit dem Befreiungsgrund-Code VATEX-EU-79-C und einem kurzen Grundtext, in einer eigenen Steueraufschlüsselung. Die Musterrechnungen von Rhinvoice bestehen den KoSIT-Validator und Mustang.
+    a: Als steuerbefreite Positionen der Kategorie E mit dem Befreiungsgrund-Code VATEX-EU-79-C und einem kurzen Grundtext, in einer eigenen Steueraufschlüsselung. Hat das Dokument weitere steuerbefreite Positionen, teilen sie sich deren Aufschlüsselung; bei Kleinunternehmern ohne MWST-Nummer und Steuernummer in der Schweiz und in Liechtenstein stehen sie in der Kategorie O. Die Musterrechnungen von Rhinvoice bestehen den KoSIT-Validator und Mustang.
 ---
 
 import Faq from "../../../../components/Faq.astro";
@@ -38,8 +38,8 @@ Auch ein Artikel kann ein durchlaufender Posten sein: Wählen Sie es als *Steuer
 
 ## Wie Rhinvoice sie berechnet
 
-- **Keine Steuer.** Die Position gehört zu keiner Steuerzeile und bringt keinen Hinweis mit, in jedem Steuerfall: Inland, Reverse Charge, Export oder Kleinunternehmer.
-- **Kein Rabatt auf das Dokument.** Der Rabatt auf das Dokument gilt nur für die besteuerten Positionen. Ein Betragsrabatt darf nicht grösser sein als diese.
+- **Keine Steuer.** Die Position gehört zu keiner Steuerzeile und bringt keinen Hinweis mit, in jedem Steuerfall: Inland, Reverse Charge, Export oder Kleinunternehmer. Hat ein Dokument nur durchlaufende Posten, zeigt das PDF weder Netto noch Steuerzeilen noch einen Steuerhinweis, und Reverse Charge verlangt keine UID des Kunden.
+- **Kein Rabatt auf das Dokument.** Der Rabatt auf das Dokument gilt nur für die besteuerten Positionen. Ein Betragsrabatt darf nicht grösser sein als diese. Hat das Dokument nur durchlaufende Posten, lehnt Rhinvoice einen Rabatt ab.
 - **Im Total.** Der Betrag zählt voll zum Total und damit zur QR-Rechnung, zum EPC-QR-Code, zu Zahlungen, offenen Beträgen und Mahnungen.
 - **Gerundet am Schluss.** Die Rappenrundung gilt nur für den Endbetrag.
 
@@ -73,17 +73,17 @@ Ihr Kunde braucht die Fremdrechnung meist zusammen mit Ihrer Rechnung. Jeder ges
 
 </Steps>
 
-Ein Entwurf hat höchstens **10 PDFs mit je bis zu 20 MB**; andere Dateitypen lehnt Rhinvoice ab. Beim [Ausstellen](/docs/de/invoices/issue-and-cancel/) werden die Anhänge wie das PDF mit dem Dokument eingefroren: Sie werden nie mehr geändert oder entfernt (GoBD, Art. 958f OR). Ausgestellte Dokumente zeigen sie in der Karte *Anhänge*. Das PDF des Dokuments selbst bleibt, wie es ist; die Anhänge sind eigene Dateien. Wird ein Entwurf gelöscht, sind seine Anhänge mit weg; Duplikate und Stornorechnungen übernehmen sie nicht. Die öffentliche Demo nimmt keine Uploads an.
+Ein Entwurf hat höchstens **10 PDFs mit zusammen bis zu 20 MB**, damit sie in eine E-Mail passen; ein PDF, das darüber hinausginge, lehnt Rhinvoice schon beim Hochladen ab, ebenso andere Dateitypen. Hat der Entwurf schon eine Datei mit demselben Namen, bekommt die neue eine Nummer, etwa `Notar (2).pdf`. Beim [Ausstellen](/docs/de/invoices/issue-and-cancel/) werden die Anhänge wie das PDF mit dem Dokument eingefroren: Sie werden nie mehr geändert oder entfernt (GoBD, Art. 958f OR). Ausgestellte Dokumente zeigen sie in der Karte *Anhänge*. Das PDF des Dokuments selbst bleibt, wie es ist; die Anhänge sind eigene Dateien. Wird ein Entwurf gelöscht, sind seine Anhänge mit weg; Duplikate und Stornorechnungen übernehmen sie nicht. Die öffentliche Demo nimmt keine Uploads an.
 
 ## Per E-Mail senden
 
-*Per E-Mail senden* hängt das PDF des Dokuments an, dann die XRechnung, falls gewählt, dann die Anhänge. Der Mail-Dialog listet sie alle auf. Viele Mailserver lehnen Mails über 20 bis 25 MB ab; Rhinvoice zeigt dann die Antwort des Servers.
+*Per E-Mail senden* hängt das PDF des Dokuments an, dann die XRechnung, falls gewählt, dann die Anhänge. Der Mail-Dialog listet sie alle auf. Die Anhänge eines Dokuments sind zusammen höchstens 20 MB gross, denn viele Mailserver lehnen grössere Mails ab; Rhinvoice prüft das schon beim Hochladen.
 
 ## Dashboard, Export und E-Rechnung
 
 - **Dashboard:** Durchlaufende Posten sind kein Umsatz. Umsatzdiagramm, Jahr bis heute und beste Kunden lassen sie aus; offene und überfällige Beträge enthalten sie, denn Ihr Kunde schuldet sie.
-- **[Export für die Buchhaltung](/docs/de/invoices/export/):** eine Spalte *Durchlaufende Posten* zwischen *Steuer* und *Brutto*, auch in den Summen, wenn der Zeitraum solche Posten enthält. *Netto* und *Steuer* lassen sie aus, *Brutto* enthält sie. Mit der ZIP-Datei folgen die Anhänge jedes Dokuments auf sein PDF, benannt nach der Nummer und ihrem eigenen Namen, etwa `R20260042_Handelsregister.pdf`.
-- **[E-Rechnung](/docs/de/invoices/e-invoice/):** Durchlaufende Posten sind steuerbefreit, Kategorie E, mit dem Befreiungsgrund-Code VATEX-EU-79-C und einem kurzen Grundtext, in einer eigenen Steueraufschlüsselung. Die Musterrechnungen von Rhinvoice bestehen den offiziellen KoSIT-Validator und Mustang.
+- **[Export für die Buchhaltung](/docs/de/invoices/export/):** eine Spalte *Durchlaufende Posten* zwischen *Steuer* und *Brutto*, auch in den Summen, wenn der Zeitraum solche Posten enthält. *Netto* und *Steuer* lassen sie aus, *Brutto* enthält sie. Mit der ZIP-Datei folgen die Anhänge jedes Dokuments auf sein PDF, benannt nach der Nummer und ihrem eigenen Namen, etwa `R20260042_Handelsregister.pdf`. Lange Namen kürzt Rhinvoice auf 200 Zeichen.
+- **[E-Rechnung](/docs/de/invoices/e-invoice/):** Durchlaufende Posten sind steuerbefreit, Kategorie E, mit dem Befreiungsgrund-Code VATEX-EU-79-C und einem kurzen Grundtext, in einer eigenen Steueraufschlüsselung. Hat das Dokument weitere steuerbefreite Positionen, teilen sie sich deren Aufschlüsselung, mit beiden Gründen als Text und ohne Code. Bei Kleinunternehmern ohne MWST-Nummer und Steuernummer in der Schweiz und in Liechtenstein stehen sie wie die übrigen Positionen in der Kategorie O. Die Musterrechnungen von Rhinvoice bestehen den offiziellen KoSIT-Validator und Mustang.
 
 ## Häufige Fragen
 

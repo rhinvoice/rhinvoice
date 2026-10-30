@@ -12,7 +12,7 @@ faq:
   - q: How do I send the third-party invoice along with my invoice?
     a: Save the draft, open the section "Attachments" in the editor and click "Add PDF". The PDF goes out after your invoice's PDF when you send it by e-mail, and it is frozen with the invoice when you issue it.
   - q: How do pass-through items appear in the e-invoice?
-    a: As exempt lines, VAT category E, with the exemption reason code VATEX-EU-79-C and a short reason text, in a VAT breakdown of their own. Rhinvoice's samples pass the KoSIT validator and Mustang.
+    a: As exempt lines, VAT category E, with the exemption reason code VATEX-EU-79-C and a short reason text, in a VAT breakdown of their own. When the document has other exempt lines, they share that breakdown; for small businesses in Switzerland and Liechtenstein without a VAT or tax number they are in category O. Rhinvoice's samples pass the KoSIT validator and Mustang.
 ---
 
 import Faq from "../../../components/Faq.astro";
@@ -38,8 +38,8 @@ An article can be a pass-through item too: choose it as the article's *Tax rate*
 
 ## How Rhinvoice calculates them
 
-- **No VAT.** The line is in no VAT line and adds no notice, in every tax treatment: domestic, reverse charge, export or small business.
-- **No document discount.** The discount of the document applies to the taxed lines only. An amount discount cannot be larger than those lines.
+- **No VAT.** The line is in no VAT line and adds no notice, in every tax treatment: domestic, reverse charge, export or small business. When a document has only pass-through items, the PDF shows no net total, no VAT lines and no tax notice, and reverse charge asks for no VAT number of the customer.
+- **No document discount.** The discount of the document applies to the taxed lines only. An amount discount cannot be larger than those lines. When the document has only pass-through items, Rhinvoice refuses a discount.
 - **In the total.** The amount counts in full in the total, so in the Swiss QR-bill, the EPC QR code, payments, open amounts and reminders.
 - **Rounding at the end.** The Swiss 5-centime rounding applies to the final total only.
 
@@ -73,17 +73,17 @@ Your customer usually needs the third-party invoice with yours. Every saved draf
 
 </Steps>
 
-A draft holds at most **10 PDFs of up to 20 MB each**; other file types are refused. When you [issue](/docs/invoices/issue-and-cancel/) the document, its attachments are frozen with it, like the PDF: they are never changed or removed again (GoBD, Art. 958f CO). Issued documents show them in a card *Attachments*. The document's own PDF stays as it is; the attachments are separate files. Deleting a draft deletes its attachments; duplicates and cancellation invoices do not copy them. The public demo takes no uploads.
+A draft holds at most **10 PDFs of up to 20 MB together**, so that they fit into one e-mail; Rhinvoice refuses a PDF beyond that when you upload it, and other file types too. When the draft has a file of the same name already, the new one gets a number, such as `Notar (2).pdf`. When you [issue](/docs/invoices/issue-and-cancel/) the document, its attachments are frozen with it, like the PDF: they are never changed or removed again (GoBD, Art. 958f CO). Issued documents show them in a card *Attachments*. The document's own PDF stays as it is; the attachments are separate files. Deleting a draft deletes its attachments; duplicates and cancellation invoices do not copy them. The public demo takes no uploads.
 
 ## Sending by e-mail
 
-*Send by e-mail* attaches the document's PDF, then the XRechnung if you choose it, then the attachments. The mail dialog lists them all. Many mail servers refuse mails above 20 to 25 MB; Rhinvoice then shows the server's answer.
+*Send by e-mail* attaches the document's PDF, then the XRechnung if you choose it, then the attachments. The mail dialog lists them all. A document's attachments are at most 20 MB together, because many mail servers refuse larger mails; Rhinvoice checks this when you upload them.
 
 ## Dashboard, export and e-invoice
 
 - **Dashboard:** pass-through items are not revenue. The revenue chart, the year to date and the best customers leave them out; open and overdue amounts include them, since your customer owes them.
-- **[Export for bookkeeping](/docs/invoices/export/):** a column *Pass-through items* between *Tax* and *Gross*, also in the totals, when the period has such items. *Net* and *Tax* leave them out, *Gross* includes them. With the ZIP, each document's attachments follow its PDF, named after the number and their own name, such as `R20260042_Handelsregister.pdf`.
-- **[E-invoice](/docs/invoices/e-invoice/):** pass-through lines are exempt, category E, with the exemption reason code VATEX-EU-79-C and a short reason text, in a VAT breakdown of their own. Rhinvoice's samples pass the official KoSIT validator and Mustang.
+- **[Export for bookkeeping](/docs/invoices/export/):** a column *Pass-through items* between *Tax* and *Gross*, also in the totals, when the period has such items. *Net* and *Tax* leave them out, *Gross* includes them. With the ZIP, each document's attachments follow its PDF, named after the number and their own name, such as `R20260042_Handelsregister.pdf`. Rhinvoice shortens long names to 200 characters.
+- **[E-invoice](/docs/invoices/e-invoice/):** pass-through lines are exempt, category E, with the exemption reason code VATEX-EU-79-C and a short reason text, in a VAT breakdown of their own. When the document has other exempt lines, they share that breakdown, with both reasons as text and no code. For small businesses in Switzerland and Liechtenstein without a VAT or tax number they are in category O, like the other lines. Rhinvoice's samples pass the official KoSIT validator and Mustang.
 
 ## Questions
 

@@ -40,7 +40,8 @@ before 1.0, minor versions may contain breaking changes.
   e-invoice as category E with VATEX-EU-79-C. The article import reads "durchlaufend" and
   "pass-through" (#46).
 - *Attachments* on saved drafts of invoices and quotes: *Add PDF* attaches up to 10 PDFs of up to
-  20 MB each, such as the third-party invoice of a pass-through item. Issuing freezes them with the
+  20 MB together, so that they fit into one e-mail, such as the third-party invoice of a
+  pass-through item; the upload refuses a file beyond that. Issuing freezes them with the
   document. They go out by e-mail after the PDF and the XRechnung, and the export's ZIP puts them
   next to the document's PDF (#46).
 

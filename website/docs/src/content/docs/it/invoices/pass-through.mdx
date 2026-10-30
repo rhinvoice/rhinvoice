@@ -12,7 +12,7 @@ faq:
   - q: Come invio la fattura del terzo insieme alla mia fattura?
     a: Salvi la bozza, apra nell’editor la sezione «Allegati» e clicchi su «Aggiungi PDF». Nell’invio per e-mail il PDF parte dopo quello della Sua fattura, e all’emissione viene bloccato con la fattura.
   - q: Come compaiono le spese anticipate nella fattura elettronica?
-    a: Come posizioni esenti, categoria E, con il codice del motivo di esenzione VATEX-EU-79-C e un breve testo del motivo, in un riepilogo IVA a sé. Le fatture di esempio di Rhinvoice superano il validatore KoSIT e Mustang.
+    a: Come posizioni esenti, categoria E, con il codice del motivo di esenzione VATEX-EU-79-C e un breve testo del motivo, in un riepilogo IVA a sé. Se il documento ha altre posizioni esenti, condividono il loro riepilogo; per le piccole imprese in Svizzera e nel Liechtenstein senza numero IVA né numero fiscale stanno nella categoria O. Le fatture di esempio di Rhinvoice superano il validatore KoSIT e Mustang.
 ---
 
 import Faq from "../../../../components/Faq.astro";
@@ -38,8 +38,8 @@ Anche un articolo può essere una spesa anticipata: la scelga come *Aliquota IVA
 
 ## Come le calcola Rhinvoice
 
-- **Nessuna IVA.** La posizione non appartiene a nessuna riga IVA e non aggiunge avvertenze, in ogni regime fiscale: nazionale, inversione contabile, esportazione o piccola impresa.
-- **Nessuno sconto sul documento.** Lo sconto sul documento vale solo per le posizioni imponibili. Uno sconto in importo non può superare queste posizioni.
+- **Nessuna IVA.** La posizione non appartiene a nessuna riga IVA e non aggiunge avvertenze, in ogni regime fiscale: nazionale, inversione contabile, esportazione o piccola impresa. Se un documento ha solo spese anticipate, il PDF non mostra né totale netto, né righe IVA, né avvertenza fiscale, e l’inversione contabile non chiede il numero IVA del cliente.
+- **Nessuno sconto sul documento.** Lo sconto sul documento vale solo per le posizioni imponibili. Uno sconto in importo non può superare queste posizioni. Se il documento ha solo spese anticipate, Rhinvoice rifiuta uno sconto.
 - **Nel totale.** L’importo conta per intero nel totale, quindi nella fattura QR, nel codice QR EPC, nei pagamenti, negli importi aperti e nei solleciti.
 - **Arrotondamento alla fine.** L’arrotondamento ai 5 centesimi vale solo per l’importo finale.
 
@@ -73,17 +73,17 @@ Il Suo cliente di solito ha bisogno della fattura del terzo insieme alla Sua. Og
 
 </Steps>
 
-Una bozza contiene al massimo **10 PDF di 20 MB ciascuno al massimo**; altri tipi di file vengono rifiutati. All’[emissione](/docs/it/invoices/issue-and-cancel/) gli allegati vengono bloccati con il documento, come il PDF: non vengono mai più modificati né rimossi (GoBD, art. 958f CO). I documenti emessi li mostrano in una scheda *Allegati*. Il PDF del documento stesso resta com’è; gli allegati sono file separati. Eliminando una bozza si eliminano i suoi allegati; duplicati e fatture di storno non li riprendono. La demo pubblica non accetta caricamenti.
+Una bozza contiene al massimo **10 PDF di 20 MB in totale**, così entrano in un’unica e-mail; Rhinvoice rifiuta già al caricamento un PDF che superasse il limite, come pure altri tipi di file. Se la bozza ha già un file con lo stesso nome, il nuovo riceve un numero, p. es. `Notar (2).pdf`. All’[emissione](/docs/it/invoices/issue-and-cancel/) gli allegati vengono bloccati con il documento, come il PDF: non vengono mai più modificati né rimossi (GoBD, art. 958f CO). I documenti emessi li mostrano in una scheda *Allegati*. Il PDF del documento stesso resta com’è; gli allegati sono file separati. Eliminando una bozza si eliminano i suoi allegati; duplicati e fatture di storno non li riprendono. La demo pubblica non accetta caricamenti.
 
 ## Inviare per e-mail
 
-*Invia per e-mail* allega il PDF del documento, poi la XRechnung se la sceglie, poi gli allegati. La finestra di invio li elenca tutti. Molti server di posta rifiutano e-mail oltre 20–25 MB; Rhinvoice mostra allora la risposta del server.
+*Invia per e-mail* allega il PDF del documento, poi la XRechnung se la sceglie, poi gli allegati. La finestra di invio li elenca tutti. Gli allegati di un documento non superano insieme 20 MB, perché molti server di posta rifiutano e-mail più grandi; Rhinvoice lo verifica già al caricamento.
 
 ## Dashboard, esportazione e fattura elettronica
 
 - **Dashboard:** le spese anticipate non sono fatturato. Il grafico del fatturato, il progressivo annuo e i migliori clienti le escludono; gli importi aperti e scaduti le comprendono, perché il Suo cliente le deve.
-- **[Esportazione per la contabilità](/docs/it/invoices/export/):** una colonna *Spese anticipate* tra *IVA* e *Lordo*, anche nei totali, quando il periodo contiene tali importi. *Netto* e *IVA* le escludono, *Lordo* le comprende. Con lo ZIP, gli allegati di ogni documento seguono il suo PDF, con il numero e il loro nome, p. es. `R20260042_Handelsregister.pdf`.
-- **[Fattura elettronica](/docs/it/invoices/e-invoice/):** le spese anticipate sono esenti, categoria E, con il codice del motivo di esenzione VATEX-EU-79-C e un breve testo del motivo, in un riepilogo IVA a sé. Le fatture di esempio di Rhinvoice superano il validatore ufficiale KoSIT e Mustang.
+- **[Esportazione per la contabilità](/docs/it/invoices/export/):** una colonna *Spese anticipate* tra *IVA* e *Lordo*, anche nei totali, quando il periodo contiene tali importi. *Netto* e *IVA* le escludono, *Lordo* le comprende. Con lo ZIP, gli allegati di ogni documento seguono il suo PDF, con il numero e il loro nome, p. es. `R20260042_Handelsregister.pdf`. Rhinvoice accorcia i nomi lunghi a 200 caratteri.
+- **[Fattura elettronica](/docs/it/invoices/e-invoice/):** le spese anticipate sono esenti, categoria E, con il codice del motivo di esenzione VATEX-EU-79-C e un breve testo del motivo, in un riepilogo IVA a sé. Se il documento ha altre posizioni esenti, condividono il loro riepilogo, con entrambi i motivi come testo e senza codice. Per le piccole imprese in Svizzera e nel Liechtenstein senza numero IVA né numero fiscale stanno nella categoria O, come le altre posizioni. Le fatture di esempio di Rhinvoice superano il validatore ufficiale KoSIT e Mustang.
 
 ## Domande frequenti
 

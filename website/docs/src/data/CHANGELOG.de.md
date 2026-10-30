@@ -43,8 +43,9 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   Umsatz; der Export zeigt sie in einer eigenen Spalte, die E-Rechnung als Kategorie E mit
   VATEX-EU-79-C. Der Artikelimport liest «durchlaufend» und «pass-through» (#46).
 - *Anhänge* an gespeicherten Entwürfen von Rechnungen und Angeboten: *PDF hinzufügen* hängt bis zu
-  10 PDFs mit je bis zu 20 MB an, etwa die Fremdrechnung eines durchlaufenden Postens. Das
-  Ausstellen friert sie mit dem Dokument ein. Per E-Mail gehen sie nach PDF und XRechnung mit, und
+  10 PDFs mit zusammen bis zu 20 MB an, damit sie in eine E-Mail passen, etwa die Fremdrechnung
+  eines durchlaufenden Postens; eine Datei darüber hinaus lehnt das Hochladen ab. Das Ausstellen
+  friert sie mit dem Dokument ein. Per E-Mail gehen sie nach PDF und XRechnung mit, und
   die ZIP-Datei des Exports legt sie neben das PDF des Dokuments (#46).
 
 ### Geändert

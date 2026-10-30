@@ -12,7 +12,7 @@ faq:
   - q: Comment envoyer la facture du tiers avec ma facture?
     a: Enregistrez le brouillon, ouvrez la section «Pièces jointes» dans l’éditeur et cliquez sur «Ajouter un PDF». Lors de l’envoi par e-mail, le PDF part après celui de votre facture, et il est figé avec la facture lors de l’émission.
   - q: Comment les débours apparaissent-ils dans la facture électronique?
-    a: Comme lignes exonérées, catégorie E, avec le code de motif d’exonération VATEX-EU-79-C et un court texte de motif, dans une ventilation de TVA propre. Les factures d’exemple de Rhinvoice passent le validateur KoSIT et Mustang.
+    a: Comme lignes exonérées, catégorie E, avec le code de motif d’exonération VATEX-EU-79-C et un court texte de motif, dans une ventilation de TVA propre. Si le document a d’autres lignes exonérées, ils partagent leur ventilation; pour les petites entreprises en Suisse et au Liechtenstein sans numéro TVA ni numéro fiscal, ils sont dans la catégorie O. Les factures d’exemple de Rhinvoice passent le validateur KoSIT et Mustang.
 ---
 
 import Faq from "../../../../components/Faq.astro";
@@ -38,8 +38,8 @@ Un article peut aussi être un débours: choisissez-le comme *Taux de TVA* de l�
 
 ## Comment Rhinvoice les calcule
 
-- **Pas de TVA.** La ligne n’appartient à aucune ligne de TVA et n’ajoute aucune mention, quel que soit le régime fiscal: national, autoliquidation, exportation ou petite entreprise.
-- **Pas de rabais sur le document.** Le rabais sur le document ne s’applique qu’aux lignes imposées. Un rabais en montant ne peut pas dépasser ces lignes.
+- **Pas de TVA.** La ligne n’appartient à aucune ligne de TVA et n’ajoute aucune mention, quel que soit le régime fiscal: national, autoliquidation, exportation ou petite entreprise. Si un document n’a que des débours, le PDF ne montre ni total net, ni lignes de TVA, ni mention fiscale, et l’autoliquidation ne demande pas le numéro TVA du client.
+- **Pas de rabais sur le document.** Le rabais sur le document ne s’applique qu’aux lignes imposées. Un rabais en montant ne peut pas dépasser ces lignes. Si le document n’a que des débours, Rhinvoice refuse un rabais.
 - **Dans le total.** Le montant compte en entier dans le total, et donc dans la facture QR, le code QR EPC, les paiements, les montants ouverts et les rappels.
 - **Arrondi à la fin.** L’arrondi à 5 centimes ne s’applique qu’au montant final.
 
@@ -73,17 +73,17 @@ Votre client a en général besoin de la facture du tiers avec la vôtre. Chaque
 
 </Steps>
 
-Un brouillon contient au plus **10 PDF de 20 Mo chacun au maximum**; les autres types de fichiers sont refusés. Lors de l’[émission](/docs/fr/invoices/issue-and-cancel/), les pièces jointes sont figées avec le document, comme le PDF: elles ne sont plus jamais modifiées ni retirées (GoBD, art. 958f CO). Les documents émis les montrent dans une carte *Pièces jointes*. Le PDF du document lui-même reste tel quel; les pièces jointes sont des fichiers distincts. Supprimer un brouillon supprime ses pièces jointes; les duplicatas et les factures d’annulation ne les reprennent pas. La démo publique n’accepte pas de téléversement.
+Un brouillon contient au plus **10 PDF de 20 Mo au total**, pour qu’ils tiennent dans un seul e-mail; Rhinvoice refuse un PDF qui dépasserait cette limite dès le téléversement, de même que les autres types de fichiers. Si le brouillon a déjà un fichier du même nom, le nouveau reçoit un numéro, p. ex. `Notar (2).pdf`. Lors de l’[émission](/docs/fr/invoices/issue-and-cancel/), les pièces jointes sont figées avec le document, comme le PDF: elles ne sont plus jamais modifiées ni retirées (GoBD, art. 958f CO). Les documents émis les montrent dans une carte *Pièces jointes*. Le PDF du document lui-même reste tel quel; les pièces jointes sont des fichiers distincts. Supprimer un brouillon supprime ses pièces jointes; les duplicatas et les factures d’annulation ne les reprennent pas. La démo publique n’accepte pas de téléversement.
 
 ## Envoyer par e-mail
 
-*Envoyer par e-mail* joint le PDF du document, puis la XRechnung si vous la choisissez, puis les pièces jointes. La fenêtre d’envoi les liste toutes. Beaucoup de serveurs de messagerie refusent les e-mails de plus de 20 à 25 Mo; Rhinvoice affiche alors la réponse du serveur.
+*Envoyer par e-mail* joint le PDF du document, puis la XRechnung si vous la choisissez, puis les pièces jointes. La fenêtre d’envoi les liste toutes. Les pièces jointes d’un document font au plus 20 Mo au total, car beaucoup de serveurs de messagerie refusent des e-mails plus grands; Rhinvoice le vérifie dès le téléversement.
 
 ## Tableau de bord, export et facture électronique
 
 - **Tableau de bord:** les débours ne sont pas du chiffre d’affaires. Le graphique du chiffre d’affaires, le cumul annuel et les meilleurs clients les laissent de côté; les montants ouverts et en retard les comprennent, car votre client les doit.
-- **[Export pour la comptabilité](/docs/fr/invoices/export/):** une colonne *Débours* entre *TVA* et *Brut*, aussi dans les totaux, lorsque la période contient de tels montants. *Net* et *TVA* les laissent de côté, *Brut* les comprend. Avec le ZIP, les pièces jointes de chaque document suivent son PDF, nommées d’après le numéro et leur propre nom, p. ex. `R20260042_Handelsregister.pdf`.
-- **[Facture électronique](/docs/fr/invoices/e-invoice/):** les débours sont exonérés, catégorie E, avec le code de motif d’exonération VATEX-EU-79-C et un court texte de motif, dans une ventilation de TVA propre. Les factures d’exemple de Rhinvoice passent le validateur officiel KoSIT et Mustang.
+- **[Export pour la comptabilité](/docs/fr/invoices/export/):** une colonne *Débours* entre *TVA* et *Brut*, aussi dans les totaux, lorsque la période contient de tels montants. *Net* et *TVA* les laissent de côté, *Brut* les comprend. Avec le ZIP, les pièces jointes de chaque document suivent son PDF, nommées d’après le numéro et leur propre nom, p. ex. `R20260042_Handelsregister.pdf`. Rhinvoice raccourcit les noms longs à 200 caractères.
+- **[Facture électronique](/docs/fr/invoices/e-invoice/):** les débours sont exonérés, catégorie E, avec le code de motif d’exonération VATEX-EU-79-C et un court texte de motif, dans une ventilation de TVA propre. Si le document a d’autres lignes exonérées, ils partagent leur ventilation, avec les deux motifs en texte et sans code. Pour les petites entreprises en Suisse et au Liechtenstein sans numéro TVA ni numéro fiscal, ils sont dans la catégorie O, comme les autres lignes. Les factures d’exemple de Rhinvoice passent le validateur officiel KoSIT et Mustang.
 
 ## Questions fréquentes
 

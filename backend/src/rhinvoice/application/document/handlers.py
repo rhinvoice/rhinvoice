@@ -518,7 +518,7 @@ class DocumentHandlers:
                 uow.documents.archive_pdf(document, content)
             else:
                 if document.is_draft:
-                    check_room(len(uow.documents.attachments(document_id)))
+                    check_room(uow.documents.attachments(document_id), len(content))
                 view = self._save(uow, document, new=False)
                 attachment = Attachment(
                     id=new_id(),

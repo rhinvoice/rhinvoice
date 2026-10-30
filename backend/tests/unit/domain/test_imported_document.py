@@ -7,6 +7,7 @@ from decimal import Decimal
 import pytest
 
 from rhinvoice.domain.document.attachment import (
+    MAX_ATTACHED_BYTES,
     MAX_ATTACHMENTS,
     MAX_FILE_NAME,
     Attachment,
@@ -324,12 +325,30 @@ def test_upload_names_are_safe(raw: str, expected: str) -> None:
     assert len(upload_name(raw)) <= MAX_FILE_NAME
 
 
+def stored(size: int) -> Attachment:
+    return Attachment(new_id(), new_id(), "x.pdf", SHA, size, ADDED)
+
+
 def test_a_draft_takes_a_limited_number_of_attachments() -> None:
-    check_room(MAX_ATTACHMENTS - 1)
+    check_room([stored(1)] * (MAX_ATTACHMENTS - 1), 1)
     with raises_exactly(ValidationError, "a draft has at most 10 attachments") as caught:
-        check_room(MAX_ATTACHMENTS)
+        check_room([stored(1)] * MAX_ATTACHMENTS, 1)
     assert (caught.value.field, caught.value.code) == ("file", "too_many_attachments")
     assert MAX_ATTACHMENTS == 10
+
+
+def test_the_attachments_of_a_draft_fit_into_one_mail() -> None:
+    half = MAX_ATTACHED_BYTES // 2
+    check_room([], MAX_ATTACHED_BYTES)
+    check_room([stored(half), stored(half - 10)], 10)
+    with raises_exactly(
+        ValidationError, "the attachments of a draft are at most 20 MB together"
+    ) as caught:
+        check_room([stored(half), stored(half - 10)], 11)
+    assert (caught.value.field, caught.value.code) == ("file", "attachments_too_large")
+    with pytest.raises(ValidationError):
+        check_room([], MAX_ATTACHED_BYTES + 1)
+    assert MAX_ATTACHED_BYTES == 20 * 1024 * 1024
 
 
 def test_lines_are_never_taken_over_and_the_history_has_the_time() -> None:

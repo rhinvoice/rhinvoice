@@ -1020,8 +1020,8 @@ def add_file(
     """Add a PDF to an imported invoice or a draft.
 
     An imported invoice takes its original if it has none, else an attachment; a draft an
-    attachment (at most ten), which can be removed until the draft is issued. Files of
-    imported invoices and issued documents are never replaced or removed.
+    attachment (at most ten, at most 20 MB together), which can be removed until the draft
+    is issued. Files of imported invoices and issued documents are never replaced or removed.
     """
     # Synchronous on purpose (thread pool); one byte more lets the handler refuse large files.
     content = file.file.read(MAX_ADDED_FILE_BYTES + 1)

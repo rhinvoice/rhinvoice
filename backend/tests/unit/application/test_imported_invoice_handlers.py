@@ -16,6 +16,7 @@ from rhinvoice.application.document.handlers import (
 from rhinvoice.application.document.printing import PrintHandlers
 from rhinvoice.application.errors import ConflictError, NotFoundError
 from rhinvoice.domain.company.print_layout import PrintLayout
+from rhinvoice.domain.document import attachment as attachment_module
 from rhinvoice.domain.document.attachment import MAX_ATTACHMENTS
 from rhinvoice.domain.document.document import (
     Document,
@@ -255,6 +256,36 @@ def test_drafts_take_attachments_until_they_are_issued(store: Store, clock: Fixe
     with raises_exactly(InvalidStateError, "attachments are removed from drafts only"):
         handlers.remove_file(document_id, first.id)
     assert len(handlers.attachments(document_id)) == MAX_ATTACHMENTS
+
+
+def test_the_attachments_of_a_draft_stay_within_one_mail(
+    store: Store, clock: FixedClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store.company = factories.company()
+    handlers = DocumentHandlers(uow=lambda: InMemoryUnitOfWork(store), clock=clock)
+    customer = factories.customer()
+    store.customers[customer.id] = customer
+    line = LineInput(kind=LineKind.ITEM, description="Beratung", quantity="1", unit_price="10")
+    draft = handlers.create(
+        DocumentType.INVOICE, DraftInput(customer_id=customer.id, lines=(line,))
+    )
+    monkeypatch.setattr(attachment_module, "MAX_ATTACHED_BYTES", len(PDF) * 2)
+    handlers.add_file(draft.document.id, "a.pdf", PDF)
+    with raises_exactly(
+        ValidationError, "the attachments of a draft are at most 20 MB together"
+    ) as caught:
+        handlers.add_file(draft.document.id, "b.pdf", PDF + b"x")
+    assert caught.value.code == "attachments_too_large"
+    handlers.add_file(draft.document.id, "b.pdf", PDF)
+    assert [item.file_name for item in handlers.attachments(draft.document.id)] == [
+        "a.pdf",
+        "b.pdf",
+    ]
+    # An imported invoice keeps every file it came with.
+    document = imported(store)
+    for name in ("x.pdf", "y.pdf", "z.pdf"):
+        handlers.add_file(document.id, name, PDF)
+    assert len(handlers.attachments(document.id)) == 3
 
 
 def test_a_deleted_draft_takes_its_attachments_along(store: Store, clock: FixedClock) -> None:

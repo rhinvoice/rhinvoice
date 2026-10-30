@@ -843,7 +843,7 @@ export const it: Catalog<MessageKey> = {
   "documents.draftAttachmentsHint": "PDF inviati con il documento",
   "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDF" },
   "documents.draftAttachmentsNote":
-    "Per esempio le fatture di terzi delle spese anticipate. Si possono rimuovere fino all’emissione del documento; poi restano invariati con esso e vengono inviati dopo il suo PDF per e-mail.",
+    "Per esempio le fatture di terzi delle spese anticipate, al massimo 10 PDF e 20 MB in totale. Si possono rimuovere fino all’emissione del documento; poi restano invariati con esso e vengono inviati dopo il suo PDF per e-mail.",
   "documents.attachmentsAdding": "Caricamento …",
   "documents.attachmentsAdded": { one: "PDF allegato.", other: "{count} PDF allegati." },
   "documents.removeAttachment": "Rimuovere «{name}»",
@@ -1418,6 +1418,8 @@ export const it: Catalog<MessageKey> = {
   "error.attachments_frozen":
     "Gli allegati si modificano solo nelle bozze; i documenti emessi conservano i loro file.",
   "error.too_many_attachments": "Una bozza ha al massimo 10 allegati.",
+  "error.attachments_too_large":
+    "Gli allegati di una bozza non superano insieme 20 MB, così entrano in un’unica e-mail.",
   "error.mail_attachments_too_large":
     "Gli allegati superano insieme 20 MB; molti server di posta li rifiutano.",
   "error.too_many_rows":

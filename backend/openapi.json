@@ -12469,7 +12469,7 @@
     },
     "/api/documents/{document_id}/files": {
       "post": {
-        "description": "Add a PDF to an imported invoice or a draft.\n\nAn imported invoice takes its original if it has none, else an attachment; a draft an\nattachment (at most ten), which can be removed until the draft is issued. Files of\nimported invoices and issued documents are never replaced or removed.",
+        "description": "Add a PDF to an imported invoice or a draft.\n\nAn imported invoice takes its original if it has none, else an attachment; a draft an\nattachment (at most ten, at most 20 MB together), which can be removed until the draft\nis issued. Files of imported invoices and issued documents are never replaced or removed.",
         "operationId": "documents_add_file",
         "parameters": [
           {

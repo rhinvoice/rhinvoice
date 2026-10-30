@@ -805,7 +805,7 @@ export const en: Catalog<MessageKey> = {
   "documents.draftAttachmentsHint": "PDFs sent along with the document",
   "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDFs" },
   "documents.draftAttachmentsNote":
-    "For example third-party invoices of pass-through items. They can be removed until the document is issued; then they stay with it unchanged and are sent after its PDF by e-mail.",
+    "For example third-party invoices of pass-through items, at most 10 PDFs and 20 MB together. They can be removed until the document is issued; then they stay with it unchanged and are sent after its PDF by e-mail.",
   "documents.attachmentsAdding": "Uploading …",
   "documents.attachmentsAdded": { one: "PDF attached.", other: "{count} PDFs attached." },
   "documents.removeAttachment": "Remove “{name}”",
@@ -1371,6 +1371,8 @@ export const en: Catalog<MessageKey> = {
   "error.attachments_frozen":
     "Attachments can only be changed on drafts; issued documents keep their files.",
   "error.too_many_attachments": "A draft has at most 10 attachments.",
+  "error.attachments_too_large":
+    "The attachments of a draft are at most 20 MB together, so that they fit into one e-mail.",
   "error.mail_attachments_too_large":
     "The attachments are larger than 20 MB together; many mail servers refuse that much.",
   "error.too_many_rows": "The file has more than 10,000 rows. Please split it into several files.",

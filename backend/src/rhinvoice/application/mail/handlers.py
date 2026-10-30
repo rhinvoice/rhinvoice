@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from rhinvoice.application.errors import DeliveryError, NotFoundError, UnavailableError
 from rhinvoice.application.mail.ports import Attachment, OutgoingMail
+from rhinvoice.domain.document.attachment import MAX_ATTACHED_BYTES
 from rhinvoice.domain.document.document import (
     MAX_EVENT_DETAIL,
     OPEN_INVOICE_STATUSES,
@@ -74,8 +75,6 @@ class MailTemplateView:
 
 
 PDF = "application/pdf"
-MAX_ATTACHED_BYTES = 20 * 1024 * 1024
-"""The document's own files in one mail; mail servers often refuse more than 20 to 25 MB."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -270,7 +269,10 @@ class MailHandlers:
         return self.documents.attachments(view.document.id)
 
     def _attachments(self, view: DocumentView) -> tuple[Attachment, ...]:
-        """Load the files of a document written here, to send them; refuse too many bytes."""
+        """Load the files of a document written here, to send them; refuse too many bytes.
+
+        Drafts take no more than that (ADR 0040); the check stays as a safeguard.
+        """
         attached = self._attached(view)
         if sum(attachment.size for attachment in attached) > MAX_ATTACHED_BYTES:
             raise ValidationError(

@@ -840,7 +840,7 @@ export const de = {
   "documents.draftAttachmentsHint": "PDFs, die mit dem Dokument versendet werden",
   "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDFs" },
   "documents.draftAttachmentsNote":
-    "Zum Beispiel Fremdrechnungen durchlaufender Posten. Bis zum Ausstellen lassen sie sich entfernen; danach bleiben sie unverändert beim Dokument und gehen beim Versand per E-Mail nach dem PDF mit.",
+    "Zum Beispiel Fremdrechnungen durchlaufender Posten, höchstens 10 PDFs und zusammen 20 MB. Bis zum Ausstellen lassen sie sich entfernen; danach bleiben sie unverändert beim Dokument und gehen beim Versand per E-Mail nach dem PDF mit.",
   "documents.attachmentsAdding": "Wird hochgeladen …",
   "documents.attachmentsAdded": { one: "PDF angehängt.", other: "{count} PDFs angehängt." },
   "documents.removeAttachment": "«{name}» entfernen",
@@ -1415,6 +1415,8 @@ export const de = {
   "error.attachments_frozen":
     "Anhänge lassen sich nur bei Entwürfen ändern; ausgestellte Dokumente behalten ihre Dateien.",
   "error.too_many_attachments": "Ein Entwurf hat höchstens 10 Anhänge.",
+  "error.attachments_too_large":
+    "Die Anhänge eines Entwurfs sind zusammen höchstens 20 MB groß, damit sie in eine E-Mail passen.",
   "error.mail_attachments_too_large":
     "Die Anhänge sind zusammen größer als 20 MB; so viel nehmen viele Mailserver nicht an.",
   "error.too_many_rows":

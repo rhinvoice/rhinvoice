@@ -17,12 +17,16 @@ from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.text import clean_text
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from datetime import datetime
     from uuid import UUID
 
 MAX_FILE_NAME = 255
 MAX_ATTACHMENTS = 10
 """Attachments of one draft; an imported invoice keeps every file it came with."""
+MAX_ATTACHED_BYTES = 20 * 1024 * 1024
+"""The attachments of one draft together: they go out after its PDF in one mail, and mail
+servers often refuse more than 20 to 25 MB."""
 PDF_SUFFIX = ".pdf"
 DEFAULT_STEM = "document"
 _SHA256 = re.compile(r"[0-9a-f]{64}")
@@ -50,13 +54,19 @@ def upload_name(raw: str) -> str:
     return stem + PDF_SUFFIX
 
 
-def check_room(count: int) -> None:
-    """Refuse one more attachment on a draft that has ``count`` already."""
-    if count >= MAX_ATTACHMENTS:
+def check_room(attached: Sequence[Attachment], size: int) -> None:
+    """Refuse one more attachment of ``size`` bytes on a draft that has ``attached`` already."""
+    if len(attached) >= MAX_ATTACHMENTS:
         raise ValidationError(
             "file",
             f"a draft has at most {MAX_ATTACHMENTS} attachments",
             code="too_many_attachments",
+        )
+    if sum(attachment.size for attachment in attached) + size > MAX_ATTACHED_BYTES:
+        raise ValidationError(
+            "file",
+            "the attachments of a draft are at most 20 MB together",
+            code="attachments_too_large",
         )
 
 

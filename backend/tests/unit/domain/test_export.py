@@ -16,6 +16,8 @@ from rhinvoice.domain.document.document import (
     Payment,
 )
 from rhinvoice.domain.document.export import (
+    MAX_ENTRY_NAME,
+    MAX_ENTRY_NAME_BYTES,
     MAX_PERIOD_YEARS,
     ExportListing,
     ExportPeriod,
@@ -527,3 +529,35 @@ def test_attachments_follow_the_pdf_named_after_the_number() -> None:
     assert without.rows[0].attachment_files == ()
     no_files = with_file_names([(export_row(invoice, TODAY), False)], (), {invoice.id: [notary]})
     assert no_files[0].attachment_files == ()
+
+
+def test_long_attachment_names_are_shortened_in_the_zip() -> None:
+    invoice = numbered("R20260042")
+
+    def attachment(name: str) -> Attachment:
+        return Attachment(new_id(), invoice.id, name, "b" * 64, 1, NOW)
+
+    first, second = attachment("x" * 251 + ".pdf"), attachment("X" * 251 + ".pdf")
+    spaced = attachment("y" * 184 + " ." + "z" * 60 + ".pdf")
+    wide = attachment("a" + "ü" * 200 + ".pdf")
+    kept = attachment("Notar .pdf")
+    emoji = attachment("\U0001f4c4" * 100 + ".pdf")
+    row = export_row(invoice, TODAY)
+    [named] = with_file_names(
+        [(row, True)], (), {invoice.id: [first, second, spaced, wide, emoji, kept]}
+    )
+    names = dict(named.attachment_files)
+    assert names[first.id] == "R20260042_" + "x" * 186 + ".pdf"
+    assert names[second.id] == "R20260042_" + "X" * 182 + " (2).pdf"
+    # Shortened: no space or dot left before ".pdf".
+    assert names[spaced.id] == "R20260042_" + "y" * 184 + ".pdf"
+    # Two bytes each: 255 bytes before 200 characters.
+    assert names[wide.id] == "R20260042_a" + "ü" * 120 + ".pdf"
+    assert len(names[wide.id].encode()) == MAX_ENTRY_NAME_BYTES
+    assert names[emoji.id] == "R20260042_" + "\U0001f4c4" * 60 + ".pdf"
+    for name in names.values():
+        assert len(name) <= MAX_ENTRY_NAME
+        assert len(name.encode()) <= MAX_ENTRY_NAME_BYTES
+    # Short names stay as they are.
+    assert names[kept.id] == "R20260042_Notar .pdf"
+    assert with_file_names([(row, True)])[0].file_name == "R20260042.pdf"

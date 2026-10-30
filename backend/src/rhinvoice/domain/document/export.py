@@ -37,6 +37,10 @@ MAX_PERIOD_YEARS = 10
 MONTHS_PER_QUARTER = 3
 EXPORTED_TYPES = frozenset({DocumentType.INVOICE, DocumentType.CANCELLATION})
 REFUSED_IN_FILE_NAMES = '/\\:*?"<>|'
+MAX_ENTRY_NAME = 200
+"""Characters of a file name in the ZIP: room for the folder it is unpacked into."""
+MAX_ENTRY_NAME_BYTES = 255
+"""UTF-8 bytes of a file name, the limit of most file systems."""
 
 
 def _years_later(day: date, years: int) -> date:
@@ -211,6 +215,16 @@ def _file_name(number: str) -> str:
     return "".join("-" if character in REFUSED_IN_FILE_NAMES else character for character in number)
 
 
+def _fitted(base: str, suffix: str) -> str:
+    """Shorten ``base`` so that it and ``suffix`` make a file name within the limits."""
+    stem = base[: MAX_ENTRY_NAME - len(suffix)]
+    while len((stem + suffix).encode()) > MAX_ENTRY_NAME_BYTES:
+        stem = stem[:-1]
+    if stem != base:
+        stem = stem.rstrip(" .")
+    return stem + suffix
+
+
 def with_file_names(
     rows: Iterable[tuple[ExportRow, bool]],
     reserved: Iterable[str] = (),
@@ -222,7 +236,8 @@ def with_file_names(
     their own: a name taken already (in any case and Unicode form, for file systems that
     ignore them) or ``reserved`` (the list beside the PDFs) gets " (2)", " (3)" and so on.
     The ``attachments`` of a document follow its PDF, named after the number and their own
-    name, e.g. "R20260042_Notar.pdf".
+    name, e.g. "R20260042_Notar.pdf". A name is shortened before ".pdf" (and the number) to
+    at most 200 characters and 255 bytes.
     """
 
     def key(name: str) -> str:
@@ -231,10 +246,10 @@ def with_file_names(
     taken = {key(name) for name in reserved}
 
     def free(base: str) -> str:
-        name, count = f"{base}.pdf", 1
+        name, count = _fitted(base, ".pdf"), 1
         while key(name) in taken:
             count += 1
-            name = f"{base} ({count}).pdf"
+            name = _fitted(base, f" ({count}).pdf")
         taken.add(key(name))
         return name
 

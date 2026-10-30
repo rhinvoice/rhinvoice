@@ -26,6 +26,24 @@ BACK_TO_EXEMPT = {
         "UPDATE document_lines SET tax_category = 'exempt' WHERE tax_category = 'pass_through'"
     ),
 }
+# Recurring plans keep their lines in the JSON of their template; the order stays.
+PLANS_BACK_TO_EXEMPT = """
+UPDATE recurring_plans SET template = jsonb_set(
+    template,
+    '{lines}',
+    (
+        SELECT jsonb_agg(
+            CASE WHEN line ->> 'tax_category' = 'pass_through'
+                THEN jsonb_set(line, '{tax_category}', '"exempt"')
+                ELSE line
+            END
+            ORDER BY position
+        )
+        FROM jsonb_array_elements(template -> 'lines') WITH ORDINALITY AS lines (line, position)
+    )
+)
+WHERE template -> 'lines' @> '[{"tax_category": "pass_through"}]'
+"""
 
 # The document row is read FOR SHARE: issuing the draft at the same moment waits for the
 # upload (or the upload for the issuing), so no file slips onto an issued document.
@@ -98,9 +116,9 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Undo the wider column and the attachments of drafts.
 
-    Drafts lose their attachments; their pass-through lines and such articles fall back to
-    "exempt", the category without VAT closest to them. Issued documents are never changed:
-    once one holds a pass-through line, the downgrade stops.
+    Drafts lose their attachments; their pass-through lines, such articles and the lines of
+    recurring plans fall back to "exempt", the category without VAT closest to them. Issued
+    documents are never changed: once one holds a pass-through line, the downgrade stops.
     """
     issued = op.get_bind().execute(
         sa.text(
@@ -118,6 +136,7 @@ def downgrade() -> None:
         "(SELECT id FROM documents WHERE status = 'draft')"
     )
     op.execute("ALTER TABLE document_attachments ENABLE TRIGGER protect_document_attachments")
+    op.execute(PLANS_BACK_TO_EXEMPT)
     for table in CATEGORY_TABLES:
         op.execute(BACK_TO_EXEMPT[table])
         op.alter_column(

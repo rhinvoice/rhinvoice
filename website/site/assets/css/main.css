@@ -371,6 +371,7 @@ section.river { padding-block: 8px 24px; }
 }
 .features strong { font-weight: 600; }
 .features span { color: var(--muted); font-size: 15px; }
+.all-features { margin-top: 20px; }
 
 /* ---------- Install -------------------------------------------------------- */
 

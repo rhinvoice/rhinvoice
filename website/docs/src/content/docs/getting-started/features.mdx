@@ -1,0 +1,265 @@
+---
+title: Rhinvoice features at a glance
+description: "All features of Rhinvoice, the free open-source invoicing program for CH, LI, DE and AT: invoices, VAT, Swiss QR-bill, e-invoices, payment reminders and backups."
+faq:
+  - q: Do some features of Rhinvoice cost extra?
+    a: "No. Every feature on this page is part of Rhinvoice, free under the AGPL. There is no paid version and there are no add-ons."
+  - q: Which currencies can Rhinvoice invoice in?
+    a: "Swiss francs (CHF) and euros (EUR). Articles have a price per currency, each bank account has one currency, and an invoice uses the default account of its currency."
+  - q: What does Rhinvoice not do?
+    a: "Rhinvoice is not an accounting program: no bookkeeping, no ledger, no VAT returns, no payroll. It is also not a hosted service, a web shop or a point-of-sale system."
+  - q: Where do I see what is new?
+    a: "This page lists what the current version does. Every new version is listed under What's new in the documentation; the project collects wishes and ideas on GitHub."
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+Rhinvoice writes **quotes, invoices, cancellation invoices and payment reminders** for businesses in Switzerland, Liechtenstein, Germany and Austria, with each country's VAT rates, legal notices, payment QR codes and e-invoice formats. This page lists every feature of the current version as a short list. Each group links to the detailed guide.
+
+## Quotes and invoices
+
+- Quotes, invoices and cancellation invoices in CHF or EUR
+- Editor with the form on the left and a live paper preview on the right
+- Drafts save themselves; drafts can be deleted
+- Lines with quantity, unit, price, discount and VAT rate, plus text lines for headings and notes
+- Reorder lines by dragging or with Alt+↑ / Alt+↓
+- Articles are suggested while you type in the line; *Save as article* keeps a new line as an article
+- Line discount and document discount as a percentage or an amount, net or gross prices
+- Subject, reference, service period, due date and payment terms per document
+- Create a new customer right from the invoice, in a panel beside it
+- What issuing still needs is listed on top of the editor, with a button that opens the form for it
+- Numbers are assigned only when issuing, without gaps and without duplicates
+- Number sequences with your own pattern (`{YYYY}`, `{YY}`, `{MM}`, `{NNNN}`), yearly reset and a preview of the next number
+- Issued documents are locked, also in the database, and the PDF is kept with its SHA-256 checksum (GoBD, Art. 958f CO, BAO)
+- Corrections only by a cancellation invoice with its own number
+- Mark quotes as sent, accepted or declined; after their validity (30 days by default) they count as expired
+- *Turn into invoice* makes an invoice draft from a quote
+- *Duplicate* creates a copy as a draft
+- History per document, for example issuing, payments, reminders, e-mails and a manual choice of tax treatment
+- Lists with views (*Drafts*, *Open*, *Overdue*, *Paid*, *Cancelled*, *Written off*), filters by year and customer, totals
+- Full-text search over number, customer, subject and lines
+- View, download and print the PDF
+
+Guides: [Your first invoice](/docs/getting-started/first-invoice/), [Quotes](/docs/invoices/quotes/), [Issuing and cancelling](/docs/invoices/issue-and-cancel/)
+
+## Payments and write-offs
+
+- Record payments with date, amount and note, also partial payments
+- *Mark as paid* in one click, also for several invoices at once
+- *Undo* right in the message; recorded payments can be removed again
+- *Overdue* is derived from the due date every day, not stored
+- Write off invoices that will not be paid, with date, reason and note; a write-off can be taken back
+- A payment after the write-off is recorded as usual
+- The view *Written off* shows the losses per year and currency and the tax they contain
+
+Guides: [Payments and reminders](/docs/invoices/payments-and-reminders/), [Writing off invoices](/docs/invoices/write-off/)
+
+## Taxes and countries
+
+- Company seat in Switzerland, Liechtenstein, Germany or Austria; customers can be anywhere
+- Dated VAT rates; the rate of the service date applies, without a service date the invoice date
+- Switzerland and Liechtenstein: 8.1 / 2.6 / 3.8 %, plus the earlier rates since 2011
+- Germany: 19 / 7 %, plus 16 / 5 % for the second half of 2020
+- Austria: 20 / 10 / 13 %
+- Tax treatment decided from the company's country, the customer's country and VAT number: domestic, reverse charge, intra-Community supply, export delivery, export, small business, exempt
+- Manual choice of the tax treatment with a reason that goes into the history
+- Goods and services kept apart, also on mixed invoices, each with its notice
+- Small businesses: invoices without VAT, with the notice the country requires (§ 19 UStG, § 6 Abs. 1 Z 27 UStG)
+- Mandatory invoice details are checked before issuing
+- A hint in the editor when an EU business customer lacks the VAT number for reverse charge
+- VAT is calculated per rate; only the total is rounded
+- Swiss 5-centime rounding to CHF 0.05, can be switched off
+- Wording per country: MWST and UID in Switzerland and Liechtenstein, USt. and USt-IdNr. in Germany, USt. and UID in Austria
+- More countries can be added as a country profile of their own
+
+Guides: [Switzerland](/docs/countries/switzerland/), [Liechtenstein](/docs/countries/liechtenstein/), [Germany](/docs/countries/germany/), [Austria](/docs/countries/austria/), [More countries](/docs/countries/more-countries/)
+
+## Payment QR codes and bank accounts
+
+- Swiss QR-bill with payment part in CHF or EUR, for businesses in Switzerland and Liechtenstein
+- QR reference with a QR-IBAN, or creditor reference (SCOR, ISO 11649) with a normal IBAN
+- EPC QR code (GiroCode) on euro invoices from Germany and Austria
+- EPC QR code also on euro invoices from Switzerland and Liechtenstein to customers in the EEA, when the euro account has a BIC
+- Several bank accounts with IBAN, QR-IBAN, BIC and currency, one default account per currency
+- Footer with all bank accounts or only the account of the invoice currency
+
+Guides: [Switzerland](/docs/countries/switzerland/), [Germany](/docs/countries/germany/)
+
+## E-invoices
+
+- ZUGFeRD / Factur-X (EN 16931) embedded in the PDF of every issued invoice and cancellation invoice, for all four countries
+- Every PDF is PDF/A-3b
+- The embedded e-invoice can be switched off in the print template
+- XRechnung 3.0 (CII) as an XML file for German public authorities
+- Leitweg-ID or fixed buyer reference per customer in Germany
+- Before issuing, Rhinvoice names what the e-invoice or the XRechnung still lacks
+- Units as UN/ECE codes (Recommendation No. 20), as EN 16931 requires
+- Checked in the automated tests with the KoSIT validator and Mustang
+
+Guide: [E-invoices](/docs/invoices/e-invoice/)
+
+## Customers and articles
+
+- Customers as a company or a person, with salutation, contact person, address, e-mail, phone and group
+- Customer number from its own number sequence or by hand
+- Per customer: default currency, document language, payment terms, default discount, tax exemption, delivery address and internal note
+- The customer's VAT number; in Germany the Leitweg-ID
+- Customer page with "customer since" and all the customer's documents
+- Articles with number, name, description, group, unit, VAT rate and whether they are goods or a service
+- Article prices per currency (CHF and EUR)
+- Archive and restore; archived entries no longer appear in selection lists
+- Search by name, number, city, e-mail or description
+
+Guide: [Customers and articles](/docs/moving/customers-and-articles/)
+
+## Texts and print template
+
+- Text templates for introduction, payment terms and closing, per document type, one of them as the default
+- Placeholders in texts: `{nummer}`, `{datum}`, `{faellig}`, `{kunde}`, `{betrag}`, `{waehrung}`, `{firma}`
+- The country's legal notices as a suggestion, with your own wording if you like
+- Documents in German, English, French or Italian, chosen per document, per customer or as the company's default
+- Three print templates: *Classic*, *Modern*, *Plain*
+- Logo on the left or right in three sizes, font Inter or Source Serif
+- Sender line above the address for the window envelope, contact details in the head, position numbers on or off
+- Address field after DIN 5008 form B for window envelopes
+- Preview of the print template with the latest invoice
+- Issued documents keep their PDF when the print template changes
+
+Guide: [First start](/docs/getting-started/first-start/)
+
+## Payment reminders
+
+- All overdue invoices with the next step under *Dunning*
+- Three levels: payment reminder, 1st dunning letter, 2nd dunning letter
+- Per level: days after the due date or the last deadline, new payment deadline, dunning fee
+- Reminder text per level in German, English, French and Italian
+- Reminder as a PDF with the open amount plus the fee
+- Send reminders by e-mail
+- Written-off invoices are not reminded
+
+Guide: [Payments and reminders](/docs/invoices/payments-and-reminders/)
+
+## Recurring invoices
+
+- Plans every month, quarter, half-year or year
+- On the date: create a draft, issue, or issue and send by e-mail
+- The period covered goes onto the invoice as its service period
+- Set the first and last invoice, pause and resume a plan
+- Missed dates are caught up, each period only once
+- Per plan a list of the invoices written, with their outcome
+- *Make recurring* turns an issued invoice into a plan
+
+Guide: [Recurring invoices](/docs/invoices/recurring/)
+
+## Sending by e-mail
+
+- Invoices, quotes, cancellation invoices and reminders by e-mail with their PDF
+- Optionally the XRechnung as a second attachment
+- Sent through your own mail server (SMTP) with STARTTLS or SSL/TLS
+- Sender name, reply-to address and a copy of every e-mail to the sender
+- Test e-mail under *Settings → E-mail*
+- E-mail templates per document type and language, with placeholders
+- Several recipients per e-mail
+- Every e-mail is noted in the document's history; when the server refuses one, Rhinvoice shows its answer
+
+Guide: [Recurring invoices](/docs/invoices/recurring/)
+
+## Moving over from your previous program
+
+- Customers and articles from CSV, XLSX and XLS
+- Character set (UTF-8, Windows-1252) and separator are detected
+- Column mapping, test run with preview and a report as CSV
+- Entries that exist already: skip, update or create anew
+- Save column mappings as a template
+- Old invoices with their original PDFs: a list plus PDF files, a folder or ZIP files
+- Invoices taken over are locked, marked *Taken over* and appear in search, revenue and the customer's history
+- Open invoices taken over can be paid and written off
+- The number sequence continues behind the numbers taken over
+
+Guides: [Customers and articles](/docs/moving/customers-and-articles/), [Old invoices](/docs/moving/old-invoices/)
+
+## Overview
+
+- Revenue of the year against last year, with a line per month
+- Open and overdue amounts per currency, by age
+- The longest overdue invoices
+- Open quotes with this year's acceptance rate
+- Top customers of the year and expected payments per week
+- Recent activity and a setup checklist
+
+## Backup
+
+- With Docker: a backup container of its own with restic, encrypted and deduplicated
+- Daily, after issuing or cancelling, and on request with *Back up now*
+- Targets: S3-compatible storage, SFTP, a folder, and through rclone Dropbox, Google Drive and others
+- On Windows and Mac: backups into a folder such as OneDrive, Dropbox, iCloud Drive, Google Drive, a network drive or a USB disk, with a recovery key
+- Kept are 7 daily, 4 weekly, 12 monthly and every yearly backup
+- *Settings → Backup* shows the recent backups and warns when the last successful one is older than 24 hours
+- Restoring is described step by step, also onto a new computer
+
+Guides: [Backup and restore](/docs/operations/backup/), [Backup in the program](/docs/operations/backup-desktop/), [Backup to Google Drive](/docs/operations/backup-google-drive/)
+
+## Security
+
+- Login with e-mail address and password; passwords are stored with argon2id
+- Two-factor authentication with an authenticator app (TOTP)
+- Lock after repeated failed attempts, at most 10 logins per minute and address
+- Session cookie with HttpOnly and SameSite=Strict, a strict Content-Security-Policy
+- A new password ends the account's other sessions
+- *Forgot password?*: on a server by command, on Windows and Mac with a one-time code in the data folder
+- The program for Windows and Mac only answers requests to its own address (127.0.0.1 or localhost)
+- Your data lies in your own database, on your computer or server
+
+## Working with it
+
+- Command palette with ⌘K or Ctrl+K
+- Keyboard shortcuts: **I** or **N** new invoice, **Q** new quote, **C** new customer, **A** new article, **P** record a payment, **/** search, ⌘↵ save, ⌘Z undo
+- **G** and a letter open a list, for example **G I** the invoices; **?** shows every shortcut
+- Single-key shortcuts can be switched off under *Settings → Interaction*
+- Light and dark mode, or following the system
+- Interface in German (Switzerland, Germany, Austria), French, Italian and English
+- Amounts and dates in the country's format, for example `CHF 1’234.50` or `1.234,50 EUR`
+- Accent colour of the interface can be set, for example to the company colour
+- On the phone: check the status, mark as paid, view the PDF
+- Fully usable by keyboard; the automated interface tests check the pages with axe-core against WCAG 2.2 AA
+- Setup wizard on the first start (country, company) and a checklist on the overview
+- *About Rhinvoice* with the version and *Report a problem*
+
+Guide: [First start](/docs/getting-started/first-start/)
+
+## Installation and updates
+
+- Program for Windows 10/11 with a setup, without Docker, database included (beta)
+- Program for Macs with Apple silicon, macOS 12 or later (beta)
+- The setups are signed; the Mac app is also notarized by Apple
+- Your data stays when you uninstall
+- With Docker Compose on a server, a NAS, a Raspberry Pi 4/5 or your own computer; images for `linux/amd64` and `linux/arm64`
+- With Docker also several user accounts, created with `rhinvoice user create`
+- A notice about a new version in the sidebar and under *About Rhinvoice*
+- On Windows and Mac one click installs the update; if the new version does not start, the previous one comes back with its database
+- With Docker the notice shows the commands for the update
+- The update check can be switched off
+- Test versions come as a separate program, *Rhinvoice Beta*, with data of its own
+- Sample data for a test installation with `rhinvoice demo`
+
+Guides: [Windows and Mac](/docs/getting-started/install-desktop/), [Installation with Docker](/docs/getting-started/installation/), [Updating](/docs/operations/update/), [Uninstalling](/docs/operations/uninstall/)
+
+## Open source and cost
+
+- Free, with no paid version and no add-ons
+- Licence: GNU Affero General Public License v3.0 or later (AGPL)
+- Source code on [GitHub](https://github.com/rhinvoice/rhinvoice)
+- No hosted service: you run Rhinvoice yourself
+- Public demos for [Switzerland](https://ch.rhinvoice.com), [Germany](https://de.rhinvoice.com) and [Austria](https://at.rhinvoice.com), reset every hour
+- Documentation in English, German, French and Italian
+
+More: [What is Rhinvoice?](/docs/getting-started/what-is-rhinvoice/)
+
+<Aside type="caution" title="No tax advice">
+Rhinvoice is in beta (0.x) and does not replace tax or legal advice. VAT rates and rules are checked against official sources and provided without warranty.
+</Aside>
+
+## Questions
+
+<Faq />

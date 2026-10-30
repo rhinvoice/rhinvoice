@@ -85,6 +85,7 @@ All visitors share one login per demo; it sends no e-mail and takes no uploads (
 The user documentation, in English (https://rhinvoice.com/docs/) and German (https://rhinvoice.com/docs/de/, same paths below /docs/de/). Also in French (https://rhinvoice.com/docs/fr/) and Italian (https://rhinvoice.com/docs/it/), machine-translated, with the same paths. Its sitemap: https://rhinvoice.com/docs/sitemap-index.xml
 
 - [What is Rhinvoice?](https://rhinvoice.com/docs/getting-started/what-is-rhinvoice/)
+- [Features](https://rhinvoice.com/docs/getting-started/features/): every feature of the current version as a checklist, grouped by topic
 - [Install on Windows or Mac](https://rhinvoice.com/docs/getting-started/install-desktop/): one setup, no Docker (beta)
 - [Installation with Docker](https://rhinvoice.com/docs/getting-started/installation/): Docker Compose, first user, HTTPS
 - [Your first invoice](https://rhinvoice.com/docs/getting-started/first-invoice/)

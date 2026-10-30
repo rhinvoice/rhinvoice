@@ -22,6 +22,7 @@ from rhinvoice.domain.document.document import (
     EventKind,
 )
 from rhinvoice.domain.shared.clock import FixedClock
+from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork
@@ -119,7 +120,17 @@ def test_imported_invoices_are_stored_with_their_files(
     documents.add_file(unpaid, "Mahnung.pdf", b"%PDF-1.4 mahnung")
     with SqlUnitOfWork(engine) as uow:
         assert uow.documents.get_pdf(unpaid) == b"%PDF-1.4 scan"
-        assert [a.file_name for a in uow.documents.attachments(unpaid)] == ["Mahnung.pdf"]
+        [later] = uow.documents.attachments(unpaid)
+        assert later.file_name == "Mahnung.pdf"
+        # Several documents at once, and one without its content.
+        paid_id = summaries["R20150001"].id
+        assert uow.documents.attachments_of([paid_id, unpaid, new_id()]) == {
+            paid_id: uow.documents.attachments(paid_id),
+            unpaid: [later],
+        }
+        assert uow.documents.attachments_of([]) == {}
+        assert uow.documents.find_attachment(unpaid, later.id) == later
+        assert uow.documents.find_attachment(paid_id, later.id) is None
         stored = uow.documents.get(unpaid)
         assert stored is not None
         assert stored.status is DocumentStatus.PAID

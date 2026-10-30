@@ -517,6 +517,14 @@ class InMemoryDocumentRepository:
         ]
         return sorted(found, key=lambda attachment: (attachment.file_name, str(attachment.id)))
 
+    def attachments_of(self, document_ids: Sequence[UUID]) -> dict[UUID, list[Attachment]]:
+        found = {document_id: self.attachments(document_id) for document_id in document_ids}
+        return {document_id: listed for document_id, listed in found.items() if listed}
+
+    def find_attachment(self, document_id: UUID, attachment_id: UUID) -> Attachment | None:
+        stored = self.get_attachment(document_id, attachment_id)
+        return None if stored is None else stored[0]
+
     def get_attachment(
         self, document_id: UUID, attachment_id: UUID
     ) -> tuple[Attachment, bytes] | None:

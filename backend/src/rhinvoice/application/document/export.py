@@ -107,7 +107,7 @@ class ExportHandlers:
             company = uow.company.get()
             documents = uow.documents.issued_between(period.start, period.end)
             attachments = (
-                {document.id: uow.documents.attachments(document.id) for document in documents}
+                uow.documents.attachments_of([document.id for document in documents])
                 if request.with_pdfs
                 else {}
             )

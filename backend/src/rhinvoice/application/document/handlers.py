@@ -545,10 +545,10 @@ class DocumentHandlers:
         """Take an attachment off a draft; issued documents keep theirs."""
         with self.uow() as uow:
             document = self._require(uow, document_id, for_update=True)
-            found = uow.documents.get_attachment(document_id, attachment_id)
+            found = uow.documents.find_attachment(document_id, attachment_id)
             if found is None:
                 raise NotFoundError("attachment not found")
-            document = document.remove_file(found[0].file_name, self.clock.now())
+            document = document.remove_file(found.file_name, self.clock.now())
             view = self._save(uow, document, new=False)
             uow.documents.remove_attachment(document_id, attachment_id)
             uow.commit()

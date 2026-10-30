@@ -95,7 +95,9 @@ test("pass-through items print apart and third-party invoices go with the invoic
   ]);
   await expect(page.getByText("2 PDFs angehängt.")).toBeVisible();
   await expect(page.getByRole("link", { name: /Irrtum\.pdf/ })).toBeVisible();
-  await page.getByRole("button", { name: "«Irrtum.pdf» entfernen" }).click();
+  // Keyboard: on phones a tap here would leave the pointer on the toasts, which then stay open.
+  await page.getByRole("button", { name: "«Irrtum.pdf» entfernen" }).focus();
+  await page.keyboard.press("Enter");
   await expect(page.getByText("«Irrtum.pdf» entfernt.")).toBeVisible();
   await expect(page.getByRole("link", { name: /Irrtum\.pdf/ })).toHaveCount(0);
   await expect(page.getByText("1 PDF", { exact: true })).toBeVisible();

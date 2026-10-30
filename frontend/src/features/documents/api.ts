@@ -495,22 +495,33 @@ async function postFile(documentId: string, file: File): Promise<DocumentDetail>
 }
 
 /**
- * Attach PDFs to a draft, one after the other (ADR 0040). Only the list of files is
- * refreshed: the draft's form stays as it is while it is being edited.
+ * Refresh the files of a document and the document itself, whose history notes each file
+ * added or removed. The draft's form keeps what is being edited: it only starts from the
+ * document.
  */
-export function useAddAttachments(documentId: string) {
+function useOnFilesChanged(documentId: string) {
   const client = useQueryClient();
+  return () =>
+    Promise.all([
+      client.invalidateQueries({ queryKey: attachmentsQuery(documentId).queryKey }),
+      client.invalidateQueries({ queryKey: documentKeys.detail(documentId) }),
+    ]);
+}
+
+/** Attach PDFs to a draft, one after the other (ADR 0040). */
+export function useAddAttachments(documentId: string) {
+  const onSettled = useOnFilesChanged(documentId);
   return useMutation({
     mutationFn: async (files: readonly File[]) => {
       for (const file of files) await postFile(documentId, file);
     },
-    onSettled: () => client.invalidateQueries({ queryKey: attachmentsQuery(documentId).queryKey }),
+    onSettled,
   });
 }
 
 /** Take an attachment off a draft; issued documents keep theirs. */
 export function useRemoveAttachment(documentId: string) {
-  const client = useQueryClient();
+  const onSettled = useOnFilesChanged(documentId);
   return useMutation({
     mutationFn: (attachmentId: string) =>
       unwrap(
@@ -518,7 +529,7 @@ export function useRemoveAttachment(documentId: string) {
           params: { path: { document_id: documentId, attachment_id: attachmentId } },
         }),
       ),
-    onSettled: () => client.invalidateQueries({ queryKey: attachmentsQuery(documentId).queryKey }),
+    onSettled,
   });
 }
 

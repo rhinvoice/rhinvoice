@@ -15,6 +15,7 @@ import {
   ListIcon,
   PrinterIcon,
   RepeatIcon,
+  Share2Icon,
   ThumbsDownIcon,
   ThumbsUpIcon,
   Trash2Icon,
@@ -89,6 +90,7 @@ import { cn } from "@/lib/cn";
 import { todayIso } from "@/lib/dates";
 import { formatMoney } from "@/lib/format";
 import type { MessageKey } from "@/lib/i18n";
+import { canSharePdf, pdfFile, shareFile } from "@/lib/share";
 import { readStorage, writeStorage } from "@/lib/storage";
 import { termsFor } from "@/features/shared/country-profile-model";
 
@@ -425,7 +427,11 @@ function IssuedPage({ document, company }: PageProps) {
             </Button>
           </>
         ) : null}
-        <OutputActions documentId={document.id} printable={!document.imported} />
+        <OutputActions
+          documentId={document.id}
+          printable={!document.imported}
+          title={documentTitle(t, document)}
+        />
         <MailAction document={document} title={documentTitle(t, document)} />
         <RelatedLinks document={document} />
         <div className="ml-auto">
@@ -837,10 +843,13 @@ function MailAction({
 function OutputActions({
   documentId,
   printable,
+  title,
 }: {
   readonly documentId: string;
   /** Imported invoices have no page to print: the PDF is the invoice. */
   readonly printable: boolean;
+  /** The document's title, for the share sheet. */
+  readonly title: string;
 }) {
   const { t } = useI18n();
   const client = useQueryClient();
@@ -910,6 +919,48 @@ function OutputActions({
           {t("documents.print")}
         </Button>
       ) : null}
+      <ShareAction documentId={documentId} title={title} onError={fail} />
     </>
+  );
+}
+
+/**
+ * The PDF to the system's share sheet (phones, Safari on macOS); nothing where the
+ * browser cannot share files. The PDF is loaded beforehand: browsers open the sheet
+ * only right after the tap.
+ */
+function ShareAction({
+  documentId,
+  title,
+  onError,
+}: {
+  readonly documentId: string;
+  readonly title: string;
+  readonly onError: (caught: unknown) => void;
+}) {
+  const { t } = useI18n();
+  const [supported] = useState(() => canSharePdf());
+  const pdf = useQuery({
+    queryKey: ["documents", "pdf-file", documentId] as const,
+    queryFn: () => fetchFile(documentPdfUrl(documentId), "document.pdf"),
+    enabled: supported,
+    staleTime: Infinity,
+  });
+  if (!supported) return null;
+  return (
+    <Button
+      variant="outline"
+      disabled={pdf.isPending}
+      onClick={() => {
+        if (pdf.data === undefined) {
+          onError(pdf.error);
+          return;
+        }
+        shareFile(pdfFile(pdf.data.blob, pdf.data.name), title).catch(onError);
+      }}
+    >
+      <Share2Icon aria-hidden="true" />
+      {t("documents.share")}
+    </Button>
   );
 }

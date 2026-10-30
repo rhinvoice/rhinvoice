@@ -5,6 +5,12 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.9.0] – 2026-10-30
+
+### Added
+- *Share* on an issued document hands its PDF to the share sheet of the phone (and of Safari on a
+  Mac), e.g. to mail or a messenger. Browsers that cannot share files show no such button.
+
 ## [0.8.8] – 2026-10-27
 
 ### Fixed

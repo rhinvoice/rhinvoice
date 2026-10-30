@@ -822,6 +822,7 @@ export const fr: Catalog<MessageKey> = {
   "documents.pdf": "PDF",
   "documents.download": "Télécharger",
   "documents.print": "Imprimer",
+  "documents.share": "Partager",
   "documents.viewMode": "Affichage",
   "documents.viewDocument": "Document",
   "documents.viewDetails": "Détails",

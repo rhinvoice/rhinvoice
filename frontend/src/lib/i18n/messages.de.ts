@@ -810,6 +810,7 @@ export const de = {
   "documents.pdf": "PDF",
   "documents.download": "Herunterladen",
   "documents.print": "Drucken",
+  "documents.share": "Teilen",
   "documents.viewMode": "Darstellung",
   "documents.viewDocument": "Dokument",
   "documents.viewDetails": "Details",

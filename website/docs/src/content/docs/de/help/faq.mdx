@@ -15,7 +15,7 @@ faq:
   - q: Wo liegen meine Daten?
     a: Auf Ihrem eigenen Server oder Computer, in der PostgreSQL-Datenbank von Rhinvoice. Dort liegen Kunden, Artikel, Dokumente und die archivierten PDFs. Rhinvoice ist kein Cloud-Dienst, die Daten bleiben bei Ihnen. Das Programm für Windows und Mac legt sie in Ihrem Benutzerordner ab.
   - q: Erfüllt Rhinvoice die Unveränderbarkeit nach GoBD, Art. 958f OR und BAO?
-    a: Rhinvoice setzt sie um. Ab dem Ausstellen sind Inhalt und PDF einer Rechnung gesperrt, auch direkt in der Datenbank, und das PDF wird mit SHA-256 gespeichert. Korrekturen gehen nur über eine Stornorechnung mit eigener Nummer. Ob Ihre Buchführung insgesamt den Vorschriften entspricht, klären Sie mit Ihrer Steuerberatung oder Treuhand.
+    a: Ab dem Ausstellen sind Inhalt und PDF einer Rechnung gesperrt, auch direkt in der Datenbank, das PDF wird mit SHA-256 gespeichert, und Korrekturen gehen nur über eine Stornorechnung mit eigener Nummer. Ein amtliches GoBD-Zertifikat gibt es nicht, und Rhinvoice hat kein Software-Testat. Ob Ihre Buchführung samt Verfahrensdokumentation insgesamt den Vorschriften entspricht, klären Sie mit Ihrer Steuerberatung oder Treuhand.
   - q: Wie sichert Rhinvoice meine Daten?
     a: Mit restic, verschlüsselt und dedupliziert, täglich und etwa zwei Minuten nach dem Ausstellen oder Stornieren von Dokumenten. Ziele sind S3-kompatible Speicher, SFTP, ein Ordner, Dropbox, Google Drive und andere; das Programm für Windows und Mac sichert in einen Ordner wie OneDrive oder iCloud Drive. Rhinvoice behält 7 tägliche, 4 wöchentliche, 12 monatliche und alle jährlichen Backups.
   - q: Kann Rhinvoice E-Rechnungen erstellen?

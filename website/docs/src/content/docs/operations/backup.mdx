@@ -5,7 +5,7 @@ faq:
   - q: How often does Rhinvoice back up?
     a: Daily, at 02:00 by default, and about two minutes after documents were issued or cancelled. Settings, Backup, Back up now asks for one at once.
   - q: How long are backups kept?
-    a: 7 daily, 4 weekly, 12 monthly and every yearly backup. Yearly backups are never deleted, because invoices must be kept for ten years.
+    a: 7 daily, 4 weekly, 12 monthly and every yearly backup. Yearly backups are never deleted, because invoices must be kept for seven to ten years, depending on the country.
   - q: Can Rhinvoice back up to Dropbox or Google Drive?
     a: Yes, through rclone, which is part of the backup container. The backups are encrypted before they leave the machine, so the cloud provider only stores unreadable blocks.
   - q: What happens if I lose the backup password?
@@ -22,7 +22,7 @@ This page covers the Docker installation. The program for Windows and Mac backs 
 ## When and how long
 
 - **When:** daily (02:00 by default, `BACKUP_DAILY_AT`) and about two minutes after documents were issued or cancelled (several in a row give one backup). *Settings → Backup → Back up now* asks for one at once.
-- **Kept:** 7 daily, 4 weekly, 12 monthly and **every yearly** backup. Invoices must be kept for ten years (Art. 958f CO, GoBD, BAO); yearly backups are never deleted. Old backups are removed on Sundays, when a sample of 5 % of the data is also verified.
+- **Kept:** 7 daily, 4 weekly, 12 monthly and **every yearly** backup. Invoices must be kept for seven to ten years, depending on the country (Switzerland: Art. 958f CO, Germany: § 14b UStG, § 147 AO, Austria: § 132 BAO); yearly backups are never deleted. Old backups are removed on Sundays, when a sample of 5 % of the data is also verified.
 - **Not backed up:** an installation without company data (a fresh one). Its empty database must never become the latest backup.
 - **Shown:** the overview warns when the last successful backup is older than 24 hours or backups are not set up. *Settings → Backup* lists the last backups.
 

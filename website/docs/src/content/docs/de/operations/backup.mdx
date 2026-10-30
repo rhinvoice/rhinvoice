@@ -5,7 +5,7 @@ faq:
   - q: Wie oft sichert Rhinvoice?
     a: Täglich, standardmässig um 02:00 Uhr, und etwa zwei Minuten nachdem Dokumente ausgestellt oder storniert wurden. Unter Einstellungen, Backup, Jetzt sichern fordern Sie sofort ein Backup an.
   - q: Wie lange werden Backups aufbewahrt?
-    a: 7 tägliche, 4 wöchentliche, 12 monatliche und alle jährlichen Backups. Jährliche Backups werden nie gelöscht, weil Rechnungen zehn Jahre aufbewahrt werden müssen.
+    a: 7 tägliche, 4 wöchentliche, 12 monatliche und alle jährlichen Backups. Jährliche Backups werden nie gelöscht, weil Rechnungen je nach Land sieben bis zehn Jahre aufbewahrt werden müssen.
   - q: Kann Rhinvoice nach Dropbox oder Google Drive sichern?
     a: Ja, über rclone, das im Backup-Container enthalten ist. Die Backups werden verschlüsselt, bevor sie den Rechner verlassen. Der Cloud-Anbieter speichert nur unlesbare Blöcke.
   - q: Was passiert, wenn ich das Backup-Passwort verliere?
@@ -22,7 +22,7 @@ Diese Seite beschreibt die Docker-Installation. Das Programm für Windows und Ma
 ## Wann und wie lange
 
 - **Wann:** täglich (standardmässig um 02:00 Uhr, `BACKUP_DAILY_AT`) und etwa zwei Minuten nachdem Dokumente ausgestellt oder storniert wurden (mehrere hintereinander ergeben ein Backup). *Einstellungen → Backup → Jetzt sichern* fordert sofort eines an.
-- **Aufbewahrt:** 7 tägliche, 4 wöchentliche, 12 monatliche und **alle jährlichen** Backups. Rechnungen müssen zehn Jahre aufbewahrt werden (Art. 958f OR, GoBD, BAO), jährliche Backups werden deshalb nie gelöscht. Alte Backups werden sonntags entfernt. Dabei wird auch eine Stichprobe von 5 % der Daten geprüft.
+- **Aufbewahrt:** 7 tägliche, 4 wöchentliche, 12 monatliche und **alle jährlichen** Backups. Rechnungen müssen je nach Land sieben bis zehn Jahre aufbewahrt werden (Schweiz: Art. 958f OR, Deutschland: § 14b UStG, § 147 AO, Österreich: § 132 BAO), jährliche Backups werden deshalb nie gelöscht. Alte Backups werden sonntags entfernt. Dabei wird auch eine Stichprobe von 5 % der Daten geprüft.
 - **Nicht gesichert:** eine Installation ohne Firmendaten (eine frische). Ihre leere Datenbank darf nie das neueste Backup werden.
 - **Angezeigt:** Die Übersicht warnt, wenn das letzte erfolgreiche Backup älter als 24 Stunden ist oder Backups nicht eingerichtet sind. *Einstellungen → Backup* listet die letzten Backups.
 

@@ -5,7 +5,7 @@ faq:
   - q: Con quale frequenza Rhinvoice fa un backup?
     a: Ogni giorno, di base alle 02:00, e circa due minuti dopo l’emissione o lo storno di documenti. Impostazioni, Backup, Esegui backup ora ne richiede uno subito.
   - q: Per quanto tempo vengono conservati i backup?
-    a: 7 giornalieri, 4 settimanali, 12 mensili e ogni backup annuale. I backup annuali non vengono mai cancellati, perché le fatture vanno conservate per dieci anni.
+    a: 7 giornalieri, 4 settimanali, 12 mensili e ogni backup annuale. I backup annuali non vengono mai cancellati, perché le fatture vanno conservate da sette a dieci anni a seconda del paese.
   - q: Rhinvoice può fare il backup su Dropbox o Google Drive?
     a: Sì, tramite rclone, che fa parte del container di backup. I backup vengono cifrati prima di lasciare il computer, quindi il fornitore cloud conserva solo blocchi illeggibili.
   - q: Che cosa succede se perdo la password del backup?
@@ -22,7 +22,7 @@ Questa pagina riguarda l’installazione con Docker. Il programma per Windows e 
 ## Quando e per quanto tempo
 
 - **Quando:** ogni giorno (di base alle 02:00, `BACKUP_DAILY_AT`) e circa due minuti dopo l’emissione o lo storno di documenti (più documenti di seguito danno un solo backup). *Impostazioni → Backup → Esegui backup ora* ne richiede uno subito.
-- **Conservati:** 7 giornalieri, 4 settimanali, 12 mensili e **ogni backup annuale**. Le fatture vanno conservate per dieci anni (art. 958f CO, GoBD, BAO); i backup annuali non vengono mai cancellati. I backup vecchi vengono rimossi la domenica, quando viene anche verificato un campione del 5 % dei dati.
+- **Conservati:** 7 giornalieri, 4 settimanali, 12 mensili e **ogni backup annuale**. Le fatture vanno conservate da sette a dieci anni a seconda del paese (Svizzera: art. 958f CO, Germania: § 14b UStG, § 147 AO, Austria: § 132 BAO); i backup annuali non vengono mai cancellati. I backup vecchi vengono rimossi la domenica, quando viene anche verificato un campione del 5 % dei dati.
 - **Senza backup:** un’installazione senza dati dell’azienda (una nuova). Il suo database vuoto non deve mai diventare il backup più recente.
 - **Visualizzato:** la panoramica avvisa quando l’ultimo backup riuscito ha più di 24 ore o i backup non sono configurati. *Impostazioni → Backup* elenca gli ultimi backup.
 

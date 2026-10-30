@@ -1,13 +1,13 @@
 ---
 title: Uninstalling Rhinvoice completely
-description: Remove Rhinvoice with containers, data volumes and images. Keep the invoice PDFs or a backup first, because issued invoices must be kept for ten years.
+description: Remove Rhinvoice with containers, data volumes and images. Keep the invoice PDFs or a backup first, because issued invoices must be kept for years.
 faq:
   - q: How do I remove Rhinvoice completely?
     a: In the folder with compose.yml and .env run docker compose down --volumes --rmi all, then delete the folder. That removes the containers, the network, the data volumes and the images.
   - q: Are my backups deleted when I uninstall Rhinvoice?
     a: Backups in the default local Docker volume are deleted with it. A folder set as BACKUP_LOCAL_DIR, S3, SFTP and cloud targets are not touched; delete those yourself when you no longer need them.
   - q: What should I do before uninstalling?
-    a: Keep the PDFs of your issued invoices or a backup outside of Docker. Issued invoices usually have to be kept for ten years.
+    a: Keep the PDFs of your issued invoices or a backup outside of Docker. Issued invoices have to be kept for seven to ten years, depending on the country.
 ---
 
 import Faq from "../../../components/Faq.astro";
@@ -16,7 +16,7 @@ import { Aside } from "@astrojs/starlight/components";
 To remove Rhinvoice, run `docker compose down --volumes --rmi all` in its folder and delete the folder. This deletes all invoices, customers and settings for good, so keep the PDFs of your issued invoices or a backup outside of Docker first.
 
 <Aside type="caution" title="Keep your invoices first">
-Issued invoices usually have to be kept for ten years (Switzerland: Art. 958f CO, Germany: § 147 AO, Austria: § 132 BAO). Removing Rhinvoice deletes them for good.
+Issued invoices have to be kept for seven to ten years, depending on the country (Switzerland: Art. 958f CO, Germany: § 14b UStG, § 147 AO, Austria: § 132 BAO). Removing Rhinvoice deletes them for good.
 </Aside>
 
 ## 1. A last backup

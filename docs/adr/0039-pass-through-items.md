@@ -24,14 +24,18 @@ discount reduce it and counts it as revenue.
   taxable lines. Rhinvoice gives no tax advice; the user decides.
 - **Calculation.** A pass-through line has no VAT and belongs to no VAT group, whatever the
   document's treatment (domestic, reverse charge, export, small business, exempt customer)
-  and whether it is goods or a service; it has no treatment and adds no notice. The document
-  discount is spread over the VAT groups only, never over pass-through lines; an amount
-  discount may not exceed the other lines. `Totals.pass_through` holds their sum; `net`, `tax`
-  and `subtotal` leave it out, `gross` (before cash rounding) and the payable `total` include
-  it, so QR-bill, EPC QR code, payments, open amounts and reminders do. The Swiss 5-centime
-  rounding applies to the final total only. Totals frozen before (JSON without the field) read
-  as zero. Property tests pin: total = taxed part + pass-through sum (rounded at the end), and
-  adding pass-through lines changes neither the groups nor the discount.
+  and whether it is goods or a service; it has no treatment and adds no notice. A document of
+  pass-through lines alone has no treatment at all: no notice, no net or VAT rows, and reverse
+  charge asks for no VAT number (the document's treatment stands in only while there is no
+  position yet). The document discount is spread over the VAT groups only, never over
+  pass-through lines; an amount discount may not exceed the other lines, and on pass-through
+  lines alone a discount is refused (`discount_on_pass_through_only`) instead of being lost.
+  `Totals.pass_through` holds their sum; `net`, `tax` and `subtotal` leave it out, `gross`
+  (before cash rounding) and the payable `total` include it, so QR-bill, EPC QR code,
+  payments, open amounts and reminders do. The Swiss 5-centime rounding applies to the final
+  total only. Totals frozen before (JSON without the field) read as zero. Property tests pin:
+  total = taxed part + pass-through sum (rounded at the end), and adding pass-through lines
+  changes neither the groups nor the discount.
 - **Printed block.** Pass-through lines leave the positions table and follow the tax lines,
   before the rounding and the total, under "Durchlaufende Posten (im Namen und auf Rechnung des
   Kunden bezahlt)" (DE, with EN, FR, IT), each with its description and amount (quantity × price
@@ -64,3 +68,10 @@ discount reduce it and counts it as revenue.
 - Not taken from primary sources (OPEN_QUESTIONS 19): that E with VATEX-EU-79-C is the right
   e-invoice mapping (practice, no KoSIT statement), and the ESTV practice. A professional
   should review it; the validators accept it.
+
+## Open points
+- **Write-offs.** A written-off loss (`domain/document/write_off.py`, `tax_share`) spreads the
+  VAT contained in the total pro rata over the whole total, pass-through items included. On a
+  document with pass-through items a partial loss therefore shows less contained VAT than a
+  share of the taxed part alone (net plus VAT) would. The alternative is to take the share on
+  the taxed part only. The current behaviour stays until the owner decides.

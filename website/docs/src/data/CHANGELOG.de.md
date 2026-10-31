@@ -38,10 +38,10 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 - Durchlaufende Posten, etwa im Namen und für Rechnung des Kunden bezahlte Gebühren: Der
   *Steuersatz* einer Position und eines Artikels bietet *Durchlaufender Posten (ohne MWST)* bzw.
   *(ohne USt.)*, nur für Fremdrechnungen auf den Namen des Kunden. Solche Positionen haben keine
-  Steuer und keinen Rabatt auf das Dokument, zählen voll zu Total, QR-Codes, Zahlungen und
-  Mahnungen und stehen in einem eigenen Block nach den Steuerzeilen. Im Dashboard sind sie kein
-  Umsatz; der Export zeigt sie in einer eigenen Spalte, die E-Rechnung als Kategorie E mit
-  VATEX-EU-79-C. Der Artikelimport liest «durchlaufend» und «pass-through» (#46).
+  Steuer und keinen Rabatt auf das Dokument, zählen voll zu Total, QR-Codes, Zahlungen und Mahnungen
+  und stehen in einem eigenen Block nach den Steuerzeilen, mehrere mit ihrer Summe. Im Dashboard
+  sind sie kein Umsatz; der Export zeigt sie in einer eigenen Spalte, die E-Rechnung als Kategorie E
+  mit VATEX-EU-79-C. Der Artikelimport liest «durchlaufend» und «pass-through» (#46).
 - *Anhänge* an gespeicherten Entwürfen von Rechnungen und Angeboten: *PDF hinzufügen* hängt bis zu
   10 PDFs mit zusammen bis zu 20 MB an, damit sie in eine E-Mail passen, etwa die Fremdrechnung
   eines durchlaufenden Postens; eine Datei darüber hinaus lehnt das Hochladen ab. Das Ausstellen

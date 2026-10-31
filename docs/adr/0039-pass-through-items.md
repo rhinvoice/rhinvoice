@@ -39,7 +39,8 @@ discount reduce it and counts it as revenue.
 - **Printed block.** Pass-through lines leave the positions table and follow the tax lines,
   before the rounding and the total, under "Durchlaufende Posten (im Namen und auf Rechnung des
   Kunden bezahlt)" (DE, with EN, FR, IT), each with its description and amount (quantity × price
-  and line discount in brackets when not 1). This is the separate statement the MWSTG asks
+  and line discount in brackets when not 1), and with "Summe durchlaufende Posten" when there are
+  several, as a beta tester's invoices show it. This is the separate statement the MWSTG asks
   for. Documents without such lines print exactly as before; positions keep their numbers. In
   the editor's preview a click on an item opens it like a position. The in-table variant waits
   for named print templates (no update changes the look of invoices).

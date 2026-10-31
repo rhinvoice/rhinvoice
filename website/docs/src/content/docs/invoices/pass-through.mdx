@@ -18,7 +18,7 @@ faq:
 import Faq from "../../../components/Faq.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
-A **pass-through item** is an amount you paid **in the name and for the account of your customer**, such as a commercial register fee, and charge on unchanged. In Rhinvoice you choose *Pass-through item (no VAT)* as a line's *Tax rate*: the line gets no VAT, the document discount leaves it alone, and the PDF lists it in a block of its own before the total. It only applies when the **third-party invoice is made out in your customer's name**.
+A **pass-through item** is an amount you paid **in the name and for the account of your customer**, such as a commercial register fee, and charge on unchanged. In Rhinvoice you choose *Pass-through item (no VAT)* as a line's *Tax rate*: the line gets no VAT, the document discount leaves it alone, and the PDF lists it in a block of its own before the total, several such lines with their sum. It only applies when the **third-party invoice is made out in your customer's name**.
 
 <Aside type="caution" title="Only in your customer's name">
 If you buy something in your own name and charge it on, it is a normal line with VAT, even when you charge it at cost. A pass-through item needs the third-party invoice addressed to your customer. The legal basis: Germany § 10 Abs. 1 Satz 4 UStG, Austria § 4 Abs. 3 UStG 1994, Switzerland and Liechtenstein Art. 24 para. 6 lit. b MWSTG, where the amount must be shown separately (Rhinvoice always does). Rhinvoice gives no tax advice: ask your fiduciary or tax adviser when in doubt.

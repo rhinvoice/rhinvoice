@@ -423,7 +423,9 @@ def _quantity(line: DocumentLine, setting: _Setting) -> str:
 
 
 def _pass_through(model: PrintModel, setting: _Setting) -> list[TotalRow]:
-    """Build the block of pass-through lines: a title, then each with its amount (ADR 0039).
+    """Build the block of pass-through lines: a title, each with its amount, then their sum.
+
+    The sum appears only for several lines (ADR 0039).
 
     In CH and LI such amounts stay outside the taxable amount only when shown separately
     (Art. 24 Abs. 6 lit. b MWSTG), so they never mix with the positions.
@@ -447,6 +449,9 @@ def _pass_through(model: PrintModel, setting: _Setting) -> list[TotalRow]:
                 label, setting.amount(amounts[line.id].amount), kind="pass_through", index=index
             )
         )
+    if len(rows) > 1:
+        total = model.view.totals.pass_through.amount
+        rows.append(TotalRow(setting.labels["pass_through_total"], setting.amount(total)))
     if rows:
         rows.insert(0, TotalRow(setting.labels["pass_through"], "", kind="pass_through_title"))
     return rows

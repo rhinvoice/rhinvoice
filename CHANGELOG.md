@@ -26,6 +26,11 @@ before 1.0, minor versions may contain breaking changes.
   from a quote. The field stays editable; cleared, the document takes the date of issuing as
   before. Existing drafts keep their dates, recurring invoices are dated by their plan.
 
+### Fixed
+- Issuing no longer reports an error when the invoice is issued but its PDF could not be stored
+  right away. The editor stayed on the draft and later saves failed; now the issued invoice
+  opens, and its first download stores the PDF.
+
 ## [0.8.8] – 2026-10-27
 
 ### Fixed

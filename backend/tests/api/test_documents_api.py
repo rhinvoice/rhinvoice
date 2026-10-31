@@ -4,6 +4,7 @@ from datetime import timedelta
 from decimal import Decimal
 from typing import Any
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -402,8 +403,11 @@ class FakePdf:
     def __init__(self) -> None:
         self.calls = 0
         self.e_invoices: list[bytes | None] = []
+        self.failure: Exception | None = None
 
     def pdf(self, model: PrintModel, e_invoice: bytes | None = None) -> bytes:
+        if self.failure is not None:
+            raise self.failure
         self.calls += 1
         self.e_invoices.append(e_invoice)
         return f"%PDF-{model.view.document.number} {self.calls}".encode()
@@ -453,6 +457,32 @@ def test_documents_as_pdf(
     assert (
         cancellation_pdf.content == f"%PDF-{cancellation_number(user_client, cancelled)} 3".encode()
     )
+
+
+def test_a_failed_archive_does_not_fail_the_issue(
+    user_client: TestClient,
+    customer_id: str,
+    app: FastAPI,
+    container: Container,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    fake = FakePdf()
+    fake.failure = RuntimeError("PDF service answered 500")
+    app.state.container = replace(
+        container, printing=replace(container.printing, pdf_renderer=fake)
+    )
+    created = create(user_client, customer_id)
+    response = user_client.post(f"/api/documents/{created['id']}/issue")
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "issued"
+    assert "not archived yet" in caplog.text
+
+    # The first download archives it.
+    fake.failure = None
+    pdf = user_client.get(f"/api/documents/{created['id']}/pdf")
+    assert pdf.status_code == 200
+    assert pdf.headers["cache-control"] == "private, max-age=31536000"
+    assert fake.calls == 1
 
 
 def cancellation_number(client: TestClient, cancelled: Json) -> str:

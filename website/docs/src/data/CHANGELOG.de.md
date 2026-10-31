@@ -30,6 +30,12 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   das Datum des Ausstellens. Bestehende Entwürfe behalten ihre Daten, wiederkehrende Rechnungen
   datiert ihr Plan.
 
+### Behoben
+- Das Ausstellen meldet keinen Fehler mehr, wenn die Rechnung ausgestellt ist, ihr PDF aber nicht
+  sofort gespeichert werden konnte. Der Editor blieb auf dem Entwurf stehen und späteres Speichern
+  schlug fehl; jetzt öffnet sich die ausgestellte Rechnung, und ihr erster Download speichert das
+  PDF.
+
 ## [0.8.8] – 2026-10-27
 
 ### Behoben

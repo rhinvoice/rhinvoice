@@ -1044,8 +1044,17 @@ def issue_document(
 
 
 def _archive(container: Container, document_id: UUID) -> None:
-    """Freeze the PDF right after issuing, so later template or logo changes do not affect it."""
-    if not container.printing.archive(document_id):
+    """Freeze the PDF right after issuing, so later template or logo changes do not affect it.
+
+    The document is issued already: a failure here must not report the issue as
+    failed. The PDF is then archived on the first download, which reports the error.
+    """
+    try:
+        archived = container.printing.archive(document_id)
+    except Exception:
+        logger.exception("PDF of document %s not archived yet", document_id)
+        return
+    if not archived:
         logger.warning("PDF of document %s not archived yet: no PDF service", document_id)
 
 

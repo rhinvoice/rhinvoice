@@ -20,7 +20,7 @@ from rhinvoice.domain.company.print_layout import (
     PrintTemplate,
 )
 from rhinvoice.domain.document.document import DocumentType
-from rhinvoice.domain.shared.country import Country
+from rhinvoice.domain.shared.country import Country, CountryCode
 from rhinvoice.domain.shared.email import EmailAddress
 from rhinvoice.domain.shared.iban import Bic, Iban
 from rhinvoice.domain.shared.money import Currency
@@ -246,13 +246,14 @@ def test_documents_issued_before_layouts_existed_use_the_current_one(store: Stor
 
 
 def _provider(store: Store, **overrides: object) -> BankAccount:
-    provider = factories.bank_account(
-        iban=Iban.parse("CH5800791123000889012"),
-        holder="Inkasso AG",
-        third_party=True,
-        holder_address=factories.address(street="Zahlweg", postal_code="4001", city="Basel"),
-        **overrides,
-    )
+    values: dict[str, object] = {
+        "iban": Iban.parse("CH5800791123000889012"),
+        "holder": "Inkasso AG",
+        "third_party": True,
+        "holder_address": factories.address(street="Zahlweg", postal_code="4001", city="Basel"),
+    }
+    values.update(overrides)
+    provider = factories.bank_account(**values)
     store.bank_accounts[provider.id] = provider
     return provider
 
@@ -292,6 +293,41 @@ def test_a_document_paid_to_a_third_party_names_it(store: Store) -> None:
     assert '<p class="payment-text">' not in paid_to_it
     assert "CH93" not in footer(paid_to_it)
     assert "Zahlung an" not in printing.preview_html(DocumentType.INVOICE, draft())
+
+
+def test_texts_name_the_holder_of_the_paid_account(store: Store) -> None:
+    provider = _provider(
+        store,
+        holder_address=factories.address(
+            street="Zahlweg",
+            house_number="3",
+            postal_code="40477",
+            city="Düsseldorf",
+            country=CountryCode("DE"),
+        ),
+    )
+    printing = printing_for(store)
+    text = "Abgetreten an {kontoinhaber}, {kontoinhaber_adresse}."
+
+    def payment(**overrides: object) -> str:
+        html = printing.preview_html(DocumentType.INVOICE, draft(payment_text=text, **overrides))
+        found = re.search(r'<p class="(?:payment-)?text">(Abgetreten an[^<]*)</p>', html)
+        assert found is not None
+        return found.group(1)
+
+    # A third party's address, with its country when abroad.
+    assert payment(bank_account_id=provider.id) == (
+        "Abgetreten an Inkasso AG, Zahlweg 3, 40477 Düsseldorf, Deutschland."
+    )
+    # An own account: its holder at the company's address.
+    assert payment() == "Abgetreten an Anna Muster, Bahnhofstrasse 1, 8001 Zürich."
+    # No account in the document's currency: nothing to name.
+    store.bank_accounts = {
+        account.id: account
+        for account in store.bank_accounts.values()
+        if account.currency is not Currency.CHF
+    }
+    assert payment() == "Abgetreten an , ."
 
 
 def test_own_accounts_name_no_payee(store: Store) -> None:

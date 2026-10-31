@@ -49,6 +49,10 @@ class Placeholder(StrEnum):
     CURRENCY = "waehrung"
     COMPANY = "firma"
     """The company's name, e.g. under the greeting of a mail."""
+    ACCOUNT_HOLDER = "kontoinhaber"
+    """Holder of the account the document is paid to, a third party's too."""
+    ACCOUNT_HOLDER_ADDRESS = "kontoinhaber_adresse"
+    """That holder's address on one line: a third party's, else the company's."""
 
 
 _PLACEHOLDER = re.compile(r"\{([A-Za-z_]+)\}")

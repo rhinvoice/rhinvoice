@@ -282,7 +282,7 @@ export const fr: Catalog<MessageKey> = {
   "error.payment_before_write_off":
     "Ce paiement a été reçu avant le passage en perte. Annulez d’abord le passage en perte.",
   "error.unknown_placeholder":
-    "Espace réservé inconnu. Les possibilités sont {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung} et {firma}.",
+    "Espace réservé inconnu. Les possibilités sont {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung}, {firma}, {kontoinhaber} et {kontoinhaber_adresse}.",
   "error.already_converted": "Une facture a déjà été créée à partir de cette offre.",
   "error.pageDescription":
     "Cette page n’a pas pu être affichée. Vos données enregistrées ne sont pas concernées.",
@@ -522,6 +522,8 @@ export const fr: Catalog<MessageKey> = {
   "texts.placeholder.betrag": "Montant",
   "texts.placeholder.waehrung": "Monnaie",
   "texts.placeholder.firma": "Votre entreprise",
+  "texts.placeholder.kontoinhaber": "Titulaire du compte",
+  "texts.placeholder.kontoinhaber_adresse": "Adresse du titulaire du compte",
   "texts.useAsDefault": "Insérer dans les nouveaux documents (par défaut)",
   "texts.notices": "Mentions légales",
   "texts.noticesHint":

@@ -9,6 +9,8 @@ faq:
     a: Sì. Aggiunga il suo conto in «Impostazioni → Conti bancari» e spunti «Il conto appartiene a terzi (p. es. un fornitore di servizi finanziari)». Le fatture pagate su questo conto stampano «Pagamento a:» con il titolare, e la fattura QR e la fattura elettronica lo indicano come beneficiario.
   - q: Che cosa succede alle mie fatture se elimino un conto bancario?
     a: Le bozze e le fatture ricorrenti che lo usavano riprendono il conto predefinito della loro valuta. I documenti emessi mantengono il conto con cui sono stati emessi.
+  - q: Il testo di pagamento può nominare l’intestatario del conto?
+    a: "Sì. I segnaposto {kontoinhaber} e {kontoinhaber_adresse} inseriscono l’intestatario e l’indirizzo del conto su cui il documento viene pagato: l’indirizzo del terzo per il suo conto, quello della Sua azienda per i Suoi conti."
   - q: Posso togliere le coordinate bancarie dal piè di pagina?
     a: Sì. In «Impostazioni → Layout di stampa», scheda «Piè di pagina», scelga «Nessuna» per «Coordinate bancarie». I dati di pagamento e i codici QR restano sulla fattura.
 ---
@@ -65,6 +67,16 @@ Che cosa cambia sui documenti pagati su un conto di terzi:
 <Aside type="tip" title="La maggior parte delle fatture va al fornitore">
 Renda il conto del fornitore il conto predefinito della sua valuta, e le sue condizioni di pagamento il testo predefinito: in *Impostazioni → Testi* spunti *Inserisci nei nuovi documenti (predefinito)* sulle *Condizioni di pagamento* corrispondenti. Le nuove fatture iniziano allora con entrambi. Conti bancari e testi di pagamento non sono collegati di proposito: se sceglie un altro conto su una fattura, adatti lì anche le condizioni di pagamento.
 </Aside>
+
+## Nominare l’intestatario del conto in un testo
+
+Due segnaposto inseriscono nelle *Condizioni di pagamento* e negli altri testi chi riceve il denaro: `{kontoinhaber}` l’intestatario del conto su cui il documento viene pagato, e `{kontoinhaber_adresse}` il suo indirizzo su una riga. Per il conto di un terzo è il suo indirizzo, con il paese se non è quello della Sua azienda; per i Suoi conti, l’indirizzo della Sua azienda. Se sceglie un altro conto su una fattura, il testo nomina il suo intestatario.
+
+Per esempio, per crediti ceduti a un fornitore di servizi finanziari:
+
+> Abbiamo ceduto i nostri crediti a \{kontoinhaber\}, \{kontoinhaber_adresse\}. La preghiamo di versare l’importo entro il \{faellig\}, con effetto liberatorio, sul conto seguente:
+
+Sotto, la fattura stampa «Pagamento a:» con l’intestatario, l’IBAN e il BIC.
 
 ## Coordinate bancarie nel piè di pagina
 

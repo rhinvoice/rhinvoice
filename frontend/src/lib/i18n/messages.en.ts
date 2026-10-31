@@ -262,7 +262,7 @@ export const en: Catalog<MessageKey> = {
   "error.payment_before_write_off":
     "This payment came in before the write-off. Take the write-off back first.",
   "error.unknown_placeholder":
-    "Unknown placeholder. Available are {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung} and {firma}.",
+    "Unknown placeholder. Available are {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung}, {firma}, {kontoinhaber} and {kontoinhaber_adresse}.",
   "error.already_converted": "An invoice has already been created from this quote.",
   "error.pageDescription": "This page could not be shown. Your saved data is not affected.",
 
@@ -489,6 +489,8 @@ export const en: Catalog<MessageKey> = {
   "texts.placeholder.betrag": "amount",
   "texts.placeholder.waehrung": "currency",
   "texts.placeholder.firma": "your company",
+  "texts.placeholder.kontoinhaber": "account holder",
+  "texts.placeholder.kontoinhaber_adresse": "account holder's address",
   "texts.useAsDefault": "Insert into new documents (default)",
   "texts.notices": "Legal notices",
   "texts.noticesHint":

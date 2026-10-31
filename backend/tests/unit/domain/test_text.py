@@ -64,7 +64,8 @@ def test_template_rules() -> None:
     assert unknown.value.code == "unknown_placeholder"
     assert str(unknown.value) == (
         "unknown placeholder {faelig}; available are "
-        "{nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung}, {firma}"
+        "{nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung}, {firma},"
+        " {kontoinhaber}, {kontoinhaber_adresse}"
     )
     assert template(document_type=DocumentType.QUOTE, text="{ } {a b} {}").text == "{ } {a b} {}"
 
@@ -89,6 +90,8 @@ def test_fill_placeholders() -> None:
         "betrag",
         "waehrung",
         "firma",
+        "kontoinhaber",
+        "kontoinhaber_adresse",
     ]
 
 

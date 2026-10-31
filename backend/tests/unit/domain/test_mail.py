@@ -204,7 +204,8 @@ def test_template_rules() -> None:
         with raises_exactly(
             ValidationError,
             f"unknown placeholder {{{'nr' if field == 'subject' else 'name'}}}; available are"
-            " {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung}, {firma}",
+            " {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung}, {firma},"
+            " {kontoinhaber}, {kontoinhaber_adresse}",
         ) as unknown:
             MailTemplate(MailKind.INVOICE, Language.DE, subject_text, body_text)
         assert (unknown.value.field, unknown.value.code) == (field, "unknown_placeholder")

@@ -278,7 +278,7 @@ export const de = {
   "error.payment_before_write_off":
     "Diese Zahlung ging vor der Abschreibung ein. Nehmen Sie zuerst die Abschreibung zurück.",
   "error.unknown_placeholder":
-    "Unbekannter Platzhalter. Möglich sind {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung} und {firma}.",
+    "Unbekannter Platzhalter. Möglich sind {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung}, {firma}, {kontoinhaber} und {kontoinhaber_adresse}.",
   "error.already_converted": "Aus diesem Angebot wurde bereits eine Rechnung erstellt.",
   "error.pageDescription":
     "Diese Seite konnte nicht angezeigt werden. Ihre gespeicherten Daten sind nicht betroffen.",
@@ -513,6 +513,8 @@ export const de = {
   "texts.placeholder.betrag": "Betrag",
   "texts.placeholder.waehrung": "Währung",
   "texts.placeholder.firma": "Ihre Firma",
+  "texts.placeholder.kontoinhaber": "Kontoinhaber",
+  "texts.placeholder.kontoinhaber_adresse": "Adresse des Kontoinhabers",
   "texts.useAsDefault": "In neue Dokumente einsetzen (Standard)",
   "texts.notices": "Gesetzliche Hinweise",
   "texts.noticesHint":

@@ -281,7 +281,7 @@ export const it: Catalog<MessageKey> = {
   "error.payment_before_write_off":
     "Questo pagamento è pervenuto prima della registrazione come perdita. Annulli prima la registrazione come perdita.",
   "error.unknown_placeholder":
-    "Segnaposto sconosciuto. Sono possibili {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung} e {firma}.",
+    "Segnaposto sconosciuto. Sono possibili {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung}, {firma}, {kontoinhaber} e {kontoinhaber_adresse}.",
   "error.already_converted": "Da questa offerta è già stata creata una fattura.",
   "error.pageDescription":
     "Non è stato possibile visualizzare questa pagina. I Suoi dati salvati non sono interessati.",
@@ -517,6 +517,8 @@ export const it: Catalog<MessageKey> = {
   "texts.placeholder.betrag": "Importo",
   "texts.placeholder.waehrung": "Valuta",
   "texts.placeholder.firma": "La sua azienda",
+  "texts.placeholder.kontoinhaber": "Intestatario del conto",
+  "texts.placeholder.kontoinhaber_adresse": "Indirizzo dell’intestatario del conto",
   "texts.useAsDefault": "Inserisci nei nuovi documenti (predefinito)",
   "texts.notices": "Indicazioni legali",
   "texts.noticesHint":

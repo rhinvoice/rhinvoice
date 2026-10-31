@@ -434,6 +434,7 @@ def _placeholder_values(model: PrintModel, setting: _Setting) -> dict[Placeholde
     document = model.view.document
     recipient = model.recipient
     total = model.view.totals.total
+    account = model.bank_account
     return {
         Placeholder.NUMBER: document.number or f"({setting.labels['number_pending']})",
         Placeholder.DATE: day(model.issue_date, setting.locale),
@@ -442,7 +443,22 @@ def _placeholder_values(model: PrintModel, setting: _Setting) -> dict[Placeholde
         Placeholder.AMOUNT: setting.amount(total.amount),
         Placeholder.CURRENCY: total.currency.value,
         Placeholder.COMPANY: model.company.name,
+        Placeholder.ACCOUNT_HOLDER: "" if account is None else account.holder,
+        Placeholder.ACCOUNT_HOLDER_ADDRESS: _holder_address(model, setting.language),
     }
+
+
+def _holder_address(model: PrintModel, language: Language) -> str:
+    """Put the address of the paid account's holder on one line, as texts quote it."""
+    account = model.bank_account
+    if account is None:
+        return ""
+    company = model.company.address
+    address = account.creditor_address(company)
+    lines = _company_lines(address)
+    if address.country.value != company.country.value:
+        lines.append(country_name(address.country.value, language))
+    return ", ".join(lines)
 
 
 def _accent(model: PrintModel) -> str:

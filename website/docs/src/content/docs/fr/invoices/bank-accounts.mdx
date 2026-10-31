@@ -9,6 +9,8 @@ faq:
     a: "Oui. Ajoutez son compte sous « Paramètres → Comptes bancaires » et cochez « Le compte appartient à un tiers (p. ex. un prestataire financier) ». Les factures payées sur ce compte impriment « Paiement à : » avec le titulaire, et la facture QR et la facture électronique le nomment comme bénéficiaire."
   - q: Que deviennent mes factures si je supprime un compte bancaire?
     a: "Les brouillons et les factures récurrentes qui l’utilisaient reprennent le compte par défaut de leur monnaie. Les documents émis gardent le compte avec lequel ils ont été émis."
+  - q: Le texte de paiement peut-il nommer le titulaire du compte?
+    a: "Oui. Les variables {kontoinhaber} et {kontoinhaber_adresse} insèrent le titulaire et l’adresse du compte sur lequel le document est payé : l’adresse du tiers pour son compte, celle de votre entreprise pour vos propres comptes."
   - q: Puis-je retirer les coordonnées bancaires du pied de page?
     a: "Oui. Sous « Paramètres → Mise en page d’impression », carte « Pied de page », choisissez « Aucune » pour « Coordonnées bancaires ». Les informations de paiement et les codes QR restent sur la facture."
 ---
@@ -65,6 +67,16 @@ Ce qui change sur les documents payés sur un compte de tiers :
 <Aside type="tip" title="La plupart des factures vont au prestataire">
 Faites du compte du prestataire le compte par défaut de sa monnaie, et de ses conditions de paiement le texte par défaut : sous *Paramètres → Textes*, cochez *Insérer dans les nouveaux documents (par défaut)* sur les *Conditions de paiement* correspondantes. Les nouvelles factures commencent alors avec les deux. Les comptes bancaires et les textes de paiement ne sont volontairement pas liés : si vous choisissez un autre compte sur une facture, adaptez-y aussi les conditions de paiement.
 </Aside>
+
+## Nommer le titulaire du compte dans un texte
+
+Deux variables insèrent dans les *Conditions de paiement* et les autres textes qui reçoit l’argent : `{kontoinhaber}` le titulaire du compte sur lequel le document est payé, et `{kontoinhaber_adresse}` son adresse sur une ligne. Pour le compte d’un tiers, c’est son adresse, avec le pays s’il n’est pas celui de votre entreprise; pour vos propres comptes, l’adresse de votre entreprise. Choisissez un autre compte sur une facture, et le texte nomme son titulaire.
+
+Par exemple, pour des créances cédées à un prestataire financier :
+
+> Nous avons cédé nos créances à \{kontoinhaber\}, \{kontoinhaber_adresse\}. Veuillez virer le montant d’ici au \{faellig\}, avec effet libératoire, sur le compte suivant :
+
+En dessous, la facture imprime « Paiement à : » avec le titulaire, l’IBAN et le BIC.
 
 ## Coordonnées bancaires dans le pied de page
 

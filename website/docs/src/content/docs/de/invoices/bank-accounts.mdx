@@ -9,6 +9,8 @@ faq:
     a: Ja. Erfassen Sie sein Konto unter «Einstellungen → Bankkonten» und kreuzen Sie «Konto gehört einem Dritten (z. B. Finanzdienstleister)» an. Rechnungen auf dieses Konto drucken «Zahlung an:» mit dem Kontoinhaber, QR-Rechnung und E-Rechnung nennen ihn als Zahlungsempfänger.
   - q: Was passiert mit meinen Rechnungen, wenn ich ein Bankkonto lösche?
     a: Entwürfe und wiederkehrende Rechnungen, die es verwendet haben, nehmen wieder das Standardkonto ihrer Währung. Ausgestellte Dokumente behalten das Konto, mit dem sie ausgestellt wurden.
+  - q: Kann der Zahlungstext den Kontoinhaber nennen?
+    a: "Ja. Die Platzhalter {kontoinhaber} und {kontoinhaber_adresse} setzen den Inhaber und die Adresse des Kontos ein, auf das das Dokument bezahlt wird: bei einem Konto eines Dritten dessen Adresse, bei Ihren eigenen Konten die Ihrer Firma."
   - q: Kann ich die Bankverbindung in der Fusszeile weglassen?
     a: Ja. Unter «Einstellungen → Druckvorlage», Karte «Fusszeile», wählen Sie bei «Bankverbindung» die Option «Keine». Die Zahlungsangaben und die QR-Codes bleiben auf der Rechnung.
 ---
@@ -65,6 +67,16 @@ Was sich auf Dokumenten ändert, die auf ein Konto eines Dritten bezahlt werden:
 <Aside type="tip" title="Die meisten Rechnungen gehen an den Dienstleister">
 Machen Sie das Konto des Dienstleisters zum Standardkonto seiner Währung und seine Zahlungsbedingungen zum Standardtext: unter *Einstellungen → Texte* bei den passenden *Zahlungsbedingungen* das Häkchen *In neue Dokumente einsetzen (Standard)*. Neue Rechnungen beginnen dann mit beidem. Bankkonten und Zahlungstexte sind bewusst nicht verknüpft: Wählen Sie auf einer Rechnung ein anderes Konto, passen Sie dort auch die Zahlungsbedingungen an.
 </Aside>
+
+## Den Kontoinhaber im Text nennen
+
+Zwei Platzhalter setzen in *Zahlungsbedingungen* und andere Texte ein, wer das Geld bekommt: `{kontoinhaber}` den Inhaber des Kontos, auf das das Dokument bezahlt wird, und `{kontoinhaber_adresse}` seine Adresse auf einer Zeile. Bei einem Konto eines Dritten ist das dessen Adresse, mit dem Land, wenn es nicht das Land Ihrer Firma ist; bei Ihren eigenen Konten die Adresse Ihrer Firma. Wählen Sie auf einer Rechnung ein anderes Konto, nennt der Text dessen Inhaber.
+
+Zum Beispiel für Forderungen, die an einen Finanzdienstleister abgetreten sind:
+
+> Wir haben unsere Forderungen an \{kontoinhaber\}, \{kontoinhaber_adresse\} abgetreten. Bitte überweisen Sie den Betrag bis \{faellig\} mit schuldbefreiender Wirkung auf folgendes Konto:
+
+Darunter druckt die Rechnung «Zahlung an:» mit Kontoinhaber, IBAN und BIC.
 
 ## Bankverbindung in der Fusszeile
 

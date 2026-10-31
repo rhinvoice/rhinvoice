@@ -9,6 +9,8 @@ faq:
     a: Yes. Add the provider's account under "Settings → Bank accounts" and tick "Account belongs to a third party (e.g. a financial service provider)". Invoices paid to it print "Pay to:" with the holder, and the QR-bill and e-invoice name the provider as payee.
   - q: What happens to my invoices when I delete a bank account?
     a: Drafts and recurring plans that used it fall back to the default account of their currency. Issued documents keep the account they were issued with.
+  - q: Can the payment text name the account holder?
+    a: "Yes. The placeholders {kontoinhaber} and {kontoinhaber_adresse} insert the holder and the address of the account the document is paid to: a third party's address for its account, your company's for your own accounts."
   - q: Can I leave the bank details out of the footer?
     a: Yes. Under "Settings → Print template", card "Footer", choose "None" for "Bank details". The payment details above and the QR codes stay on the invoice.
 ---
@@ -65,6 +67,16 @@ What changes on documents paid to a third-party account:
 <Aside type="tip" title="Most invoices go to the provider">
 Make the provider's account the default of its currency, and its payment terms the default text: under *Settings → Texts*, tick *Insert into new documents (default)* on the matching *Payment terms*. New invoices then start with both. Bank accounts and payment texts are deliberately not linked: if you choose another account on one invoice, adjust the payment terms there too.
 </Aside>
+
+## Name the account holder in a text
+
+Two placeholders put who receives the money into *Payment terms* and other texts: `{kontoinhaber}` the holder of the account the document is paid to, and `{kontoinhaber_adresse}` the holder's address on one line. For a third party's account that is its address, with the country when it is not your company's; for your own accounts, your company's address. Choose another account on an invoice, and the text names its holder.
+
+For example, for receivables assigned to a financial service provider:
+
+> We have assigned our receivables to \{kontoinhaber\}, \{kontoinhaber_adresse\}. Please transfer the amount by \{faellig\}, with discharging effect, to the following account:
+
+Below it the invoice prints "Pay to:" with the holder, IBAN and BIC.
 
 ## Bank details in the footer
 

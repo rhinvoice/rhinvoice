@@ -18,6 +18,10 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   drucken «Zahlung an:» mit dem Kontoinhaber, die QR-Rechnung nennt ihn mit dieser Adresse, die
   E-Rechnung nennt ihn als Zahlungsempfänger (BG-10). In der Fusszeile erscheint ein solches
   Konto nur auf Dokumenten, die an es bezahlt werden.
+- Platzhalter `{kontoinhaber}` und `{kontoinhaber_adresse}` für Texte und E-Mails: der Inhaber
+  des Kontos, auf das das Dokument bezahlt wird, und seine Adresse auf einer Zeile, die eines
+  Dritten oder bei eigenen Konten die der Firma. Ein Zahlungstext, der den Dienstleister nennt, an
+  den Forderungen abgetreten sind, folgt so dem Konto, das auf der Rechnung gewählt ist.
 - *Einstellungen → Druckvorlage → Fusszeile*: Die Bankverbindung lässt sich weglassen (*Keine*).
   Zahlungsangaben und QR-Codes bleiben.
 - *Teilen* auf einem ausgestellten Dokument gibt sein PDF an das Teilen-Menü des Handys (und von

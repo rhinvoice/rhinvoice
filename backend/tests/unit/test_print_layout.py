@@ -278,9 +278,11 @@ def test_a_document_paid_to_a_third_party_names_it(store: Store) -> None:
     store.print_layout = ALL
     printing = printing_for(store)
     html = printing.preview_html(DocumentType.INVOICE, draft(bank_account_id=provider.id))
+    # Payee, IBAN and BIC one below the other.
     assert (
-        '<p class="payee">Zahlung an: Inkasso AG · IBAN CH58 0079 1123 0008 8901 2'
-        " · BIC UBSWCHZH80A</p>" in html
+        "<dt>Zahlungsempfänger</dt><dd>Inkasso AG</dd>"
+        "<dt>IBAN</dt><dd>CH58 0079 1123 0008 8901 2</dd>"
+        "<dt>BIC</dt><dd>UBSWCHZH80A</dd>" in html
     )
     # Listed after the own accounts, only on documents paid to it.
     assert "Inkasso AG" in footer(html)
@@ -289,10 +291,10 @@ def test_a_document_paid_to_a_third_party_names_it(store: Store) -> None:
     paid_to_it = printing.preview_html(
         DocumentType.INVOICE, draft(bank_account_id=provider.id, payment_text="")
     )
-    assert '<p class="payee">Zahlung an: Inkasso AG' in paid_to_it
-    assert '<p class="payment-text">' not in paid_to_it
+    assert "<dt>Zahlungsempfänger</dt><dd>Inkasso AG</dd>" in paid_to_it
+    assert 'class="payment-text"' not in paid_to_it
     assert "CH93" not in footer(paid_to_it)
-    assert "Zahlung an" not in printing.preview_html(DocumentType.INVOICE, draft())
+    assert "Zahlungsempfänger" not in printing.preview_html(DocumentType.INVOICE, draft())
 
 
 def test_texts_name_the_holder_of_the_paid_account(store: Store) -> None:
@@ -311,7 +313,7 @@ def test_texts_name_the_holder_of_the_paid_account(store: Store) -> None:
 
     def payment(**overrides: object) -> str:
         html = printing.preview_html(DocumentType.INVOICE, draft(payment_text=text, **overrides))
-        found = re.search(r'<p class="(?:payment-)?text">(Abgetreten an[^<]*)</p>', html)
+        found = re.search(r"<p>(Abgetreten an[^<]*)</p>", html)
         assert found is not None
         return found.group(1)
 
@@ -332,5 +334,5 @@ def test_texts_name_the_holder_of_the_paid_account(store: Store) -> None:
 
 def test_own_accounts_name_no_payee(store: Store) -> None:
     html = render(store, PrintLayout())
-    assert "Zahlung an" not in html
+    assert "Zahlungsempfänger" not in html
     assert 'class="payee' not in html

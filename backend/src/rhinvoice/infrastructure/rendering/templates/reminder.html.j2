@@ -2,7 +2,7 @@
 {% extends "layout.html.j2" %}
 {% block content %}
   <h1>{{ title }}</h1>
-  {% if intro %}<p class="text">{{ intro }}</p>{% endif %}
+  {% if intro %}<div class="text">{% for part in intro_paragraphs %}<p>{{ part }}</p>{% endfor %}</div>{% endif %}
   <table class="lines">
     <thead>
       <tr>
@@ -33,7 +33,11 @@
   </div>
   {% if epc_qr or payee %}
   <div class="payment">
-    {% if payee %}<p class="text payee">{{ payee }}</p>{% endif %}
+    {% if payee %}
+    <dl class="payee">
+      {% for label, value in payee_rows %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}
+    </dl>
+    {% endif %}
     {% if epc_qr %}
     <figure class="epc">
       {{ epc_qr }}

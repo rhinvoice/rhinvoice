@@ -131,8 +131,10 @@ def test_a_reminder_names_the_third_party_that_collects(store: Store) -> None:
         store, holder="Inkasso AG", third_party=True, holder_address=factories.address()
     )
     html = printing.reminder_html(reminder_id)
+    assert '<dl class="payee">' in html
     assert (
-        '<p class="text payee">Zahlung an: Inkasso AG · IBAN CH93 0076 2011 6238 5295 7</p>' in html
+        "<dt>Zahlungsempfänger</dt><dd>Inkasso AG</dd>"
+        "<dt>IBAN</dt><dd>CH93 0076 2011 6238 5295 7</dd>" in html
     )
 
 

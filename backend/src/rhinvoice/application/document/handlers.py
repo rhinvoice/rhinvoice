@@ -779,13 +779,18 @@ def _goods_notice(uow: UnitOfWork, content: DraftContent, company: Company) -> s
     return effective_notice(uow, goods, company.country, content.language)
 
 
+def _without_blank_lines(text: str) -> str:
+    return "\n".join(line for line in text.split("\n") if line.strip())
+
+
 def _invoice_texts(
     content: DraftContent, templates: list[TextTemplate], language: Language
 ) -> DraftContent:
     """Replace the quote's default texts with the invoice's; texts the user wrote stay."""
 
     def joined(document_type: DocumentType, kind: TextKind) -> str:
-        return "\n".join(
+        # A blank line between templates, as the editor joins them: they print as paragraphs.
+        return "\n\n".join(
             template.text
             for template in sorted(templates, key=lambda template: template.position)
             if (template.document_type, template.kind, template.language, template.is_default)
@@ -793,7 +798,8 @@ def _invoice_texts(
         )
 
     def pick(current: str, kind: TextKind) -> str:
-        if current == joined(DocumentType.QUOTE, kind):
+        # Quotes written before the blank line joined their templates line by line.
+        if _without_blank_lines(current) == _without_blank_lines(joined(DocumentType.QUOTE, kind)):
             return joined(DocumentType.INVOICE, kind)
         return current
 

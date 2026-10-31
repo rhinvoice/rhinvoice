@@ -901,6 +901,7 @@ def test_converted_invoices_get_the_invoice_texts(handlers: DocumentHandlers, st
         store.text_templates[created.id] = created
 
     template(TextKind.INTRO, DocumentType.QUOTE, "Gerne bieten wir an:")
+    template(TextKind.INTRO, DocumentType.QUOTE, "Preise in CHF.", 1)
     template(TextKind.CLOSING, DocumentType.QUOTE, "Gültig bis {faellig}.")
     template(TextKind.INTRO, DocumentType.INVOICE, "Danke für den Auftrag.")
     template(TextKind.PAYMENT, DocumentType.INVOICE, "Zahlbar bis {faellig}.")
@@ -918,7 +919,8 @@ def test_converted_invoices_get_the_invoice_texts(handlers: DocumentHandlers, st
     quote = handlers.create(
         DocumentType.QUOTE,
         draft_input(
-            intro_text="Gerne bieten wir an:",
+            # Joined line by line, as before the blank line between templates.
+            intro_text="Gerne bieten wir an:\nPreise in CHF.",
             closing_text="Gültig bis {faellig}.",
             payment_text="",
         ),
@@ -926,7 +928,7 @@ def test_converted_invoices_get_the_invoice_texts(handlers: DocumentHandlers, st
     handlers.issue(quote.id)
     invoice = handlers.convert_to_invoice(quote.id).document
     assert invoice.content.intro_text == "Danke für den Auftrag."
-    assert invoice.content.payment_text == "Zahlbar bis {faellig}.\nNummer {nummer} angeben."
+    assert invoice.content.payment_text == "Zahlbar bis {faellig}.\n\nNummer {nummer} angeben."
     assert invoice.content.closing_text == ""
 
     # Texts the user wrote stay as they are.

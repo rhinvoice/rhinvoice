@@ -23,8 +23,9 @@ footer must not offer it on documents paid to the company.
 - **Third-party accounts.** A bank account has `third_party` and, then required, the holder's
   structured address. It is set by the user, never guessed from the holder's name. A third
   party's account may be the default of its currency.
-  - The payment block prints "Zahlung an: holder · IBAN" (all document languages), also on
-    reminders.
+  - The payment block lists payee (the holder), IBAN and BIC as a small table, also on
+    reminders. It never breaks across pages, nor apart from the payment terms above it.
+    Themes written before keep the one-line `payee` ("Zahlung an: holder · IBAN · BIC").
   - Swiss QR-bill: creditor = holder with the third party's address; own accounts keep the
     company's address (SIX IG 3.2.4 names the account holder as creditor).
   - EPC QR code: the beneficiary is the holder already; unchanged.

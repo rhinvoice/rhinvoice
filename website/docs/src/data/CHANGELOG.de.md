@@ -15,9 +15,11 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   behalten ihres (#45).
 - Konten von Dritten, etwa eines Finanzdienstleisters, der die Zahlung einzieht: *Konto gehört
   einem Dritten* ankreuzen und die Adresse des Kontoinhabers erfassen. Dokumente auf dieses Konto
-  drucken «Zahlung an:» mit dem Kontoinhaber, die QR-Rechnung nennt ihn mit dieser Adresse, die
+  nennen Zahlungsempfänger, IBAN und BIC in einer kleinen Tabelle, die mit den
+  Zahlungsbedingungen auf einer Seite bleibt, die QR-Rechnung nennt ihn mit dieser Adresse, die
   E-Rechnung nennt ihn als Zahlungsempfänger (BG-10). In der Fusszeile erscheint ein solches
-  Konto nur auf Dokumenten, die an es bezahlt werden.
+  Konto nur auf Dokumenten, die an es bezahlt werden. Die Demos zeigen eine Rechnung, die ein
+  solcher Dienstleister einzieht.
 - Platzhalter `{kontoinhaber}` und `{kontoinhaber_adresse}` für Texte und E-Mails: der Inhaber
   des Kontos, auf das das Dokument bezahlt wird, und seine Adresse auf einer Zeile, die eines
   Dritten oder bei eigenen Konten die der Firma. Ein Zahlungstext, der den Dienstleister nennt, an
@@ -29,6 +31,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   können, zeigen den Knopf nicht.
 
 ### Geändert
+- Im Editor angekreuzte Textbausteine sind durch eine Leerzeile getrennt, und eine Leerzeile in
+  einem Text druckt als kleiner Abstand zwischen Absätzen statt als ganze leere Zeile.
 - Ein neues Angebot und eine neue Rechnung beginnen mit heute als *Datum*, ebenso Duplikate und
   Rechnungen aus einem Angebot. Das Feld bleibt änderbar; geleert nimmt das Dokument wie bisher
   das Datum des Ausstellens. Bestehende Entwürfe behalten ihre Daten, wiederkehrende Rechnungen

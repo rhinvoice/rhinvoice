@@ -523,7 +523,7 @@ def test_documents_are_paid_to_the_chosen_account(
         == (account["id"])
     )
     html = user_client.get(f"/api/documents/{issued['id']}/html").text
-    assert "Zahlung an: Inkasso AG" in html
+    assert "<dt>Zahlungsempfänger</dt><dd>Inkasso AG</dd>" in html
 
     unknown = user_client.post(
         "/api/documents",
@@ -535,7 +535,8 @@ def test_documents_are_paid_to_the_chosen_account(
     # Deleted: the draft falls back to the default, the issued invoice keeps its account.
     assert user_client.delete(f"/api/bank-accounts/{account['id']}").status_code == 204
     assert user_client.get(f"/api/documents/{draft['id']}").json()["bank_account_id"] is None
-    assert "Zahlung an: Inkasso AG" in user_client.get(f"/api/documents/{issued['id']}/html").text
+    issued_html = user_client.get(f"/api/documents/{issued['id']}/html").text
+    assert "<dt>Zahlungsempfänger</dt><dd>Inkasso AG</dd>" in issued_html
     # The issued invoice names the account frozen with it.
     frozen = user_client.get(f"/api/documents/{issued['id']}").json()
     assert frozen["bank_account_id"] == account["id"]

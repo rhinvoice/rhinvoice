@@ -6,7 +6,7 @@ faq:
   - q: Kann ich das Bankkonto pro Rechnung wählen?
     a: Ja. Hat eine Währung mehr als ein Bankkonto, zeigt der Editor in der Karte «Daten» das Feld «Bankverbindung». Das Standardkonto der Währung ist vorgewählt, für dieses Angebot oder diese Rechnung wählen Sie ein anderes.
   - q: Kann ein Finanzdienstleister die Zahlung meiner Rechnungen einziehen?
-    a: Ja. Erfassen Sie sein Konto unter «Einstellungen → Bankkonten» und kreuzen Sie «Konto gehört einem Dritten (z. B. Finanzdienstleister)» an. Rechnungen auf dieses Konto drucken «Zahlung an:» mit dem Kontoinhaber, QR-Rechnung und E-Rechnung nennen ihn als Zahlungsempfänger.
+    a: Ja. Erfassen Sie sein Konto unter «Einstellungen → Bankkonten» und kreuzen Sie «Konto gehört einem Dritten (z. B. Finanzdienstleister)» an. Rechnungen auf dieses Konto nennen ihn als Zahlungsempfänger mit IBAN und BIC, QR-Rechnung und E-Rechnung nennen ihn als Zahlungsempfänger.
   - q: Was passiert mit meinen Rechnungen, wenn ich ein Bankkonto lösche?
     a: Entwürfe und wiederkehrende Rechnungen, die es verwendet haben, nehmen wieder das Standardkonto ihrer Währung. Ausgestellte Dokumente behalten das Konto, mit dem sie ausgestellt wurden.
   - q: Kann der Zahlungstext den Kontoinhaber nennen?
@@ -59,7 +59,7 @@ Was sich auf Dokumenten ändert, die auf ein Konto eines Dritten bezahlt werden:
 
 | Wo | Was steht dort |
 |---|---|
-| Zahlungsangaben im PDF | «Zahlung an:» mit Kontoinhaber, IBAN und BIC (englisch «Pay to:», französisch «Paiement à :», italienisch «Pagamento a:»), auch auf Mahnungen |
+| Zahlungsangaben im PDF | Eine kleine Tabelle mit *Zahlungsempfänger* (dem Kontoinhaber), *IBAN* und *BIC* untereinander, auch auf Mahnungen. Sie bleibt mit den Zahlungsbedingungen darüber auf einer Seite. |
 | QR-Rechnung (CH, FL) | Der Kontoinhaber als Zahlungsempfänger, mit der Adresse des Dritten. Ihre eigenen Konten behalten die Adresse Ihrer Firma. |
 | EPC-QR-Code (GiroCode) | Der Kontoinhaber als Empfänger, wie bei Ihren eigenen Konten |
 | E-Rechnung (ZUGFeRD / Factur-X EN 16931, XRechnung) | Das gewählte Konto als Zahlungskonto und der Dritte als Zahlungsempfänger (Payee, BG-10, BT-59) |
@@ -76,7 +76,7 @@ Zum Beispiel für Forderungen, die an einen Finanzdienstleister abgetreten sind:
 
 > Wir haben unsere Forderungen an \{kontoinhaber\}, \{kontoinhaber_adresse\} abgetreten. Bitte überweisen Sie den Betrag bis \{faellig\} mit schuldbefreiender Wirkung auf folgendes Konto:
 
-Darunter druckt die Rechnung «Zahlung an:» mit Kontoinhaber, IBAN und BIC.
+Darunter nennt die Rechnung Zahlungsempfänger, IBAN und BIC.
 
 ## Bankverbindung in der Fusszeile
 

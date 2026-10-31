@@ -6,7 +6,7 @@ faq:
   - q: Can I choose the bank account per invoice?
     a: Yes. When a currency has more than one bank account, the editor shows the field "Bank details" in the "Dates" card. The default account of the currency is preselected; you can pick another one for this quote or invoice.
   - q: Can a financial service provider collect the payment for my invoices?
-    a: Yes. Add the provider's account under "Settings → Bank accounts" and tick "Account belongs to a third party (e.g. a financial service provider)". Invoices paid to it print "Pay to:" with the holder, and the QR-bill and e-invoice name the provider as payee.
+    a: Yes. Add the provider's account under "Settings → Bank accounts" and tick "Account belongs to a third party (e.g. a financial service provider)". Invoices paid to it name the provider as payee, with IBAN and BIC, and the QR-bill and e-invoice name the provider as payee.
   - q: What happens to my invoices when I delete a bank account?
     a: Drafts and recurring plans that used it fall back to the default account of their currency. Issued documents keep the account they were issued with.
   - q: Can the payment text name the account holder?
@@ -59,7 +59,7 @@ What changes on documents paid to a third-party account:
 
 | Where | What it shows |
 |---|---|
-| Payment details on the PDF | "Pay to:" with the holder, IBAN and BIC (in German "Zahlung an:", in French "Paiement à :", in Italian "Pagamento a:"), also on payment reminders |
+| Payment details on the PDF | A small table of *Payee* (the holder), *IBAN* and *BIC*, one below the other, also on payment reminders. It stays on one page with the payment terms above it. |
 | Swiss QR-bill (CH, LI) | The holder as creditor, with the third party's address. Your own accounts keep your company's address. |
 | EPC QR code (GiroCode) | The account holder as beneficiary, as with your own accounts |
 | E-invoice (ZUGFeRD / Factur-X EN 16931, XRechnung) | The chosen account as payment account, and the third party as payee (BG-10, BT-59) |
@@ -76,7 +76,7 @@ For example, for receivables assigned to a financial service provider:
 
 > We have assigned our receivables to \{kontoinhaber\}, \{kontoinhaber_adresse\}. Please transfer the amount by \{faellig\}, with discharging effect, to the following account:
 
-Below it the invoice prints "Pay to:" with the holder, IBAN and BIC.
+Below it the invoice lists the payee, IBAN and BIC.
 
 ## Bank details in the footer
 

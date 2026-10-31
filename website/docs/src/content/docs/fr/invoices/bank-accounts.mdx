@@ -6,7 +6,7 @@ faq:
   - q: Puis-je choisir le compte bancaire par facture?
     a: "Oui. Lorsqu’une monnaie a plus d’un compte bancaire, l’éditeur affiche le champ « Coordonnées bancaires » dans la carte « Dates ». Le compte par défaut de la monnaie est présélectionné; vous en choisissez un autre pour cette offre ou cette facture."
   - q: Un prestataire financier peut-il encaisser le paiement de mes factures?
-    a: "Oui. Ajoutez son compte sous « Paramètres → Comptes bancaires » et cochez « Le compte appartient à un tiers (p. ex. un prestataire financier) ». Les factures payées sur ce compte impriment « Paiement à : » avec le titulaire, et la facture QR et la facture électronique le nomment comme bénéficiaire."
+    a: "Oui. Ajoutez son compte sous « Paramètres → Comptes bancaires » et cochez « Le compte appartient à un tiers (p. ex. un prestataire financier) ». Les factures payées sur ce compte le nomment comme bénéficiaire, avec l’IBAN et le BIC, et la facture QR et la facture électronique le nomment comme bénéficiaire."
   - q: Que deviennent mes factures si je supprime un compte bancaire?
     a: "Les brouillons et les factures récurrentes qui l’utilisaient reprennent le compte par défaut de leur monnaie. Les documents émis gardent le compte avec lequel ils ont été émis."
   - q: Le texte de paiement peut-il nommer le titulaire du compte?
@@ -59,7 +59,7 @@ Ce qui change sur les documents payés sur un compte de tiers :
 
 | Où | Ce qui y figure |
 |---|---|
-| Informations de paiement du PDF | « Paiement à : » avec le titulaire, l’IBAN et le BIC (en allemand « Zahlung an: », en anglais « Pay to: », en italien « Pagamento a: »), aussi sur les rappels |
+| Informations de paiement du PDF | Un petit tableau avec *Bénéficiaire* (le titulaire), *IBAN* et *BIC* l’un sous l’autre, aussi sur les rappels. Il reste sur une page avec les conditions de paiement au-dessus. |
 | Facture QR (CH, LI) | Le titulaire comme créancier, avec l’adresse du tiers. Vos propres comptes gardent l’adresse de votre entreprise. |
 | Code QR EPC (GiroCode) | Le titulaire du compte comme bénéficiaire, comme pour vos propres comptes |
 | Facture électronique (ZUGFeRD / Factur-X EN 16931, XRechnung) | Le compte choisi comme compte de paiement, et le tiers comme bénéficiaire (Payee, BG-10, BT-59) |
@@ -76,7 +76,7 @@ Par exemple, pour des créances cédées à un prestataire financier :
 
 > Nous avons cédé nos créances à \{kontoinhaber\}, \{kontoinhaber_adresse\}. Veuillez virer le montant d’ici au \{faellig\}, avec effet libératoire, sur le compte suivant :
 
-En dessous, la facture imprime « Paiement à : » avec le titulaire, l’IBAN et le BIC.
+En dessous, la facture indique le bénéficiaire, l’IBAN et le BIC.
 
 ## Coordonnées bancaires dans le pied de page
 

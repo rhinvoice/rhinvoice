@@ -6,7 +6,7 @@ faq:
   - q: Posso scegliere il conto bancario per ogni fattura?
     a: Sì. Se una valuta ha più di un conto bancario, l’editor mostra il campo «Coordinate bancarie» nella scheda «Date». Il conto predefinito della valuta è preselezionato; per questa offerta o fattura ne sceglie un altro.
   - q: Un fornitore di servizi finanziari può incassare il pagamento delle mie fatture?
-    a: Sì. Aggiunga il suo conto in «Impostazioni → Conti bancari» e spunti «Il conto appartiene a terzi (p. es. un fornitore di servizi finanziari)». Le fatture pagate su questo conto stampano «Pagamento a:» con il titolare, e la fattura QR e la fattura elettronica lo indicano come beneficiario.
+    a: Sì. Aggiunga il suo conto in «Impostazioni → Conti bancari» e spunti «Il conto appartiene a terzi (p. es. un fornitore di servizi finanziari)». Le fatture pagate su questo conto lo indicano come beneficiario, con IBAN e BIC, e la fattura QR e la fattura elettronica lo indicano come beneficiario.
   - q: Che cosa succede alle mie fatture se elimino un conto bancario?
     a: Le bozze e le fatture ricorrenti che lo usavano riprendono il conto predefinito della loro valuta. I documenti emessi mantengono il conto con cui sono stati emessi.
   - q: Il testo di pagamento può nominare l’intestatario del conto?
@@ -59,7 +59,7 @@ Che cosa cambia sui documenti pagati su un conto di terzi:
 
 | Dove | Che cosa vi figura |
 |---|---|
-| Dati di pagamento nel PDF | «Pagamento a:» con titolare, IBAN e BIC (in tedesco «Zahlung an:», in inglese «Pay to:», in francese «Paiement à :»), anche sui solleciti |
+| Dati di pagamento nel PDF | Una piccola tabella con *Beneficiario* (il titolare), *IBAN* e *BIC* uno sotto l’altro, anche sui solleciti. Resta su una pagina con le condizioni di pagamento sopra. |
 | Fattura QR (CH, LI) | Il titolare come creditore, con l’indirizzo del terzo. I Suoi conti mantengono l’indirizzo della Sua azienda. |
 | Codice QR EPC (GiroCode) | Il titolare del conto come beneficiario, come per i Suoi conti |
 | Fattura elettronica (ZUGFeRD / Factur-X EN 16931, XRechnung) | Il conto scelto come conto di pagamento, e il terzo come beneficiario (Payee, BG-10, BT-59) |
@@ -76,7 +76,7 @@ Per esempio, per crediti ceduti a un fornitore di servizi finanziari:
 
 > Abbiamo ceduto i nostri crediti a \{kontoinhaber\}, \{kontoinhaber_adresse\}. La preghiamo di versare l’importo entro il \{faellig\}, con effetto liberatorio, sul conto seguente:
 
-Sotto, la fattura stampa «Pagamento a:» con l’intestatario, l’IBAN e il BIC.
+Sotto, la fattura indica il beneficiario, l’IBAN e il BIC.
 
 ## Coordinate bancarie nel piè di pagina
 

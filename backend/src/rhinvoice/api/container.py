@@ -119,6 +119,7 @@ def build_container(
     imports = ImportHandlers(uow=uow, clock=effective_clock, reader=SpreadsheetReader())
     company = CompanyHandlers(uow=uow)
     customers = CustomerHandlers(uow=uow, clock=effective_clock)
+    texts = TextHandlers(uow=uow)
     articles = ArticleHandlers(uow=uow, clock=effective_clock)
     html = JinjaDocumentRenderer(settings.theme_dir)
     pdf = pdf_renderer(settings, html)
@@ -184,7 +185,7 @@ def build_container(
         numbering=NumberingHandlers(uow=uow, clock=effective_clock),
         documents=documents,
         dashboard=DashboardHandlers(uow=uow, clock=effective_clock),
-        texts=TextHandlers(uow=uow),
+        texts=texts,
         printing=printing,
         backup=BackupHandlers(uow=uow, clock=effective_clock, setup=own.backup_setup),
         imports=imports,
@@ -199,6 +200,7 @@ def build_container(
             articles=articles,
             documents=documents,
             imports=imports,
+            texts=texts,
         ),
         mail=mail,
         recurring=RecurringHandlers(

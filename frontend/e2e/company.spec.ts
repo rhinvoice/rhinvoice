@@ -141,9 +141,10 @@ test("a third party's account is chosen per invoice and named on it", async ({
     await expectAccessible(page);
     if (isMobile) await page.getByRole("button", { name: "Vorschau" }).click();
     const paper = page.frameLocator('iframe[title="Vorschau: Rechnung"]');
-    await expect(
-      paper.getByText(/^Zahlung an: Inkasso AG · IBAN CH58 0079 1123 0008 8901 2$/),
-    ).toBeVisible();
+    // Payee and IBAN one below the other, under the payment terms.
+    await expect(paper.locator("dl.payee")).toHaveText(
+      /^\s*Zahlungsempfänger\s*Inkasso AG\s*IBAN\s*CH58 0079 1123 0008 8901 2\s*$/,
+    );
   } finally {
     await removeAddedAccounts(page);
   }

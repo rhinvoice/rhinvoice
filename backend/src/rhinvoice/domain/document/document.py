@@ -152,6 +152,14 @@ class Payment:
 
 
 @dataclass(frozen=True, slots=True)
+class IssuedLogo:
+    """The company's logo on the day of issuing, kept by its fingerprint."""
+
+    sha256: str | None
+    """None: the company had no logo."""
+
+
+@dataclass(frozen=True, slots=True)
 class IssueSnapshot:
     """Company, customer and bank account exactly as they were when issuing."""
 
@@ -169,6 +177,8 @@ class IssueSnapshot:
     """Every bank account of that day, for footers listing all; None before version 0.5."""
     goods_notice: str | None = None
     """Notice of the goods lines' own treatment (e.g. export delivery), when they have one."""
+    logo: IssuedLogo | None = None
+    """The logo of that day, so a PDF made later looks the same; None before 0.9 (today's)."""
 
 
 @dataclass(frozen=True, slots=True)

@@ -41,7 +41,7 @@ Il numero segue la numerazione in *Impostazioni → Numerazioni*. Lo schema pred
 
 - **Il numero.** Viene assegnato nella stessa transazione della banca dati dell’emissione. Se qualcosa non riesce, nessun numero viene consumato, e la banca dati stessa impedisce i numeri doppi.
 - **Contenuto e aliquote IVA.** Posizioni, importi e l’aliquota IVA di ogni posizione sono fissati. Vale l’aliquota della data della prestazione; le modifiche di aliquota successive non si applicano retroattivamente.
-- **Mittente, destinatario e conto bancario.** Rhinvoice salva azienda, cliente e conto bancario così come erano al momento dell’emissione. Se più tardi cambia l’indirizzo di un cliente, la fattura resta com’era. Viene conservato anche il layout di stampa di quel giorno.
+- **Mittente, destinatario e conto bancario.** Rhinvoice salva azienda, cliente e conto bancario così come erano al momento dell’emissione. Se più tardi cambia l’indirizzo di un cliente, la fattura resta com’era. Vengono conservati anche il layout di stampa e il logo di quel giorno.
 - **Il PDF.** La fattura conserva il suo primo PDF, salvato con la sua somma di controllo SHA-256.
 
 Il blocco non è solo nell’interfaccia: la banca dati stessa rifiuta le modifiche al contenuto e l’eliminazione dei documenti emessi. I cambiamenti di stato come pagamenti e storno restano possibili. Lo *Cronologia* di ogni fattura registra quando è stata creata, emessa, pagata o stornata.

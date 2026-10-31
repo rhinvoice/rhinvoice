@@ -24,7 +24,7 @@ from rhinvoice.domain.company.print_layout import (
 )
 from rhinvoice.domain.customer.customer import Customer, CustomerKind
 from rhinvoice.domain.document.calculation import LineAmount, TaxGroup, Totals
-from rhinvoice.domain.document.document import IssueSnapshot
+from rhinvoice.domain.document.document import IssuedLogo, IssueSnapshot
 from rhinvoice.domain.document.lines import (
     Discount,
     DiscountKind,
@@ -228,14 +228,17 @@ def snapshot_to_json(snapshot: IssueSnapshot) -> Json:
             if snapshot.accounts is None
             else [bank_account_to_json(account) for account in snapshot.accounts]
         ),
+        "logo": None if snapshot.logo is None else {"sha256": snapshot.logo.sha256},
     }
 
 
 def snapshot_from_json(data: Json) -> IssueSnapshot:
     account = data["bank_account"]
-    # Documents issued before version 0.4 have no notice, before 0.5 no layout and accounts.
+    # Documents issued before version 0.4 have no notice, before 0.5 no layout and accounts,
+    # before 0.9 no logo.
     layout = data.get("layout")
     accounts = data.get("accounts")
+    logo = data.get("logo")
     return IssueSnapshot(
         company=company_from_json(data["company"]),
         customer=customer_from_json(data["customer"]),
@@ -248,6 +251,7 @@ def snapshot_from_json(data: Json) -> IssueSnapshot:
             if accounts is None
             else tuple(bank_account_from_json(account) for account in accounts)
         ),
+        logo=None if logo is None else IssuedLogo(logo["sha256"]),
     )
 
 

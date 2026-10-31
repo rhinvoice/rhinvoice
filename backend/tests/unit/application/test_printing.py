@@ -21,7 +21,7 @@ from rhinvoice.application.document.printing import (
 from rhinvoice.application.errors import ConflictError, NotFoundError, UnavailableError
 from rhinvoice.domain.company.logo import Logo
 from rhinvoice.domain.company.print_layout import PrintLayout
-from rhinvoice.domain.document.document import DocumentType
+from rhinvoice.domain.document.document import DocumentType, IssuedLogo
 from rhinvoice.domain.document.lines import LineKind
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.country import CountryCode
@@ -155,11 +155,49 @@ def test_issued_documents_print_their_snapshot(
     assert invoice_model.company == snapshot.company
     assert invoice_model.recipient == snapshot.customer
     assert invoice_model.bank_account == snapshot.bank_account
-    assert invoice_model.logo == store.logo
+    # The company had no logo when issuing: a logo added later does not appear.
+    assert invoice_model.logo is None
     assert (invoice_model.issue_date, invoice_model.due_date) == (TODAY, date(2026, 3, 29))
     assert invoice_model.cancelled_number is None
     assert cancellation_model.cancelled_number == issued.number
     assert cancellation_model.bank_account is None
+
+
+def test_issued_documents_print_the_logo_of_that_day(
+    printing: PrintHandlers, renderer: RecordingRenderer, store: Store
+) -> None:
+    old = Logo(content=b"\x89PNG old", media_type="image/png")
+    store.logo = old
+    created = printing.documents.create(DocumentType.INVOICE, draft())
+    issued = printing.documents.issue(created.document.id).document
+    assert issued.issued_snapshot.logo == IssuedLogo(old.sha256)
+    assert store.issued_logos == {old.sha256: old}
+    # A new logo, then none: the invoice and its cancellation keep the old one.
+    store.logo = Logo(content=b"\x89PNG new", media_type="image/png")
+    cancellation = printing.documents.cancel(issued.id).document.cancelled_by_id
+    assert cancellation is not None
+    store.logo = None
+    printing.html(issued.id)
+    printing.html(cancellation)
+    assert [model.logo for model in renderer.models] == [old, old]
+    # Kept once, also when issuing again with the same logo.
+    store.logo = old
+    second = printing.documents.create(DocumentType.INVOICE, draft())
+    printing.documents.issue(second.document.id)
+    assert store.issued_logos == {old.sha256: old}
+
+
+def test_documents_issued_before_print_todays_logo(
+    printing: PrintHandlers, renderer: RecordingRenderer, store: Store
+) -> None:
+    created = printing.documents.create(DocumentType.INVOICE, draft())
+    issued = printing.documents.issue(created.document.id).document
+    stored = store.documents[issued.id]
+    older = replace(issued.issued_snapshot, logo=None)
+    store.documents[issued.id] = replace(stored, document=replace(stored.document, snapshot=older))
+    store.logo = Logo(content=b"\x89PNG today", media_type="image/png")
+    printing.html(issued.id)
+    assert renderer.models[-1].logo == store.logo
 
 
 def test_converted_invoices_do_not_print_a_cancelled_number(

@@ -41,7 +41,7 @@ Die Nummer folgt dem Nummernkreis unter *Einstellungen → Nummernkreise*. Vorei
 
 - **Die Nummer.** Sie wird in derselben Datenbank-Transaktion vergeben wie das Ausstellen. Bricht etwas ab, ist keine Nummer verbraucht. Doppelte Nummern verhindert zusätzlich die Datenbank selbst.
 - **Inhalt und Steuersätze.** Positionen, Beträge und der Steuersatz jeder Position werden eingefroren. Massgebend ist der Satz zum Leistungsdatum. Spätere Satzänderungen wirken nicht zurück.
-- **Absender, Empfänger und Bankkonto.** Rhinvoice speichert Firma, Kunde und Bankkonto so, wie sie beim Ausstellen waren. Ändern Sie später die Adresse eines Kunden, bleibt die Rechnung unverändert. Auch die Druckvorlage des Tages bleibt erhalten.
+- **Absender, Empfänger und Bankkonto.** Rhinvoice speichert Firma, Kunde und Bankkonto so, wie sie beim Ausstellen waren. Ändern Sie später die Adresse eines Kunden, bleibt die Rechnung unverändert. Auch die Druckvorlage und das Logo des Tages bleiben erhalten.
 - **Das PDF.** Die Rechnung behält ihr erstes PDF, gespeichert mit seinem SHA-256-Prüfwert.
 
 Diese Sperre gilt nicht nur in der Oberfläche: Die Datenbank selbst verbietet Änderungen am Inhalt und das Löschen ausgestellter Dokumente. Erlaubt bleiben Statusänderungen wie Zahlungen und Storno. Der *Verlauf* jeder Rechnung hält fest, wann sie erstellt, ausgestellt, bezahlt oder storniert wurde.

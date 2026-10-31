@@ -386,6 +386,10 @@ class PrintHandlers:
             accounts = tuple(uow.bank_accounts.list())
             if not document.is_draft:
                 snapshot = document.issued_snapshot
+                if snapshot.logo is not None:
+                    # The logo of that day; documents issued before 0.9 take today's.
+                    sha256 = snapshot.logo.sha256
+                    logo = None if sha256 is None else uow.company.issued_logo(sha256)
                 source = (
                     None
                     if document.type is not DocumentType.CANCELLATION or document.source_id is None

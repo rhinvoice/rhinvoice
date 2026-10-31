@@ -22,6 +22,7 @@ from rhinvoice.domain.document.document import (
     Document,
     DocumentType,
     DraftContent,
+    IssuedLogo,
     IssueSnapshot,
     Payment,
     default_due_date,
@@ -583,6 +584,9 @@ class DocumentHandlers:
         )
         number = allocate_number(uow, document.type.sequence, issue_date)
         if snapshot is None:
+            logo = uow.company.get_logo()
+            if logo is not None:
+                uow.company.keep_issued_logo(logo)
             snapshot = IssueSnapshot(
                 company=company,
                 customer=customer,
@@ -593,6 +597,7 @@ class DocumentHandlers:
                 layout=uow.company.print_layout(),
                 accounts=tuple(uow.bank_accounts.list()),
                 goods_notice=_goods_notice(uow, document.content, company),
+                logo=IssuedLogo(None if logo is None else logo.sha256),
             )
         issued = document.issue(
             number=number,

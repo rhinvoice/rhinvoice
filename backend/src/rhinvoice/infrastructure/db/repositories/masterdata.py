@@ -52,6 +52,7 @@ from rhinvoice.infrastructure.db.tables import (
     bank_accounts,
     company_logo,
     customers,
+    issued_logos,
     number_sequences,
     print_layout,
 )
@@ -164,6 +165,20 @@ class SqlCompanyRepository:
 
     def delete_logo(self) -> None:
         self._connection.execute(delete(company_logo))
+
+    def keep_issued_logo(self, logo: Logo) -> None:
+        statement = pg_insert(issued_logos).values(
+            sha256=logo.sha256, media_type=logo.media_type, content=logo.content
+        )
+        self._connection.execute(statement.on_conflict_do_nothing(index_elements=["sha256"]))
+
+    def issued_logo(self, sha256: str) -> Logo | None:
+        row = (
+            self._connection.execute(select(issued_logos).where(issued_logos.c.sha256 == sha256))
+            .mappings()
+            .first()
+        )
+        return None if row is None else Logo(content=row["content"], media_type=row["media_type"])
 
     def print_layout(self) -> PrintLayout:
         row = self._connection.execute(select(print_layout)).mappings().first()

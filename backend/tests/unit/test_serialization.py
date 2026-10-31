@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from rhinvoice.domain.document.document import IssueSnapshot
+from rhinvoice.domain.document.document import IssuedLogo, IssueSnapshot
 from rhinvoice.domain.document.lines import DocumentLine, LineKind, PriceMode
 from rhinvoice.domain.recurring.plan import InvoiceTemplate
 from rhinvoice.domain.shared.identifier import new_id
@@ -31,6 +31,22 @@ def test_snapshots_keep_the_notice_and_older_ones_have_none() -> None:
     del data["goods_notice"]
     assert snapshot_from_json(data).notice is None
     assert snapshot_from_json(data).goods_notice is None
+
+
+def test_snapshots_keep_the_logo_and_older_ones_have_none() -> None:
+    company, customer = factories.company(), factories.customer()
+
+    def snapshot(logo: IssuedLogo | None) -> IssueSnapshot:
+        return IssueSnapshot(company=company, customer=customer, bank_account=None, logo=logo)
+
+    for logo in (IssuedLogo("ab" * 32), IssuedLogo(None)):
+        data = snapshot_to_json(snapshot(logo))
+        assert data["logo"] == {"sha256": logo.sha256}
+        assert snapshot_from_json(data) == snapshot(logo)
+    # Snapshots written before version 0.9 have no "logo" key.
+    del data["logo"]
+    assert snapshot_from_json(data).logo is None
+    assert snapshot_to_json(snapshot(None))["logo"] is None
 
 
 def test_snapshots_keep_the_buyer_reference_and_older_ones_have_none() -> None:

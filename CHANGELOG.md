@@ -37,7 +37,8 @@ before 1.0, minor versions may contain breaking changes.
 ### Fixed
 - Issuing no longer reports an error when the invoice is issued but its PDF could not be stored
   right away. The editor stayed on the draft and later saves failed; now the issued invoice
-  opens, and its first download stores the PDF.
+  opens, and its first download stores the PDF. Issuing keeps the logo of that day, so such a
+  PDF shows it even when the logo was changed meanwhile.
 
 ## [0.8.8] – 2026-10-27
 

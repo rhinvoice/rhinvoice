@@ -127,6 +127,16 @@ company_logo = Table(
     CheckConstraint("singleton", name="single_row"),
 )
 
+# Logos of issued documents by their fingerprint, so a PDF made later shows the logo of the
+# day of issuing (migration 0023: only added, never changed or removed).
+issued_logos = Table(
+    "issued_logos",
+    metadata,
+    Column("sha256", String(64), primary_key=True),
+    Column("media_type", String(50), nullable=False),
+    Column("content", LargeBinary, nullable=False),
+)
+
 bank_accounts = Table(
     "bank_accounts",
     metadata,

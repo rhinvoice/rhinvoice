@@ -36,6 +36,7 @@ from rhinvoice.application.importing.ports import ImportTemplate
 from rhinvoice.application.onboarding.ports import OnboardingMarks
 from rhinvoice.domain.catalog.article import Article
 from rhinvoice.domain.company.bank_account import BankAccount
+from rhinvoice.domain.company.logo import Logo
 from rhinvoice.domain.company.print_layout import PrintLayout
 from rhinvoice.domain.customer.customer import Customer
 from rhinvoice.domain.document.attachment import Attachment
@@ -65,7 +66,6 @@ if TYPE_CHECKING:
 
     from rhinvoice.application.importing.fields import ImportTarget
     from rhinvoice.domain.company.company import Company
-    from rhinvoice.domain.company.logo import Logo
     from rhinvoice.domain.document.document import Document
     from rhinvoice.domain.mail.server import MailServer
     from rhinvoice.domain.shared.email import EmailAddress
@@ -93,6 +93,7 @@ class Store:
     sessions: dict[str, Session] = field(default_factory=dict[str, Session])
     company: Company | None = None
     logo: Logo | None = None
+    issued_logos: dict[str, Logo] = field(default_factory=dict[str, Logo])
     bank_accounts: dict[UUID, BankAccount] = field(default_factory=dict[UUID, BankAccount])
     customers: dict[UUID, Customer] = field(default_factory=dict[UUID, Customer])
     articles: dict[UUID, Article] = field(default_factory=dict[UUID, Article])
@@ -202,11 +203,16 @@ def _page[T](items: list[T], offset: int, limit: int) -> Page[T]:
 
 class InMemoryCompanyRepository:
     def __init__(
-        self, company: Company | None, logo: Logo | None, layout: PrintLayout | None = None
+        self,
+        company: Company | None,
+        logo: Logo | None,
+        layout: PrintLayout | None = None,
+        issued_logos: dict[str, Logo] | None = None,
     ) -> None:
         self.company = company
         self.logo = logo
         self.layout = layout
+        self.issued_logos = {} if issued_logos is None else issued_logos
 
     def get(self) -> Company | None:
         return self.company
@@ -222,6 +228,13 @@ class InMemoryCompanyRepository:
 
     def delete_logo(self) -> None:
         self.logo = None
+
+    def keep_issued_logo(self, logo: Logo) -> None:
+        # Like the database: kept once, never replaced.
+        self.issued_logos.setdefault(logo.sha256, logo)
+
+    def issued_logo(self, sha256: str) -> Logo | None:
+        return self.issued_logos.get(sha256)
 
     def print_layout(self) -> PrintLayout:
         return PrintLayout() if self.layout is None else self.layout
@@ -940,7 +953,10 @@ class InMemoryUnitOfWork:
         self.users = InMemoryUserRepository(dict(self.store.users))
         self.sessions = InMemorySessionRepository(dict(self.store.sessions))
         self.company = InMemoryCompanyRepository(
-            self.store.company, self.store.logo, self.store.print_layout
+            self.store.company,
+            self.store.logo,
+            self.store.print_layout,
+            dict(self.store.issued_logos),
         )
         self.bank_accounts = InMemoryBankAccountRepository(dict(self.store.bank_accounts))
         self.customers = InMemoryCustomerRepository(dict(self.store.customers))
@@ -982,6 +998,7 @@ class InMemoryUnitOfWork:
         self.store.company = self.company.company
         self.store.logo = self.company.logo
         self.store.print_layout = self.company.layout
+        self.store.issued_logos = dict(self.company.issued_logos)
         self.store.bank_accounts = dict(self.bank_accounts.data)
         self.store.customers = dict(self.customers.data)
         self.store.articles = dict(self.articles.data)

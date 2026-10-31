@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 
 from rhinvoice.domain.shared.errors import ValidationError
@@ -40,3 +41,8 @@ class Logo:
         if media_type is None:
             raise ValidationError("logo", "the logo must be a PNG, JPEG or WebP image")
         return cls(content=content, media_type=media_type)
+
+    @property
+    def sha256(self) -> str:
+        """Fingerprint of the file: issued documents keep the logo by it."""
+        return hashlib.sha256(self.content).hexdigest()

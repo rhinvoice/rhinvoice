@@ -41,7 +41,7 @@ Le numéro suit la série sous *Paramètres → Numérotations*. Le modèle pré
 
 - **Le numéro.** Il est attribué dans la même transaction de base de données que l’émission. Si quelque chose échoue, aucun numéro n’est consommé, et la base de données elle-même empêche les numéros en double.
 - **Le contenu et les taux de TVA.** Les lignes, les montants et le taux de TVA de chaque ligne sont figés. Le taux à la date de la prestation s’applique; les changements de taux ultérieurs ne s’appliquent pas rétroactivement.
-- **L’expéditeur, le destinataire et le compte bancaire.** Rhinvoice enregistre l’entreprise, le client et le compte bancaire tels qu’ils étaient à l’émission. Si vous modifiez plus tard l’adresse d’un client, la facture reste telle quelle. La mise en page d’impression du jour est conservée lui aussi.
+- **L’expéditeur, le destinataire et le compte bancaire.** Rhinvoice enregistre l’entreprise, le client et le compte bancaire tels qu’ils étaient à l’émission. Si vous modifiez plus tard l’adresse d’un client, la facture reste telle quelle. La mise en page d’impression et le logo du jour sont conservés eux aussi.
 - **Le PDF.** La facture garde son premier PDF, enregistré avec sa somme de contrôle SHA-256.
 
 Le verrouillage ne se limite pas à l’interface : la base de données elle-même refuse les modifications du contenu et la suppression des documents émis. Les changements de statut comme les paiements et l’annulation restent permis. L’*Historique* de chaque facture indique quand elle a été créée, émise, payée ou annulée.

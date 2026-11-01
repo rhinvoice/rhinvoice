@@ -31,7 +31,7 @@
 
 ## What Rhinvoice is not
 
-- Not a hosted service or SaaS: everyone runs it on their own server or computer. A hosted version is only conceivable if the community asks for it and sponsors carry the running costs.
+- Not a hosted service or SaaS: everyone runs it on their own server or computer.
 - Not an accounting program: no bookkeeping, no ledger, no VAT returns, no payroll.
 - Not tax advice: rates and rules are checked against official sources (ESTV, Liechtenstein tax administration, German and Austrian ministries of finance) and provided without warranty.
 - Not for countries other than CH, LI, DE and AT as the issuing company's country yet; new countries can be added as country profiles (see the guide below).

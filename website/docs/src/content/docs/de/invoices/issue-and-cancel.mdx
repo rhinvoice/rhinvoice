@@ -22,7 +22,7 @@ Beim **Ausstellen** bekommt eine Rechnung in Rhinvoice ihre endgültige Nummer, 
 <Steps>
 
 1. Erfassen Sie die Rechnung als Entwurf (*Rechnungen → Neue Rechnung*). Ein Entwurf hat noch keine Nummer und speichert sich selbst.
-2. Lassen Sie *Datum* leer, gilt das Datum des Ausstellens. Lassen Sie *Fällig am* leer, gilt die Zahlungsfrist des Kunden bzw. der Firma.
+2. *Datum* ist bei einer neuen Rechnung mit heute vorbelegt. Leeren Sie es, gilt das Datum des Ausstellens. Lassen Sie *Fällig am* leer, gilt die Zahlungsfrist des Kunden bzw. der Firma.
 3. Klicken Sie auf **Ausstellen** und bestätigen Sie die Frage *Rechnung ausstellen?*.
 
 </Steps>
@@ -31,7 +31,7 @@ Fehlt etwas, stellt Rhinvoice nicht aus und sagt, was zu tun ist. Geprüft wird 
 
 - die **Pflichtangaben Ihres Landes**: in der Schweiz und in Liechtenstein Ihre MWST-Nummer (ausser Sie sind nicht MWST-pflichtig), in Deutschland Steuernummer oder USt-IdNr. (nicht bei Kleinbetragsrechnungen bis 250 EUR), in Österreich Ihre UID (nicht bis 400 EUR) und bei Rechnungen über 10’000 EUR an Firmen in Österreich auch die UID des Kunden. Kleinunternehmer in Österreich brauchen beides nicht,
 - mindestens **eine Position mit Betrag** und ein **Total über null**. Gutschriften entstehen nur durch Stornieren,
-- ein **Bankkonto** in der Währung der Rechnung (*Einstellungen → Bankkonten*),
+- ein **Bankkonto** in der Währung der Rechnung (*Einstellungen → Bankkonten*): das unter *Bankverbindung* gewählte oder das Standardkonto der Währung ([Bankkonten](/docs/de/invoices/bank-accounts/)),
 - bei Reverse Charge die **UID bzw. USt-IdNr. des Kunden**,
 - das **Datum**: nicht in der Zukunft und nicht vor der zuletzt ausgestellten Rechnung. So steigen Nummern und Daten gemeinsam.
 
@@ -41,7 +41,7 @@ Die Nummer folgt dem Nummernkreis unter *Einstellungen → Nummernkreise*. Vorei
 
 - **Die Nummer.** Sie wird in derselben Datenbank-Transaktion vergeben wie das Ausstellen. Bricht etwas ab, ist keine Nummer verbraucht. Doppelte Nummern verhindert zusätzlich die Datenbank selbst.
 - **Inhalt und Steuersätze.** Positionen, Beträge und der Steuersatz jeder Position werden eingefroren. Massgebend ist der Satz zum Leistungsdatum. Spätere Satzänderungen wirken nicht zurück.
-- **Absender, Empfänger und Bankkonto.** Rhinvoice speichert Firma, Kunde und Bankkonto so, wie sie beim Ausstellen waren. Ändern Sie später die Adresse eines Kunden, bleibt die Rechnung unverändert. Auch die Druckvorlage des Tages bleibt erhalten.
+- **Absender, Empfänger und Bankkonto.** Rhinvoice speichert Firma, Kunde und Bankkonto so, wie sie beim Ausstellen waren. Ändern Sie später die Adresse eines Kunden, bleibt die Rechnung unverändert. Auch die Druckvorlage und das Logo des Tages bleiben erhalten.
 - **Das PDF.** Die Rechnung behält ihr erstes PDF, gespeichert mit seinem SHA-256-Prüfwert.
 
 Diese Sperre gilt nicht nur in der Oberfläche: Die Datenbank selbst verbietet Änderungen am Inhalt und das Löschen ausgestellter Dokumente. Erlaubt bleiben Statusänderungen wie Zahlungen und Storno. Der *Verlauf* jeder Rechnung hält fest, wann sie erstellt, ausgestellt, bezahlt oder storniert wurde.
@@ -56,7 +56,7 @@ Entwürfe löschen Sie im Menü *Weitere Aktionen* (der Knopf mit den drei Punkt
 
 ## Rechnung duplizieren
 
-*Weitere Aktionen → Duplizieren* legt einen neuen Entwurf mit demselben Inhalt an: Kunde, Positionen, Texte, Rabatte und Währung. Datum und Fälligkeit sind leer, die Nummer kommt erst beim Ausstellen. Das geht mit jeder Rechnung, auch mit einer stornierten, und mit Angeboten. Stornorechnungen und [übernommene Rechnungen](/docs/de/moving/old-invoices/) lassen sich nicht duplizieren.
+*Weitere Aktionen → Duplizieren* legt einen neuen Entwurf mit demselben Inhalt an: Kunde, Positionen, Texte, Rabatte und Währung. Die Kopie trägt das heutige Datum, die Fälligkeit ist leer, die Nummer kommt erst beim Ausstellen. Das geht mit jeder Rechnung, auch mit einer stornierten, und mit Angeboten. Stornorechnungen und [übernommene Rechnungen](/docs/de/moving/old-invoices/) lassen sich nicht duplizieren.
 
 ## Rechnung stornieren
 

@@ -24,7 +24,10 @@ export function templatesFor(
     .sort((a, b) => a.position - b.position);
 }
 
-/** The texts a new document starts with: its default templates, joined by line breaks. */
+/** Text templates are separated by a blank line: they print as paragraphs with a small gap. */
+const TEMPLATE_SEPARATOR = "\n\n";
+
+/** The texts a new document starts with: its default templates, one paragraph each. */
 export function defaultTexts(
   templates: readonly TextTemplate[],
   type: EditableType,
@@ -34,7 +37,7 @@ export function defaultTexts(
     templatesFor(templates, kind, type, language)
       .filter((template) => template.is_default)
       .map((template) => template.text)
-      .join("\n");
+      .join(TEMPLATE_SEPARATOR);
   return {
     intro_text: joined("intro"),
     payment_text: joined("payment"),
@@ -44,6 +47,13 @@ export function defaultTexts(
 
 function lines(text: string): string[] {
   return text === "" ? [] : text.split("\n");
+}
+
+/** The text without its blank lines: documents written before the gap compare equal. */
+function withoutBlankLines(text: string): string {
+  return lines(text)
+    .filter((line) => line.trim() !== "")
+    .join("\n");
 }
 
 /** Index where ``block`` starts as whole lines inside ``text``, or -1. */
@@ -84,7 +94,14 @@ export function toggleTemplate(
     ? present.filter((candidate) => candidate.id !== template.id)
     : [...present, template];
   const ordered = siblings.filter((candidate) => chosen.some((item) => item.id === candidate.id));
-  return [...ordered.map((candidate) => candidate.text), ...rest].join("\n").trim();
+  // What remains is the user's own text, its blank lines kept once.
+  const own = rest
+    .join("\n")
+    .replace(/\n[ \t]*(?:\n[ \t]*)+\n/g, "\n\n")
+    .trim();
+  return [...ordered.map((candidate) => candidate.text), own]
+    .filter((part) => part !== "")
+    .join(TEMPLATE_SEPARATOR);
 }
 
 /**
@@ -101,7 +118,7 @@ export function switchLanguage(
   const before = defaultTexts(templates, type, from);
   const after = defaultTexts(templates, type, to);
   const pick = (key: keyof DocumentTexts) =>
-    current[key] === before[key] ? after[key] : current[key];
+    withoutBlankLines(current[key]) === withoutBlankLines(before[key]) ? after[key] : current[key];
   return {
     intro_text: pick("intro_text"),
     payment_text: pick("payment_text"),

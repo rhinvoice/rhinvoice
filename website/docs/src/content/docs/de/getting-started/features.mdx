@@ -5,7 +5,7 @@ faq:
   - q: Kosten einzelne Funktionen von Rhinvoice extra?
     a: "Nein. Alle Funktionen auf dieser Seite sind in Rhinvoice enthalten, kostenlos unter der AGPL. Es gibt keine Bezahlversion und keine Zusatzmodule."
   - q: In welchen Währungen schreibt Rhinvoice Rechnungen?
-    a: "In Schweizer Franken (CHF) und Euro (EUR). Artikel haben einen Preis pro Währung, jedes Bankkonto hat eine Währung, und eine Rechnung nimmt das Standardkonto ihrer Währung."
+    a: "In Schweizer Franken (CHF) und Euro (EUR). Artikel haben einen Preis pro Währung, jedes Bankkonto hat eine Währung, und eine Rechnung nimmt das Standardkonto ihrer Währung oder ein anderes Konto, das Sie im Editor wählen."
   - q: Was kann Rhinvoice nicht?
     a: "Rhinvoice ist kein Buchhaltungsprogramm: keine Buchhaltung, kein Kontenplan, keine MWST- bzw. USt.-Abrechnung, kein Lohn. Es ist auch kein Cloud-Dienst, kein Webshop und keine Kasse."
   - q: Wo sehe ich, was neu dazukommt?
@@ -40,6 +40,8 @@ Rhinvoice schreibt **Angebote, Rechnungen, Stornorechnungen und Mahnungen** für
 - Listen mit Ansichten (*Entwürfe*, *Offen*, *Überfällig*, *Bezahlt*, *Storniert*, *Abgeschrieben*), Filter nach Jahr und Kunde, Summen
 - Volltextsuche über Nummer, Kunde, Betreff und Positionen
 - PDF ansehen, herunterladen und drucken
+- Export der Rechnungen eines Monats, Quartals, Jahres oder freien Zeitraums für die Buchhaltung als Excel, CSV oder PDF-Liste, auf Wunsch mit allen PDFs als ZIP ([Export](/docs/de/invoices/export/))
+- *Teilen* gibt das PDF eines ausgestellten Dokuments an das Teilen-Menü des Handys (und von Safari auf dem Mac) weiter, etwa an Mail oder einen Messenger
 
 Anleitungen: [Die erste Rechnung](/docs/de/getting-started/first-invoice/), [Angebote](/docs/de/invoices/quotes/), [Ausstellen und Storno](/docs/de/invoices/issue-and-cancel/)
 
@@ -82,7 +84,9 @@ Anleitungen: [Schweiz](/docs/de/countries/switzerland/), [Liechtenstein](/docs/d
 - EPC-QR-Code (GiroCode) auf Euro-Rechnungen aus Deutschland und Österreich
 - EPC-QR-Code auch auf Euro-Rechnungen aus der Schweiz und Liechtenstein an Kunden im EWR, wenn das Euro-Konto eine BIC hat
 - Mehrere Bankkonten mit IBAN, QR-IBAN, BIC und Währung, ein Standardkonto pro Währung
-- Fusszeile mit allen Bankkonten oder nur dem Konto der Rechnungswährung
+- Bankkonto pro Angebot und Rechnung wählen, wenn die Währung mehrere hat ([Bankkonto pro Rechnung](/docs/de/invoices/bank-accounts/))
+- Konten von Dritten, etwa eines Finanzdienstleisters: Die Rechnung nennt ihn als Zahlungsempfänger mit IBAN und BIC, auch in der QR-Rechnung und der E-Rechnung
+- Fusszeile mit allen Bankkonten, nur dem Konto der Rechnung oder ohne Bankverbindung
 
 Anleitungen: [Schweiz](/docs/de/countries/switzerland/), [Deutschland](/docs/de/countries/germany/)
 
@@ -115,8 +119,8 @@ Anleitung: [Kunden und Artikel übernehmen](/docs/de/moving/customers-and-articl
 
 ## Texte und Druckvorlage
 
-- Textbausteine für Einleitung, Zahlungsbedingungen und Schluss, pro Dokumentart, einer davon als Standard
-- Platzhalter in Texten: `{nummer}`, `{datum}`, `{faellig}`, `{kunde}`, `{betrag}`, `{waehrung}`, `{firma}`
+- Textbausteine für Einleitung, Zahlungsbedingungen und Schluss, pro Dokumentart, einer davon als Standard; mehrere stehen als Absätze mit kleinem Abstand
+- Platzhalter in Texten: `{nummer}`, `{datum}`, `{faellig}`, `{kunde}`, `{betrag}`, `{waehrung}`, `{firma}`, `{kontoinhaber}`, `{kontoinhaber_adresse}`
 - Pflichthinweise des Landes als Vorschlag, auf Wunsch mit eigenem Wortlaut
 - Dokumente auf Deutsch, Englisch, Französisch oder Italienisch, wählbar pro Dokument, pro Kunde oder als Standard der Firma
 - Drei Druckvorlagen: *Klassisch*, *Modern*, *Schlicht*

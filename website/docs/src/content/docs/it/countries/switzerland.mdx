@@ -65,7 +65,7 @@ Ogni fattura di un’azienda svizzera riceve la **sezione pagamento della fattur
 | con un **QR-IBAN** | riferimento QR (QRR), 27 cifre |
 | solo con un **IBAN** | Creditor Reference (SCOR, ISO 11649), che inizia con `RF` |
 
-Rhinvoice costruisce entrambi i riferimenti dal numero della fattura, così può abbinare i pagamenti dell’estratto conto alla fattura. Ogni valuta ha un conto predefinito: una fattura in EUR usa il Suo conto in EUR. Le bozze mostrano un segnaposto nello stesso punto, perché il riferimento esiste solo quando esiste il numero.
+Rhinvoice costruisce entrambi i riferimenti dal numero della fattura, così può abbinare i pagamenti dell’estratto conto alla fattura. Ogni valuta ha un conto predefinito: una fattura in EUR usa il Suo conto predefinito in EUR, a meno che scelga un altro conto nell’editor. Se il conto appartiene a terzi, per esempio a un fornitore di servizi finanziari, la fattura QR indica il suo titolare come creditore, con l’indirizzo del terzo ([conto bancario per fattura](/docs/it/invoices/bank-accounts/)). <Since version="0.9.0" /> Le bozze mostrano un segnaposto nello stesso punto, perché il riferimento esiste solo quando esiste il numero.
 
 **Le fatture in euro a clienti nello SEE** (UE, Islanda, Norvegia) ricevono anche il **codice QR EPC** (GiroCode): le app bancarie di quei Paesi lo leggono, ma per lo più non leggono la fattura QR. Per un conto svizzero il codice EPC richiede il BIC; lo aggiunga al conto, altrimenti il codice viene omesso.
 

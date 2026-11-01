@@ -56,6 +56,8 @@ const PLACEHOLDERS = [
   "betrag",
   "waehrung",
   "firma",
+  "kontoinhaber",
+  "kontoinhaber_adresse",
 ] as const;
 
 /** API field names of the server settings, as the form names them. */

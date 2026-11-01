@@ -1,0 +1,79 @@
+---
+title: Export invoices for your bookkeeping
+description: "Export the invoices of a month, quarter or year from Rhinvoice as Excel, CSV or PDF, optionally with every invoice PDF in one ZIP for your accountant."
+since: 0.9.0
+faq:
+  - q: How do I give my accountant the invoices of a month?
+    a: In "Invoices", click "Export", choose the month and the format (Excel, CSV or PDF) and click "Download". With "Add the invoice PDFs as a ZIP" the PDFs of all invoices come along in the same ZIP file.
+  - q: Which invoices does the export contain?
+    a: All issued invoices and credit notes whose invoice date lies in the chosen period, also invoices taken over from a previous program. Drafts and quotes are not included.
+  - q: Why are credit notes negative?
+    a: A credit note (cancellation invoice) reverses its invoice with negative amounts, as it was issued. The invoice and its credit note add up to zero, so the totals are right without further work.
+  - q: Is there an export for DATEV or BMD?
+    a: Not yet. These formats are to be agreed with accountants and tax advisers first. Until then, the Excel and CSV files can be read by most accounting programs.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Under *Invoices → Export* you download **all issued invoices and credit notes of a month, quarter, year or days of your choice**: as **Excel**, **CSV** or **PDF**, optionally together with **every invoice PDF in one ZIP file**. Your bookkeeping, accountant or tax adviser gets the invoices of a period in one go.
+
+## Exporting invoices
+
+<Steps>
+
+1. Open *Invoices* and click **Export**.
+2. Choose the *Period*: *Month*, *Quarter*, *Year* or *Custom* with *From* and *To*. The last full month is preselected.
+3. Choose the *Format*: *Excel*, *CSV* or *PDF*.
+4. Tick *Add the invoice PDFs as a ZIP* when the PDFs should come along.
+5. Click **Download**.
+
+</Steps>
+
+What counts is the **invoice date**. The export holds issued invoices, credit notes and [invoices taken over](/docs/moving/old-invoices/) from the program you used before, but no drafts and no quotes. A custom period spans at most ten years. The column headers are in the language you use Rhinvoice in.
+
+## Formats
+
+| Format | Content |
+|---|---|
+| Excel (.xlsx) | Sheet *Invoices* with one row per document, filter and frozen header row; sheet *Totals* with one row per currency. Amounts are numbers with two decimals, dates are real dates. |
+| CSV | UTF-8 with BOM, semicolons as separators, dates as `YYYY-MM-DD`. Amounts without thousands separators, with a point (company in Switzerland or Liechtenstein) or a comma (company in Germany or Austria). After an empty line follow the totals per currency. |
+| PDF | A4 landscape, with company, period and page numbers, the totals per currency at the end. |
+
+With *Add the invoice PDFs as a ZIP* you get one ZIP file with the list in the chosen format and the PDF of every document. The PDFs are named after their number, such as `R20260042.pdf`, and the list's column *File* names each. They are the archived PDFs, unchanged since issuing. Invoices taken over bring their original PDF; without one, *File* stays empty. One export runs at a time; the public demo offers the lists but no ZIP file with PDFs.
+
+<Aside type="caution">
+When a text in the CSV file starts with `=`, `+`, `-` or `@`, Rhinvoice puts an apostrophe in front of it, so that a spreadsheet does not run it as a formula when opening the file. The Excel file stores such texts as text and keeps them unchanged.
+</Aside>
+
+## Columns
+
+| Column | Meaning |
+|---|---|
+| Number, Type | Invoice or credit note number; *Invoice* or *Credit note* |
+| Date | Invoice date |
+| Service from, Service to | Service period, when given |
+| Customer no., Customer, Country, Customer VAT ID | The customer as at issuing |
+| Currency, Tax treatment | Such as *Domestic*, *Reverse charge*, *Export*, *Small business* |
+| Net | Net amount of the document |
+| Net x %, Tax x % | One pair per VAT rate that occurs in the export, also 0 % |
+| Tax, Gross | Total tax and the invoice amount, cash rounding included |
+| Paid, Paid on | Sum of the payments; the date of the last payment once the invoice is paid in full |
+| Open | What is still open |
+| Written off | The loss of a [written-off](/docs/invoices/write-off/) invoice |
+| Status | Such as *Paid*, *Overdue*, *Cancelled* |
+| File | Name of the PDF in the ZIP file (only with PDFs) |
+
+Credit notes carry **negative amounts**, as they were issued. A cancelled invoice and its credit note add up to zero. A credit note is never open. Invoices taken over have no columns per rate, as their lines were not taken over; net, tax and gross are as in the program you used before.
+
+Totals are **per currency**; francs and euros are never added up.
+
+The export selects documents by invoice date. If you account for VAT on payments received, *Paid* and *Paid on* show what came in. Payments on invoices of an earlier period are in the export of that period.
+
+## DATEV and BMD
+
+An export in the format of DATEV (Germany) or BMD (Austria) does not exist yet. These formats are to be agreed with accountants and tax advisers first. Until then, the Excel and CSV files can be read by most accounting programs.
+
+## Questions
+
+<Faq />

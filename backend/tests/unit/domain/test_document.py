@@ -481,16 +481,19 @@ def test_converting_a_quote() -> None:
         issued().mark_converted(invoice_id, NOW)
 
 
-def test_copy_as_draft_resets_dates_and_rates() -> None:
+def test_copy_as_draft_is_dated_today_without_rates() -> None:
     quote = issued(DocumentType.QUOTE, subject="Website")
     invoice_id = new_id()
-    invoice = quote.copy_as_draft(invoice_id, DocumentType.INVOICE, NOW + timedelta(days=1))
+    tomorrow = TODAY + timedelta(days=1)
+    invoice = quote.copy_as_draft(
+        invoice_id, DocumentType.INVOICE, NOW + timedelta(days=1), today=tomorrow
+    )
     assert invoice.id == invoice_id
     assert invoice.type is DocumentType.INVOICE
     assert invoice.is_draft
     assert invoice.source_id == quote.id
     assert invoice.content.subject == "Website"
-    assert invoice.content.issue_date is None
+    assert invoice.content.issue_date == tomorrow
     assert invoice.content.due_date is None
     assert all(line.tax_rate is None for line in invoice.content.lines)
     copied_ids = [line.id for line in invoice.content.lines]
@@ -501,7 +504,7 @@ def test_copy_as_draft_resets_dates_and_rates() -> None:
     )
     assert invoice.created_at == NOW + timedelta(days=1)
     source = draft()
-    duplicate = source.copy_as_draft(new_id(), DocumentType.INVOICE, NOW)
+    duplicate = source.copy_as_draft(new_id(), DocumentType.INVOICE, NOW, today=TODAY)
     assert duplicate.source_id is None
     assert duplicate.events[0].detail == str(source.id)
 

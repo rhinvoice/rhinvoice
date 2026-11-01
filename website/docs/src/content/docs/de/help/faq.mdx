@@ -3,7 +3,7 @@ title: Häufige Fragen zu Rhinvoice
 description: Antworten zu Rhinvoice, dem kostenlosen Open-Source-Rechnungsprogramm für CH, FL, DE und AT. Kosten, Lizenz, Daten, GoBD, Backup, E-Rechnung, Demo.
 faq:
   - q: Was kostet Rhinvoice?
-    a: Nichts. Rhinvoice ist kostenlos und Open Source. Es gibt keine Bezahlversion und keinen Hosting-Dienst, und es ist nicht geplant, daraus einen kostenpflichtigen Hosting-Dienst zu machen. Sie betreiben Rhinvoice auf Ihrem eigenen Server oder Computer.
+    a: Nichts. Rhinvoice ist kostenlos und Open Source. Es gibt keine Bezahlversion und keinen Hosting-Dienst. Sie betreiben Rhinvoice auf Ihrem eigenen Server oder Computer.
   - q: Unter welcher Lizenz steht Rhinvoice?
     a: Unter der GNU Affero General Public License v3.0 oder später (AGPL-3.0). Sie dürfen Rhinvoice frei nutzen, verändern und weitergeben. Wer eine veränderte Fassung anderen als Dienst anbietet, legt seine Änderungen unter derselben Lizenz offen.
   - q: Für welche Länder ist Rhinvoice gedacht?
@@ -27,13 +27,17 @@ faq:
   - q: Läuft Rhinvoice auf einem Raspberry Pi oder einem NAS?
     a: Ja. Rhinvoice gibt es für linux/amd64 und linux/arm64, also auch für den Raspberry Pi 4 und 5. Auf einem NAS läuft es, wenn das NAS Docker mit Docker Compose ausführen kann.
   - q: Kann ich Rhinvoice auf dem Handy benutzen?
-    a: Ja. Die Oberfläche passt sich dem Handy an. Unterwegs prüfen Sie den Status von Rechnungen, markieren sie als bezahlt und öffnen und teilen das PDF.
+    a: Ja. Die Oberfläche passt sich dem Handy an. Unterwegs prüfen Sie den Status von Rechnungen, markieren sie als bezahlt und öffnen das PDF oder geben es mit *Teilen* über das Teilen-Menü des Handys weiter.
   - q: Wo bekomme ich Hilfe, und gibt es eine kommerzielle Lizenz?
     a: Fragen und Ideen gehören in die GitHub Discussions, Fehler in die GitHub Issues von rhinvoice/rhinvoice. Für eine kommerzielle Lizenz, eine Partnerschaft oder die Übernahme des Projekts schreiben Sie an hello@rhinvoice.com.
   - q: Kann ich Rhinvoice ausprobieren, ohne es zu installieren?
     a: Ja, in der öffentlichen Demo für die Schweiz (ch.rhinvoice.com), Deutschland (de.rhinvoice.com) und Österreich (at.rhinvoice.com). Sie setzt sich jede Stunde zurück und nimmt keine Uploads an, also keine Importe, kein Logo und keine Dateien. E-Mails verschickt sie nicht.
   - q: "Warum lehnt meine Bank-App den QR-Code aus der Demo ab?"
     a: "Die Demo rechnet mit offiziellen Beispielkonten, nicht mit echten. Bei Schweizer Rechnungen in CHF ist es die Beispiel-QR-IBAN von SIX, deren Bankkennung zu keiner Bank gehört; Bank-Apps lehnen den QR-Code darum ab. Die übrigen QR-Codes lassen sich scannen, führen aber ebenfalls auf Beispielkonten: bitte nichts überweisen. In Ihrer eigenen Installation steht Ihr Konto im QR-Code, und Ihre Kunden können ihn wie gewohnt scannen."
+  - q: Kann eine Rechnung auf ein anderes Konto bezahlt werden, etwa an eine Factoring-Firma?
+    a: "Ja. Seit Version 0.9.0 erfassen Sie mehrere Bankkonten pro Währung und wählen im Editor pro Rechnung eines. Ein Konto lässt sich als Konto eines Dritten markieren, etwa eines Finanzdienstleisters: Die Rechnung nennt ihn dann als Zahlungsempfänger mit IBAN und BIC, QR-Rechnung und E-Rechnung nennen ihn als Zahlungsempfänger."
+  - q: Kann ich meine Rechnungen für die Buchhaltung exportieren?
+    a: "Ja. Seit Version 0.9.0 lädt «Rechnungen → Exportieren» die ausgestellten Rechnungen und Stornorechnungen eines Monats, Quartals, Jahres oder freien Zeitraums als Excel, CSV oder PDF herunter, mit Summen pro Währung. Auf Wunsch kommen alle Rechnungs-PDFs in einer ZIP-Datei mit."
 ---
 
 import Faq from "../../../../components/Faq.astro";

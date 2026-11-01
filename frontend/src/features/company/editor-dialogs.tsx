@@ -45,7 +45,7 @@ export function NewBankAccountDialog({
   return (
     <BankAccountDialog
       account={null}
-      defaults={emptyBankAccount(currency, company?.name ?? "")}
+      defaults={emptyBankAccount(currency, company?.name ?? "", company?.address.country)}
       profile={company?.profile}
       onClose={onClose}
     />

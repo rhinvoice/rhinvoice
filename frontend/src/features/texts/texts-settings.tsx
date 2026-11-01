@@ -65,6 +65,8 @@ const PLACEHOLDERS = [
   "betrag",
   "waehrung",
   "firma",
+  "kontoinhaber",
+  "kontoinhaber_adresse",
 ] as const;
 const MAX_NAME = 70;
 const MAX_TEXT = 2000;

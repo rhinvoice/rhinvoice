@@ -239,6 +239,10 @@ export const de = {
     "Diese Aktion ist im aktuellen Status nicht möglich. Bitte laden Sie die Seite neu.",
   "error.bank_account_missing":
     "Für diese Währung ist kein Bankkonto erfasst. Bitte legen Sie es unter Einstellungen → Bankkonten an.",
+  "error.bank_account_unknown":
+    "Dieses Bankkonto gibt es nicht mehr. Bitte wählen Sie ein anderes.",
+  "error.bank_account_currency": "Das Bankkonto ist in einer anderen Währung als das Dokument.",
+  "error.holder_address_missing": "Ein Konto eines Dritten braucht die Adresse des Kontoinhabers.",
   "error.no_positions": "Das Dokument braucht mindestens eine Position mit Betrag.",
   "error.non_positive_total":
     "Das Total einer Rechnung muss größer als null sein. Gutschriften entstehen durch Stornieren.",
@@ -274,7 +278,7 @@ export const de = {
   "error.payment_before_write_off":
     "Diese Zahlung ging vor der Abschreibung ein. Nehmen Sie zuerst die Abschreibung zurück.",
   "error.unknown_placeholder":
-    "Unbekannter Platzhalter. Möglich sind {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung} und {firma}.",
+    "Unbekannter Platzhalter. Möglich sind {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung}, {firma}, {kontoinhaber} und {kontoinhaber_adresse}.",
   "error.already_converted": "Aus diesem Angebot wurde bereits eine Rechnung erstellt.",
   "error.pageDescription":
     "Diese Seite konnte nicht angezeigt werden. Ihre gespeicherten Daten sind nicht betroffen.",
@@ -509,6 +513,8 @@ export const de = {
   "texts.placeholder.betrag": "Betrag",
   "texts.placeholder.waehrung": "Währung",
   "texts.placeholder.firma": "Ihre Firma",
+  "texts.placeholder.kontoinhaber": "Kontoinhaber",
+  "texts.placeholder.kontoinhaber_adresse": "Adresse des Kontoinhabers",
   "texts.useAsDefault": "In neue Dokumente einsetzen (Standard)",
   "texts.notices": "Gesetzliche Hinweise",
   "texts.noticesHint":
@@ -567,7 +573,7 @@ export const de = {
   "language.it": "Italienisch",
   "bank.title": "Bankkonten",
   "bank.description":
-    "Konten für Zahlungsangaben und QR-Codes. Pro Währung ist ein Konto das Standardkonto.",
+    "Konten für Zahlungsangaben und QR-Codes. Pro Währung ist ein Konto das Standardkonto; im Dokument können Sie ein anderes wählen.",
   "bank.add": "Konto hinzufügen",
   "bank.edit": "Konto bearbeiten",
   "bank.emptyTitle": "Noch kein Bankkonto",
@@ -582,10 +588,15 @@ export const de = {
     "Nötig für den EPC-QR-Code auf Euro-Rechnungen an Kunden in der EU: Ohne BIC entfällt er.",
   "bank.currency": "Währung",
   "bank.isDefault": "Standardkonto für diese Währung",
+  "bank.thirdParty": "Konto gehört einem Dritten (z. B. Finanzdienstleister)",
+  "bank.thirdPartyHint":
+    "Dokumente, die auf dieses Konto bezahlt werden, nennen den Kontoinhaber als Zahlungsempfänger. Seine Adresse steht im QR-Zahlteil.",
+  "bank.thirdPartyBadge": "Drittkonto",
+  "bank.holderAddress": "Adresse des Kontoinhabers",
   "bank.saved": "Bankkonto gespeichert.",
   "bank.deleteTitle": "Bankkonto löschen?",
   "bank.deleteDescription":
-    "Bereits ausgestellte Dokumente behalten ihre Kontoangaben. Neue Dokumente verwenden ein anderes Konto.",
+    "Bereits ausgestellte Dokumente behalten ihre Kontoangaben. Entwürfe und neue Dokumente nehmen das Standardkonto ihrer Währung.",
   "bank.deleted": "Bankkonto gelöscht.",
   "numbering.title": "Nummernkreise",
   "numbering.description":
@@ -810,6 +821,7 @@ export const de = {
   "documents.pdf": "PDF",
   "documents.download": "Herunterladen",
   "documents.print": "Drucken",
+  "documents.share": "Teilen",
   "documents.viewMode": "Darstellung",
   "documents.viewDocument": "Dokument",
   "documents.viewDetails": "Details",
@@ -914,8 +926,12 @@ export const de = {
   "documents.language": "Sprache",
   "documents.sectionDates": "Daten",
   "documents.issueDate": "Datum",
-  "documents.issueDateHint": "Leer lassen für das Datum des Ausstellens.",
+  "documents.issueDateHint": "Vorbelegt mit heute. Leer lassen für das Datum des Ausstellens.",
   "documents.dueDate": "Fällig am",
+  "documents.bankAccount": "Bankverbindung",
+  "documents.bankAccountHint": "Das Konto, auf das dieses Dokument bezahlt wird.",
+  "documents.bankAccountDefault": "(Standard)",
+  "documents.bankAccountThirdParty": "(Drittkonto)",
   "documents.dueDateHint": "Leer lassen für die Zahlungsfrist des Kunden bzw. der Firma.",
   "documents.validUntil": "Gültig bis",
   "documents.validUntilHint": "Leer lassen für 30 Tage ab Datum.",
@@ -1470,8 +1486,9 @@ export const de = {
   "printLayout.footerAccounts": "Bankverbindung",
   "printLayout.footerAccounts.all": "Alle Konten",
   "printLayout.footerAccounts.invoice_currency": "Nur Rechnungswährung",
+  "printLayout.footerAccounts.none": "Keine",
   "printLayout.footerHint":
-    "Konten derselben Bank stehen zusammen. Der Zahlungs-QR-Code nimmt immer das Konto der Rechnungswährung.",
+    "Konten derselben Bank stehen zusammen. Konten Dritter erscheinen nur auf Dokumenten, die an sie bezahlt werden. Der Zahlungs-QR-Code nimmt immer das Konto, an das die Rechnung bezahlt wird.",
   "printLayout.reset": "Zurücksetzen",
   "printLayout.issuedStay": "Gilt für neue PDFs. Ausgestellte Dokumente behalten ihr PDF.",
   "printLayout.preview": "Vorschau der Druckvorlage",
@@ -1729,6 +1746,37 @@ export const de = {
   "mail.kind.reminder_2": "1. Mahnung",
   "mail.kind.reminder_3": "2. Mahnung",
   "mail.reminderSent": "{level} per E-Mail gesendet",
+
+  "export.open": "Exportieren",
+  "export.title": "Rechnungen exportieren",
+  "export.description":
+    "Die ausgestellten Rechnungen und Stornorechnungen eines Zeitraums nach Rechnungsdatum, für die Buchhaltung oder die Steuerberatung.",
+  "export.period": "Zeitraum",
+  "export.period.month": "Monat",
+  "export.period.quarter": "Quartal",
+  "export.period.year": "Jahr",
+  "export.period.custom": "Frei",
+  "export.month": "Monat",
+  "export.quarter": "Quartal",
+  "export.quarterName": "{quarter}. Quartal",
+  "export.year": "Jahr",
+  "export.from": "Von",
+  "export.to": "Bis",
+  "export.problem.missing": "Bitte beide Tage angeben.",
+  "export.problem.reversed": "Das Ende liegt vor dem Anfang.",
+  "export.problem.tooLong": "Höchstens zehn Jahre auf einmal.",
+  "export.format": "Format",
+  "export.format.xlsx": "Excel",
+  "export.format.csv": "CSV",
+  "export.format.pdf": "PDF",
+  "export.withPdfs": "Rechnungs-PDFs als ZIP beilegen",
+  "export.withPdfsHint":
+    "Eine ZIP-Datei mit der Liste und dem PDF jeder Rechnung; die Spalte «Datei» nennt seinen Namen.",
+  "export.download": "Herunterladen",
+  "export.preparing": "Wird erstellt …",
+  "error.period_reversed": "Das Ende des Zeitraums liegt vor dem Anfang.",
+  "error.period_too_long": "Ein Zeitraum umfasst höchstens zehn Jahre.",
+  "error.export_busy": "Ein anderer Export wird gerade erstellt. Bitte gleich nochmals versuchen.",
 } as const;
 
 export type MessageKey = keyof typeof de;

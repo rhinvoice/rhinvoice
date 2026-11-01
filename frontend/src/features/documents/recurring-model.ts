@@ -78,6 +78,7 @@ export function planToForm(plan: Plan, company: Company, locale: Locale): Docume
     intro_text: template.intro_text,
     payment_text: template.payment_text,
     closing_text: template.closing_text,
+    bank_account_id: template.bank_account_id ?? "",
     discount_kind: template.discount_kind,
     discount_value:
       template.discount_value === null || Number(template.discount_value) === 0
@@ -124,6 +125,7 @@ export function toPlanRequest(settings: PlanSettings, draft: DraftRequest): Plan
       intro_text: draft.intro_text,
       payment_text: draft.payment_text,
       closing_text: draft.closing_text,
+      bank_account_id: draft.bank_account_id ?? null,
     },
   };
 }

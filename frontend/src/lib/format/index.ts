@@ -186,6 +186,15 @@ export function formatMonth(isoDate: string, locale: Locale): string {
   return formatter.format(date);
 }
 
+/** The name of a month (1 to 12), e.g. "September" (de-AT: "Jänner"). */
+export function formatMonthName(month: number, locale: Locale): string {
+  const formatter = cached(
+    `month-name:${locale}`,
+    () => new Intl.DateTimeFormat(intlLocale(locale), { month: "long", timeZone: "UTC" }),
+  );
+  return formatter.format(new Date(Date.UTC(2000, month - 1, 1)));
+}
+
 const BYTE_UNITS = [
   ["byte", 1],
   ["kilobyte", 1e3],

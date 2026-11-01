@@ -117,8 +117,9 @@ test("create, issue, pay and cancel an invoice", async ({ page, isMobile }, test
   await expect(page.locator("#payment_text")).toHaveValue(/Zahlbar prompt und ohne Abzug\./);
   await expectAccessible(page);
   await expect(page).toHaveScreenshot("invoice-editor.png", {
-    // The customer number, the draft dates and the texts' order depend on other tests.
-    mask: [customerCard, paper.locator(".meta")],
+    // The customer number, the draft dates and the texts' order depend on other tests;
+    // the date is today's.
+    mask: [customerCard, paper.locator(".meta"), page.locator("#issue_date")],
   });
 
   // ⌘↵ / Ctrl+↵ saves the draft; the editor continues on the draft's page.
@@ -570,4 +571,59 @@ test("cancelling the first line of a new invoice discards it without errors", as
   await page.getByRole("button", { name: "Verwerfen" }).click();
   await expect(page.locator("#lines-0-description")).toHaveCount(0);
   await expect(page.getByText("Bitte ausfüllen.")).toHaveCount(0);
+});
+
+test("the PDF goes to the share sheet only where the browser can share files", async ({
+  page,
+}, testInfo) => {
+  const customerId = await createCustomer(page, `Teilkunde ${unique(testInfo.project.name)} AG`);
+  const invoice = await post<{ id: string; number: string }>(page, "/api/documents", {
+    type: "invoice",
+    customer_id: customerId,
+    lines: [{ description: "Beratung", quantity: "1", unit: "HUR", unit_price: "100" }],
+  });
+  const issued = await post<{ number: string }>(page, `/api/documents/${invoice.id}/issue`, {});
+  const heading = `Rechnung ${issued.number}`;
+
+  // The test browser has no Web Share API: no button, no replacement.
+  await page.goto(`/documents/${invoice.id}`);
+  await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Drucken" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Teilen" })).toHaveCount(0);
+
+  // A phone's browser: the button hands the PDF to the share sheet.
+  await page.addInitScript(() => {
+    const shared: { name: string; type: string; size: number; title: string }[] = [];
+    Object.assign(window, { shared });
+    Object.assign(navigator, {
+      canShare: (data?: ShareData) => (data?.files ?? []).every((file) => file.type !== ""),
+      share: (data: ShareData) => {
+        const [file] = data.files ?? [];
+        if (file !== undefined) {
+          shared.push({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            title: data.title ?? "",
+          });
+        }
+        return Promise.resolve();
+      },
+    });
+  });
+  await page.reload();
+  const share = page.getByRole("button", { name: "Teilen" });
+  await expect(share).toBeEnabled();
+  await expectAccessible(page);
+  await share.click();
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { shared: unknown[] }).shared))
+    .toEqual([
+      {
+        name: expect.stringMatching(/\.pdf$/) as unknown as string,
+        type: "application/pdf",
+        size: expect.any(Number) as unknown as number,
+        title: heading,
+      },
+    ]);
 });

@@ -3,10 +3,13 @@ from decimal import Decimal
 import pytest
 
 from rhinvoice.domain.catalog.unit import UNITS, Unit
+from rhinvoice.domain.company.bank_account import BankAccount, paying_account
+from rhinvoice.domain.company.print_layout import FooterAccounts, accounts_in_footer
 from rhinvoice.domain.customer.customer import CustomerKind
 from rhinvoice.domain.shared.country import Country, CountryCode
 from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.iban import Iban
+from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from tests.unit.domain import factories
@@ -118,6 +121,64 @@ def test_bank_account_validation(overrides: dict[str, object], field: str, messa
     with pytest.raises(ValidationError) as error:
         factories.bank_account(**overrides)
     assert error.value.details == {field: message}
+
+
+# --- Third-party accounts and the account a document is paid to ----------------------
+
+
+def test_own_account_has_no_holder_address() -> None:
+    account = factories.bank_account(holder_address=factories.address(city="Vaduz"))
+    assert account.third_party is False
+    # Ignored for own accounts: the company's address applies.
+    assert account.holder_address is None
+    company_address = factories.address(city="Chur")
+    assert account.creditor_address(company_address) == company_address
+
+
+def test_third_party_account_keeps_its_address() -> None:
+    address = factories.address(street="Zahlweg", city="Basel", postal_code="4001")
+    account = factories.bank_account(third_party=True, holder_address=address)
+    assert account.third_party is True
+    assert account.holder_address == address
+    assert account.creditor_address(factories.address(city="Chur")) == address
+
+
+def test_third_party_account_needs_the_holder_address() -> None:
+    with pytest.raises(ValidationError) as error:
+        factories.bank_account(third_party=True)
+    assert error.value.details == {
+        "holder_address": "a third party's account needs the holder's address"
+    }
+    assert error.value.code == "holder_address_missing"
+
+
+def _accounts() -> tuple[BankAccount, ...]:
+    return (
+        factories.bank_account(is_default=False),
+        factories.bank_account(is_default=True),
+        factories.bank_account(currency=Currency.EUR, is_default=True),
+        factories.bank_account(currency=Currency.EUR),
+    )
+
+
+def test_paying_account_is_the_default_without_a_choice() -> None:
+    accounts = _accounts()
+    assert paying_account(accounts, Currency.CHF, None) is accounts[1]
+    assert paying_account(accounts, Currency.EUR, None) is accounts[2]
+    assert paying_account(accounts[:2], Currency.EUR, None) is None
+    assert paying_account((), Currency.CHF, None) is None
+
+
+def test_paying_account_is_the_chosen_one() -> None:
+    accounts = _accounts()
+    assert paying_account(accounts, Currency.CHF, accounts[0].id) is accounts[0]
+    assert paying_account(accounts, Currency.EUR, accounts[3].id) is accounts[3]
+
+
+def test_paying_account_falls_back_when_the_choice_is_gone_or_in_another_currency() -> None:
+    accounts = _accounts()
+    assert paying_account(accounts, Currency.CHF, new_id()) is accounts[1]
+    assert paying_account(accounts, Currency.CHF, accounts[3].id) is accounts[1]
 
 
 # --- Customer -----------------------------------------------------------------
@@ -293,3 +354,49 @@ def test_article_validation(overrides: dict[str, object], field: str, message: s
     with pytest.raises(ValidationError) as error:
         factories.article(**overrides)
     assert error.value.details == {field: message}
+
+
+# --- Accounts in the footer -----------------------------------------------------------
+
+
+def _footer_accounts() -> tuple[BankAccount, BankAccount, BankAccount]:
+    own_chf = factories.bank_account(is_default=True)
+    own_eur = factories.bank_account(currency=Currency.EUR, is_default=True)
+    provider = factories.bank_account(
+        third_party=True, holder="Inkasso AG", holder_address=factories.address()
+    )
+    return own_chf, own_eur, provider
+
+
+def test_footer_lists_no_account() -> None:
+    own_chf, own_eur, provider = _footer_accounts()
+    accounts = (own_chf, own_eur, provider)
+    assert accounts_in_footer(FooterAccounts.NONE, own_chf, accounts) == ()
+    assert accounts_in_footer(FooterAccounts.NONE, provider, accounts) == ()
+
+
+def test_footer_lists_the_paying_account() -> None:
+    own_chf, own_eur, provider = _footer_accounts()
+    accounts = (own_chf, own_eur, provider)
+    assert accounts_in_footer(FooterAccounts.INVOICE_CURRENCY, own_chf, accounts) == (own_chf,)
+    assert accounts_in_footer(FooterAccounts.INVOICE_CURRENCY, provider, accounts) == (provider,)
+    assert accounts_in_footer(FooterAccounts.INVOICE_CURRENCY, None, accounts) == ()
+
+
+def test_footer_lists_own_accounts_and_a_paying_third_party() -> None:
+    own_chf, own_eur, provider = _footer_accounts()
+    accounts = (own_chf, provider, own_eur)
+    assert accounts_in_footer(FooterAccounts.ALL, own_chf, accounts) == (own_chf, own_eur)
+    assert accounts_in_footer(FooterAccounts.ALL, None, accounts) == (own_chf, own_eur)
+    assert accounts_in_footer(FooterAccounts.ALL, provider, accounts) == (
+        own_chf,
+        own_eur,
+        provider,
+    )
+
+
+def test_footer_without_known_accounts_lists_the_paying_one() -> None:
+    own_chf, _, provider = _footer_accounts()
+    assert accounts_in_footer(FooterAccounts.ALL, own_chf, ()) == (own_chf,)
+    assert accounts_in_footer(FooterAccounts.ALL, provider, ()) == (provider,)
+    assert accounts_in_footer(FooterAccounts.ALL, None, ()) == ()

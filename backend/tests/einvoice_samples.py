@@ -49,6 +49,8 @@ DUE = date(2026, 4, 1)
 # Official examples: SIX (CH, QR-IBAN), ECBS (DE, AT).
 DE_IBAN = "DE89370400440532013000"
 AT_IBAN = "AT611904300234573201"
+SIX_IBAN = "CH5800791123000889012"
+"""The IBAN of SIX's QR-bill examples."""
 EUR_BIC = "COBADEFFXXX"
 
 CONSULTING = LineInput(
@@ -192,7 +194,40 @@ def samples() -> dict[str, Sample]:
     swiss = _swiss()
     german = _german()
     berlin_account = _eur_account(DE_IBAN, german.name)
+    # Third parties that collect the payment (ADR 0037): the payee of the e-invoice.
+    factoring = replace(
+        _eur_account(AT_IBAN, "Factoring Beispiel GmbH"),
+        is_default=False,
+        third_party=True,
+        holder_address=factories.address(
+            street="Ringstraße",
+            house_number="5",
+            postal_code="1010",
+            city="Wien",
+            country=CountryCode("AT"),
+        ),
+    )
+    collector = factories.bank_account(
+        iban=Iban(SIX_IBAN),
+        holder="Inkasso Beispiel AG",
+        third_party=True,
+        holder_address=factories.address(
+            street="Zahlweg", house_number="3", postal_code="4001", city="Basel"
+        ),
+    )
     return {
+        "de-third-party": Sample(
+            german,
+            german_customer,
+            (berlin_account, factoring),
+            _draft((CONSULTING,), reference="Bestellung 18", bank_account_id=factoring.id),
+        ),
+        "ch-third-party": Sample(
+            swiss,
+            factories.customer(id=CUSTOMER),
+            (_chf_qr_account(), collector),
+            _draft((CONSULTING,), bank_account_id=collector.id),
+        ),
         # Two rates, a line and a document discount, the 5-centime rounding, a QR reference.
         "ch-domestic": Sample(
             swiss,

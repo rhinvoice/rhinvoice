@@ -89,6 +89,8 @@ export function documentSchema(t: T, locale: Locale) {
       intro_text: f.optionalText(4000),
       payment_text: f.optionalText(4000),
       closing_text: f.optionalText(4000),
+      /** The account to pay to; "" for the default of the currency. */
+      bank_account_id: z.string(),
       discount_kind: z.enum(["percent", "amount"]),
       discount_value: f.decimal({ max: MAX_DISCOUNT_AMOUNT, decimals: 2 }),
       treatment: z.enum(["", ...TREATMENTS]),
@@ -156,13 +158,17 @@ export function isBlankLine(line: LineFormValues): boolean {
   );
 }
 
-export function emptyDocument(company: Company): DocumentFormValues {
+/**
+ * An empty document; ``issueDate`` preselects the date (new documents: today).
+ * Empty still means "the day of issuing" (plans have no date at all).
+ */
+export function emptyDocument(company: Company, issueDate = ""): DocumentFormValues {
   return {
     customer_id: "",
     currency: company.default_currency,
     language: company.default_language,
     price_mode: "net",
-    issue_date: "",
+    issue_date: issueDate,
     due_date: "",
     service_from: "",
     service_to: "",
@@ -171,6 +177,7 @@ export function emptyDocument(company: Company): DocumentFormValues {
     intro_text: "",
     payment_text: "",
     closing_text: "",
+    bank_account_id: "",
     discount_kind: "percent",
     discount_value: "",
     treatment: "",
@@ -323,6 +330,7 @@ export function documentToForm(document: DocumentDetail, locale: Locale): Docume
     intro_text: document.intro_text,
     payment_text: document.payment_text,
     closing_text: document.closing_text,
+    bank_account_id: document.bank_account_id ?? "",
     discount_kind: document.discount_kind,
     discount_value: decimalInput(document.discount_value, locale),
     treatment:
@@ -403,6 +411,7 @@ export function formToDraft(values: DocumentFormValues, locale: Locale): DraftRe
     intro_text: values.intro_text,
     payment_text: values.payment_text,
     closing_text: values.closing_text,
+    bank_account_id: values.bank_account_id === "" ? null : values.bank_account_id,
     discount_kind: values.discount_kind,
     discount_value: apiDecimal(values.discount_value, locale),
     treatment_override: values.treatment === "" ? null : values.treatment,
@@ -417,6 +426,7 @@ const TOP_LEVEL_FIELDS = [
   "reference",
   "issue_date",
   "due_date",
+  "bank_account_id",
   "service_from",
   "service_to",
   "currency",

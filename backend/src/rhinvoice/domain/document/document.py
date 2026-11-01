@@ -152,6 +152,14 @@ class Payment:
 
 
 @dataclass(frozen=True, slots=True)
+class IssuedLogo:
+    """The company's logo on the day of issuing, kept by its fingerprint."""
+
+    sha256: str | None
+    """None: the company had no logo."""
+
+
+@dataclass(frozen=True, slots=True)
 class IssueSnapshot:
     """Company, customer and bank account exactly as they were when issuing."""
 
@@ -169,6 +177,8 @@ class IssueSnapshot:
     """Every bank account of that day, for footers listing all; None before version 0.5."""
     goods_notice: str | None = None
     """Notice of the goods lines' own treatment (e.g. export delivery), when they have one."""
+    logo: IssuedLogo | None = None
+    """The logo of that day, so a PDF made later looks the same; None before 0.9 (today's)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -196,6 +206,11 @@ class DraftContent:
     closing_text: str = ""
     goods_treatment: TaxTreatment | None = None
     """Treatment of the goods lines; None: the document's (documents before 0.4)."""
+    bank_account_id: UUID | None = None
+    """The account to pay to; None: the default account of the currency (ADR 0037).
+
+    Issuing freezes the account itself in the snapshot.
+    """
 
     def __post_init__(self) -> None:
         if self.treatment.goods_only:
@@ -402,13 +417,19 @@ class Document:
         document_id: UUID,
         document_type: DocumentType,
         now: datetime,
+        *,
+        today: date,
     ) -> Document:
-        """Duplicate or convert (quote → invoice): same content, new draft, fresh dates."""
+        """Duplicate or convert (quote → invoice): same content, a new draft dated ``today``.
+
+        Like a new document it opens with today's date; the due date follows the terms
+        when issuing.
+        """
         self._require_own("copied")
         content = replace(
             self.content,
             lines=tuple(replace(line, id=new_id(), tax_rate=None) for line in self.content.lines),
-            issue_date=None,
+            issue_date=today,
             due_date=None,
         )
         return replace(

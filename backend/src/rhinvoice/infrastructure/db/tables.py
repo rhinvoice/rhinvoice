@@ -127,6 +127,16 @@ company_logo = Table(
     CheckConstraint("singleton", name="single_row"),
 )
 
+# Logos of issued documents by their fingerprint, so a PDF made later shows the logo of the
+# day of issuing (migration 0023: only added, never changed or removed).
+issued_logos = Table(
+    "issued_logos",
+    metadata,
+    Column("sha256", String(64), primary_key=True),
+    Column("media_type", String(50), nullable=False),
+    Column("content", LargeBinary, nullable=False),
+)
+
 bank_accounts = Table(
     "bank_accounts",
     metadata,
@@ -138,6 +148,12 @@ bank_accounts = Table(
     Column("qr_iban", String(34)),
     Column("bic", String(11)),
     Column("is_default", Boolean, nullable=False),
+    # A third party's account (ADR 0037) names the holder's address; own accounts have none.
+    Column("third_party", Boolean, nullable=False, server_default="false"),
+    *_address_columns("holder_", nullable=True),
+    CheckConstraint(
+        "NOT third_party OR holder_postal_code IS NOT NULL", name="third_party_address"
+    ),
     Index(
         "uq_bank_accounts_default_per_currency",
         "currency",
@@ -239,6 +255,8 @@ documents = Table(
     Column("intro_text", Text, nullable=False, server_default=""),
     Column("payment_text", Text, nullable=False, server_default=""),
     Column("closing_text", Text, nullable=False, server_default=""),
+    # The account chosen for a draft; issuing freezes the account in the snapshot.
+    Column("bank_account_id", Uuid(), ForeignKey("bank_accounts.id", ondelete="SET NULL")),
     Column("created_at", DateTime(timezone=True), nullable=False),
     Column("issued_at", DateTime(timezone=True)),
     Column("source_id", Uuid(), ForeignKey("documents.id", ondelete="RESTRICT")),

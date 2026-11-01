@@ -1090,6 +1090,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/exports/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Invoices
+         * @description Download the issued invoices and cancellations of a period for the bookkeeping.
+         */
+        get: operations["exports_export_invoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -2096,6 +2116,7 @@ export interface components {
             currency: components["schemas"]["Currency"];
             /** Holder */
             holder: string;
+            holder_address?: components["schemas"]["AddressSchema"] | null;
             /** Iban */
             iban: string;
             /**
@@ -2105,6 +2126,11 @@ export interface components {
             is_default: boolean;
             /** Qr Iban */
             qr_iban?: string | null;
+            /**
+             * Third Party
+             * @default false
+             */
+            third_party: boolean;
         };
         /** BankAccountResponse */
         BankAccountResponse: {
@@ -2115,6 +2141,7 @@ export interface components {
             currency: components["schemas"]["Currency"];
             /** Holder */
             holder: string;
+            holder_address: components["schemas"]["AddressSchema"] | null;
             /** Iban */
             iban: string;
             /** Iban Formatted */
@@ -2128,6 +2155,8 @@ export interface components {
             is_default: boolean;
             /** Qr Iban */
             qr_iban: string | null;
+            /** Third Party */
+            third_party: boolean;
         };
         /** Body_company_upload_logo */
         Body_company_upload_logo: {
@@ -2372,6 +2401,8 @@ export interface components {
         };
         /** CreateRequest */
         CreateRequest: {
+            /** Bank Account Id */
+            bank_account_id?: string | null;
             /**
              * Closing Text
              * @default
@@ -2715,6 +2746,8 @@ export interface components {
         };
         /** DocumentResponse */
         DocumentResponse: {
+            /** Bank Account Id */
+            bank_account_id: string | null;
             /** Cancelled By Id */
             cancelled_by_id: string | null;
             /** Closing Text */
@@ -2810,6 +2843,8 @@ export interface components {
         DocumentType: "quote" | "invoice" | "cancellation";
         /** DraftRequest */
         DraftRequest: {
+            /** Bank Account Id */
+            bank_account_id?: string | null;
             /**
              * Closing Text
              * @default
@@ -2976,6 +3011,11 @@ export interface components {
              */
             week_start: string;
         };
+        /**
+         * ExportFormat
+         * @enum {string}
+         */
+        ExportFormat: "xlsx" | "csv" | "pdf";
         /** FiguresResponse */
         FiguresResponse: {
             currency: components["schemas"]["Currency"];
@@ -3001,7 +3041,7 @@ export interface components {
          * FooterAccounts
          * @enum {string}
          */
-        FooterAccounts: "invoice_currency" | "all";
+        FooterAccounts: "invoice_currency" | "all" | "none";
         /** Health */
         Health: {
             /** Database */
@@ -3117,6 +3157,8 @@ export interface components {
          * @description The invoice every period starts with.
          */
         InvoiceTemplateRequest: {
+            /** Bank Account Id */
+            bank_account_id?: string | null;
             /**
              * Closing Text
              * @default
@@ -3155,6 +3197,8 @@ export interface components {
         };
         /** InvoiceTemplateResponse */
         InvoiceTemplateResponse: {
+            /** Bank Account Id */
+            bank_account_id: string | null;
             /** Closing Text */
             closing_text: string;
             currency: components["schemas"]["Currency"];
@@ -10077,6 +10121,98 @@ export interface operations {
             };
             /** @description Unprocessable Content */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    exports_export_invoices: {
+        parameters: {
+            query: {
+                start: string;
+                end: string;
+                format?: components["schemas"]["ExportFormat"];
+                pdfs?: boolean;
+                language?: components["schemas"]["Language"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The list (Excel, CSV or PDF), or with ``pdfs`` a ZIP of the list and PDFs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                    "application/zip": string;
+                    "text/csv; charset=utf-8": string;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description A PDF is asked for, but no PDF service is configured or reachable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

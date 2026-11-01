@@ -22,7 +22,7 @@ Quando **emette** una fattura in Rhinvoice, questa riceve il suo numero definiti
 <Steps>
 
 1. Scriva la fattura come bozza (*Fatture → Nuova fattura*). Una bozza non ha ancora un numero e si salva da sola.
-2. Lasci vuoto *Data* per usare la data di emissione. Lasci vuoto *Scadenza* per usare le condizioni di pagamento del cliente o dell’azienda.
+2. Una nuova fattura riprende la data di oggi come *Data*. La svuoti per usare la data di emissione. Lasci vuoto *Scadenza* per usare le condizioni di pagamento del cliente o dell’azienda.
 3. Clicchi su **Emetti** e confermi *Emettere la fattura?*.
 
 </Steps>
@@ -31,7 +31,7 @@ Se manca qualcosa, Rhinvoice non emette la fattura e dice che cosa fare. Control
 
 - le **indicazioni obbligatorie del Suo paese**: in Svizzera e nel Liechtenstein il Suo numero IVA (a meno che non sia assoggettato all’IVA), in Germania il Suo numero fiscale o numero di partita IVA (non sulle fatture di piccolo importo fino a EUR 250), in Austria il Suo UID (non fino a EUR 400) e, sulle fatture oltre EUR 10’000 a imprese in Austria, anche l’UID del cliente; le piccole imprese in Austria non hanno bisogno di nessuno dei due,
 - almeno **una posizione con un importo** e un **totale superiore a zero**; gli accrediti nascono solo dagli storni,
-- un **conto bancario** nella valuta della fattura (*Impostazioni → Conti bancari*),
+- un **conto bancario** nella valuta della fattura (*Impostazioni → Conti bancari*): quello scelto in *Coordinate bancarie* o il conto predefinito della valuta ([conti bancari](/docs/it/invoices/bank-accounts/)),
 - per l’inversione contabile, il **numero IVA del cliente**,
 - la **data**: non nel futuro e non anteriore all’ultima fattura emessa, in modo che numeri e date crescano insieme.
 
@@ -41,7 +41,7 @@ Il numero segue la numerazione in *Impostazioni → Numerazioni*. Lo schema pred
 
 - **Il numero.** Viene assegnato nella stessa transazione della banca dati dell’emissione. Se qualcosa non riesce, nessun numero viene consumato, e la banca dati stessa impedisce i numeri doppi.
 - **Contenuto e aliquote IVA.** Posizioni, importi e l’aliquota IVA di ogni posizione sono fissati. Vale l’aliquota della data della prestazione; le modifiche di aliquota successive non si applicano retroattivamente.
-- **Mittente, destinatario e conto bancario.** Rhinvoice salva azienda, cliente e conto bancario così come erano al momento dell’emissione. Se più tardi cambia l’indirizzo di un cliente, la fattura resta com’era. Viene conservato anche il layout di stampa di quel giorno.
+- **Mittente, destinatario e conto bancario.** Rhinvoice salva azienda, cliente e conto bancario così come erano al momento dell’emissione. Se più tardi cambia l’indirizzo di un cliente, la fattura resta com’era. Vengono conservati anche il layout di stampa e il logo di quel giorno.
 - **Il PDF.** La fattura conserva il suo primo PDF, salvato con la sua somma di controllo SHA-256.
 
 Il blocco non è solo nell’interfaccia: la banca dati stessa rifiuta le modifiche al contenuto e l’eliminazione dei documenti emessi. I cambiamenti di stato come pagamenti e storno restano possibili. Lo *Cronologia* di ogni fattura registra quando è stata creata, emessa, pagata o stornata.
@@ -56,7 +56,7 @@ Elimini una bozza con *Elimina bozza* nel menu *Altre azioni* (il pulsante con t
 
 ## Duplicare una fattura
 
-*Altre azioni → Duplica* crea una nuova bozza con lo stesso contenuto: cliente, posizioni, testi, sconti e valuta. Data e scadenza sono vuote, e il numero arriva solo con l’emissione. Funziona con ogni fattura, anche stornata, e con le offerte. Le fatture di storno e le [fatture riprese](/docs/it/moving/old-invoices/) non si possono duplicare.
+*Altre azioni → Duplica* crea una nuova bozza con lo stesso contenuto: cliente, posizioni, testi, sconti e valuta. La copia porta la data di oggi e la scadenza è vuota; il numero arriva solo con l’emissione. Funziona con ogni fattura, anche stornata, e con le offerte. Le fatture di storno e le [fatture riprese](/docs/it/moving/old-invoices/) non si possono duplicare.
 
 ## Stornare una fattura
 

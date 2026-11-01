@@ -65,7 +65,7 @@ Chaque facture d’une entreprise suisse reçoit la **section paiement de la fac
 | avec un **QR-IBAN** | référence QR (QRR), 27 chiffres |
 | avec seulement un **IBAN** | référence créancier (SCOR, ISO 11649), commençant par `RF` |
 
-Rhinvoice construit les deux références à partir du numéro de facture, vous pouvez donc rapprocher les paiements de votre relevé bancaire de la facture. Chaque monnaie a un compte par défaut : une facture en EUR utilise votre compte EUR. Les brouillons montrent un emplacement réservé au même endroit, car la référence n’existe qu’une fois le numéro attribué.
+Rhinvoice construit les deux références à partir du numéro de facture, vous pouvez donc rapprocher les paiements de votre relevé bancaire de la facture. Chaque monnaie a un compte par défaut : une facture en EUR utilise votre compte par défaut en EUR, sauf si vous choisissez un autre compte dans l’éditeur. Si le compte appartient à un tiers, par exemple un prestataire financier, la facture QR indique son titulaire comme créancier, avec l’adresse du tiers ([compte bancaire par facture](/docs/fr/invoices/bank-accounts/)). <Since version="0.9.0" /> Les brouillons montrent un emplacement réservé au même endroit, car la référence n’existe qu’une fois le numéro attribué.
 
 Les **factures en euros à des clients de l’EEE** (UE, Islande, Norvège) reçoivent aussi le **code QR EPC** (GiroCode) : les applications bancaires de ces pays le lisent, mais la plupart ne lisent pas la facture QR. Pour un compte suisse, le code EPC demande le BIC; ajoutez-le au compte, sinon le code est omis.
 

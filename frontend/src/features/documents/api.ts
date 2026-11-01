@@ -191,6 +191,12 @@ export function useDocumentAction(action: Action) {
       // invoice points to its cancellation.
       if (document.id !== id) void client.invalidateQueries({ queryKey: documentKeys.detail(id) });
     },
+    // A failed response does not prove a failed action (e.g. the connection broke
+    // after the server committed): show the document as the server has it.
+    onError: (_error, id) => {
+      void client.invalidateQueries({ queryKey: documentKeys.detail(id) });
+      void client.invalidateQueries({ queryKey: documentKeys.lists });
+    },
   });
 }
 

@@ -30,6 +30,8 @@ from rhinvoice.application.document.handlers import DocumentHandlers, DraftInput
 from rhinvoice.application.errors import ConflictError
 from rhinvoice.application.identity.handlers import IdentityHandlers, Login
 from rhinvoice.application.importing.handlers import ImportHandlers
+from rhinvoice.application.text.handlers import TextHandlers
+from rhinvoice.domain.company.bank_account import BankAccount
 from rhinvoice.domain.company.company import Company
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.document.document import (
@@ -40,9 +42,11 @@ from rhinvoice.domain.document.document import (
 )
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.country import Country, CountryCode
+from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.tax.vat_number import VatNumber
+from rhinvoice.domain.text.template import TextKind
 from rhinvoice.infrastructure.importing.reader import SpreadsheetReader
 from tests.helpers import raises_exactly
 from tests.unit.application.conftest import NOW
@@ -73,6 +77,7 @@ def demo(store: Store, clock: FixedClock) -> DemoHandlers:
         articles=ArticleHandlers(uow=uow, clock=clock),
         documents=DocumentHandlers(uow=uow, clock=clock),
         imports=ImportHandlers(uow=uow, clock=clock, reader=SpreadsheetReader()),
+        texts=TextHandlers(uow=uow),
     )
 
 
@@ -94,6 +99,10 @@ def austrian(**overrides: object) -> Company:
     }
     values.update(overrides)
     return factories.company(**values)
+
+
+def own_accounts(store: Store) -> list[BankAccount]:
+    return [account for account in store.bank_accounts.values() if not account.third_party]
 
 
 def documents_of(store: Store) -> list[Document]:
@@ -146,10 +155,13 @@ def test_a_swiss_installation_gets_invoices_since_january_of_last_year(
     assert (result.customers, result.articles, result.bank_accounts, result.quotes) == (
         len(CUSTOMERS),
         len(ARTICLES),
-        2,
+        3,
         4,
     )
-    accounts = sorted(store.bank_accounts.values(), key=lambda account: account.currency.value)
+    accounts = sorted(
+        (account for account in store.bank_accounts.values() if not account.third_party),
+        key=lambda account: account.currency.value,
+    )
     assert [(account.currency, account.iban.value, account.holder) for account in accounts] == [
         (Currency.CHF, "CH9300762011623852957", "Pixelwerk GmbH"),
         (Currency.EUR, "CH5604835012345678009", "Pixelwerk GmbH"),
@@ -240,8 +252,8 @@ def test_any_day_of_the_year(
 def test_a_german_installation_invoices_mostly_at_home(demo: DemoHandlers, store: Store) -> None:
     store.company = german()
     result = demo.seed()
-    assert result.bank_accounts == 1
-    [account] = store.bank_accounts.values()
+    assert result.bank_accounts == 2
+    [account] = own_accounts(store)
     assert account.iban.value == "DE89370400440532013000"
     assert account.bic is not None
     assert account.bic.value == "COBADEFFXXX"
@@ -261,11 +273,67 @@ def test_a_german_installation_invoices_mostly_at_home(demo: DemoHandlers, store
 def test_an_austrian_installation(demo: DemoHandlers, store: Store) -> None:
     store.company = austrian()
     result = demo.seed()
-    assert result.bank_accounts == 1
-    [account] = store.bank_accounts.values()
+    assert result.bank_accounts == 2
+    [account] = own_accounts(store)
     assert account.iban.value == "AT611904300234573201"
     countries = Counter(customer.address.country.value for customer in store.customers.values())
     assert countries["AT"] >= len(CUSTOMERS) // 2
+
+
+@pytest.mark.parametrize(
+    ("company", "expected"),
+    [
+        (factories.company(), ("Muster Factoring AG", "Zürich", Language.DE, "Wir haben")),
+        (german(), ("Muster Factoring GmbH", "Düsseldorf", Language.DE, "Wir haben")),
+        (austrian(), ("Muster Factoring GmbH", "Wien", Language.DE, "Wir haben")),
+        (
+            factories.company(default_language=Language.FR),
+            ("Muster Factoring AG", "Zürich", Language.FR, "Nous avons"),
+        ),
+    ],
+)
+def test_a_provider_collects_the_newest_open_invoice(
+    demo: DemoHandlers, store: Store, company: Company, expected: tuple[str, str, Language, str]
+) -> None:
+    holder, city, language, start = expected
+    store.company = company
+    demo.seed()
+    [provider] = [account for account in store.bank_accounts.values() if account.third_party]
+    assert (provider.holder, provider.currency) == (holder, company.default_currency)
+    assert provider.holder_address is not None
+    assert provider.holder_address.city == city
+    assert not provider.is_default
+    # Offered as payment terms, not put into new invoices.
+    [template] = [
+        template for template in store.text_templates.values() if "{kontoinhaber}" in template.text
+    ]
+    assert (template.kind, template.language, template.is_default) == (
+        TextKind.PAYMENT,
+        language,
+        False,
+    )
+    assert template.text.startswith(start)
+    [collected] = [
+        document
+        for document in documents_of(store)
+        if document.content.bank_account_id == provider.id
+    ]
+    assert collected.content.payment_text == template.text
+    assert collected.content.currency is company.default_currency
+    assert collected.display_status(TODAY) is DisplayStatus.ISSUED
+    # The newest open invoice: every later one is cancelled or in another currency.
+    later = [
+        document
+        for document in documents_of(store)
+        if document.type is DocumentType.INVOICE
+        and not document.is_draft
+        and (document.content.issue_date or TODAY) > (collected.content.issue_date or TODAY)
+    ]
+    assert all(
+        document.status is DocumentStatus.CANCELLED
+        or document.content.currency is not company.default_currency
+        for document in later
+    )
 
 
 def test_the_customers_live_where_the_company_does() -> None:
@@ -307,8 +375,8 @@ def test_missing_accounts_are_added_per_currency(demo: DemoHandlers, store: Stor
     own = factories.bank_account(is_default=True)
     store.bank_accounts[own.id] = own
     result = demo.seed()
-    assert result.bank_accounts == 1
-    euro = [account for account in store.bank_accounts.values() if account.id != own.id]
+    assert result.bank_accounts == 2
+    euro = [account for account in own_accounts(store) if account.id != own.id]
     assert [(account.currency, account.is_default) for account in euro] == [(Currency.EUR, True)]
     assert store.bank_accounts[own.id] == own
 

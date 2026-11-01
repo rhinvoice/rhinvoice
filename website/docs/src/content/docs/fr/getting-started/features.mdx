@@ -5,7 +5,7 @@ faq:
   - q: Certaines fonctions de Rhinvoice sont-elles payantes?
     a: "Non. Toutes les fonctions de cette page font partie de Rhinvoice, gratuitement sous l’AGPL. Il n’existe ni version payante ni module complémentaire."
   - q: Dans quelles monnaies Rhinvoice établit-il des factures?
-    a: "En francs suisses (CHF) et en euros (EUR). Les articles ont un prix par monnaie, chaque compte bancaire a une monnaie, et une facture utilise le compte par défaut de sa monnaie."
+    a: "En francs suisses (CHF) et en euros (EUR). Les articles ont un prix par monnaie, chaque compte bancaire a une monnaie, et une facture utilise le compte par défaut de sa monnaie ou un autre compte que vous choisissez dans l’éditeur."
   - q: Que ne fait pas Rhinvoice?
     a: "Rhinvoice n’est pas un logiciel de comptabilité : ni comptabilité, ni plan comptable, ni décompte TVA, ni salaires. Ce n’est pas non plus un service hébergé, une boutique en ligne ou une caisse."
   - q: Où voir les nouveautés?
@@ -40,6 +40,8 @@ Rhinvoice établit des **offres, des factures, des factures d’annulation et de
 - Listes avec vues (*Brouillons*, *Ouvertes*, *En retard*, *Payées*, *Annulées*, *Passées en perte*), filtres par année et par client, totaux
 - Recherche plein texte sur le numéro, le client, l’objet et les lignes
 - Afficher, télécharger et imprimer le PDF
+- Export des factures d’un mois, d’un trimestre, d’une année ou d’une période libre pour la comptabilité en Excel, CSV ou liste PDF, avec tous les PDF en ZIP si vous le souhaitez ([export](/docs/fr/invoices/export/))
+- *Partager* transmet le PDF d’un document émis au menu de partage du téléphone (et de Safari sur Mac), par exemple vers la messagerie ou une application de chat
 
 Guides : [Votre première facture](/docs/fr/getting-started/first-invoice/), [Offres](/docs/fr/invoices/quotes/), [Émettre et annuler](/docs/fr/invoices/issue-and-cancel/)
 
@@ -82,7 +84,9 @@ Guides : [Suisse](/docs/fr/countries/switzerland/), [Liechtenstein](/docs/fr/cou
 - Code QR EPC (GiroCode) sur les factures en euros d’Allemagne et d’Autriche
 - Code QR EPC aussi sur les factures en euros de Suisse et du Liechtenstein à des clients de l’EEE, si le compte en euros a un BIC
 - Plusieurs comptes bancaires avec IBAN, QR-IBAN, BIC et monnaie, un compte par défaut par monnaie
-- Pied de page avec tous les comptes ou seulement le compte de la monnaie de la facture
+- Choisir le compte bancaire par offre et par facture quand la monnaie en a plusieurs ([compte bancaire par facture](/docs/fr/invoices/bank-accounts/))
+- Comptes de tiers, par exemple d’un prestataire financier : la facture le nomme comme bénéficiaire avec IBAN et BIC, aussi dans la facture QR et la facture électronique
+- Pied de page avec tous les comptes, seulement le compte de la facture ou sans coordonnées bancaires
 
 Guides : [Suisse](/docs/fr/countries/switzerland/), [Allemagne](/docs/fr/countries/germany/)
 
@@ -115,8 +119,8 @@ Guide : [Clients et articles](/docs/fr/moving/customers-and-articles/)
 
 ## Textes et modèle d’impression
 
-- Modèles de texte pour l’introduction, les conditions de paiement et la conclusion, par type de document, l’un d’eux par défaut
-- Variables dans les textes : `{nummer}`, `{datum}`, `{faellig}`, `{kunde}`, `{betrag}`, `{waehrung}`, `{firma}`
+- Modèles de texte pour l’introduction, les conditions de paiement et la conclusion, par type de document, l’un d’eux par défaut; plusieurs s’impriment en paragraphes avec un petit espace
+- Variables dans les textes : `{nummer}`, `{datum}`, `{faellig}`, `{kunde}`, `{betrag}`, `{waehrung}`, `{firma}`, `{kontoinhaber}`, `{kontoinhaber_adresse}`
 - Les mentions légales du pays en tant que proposition, avec votre propre formulation si vous le souhaitez
 - Documents en allemand, anglais, français ou italien, au choix par document, par client ou par défaut pour l’entreprise
 - Trois modèles d’impression : *Classique*, *Moderne*, *Sobre*

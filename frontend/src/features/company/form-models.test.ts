@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  bankAccountFieldFor,
   bankAccountSchema,
   bankAccountToForm,
   emptyBankAccount,
@@ -152,7 +153,66 @@ describe("bank account form", () => {
       qr_iban: null,
       bic: null,
       is_default: true,
+      third_party: false,
+      holder_address: null,
     });
-    expect(form).toMatchObject({ qr_iban: "", bic: "", iban: "LI21 0881 0000 2324 013A A" });
+    expect(form).toMatchObject({
+      qr_iban: "",
+      bic: "",
+      iban: "LI21 0881 0000 2324 013A A",
+      third_party: false,
+      holder_postal_code: "",
+      holder_country: "CH",
+    });
+  });
+
+  it("asks a third party's account for the holder's address", () => {
+    expect(messages({ third_party: true })).toEqual({
+      holder_postal_code: "Bitte ausfüllen.",
+      holder_city: "Bitte ausfüllen.",
+    });
+    const address = { street: "Ringstrasse", house_number: "5", supplement: "" };
+    const thirdParty = {
+      ...valid,
+      third_party: true,
+      holder_street: address.street,
+      holder_house_number: address.house_number,
+      holder_postal_code: "1010",
+      holder_city: "Wien",
+      holder_country: "AT" as const,
+    };
+    expect(messages(thirdParty)).toEqual({});
+    const request = bankRequest(thirdParty);
+    expect(request.third_party).toBe(true);
+    expect(request.holder_address).toEqual({
+      ...address,
+      postal_code: "1010",
+      city: "Wien",
+      country: "AT",
+    });
+    // Own accounts send no address, also when one was typed before unticking.
+    expect(bankRequest({ ...thirdParty, third_party: false }).holder_address).toBeNull();
+    const stored = bankAccountToForm({
+      id: "2",
+      currency: "CHF",
+      bank_name: "Bank",
+      holder: "Muster",
+      iban: "CH9300762011623852957",
+      iban_formatted: "CH93 0076 2011 6238 5295 7",
+      qr_iban: null,
+      bic: null,
+      is_default: false,
+      third_party: true,
+      holder_address: request.holder_address ?? null,
+    });
+    expect(stored).toMatchObject({ holder_city: "Wien", holder_country: "AT", third_party: true });
+    expect(emptyBankAccount("EUR", "Muster", "DE").holder_country).toBe("DE");
+  });
+
+  it("maps the server's fields onto the form", () => {
+    expect(bankAccountFieldFor("holder_address.city")).toBe("holder_city");
+    expect(bankAccountFieldFor("holder_address")).toBe("holder_postal_code");
+    expect(bankAccountFieldFor("iban")).toBe("iban");
+    expect(bankAccountFieldFor("unknown")).toBeNull();
   });
 });

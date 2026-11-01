@@ -225,6 +225,10 @@ export const en: Catalog<MessageKey> = {
     "This action is not possible in the current status. Please reload the page.",
   "error.bank_account_missing":
     "There is no bank account for this currency. Please add one under Settings → Bank accounts.",
+  "error.bank_account_unknown": "This bank account no longer exists. Please choose another one.",
+  "error.bank_account_currency": "The bank account is in a different currency than the document.",
+  "error.holder_address_missing":
+    "A third party's account needs the address of the account holder.",
   "error.no_positions": "The document needs at least one line with an amount.",
   "error.non_positive_total":
     "The total of an invoice must be greater than zero. Credits are created by cancelling.",
@@ -258,7 +262,7 @@ export const en: Catalog<MessageKey> = {
   "error.payment_before_write_off":
     "This payment came in before the write-off. Take the write-off back first.",
   "error.unknown_placeholder":
-    "Unknown placeholder. Available are {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung} and {firma}.",
+    "Unknown placeholder. Available are {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung}, {firma}, {kontoinhaber} and {kontoinhaber_adresse}.",
   "error.already_converted": "An invoice has already been created from this quote.",
   "error.pageDescription": "This page could not be shown. Your saved data is not affected.",
 
@@ -485,6 +489,8 @@ export const en: Catalog<MessageKey> = {
   "texts.placeholder.betrag": "amount",
   "texts.placeholder.waehrung": "currency",
   "texts.placeholder.firma": "your company",
+  "texts.placeholder.kontoinhaber": "account holder",
+  "texts.placeholder.kontoinhaber_adresse": "account holder's address",
   "texts.useAsDefault": "Insert into new documents (default)",
   "texts.notices": "Legal notices",
   "texts.noticesHint":
@@ -541,7 +547,7 @@ export const en: Catalog<MessageKey> = {
   "language.it": "Italian",
   "bank.title": "Bank accounts",
   "bank.description":
-    "Accounts for payment details and QR codes. One account per currency is the default.",
+    "Accounts for payment details and QR codes. One account per currency is the default; a document can choose another.",
   "bank.add": "Add account",
   "bank.edit": "Edit account",
   "bank.emptyTitle": "No bank account yet",
@@ -556,10 +562,15 @@ export const en: Catalog<MessageKey> = {
     "Needed for the EPC QR code on euro invoices to customers in the EU: without the BIC there is none.",
   "bank.currency": "Currency",
   "bank.isDefault": "Default account for this currency",
+  "bank.thirdParty": "Account belongs to a third party (e.g. a financial service provider)",
+  "bank.thirdPartyHint":
+    "Documents paid to this account name the account holder as payee. Their address appears on the QR payment part.",
+  "bank.thirdPartyBadge": "Third-party account",
+  "bank.holderAddress": "Address of the account holder",
   "bank.saved": "Bank account saved.",
   "bank.deleteTitle": "Delete bank account?",
   "bank.deleteDescription":
-    "Issued documents keep their account details. New documents will use another account.",
+    "Issued documents keep their account details. Drafts and new documents use the default account of their currency.",
   "bank.deleted": "Bank account deleted.",
   "numbering.title": "Number sequences",
   "numbering.description": "Invoice numbers are assigned only when issuing – gapless and unique.",
@@ -775,6 +786,7 @@ export const en: Catalog<MessageKey> = {
   "documents.pdf": "PDF",
   "documents.download": "Download",
   "documents.print": "Print",
+  "documents.share": "Share",
   "documents.viewMode": "Display",
   "documents.viewDocument": "Document",
   "documents.viewDetails": "Details",
@@ -874,8 +886,12 @@ export const en: Catalog<MessageKey> = {
   "documents.language": "Language",
   "documents.sectionDates": "Dates",
   "documents.issueDate": "Date",
-  "documents.issueDateHint": "Leave empty to use the date of issue.",
+  "documents.issueDateHint": "Set to today. Leave empty to use the date of issue.",
   "documents.dueDate": "Due date",
+  "documents.bankAccount": "Bank details",
+  "documents.bankAccountHint": "The account this document is paid to.",
+  "documents.bankAccountDefault": "(default)",
+  "documents.bankAccountThirdParty": "(third party)",
   "documents.dueDateHint": "Leave empty to use the payment terms of the customer or company.",
   "documents.validUntil": "Valid until",
   "documents.validUntilHint": "Leave empty for 30 days from the date.",
@@ -1424,8 +1440,9 @@ export const en: Catalog<MessageKey> = {
   "printLayout.footerAccounts": "Bank details",
   "printLayout.footerAccounts.all": "All accounts",
   "printLayout.footerAccounts.invoice_currency": "Invoice currency only",
+  "printLayout.footerAccounts.none": "None",
   "printLayout.footerHint":
-    "Accounts of one bank are listed together. The payment QR code always uses the account of the invoice currency.",
+    "Accounts of one bank are listed together. Third-party accounts appear only on documents paid to them. The payment QR code always uses the account the invoice is paid to.",
   "printLayout.reset": "Reset",
   "printLayout.issuedStay": "Applies to new PDFs. Issued documents keep their PDF.",
   "printLayout.preview": "Preview of the print template",
@@ -1676,4 +1693,35 @@ export const en: Catalog<MessageKey> = {
   "mail.kind.reminder_2": "Second reminder",
   "mail.kind.reminder_3": "Final reminder",
   "mail.reminderSent": "{level} sent by e-mail",
+
+  "export.open": "Export",
+  "export.title": "Export invoices",
+  "export.description":
+    "The issued invoices and credit notes of a period by invoice date, for your bookkeeping or tax adviser.",
+  "export.period": "Period",
+  "export.period.month": "Month",
+  "export.period.quarter": "Quarter",
+  "export.period.year": "Year",
+  "export.period.custom": "Custom",
+  "export.month": "Month",
+  "export.quarter": "Quarter",
+  "export.quarterName": "Q{quarter}",
+  "export.year": "Year",
+  "export.from": "From",
+  "export.to": "To",
+  "export.problem.missing": "Please enter both days.",
+  "export.problem.reversed": "The end lies before the start.",
+  "export.problem.tooLong": "At most ten years at a time.",
+  "export.format": "Format",
+  "export.format.xlsx": "Excel",
+  "export.format.csv": "CSV",
+  "export.format.pdf": "PDF",
+  "export.withPdfs": "Add the invoice PDFs as a ZIP",
+  "export.withPdfsHint":
+    "One ZIP file with the list and the PDF of every invoice; the column “File” names it.",
+  "export.download": "Download",
+  "export.preparing": "Preparing …",
+  "error.period_reversed": "The period ends before it starts.",
+  "error.period_too_long": "A period spans at most ten years.",
+  "error.export_busy": "Another export is being prepared. Please try again in a moment.",
 };

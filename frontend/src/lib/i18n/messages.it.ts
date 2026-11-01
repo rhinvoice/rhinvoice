@@ -241,6 +241,11 @@ export const it: Catalog<MessageKey> = {
   "error.invalid_state": "Questa azione non è possibile nello stato attuale. Ricarichi la pagina.",
   "error.bank_account_missing":
     "Per questa valuta non è registrato alcun conto bancario. Lo aggiunga in Impostazioni → Conti bancari.",
+  "error.bank_account_unknown":
+    "Questo conto bancario non esiste più. La preghiamo di sceglierne un altro.",
+  "error.bank_account_currency":
+    "Il conto bancario è in una valuta diversa da quella del documento.",
+  "error.holder_address_missing": "Il conto di terzi richiede l’indirizzo del titolare.",
   "error.no_positions": "Il documento richiede almeno una posizione con un importo.",
   "error.non_positive_total":
     "Il totale di una fattura deve essere maggiore di zero. Le note di credito nascono stornando.",
@@ -276,7 +281,7 @@ export const it: Catalog<MessageKey> = {
   "error.payment_before_write_off":
     "Questo pagamento è pervenuto prima della registrazione come perdita. Annulli prima la registrazione come perdita.",
   "error.unknown_placeholder":
-    "Segnaposto sconosciuto. Sono possibili {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung} e {firma}.",
+    "Segnaposto sconosciuto. Sono possibili {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung}, {firma}, {kontoinhaber} e {kontoinhaber_adresse}.",
   "error.already_converted": "Da questa offerta è già stata creata una fattura.",
   "error.pageDescription":
     "Non è stato possibile visualizzare questa pagina. I Suoi dati salvati non sono interessati.",
@@ -512,6 +517,8 @@ export const it: Catalog<MessageKey> = {
   "texts.placeholder.betrag": "Importo",
   "texts.placeholder.waehrung": "Valuta",
   "texts.placeholder.firma": "La sua azienda",
+  "texts.placeholder.kontoinhaber": "Intestatario del conto",
+  "texts.placeholder.kontoinhaber_adresse": "Indirizzo dell’intestatario del conto",
   "texts.useAsDefault": "Inserisci nei nuovi documenti (predefinito)",
   "texts.notices": "Indicazioni legali",
   "texts.noticesHint":
@@ -571,7 +578,7 @@ export const it: Catalog<MessageKey> = {
   "language.it": "Italiano",
   "bank.title": "Conti bancari",
   "bank.description":
-    "Conti per i dati di pagamento e i codici QR. Per ogni valuta un conto è quello predefinito.",
+    "Conti per i dati di pagamento e i codici QR. Per ogni valuta un conto è quello predefinito; un documento può sceglierne un altro.",
   "bank.add": "Aggiungi conto",
   "bank.edit": "Modifica conto",
   "bank.emptyTitle": "Ancora nessun conto bancario",
@@ -586,10 +593,15 @@ export const it: Catalog<MessageKey> = {
     "Necessario per il codice QR EPC sulle fatture in euro ai clienti nell’UE: senza BIC non viene stampato.",
   "bank.currency": "Valuta",
   "bank.isDefault": "Conto predefinito per questa valuta",
+  "bank.thirdParty": "Il conto appartiene a terzi (p. es. un fornitore di servizi finanziari)",
+  "bank.thirdPartyHint":
+    "I documenti pagati su questo conto indicano il titolare come beneficiario. Il suo indirizzo figura nella sezione pagamento QR.",
+  "bank.thirdPartyBadge": "Conto di terzi",
+  "bank.holderAddress": "Indirizzo del titolare del conto",
   "bank.saved": "Conto bancario salvato.",
   "bank.deleteTitle": "Eliminare il conto bancario?",
   "bank.deleteDescription":
-    "I documenti già emessi mantengono i loro dati del conto. I nuovi documenti useranno un altro conto.",
+    "I documenti già emessi mantengono i loro dati del conto. Le bozze e i nuovi documenti useranno il conto predefinito della loro valuta.",
   "bank.deleted": "Conto bancario eliminato.",
   "numbering.title": "Numerazioni",
   "numbering.description":
@@ -812,6 +824,7 @@ export const it: Catalog<MessageKey> = {
   "documents.pdf": "PDF",
   "documents.download": "Scarica",
   "documents.print": "Stampa",
+  "documents.share": "Condividi",
   "documents.viewMode": "Visualizzazione",
   "documents.viewDocument": "Documento",
   "documents.viewDetails": "Dettagli",
@@ -913,8 +926,13 @@ export const it: Catalog<MessageKey> = {
   "documents.language": "Lingua",
   "documents.sectionDates": "Date",
   "documents.issueDate": "Data",
-  "documents.issueDateHint": "Lasciare vuoto per usare la data di emissione.",
+  "documents.issueDateHint":
+    "Precompilata con la data di oggi. Lasciare vuoto per usare la data di emissione.",
   "documents.dueDate": "Scadenza il",
+  "documents.bankAccount": "Coordinate bancarie",
+  "documents.bankAccountHint": "Il conto su cui viene pagato questo documento.",
+  "documents.bankAccountDefault": "(predefinito)",
+  "documents.bankAccountThirdParty": "(conto di terzi)",
   "documents.dueDateHint":
     "Lasciare vuoto per usare il termine di pagamento del cliente o dell’azienda.",
   "documents.validUntil": "Valida fino al",
@@ -1474,8 +1492,9 @@ export const it: Catalog<MessageKey> = {
   "printLayout.footerAccounts": "Coordinate bancarie",
   "printLayout.footerAccounts.all": "Tutti i conti",
   "printLayout.footerAccounts.invoice_currency": "Solo valuta della fattura",
+  "printLayout.footerAccounts.none": "Nessuna",
   "printLayout.footerHint":
-    "I conti della stessa banca figurano insieme. Il codice QR di pagamento usa sempre il conto nella valuta della fattura.",
+    "I conti della stessa banca figurano insieme. I conti di terzi appaiono solo sui documenti pagati a loro. Il codice QR di pagamento usa sempre il conto su cui viene pagata la fattura.",
   "printLayout.reset": "Ripristina",
   "printLayout.issuedStay": "Vale per i nuovi PDF. I documenti emessi mantengono il loro PDF.",
   "printLayout.preview": "Anteprima del layout di stampa",
@@ -1737,4 +1756,35 @@ export const it: Catalog<MessageKey> = {
   "mail.kind.reminder_2": "1° sollecito",
   "mail.kind.reminder_3": "2° sollecito",
   "mail.reminderSent": "{level} inviato per e-mail",
+
+  "export.open": "Esporta",
+  "export.title": "Esporta fatture",
+  "export.description":
+    "Le fatture e note di credito emesse in un periodo secondo la data della fattura, per la contabilità o la fiduciaria.",
+  "export.period": "Periodo",
+  "export.period.month": "Mese",
+  "export.period.quarter": "Trimestre",
+  "export.period.year": "Anno",
+  "export.period.custom": "Libero",
+  "export.month": "Mese",
+  "export.quarter": "Trimestre",
+  "export.quarterName": "{quarter}° trimestre",
+  "export.year": "Anno",
+  "export.from": "Dal",
+  "export.to": "Al",
+  "export.problem.missing": "Indichi entrambi i giorni.",
+  "export.problem.reversed": "La fine precede l’inizio.",
+  "export.problem.tooLong": "Al massimo dieci anni alla volta.",
+  "export.format": "Formato",
+  "export.format.xlsx": "Excel",
+  "export.format.csv": "CSV",
+  "export.format.pdf": "PDF",
+  "export.withPdfs": "Allega i PDF delle fatture (ZIP)",
+  "export.withPdfsHint":
+    "Un file ZIP con l’elenco e il PDF di ogni fattura; la colonna «File» ne indica il nome.",
+  "export.download": "Scarica",
+  "export.preparing": "Preparazione …",
+  "error.period_reversed": "Il periodo termina prima di iniziare.",
+  "error.period_too_long": "Un periodo comprende al massimo dieci anni.",
+  "error.export_busy": "Un’altra esportazione è in preparazione. Riprovi tra un momento.",
 };

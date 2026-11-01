@@ -3,7 +3,7 @@ title: Frequently asked questions about Rhinvoice
 description: Answers about Rhinvoice, the free open-source invoicing program for CH, LI, DE and AT. Cost, licence, data, GoBD, backups, e-invoices, Docker, demo.
 faq:
   - q: What does Rhinvoice cost?
-    a: Nothing. Rhinvoice is free and open source. There is no paid version and no hosted service, and there are no plans to turn it into a paid hosted service. You run Rhinvoice on your own server or computer.
+    a: Nothing. Rhinvoice is free and open source. There is no paid version and no hosted service. You run Rhinvoice on your own server or computer.
   - q: Under which licence is Rhinvoice published?
     a: The GNU Affero General Public License v3.0 or later (AGPL-3.0). You may use, change and share Rhinvoice freely. If you offer a changed version to others as a service, you share your changes under the same licence.
   - q: Which countries is Rhinvoice made for?
@@ -27,13 +27,17 @@ faq:
   - q: Does Rhinvoice run on a Raspberry Pi or a NAS?
     a: Yes. Rhinvoice is published for linux/amd64 and linux/arm64, so also for the Raspberry Pi 4 and 5. It runs on a NAS that can run Docker with Docker Compose.
   - q: Can I use Rhinvoice on my phone?
-    a: Yes. The interface adapts to the phone. On the way you check the status of invoices, mark them as paid, and open and share the PDF.
+    a: Yes. The interface adapts to the phone. On the way you check the status of invoices, mark them as paid, and open the PDF or pass it on with *Share* through the phone's share sheet.
   - q: Where do I get help, and is there a commercial licence?
     a: Questions and ideas go to the GitHub Discussions, bugs to the GitHub Issues of rhinvoice/rhinvoice. For a commercial licence, a partnership or taking over the project, write to hello@rhinvoice.com.
   - q: Can I try Rhinvoice without installing it?
     a: Yes, in the public demo for Switzerland (ch.rhinvoice.com), Germany (de.rhinvoice.com) and Austria (at.rhinvoice.com). It resets every hour and takes no uploads, so no imports, no logo and no files. It sends no e-mail.
   - q: "Why does my banking app reject the QR code from the demo?"
     a: "The demo uses official example accounts, not real ones. For Swiss invoices in CHF it is the example QR-IBAN from SIX, whose bank code belongs to no bank, so banking apps reject the QR code. The other QR codes scan, but they lead to example accounts too: please do not transfer anything. In your own installation the QR code carries your account, and your customers scan it as usual."
+  - q: Can invoices be paid to another account, for example a factoring company's?
+    a: "Yes. Since version 0.9.0 you can keep several bank accounts per currency and choose one per invoice in the editor. An account can be marked as a third party's, for example a financial service provider's: the invoice then names it as payee with IBAN and BIC, and the QR-bill and e-invoice name it as payee."
+  - q: Can I export my invoices for my accountant?
+    a: "Yes. Since version 0.9.0, \"Invoices → Export\" downloads the issued invoices and credit notes of a month, quarter, year or custom period as Excel, CSV or PDF, with totals per currency. Optionally every invoice PDF comes along in one ZIP file."
 ---
 
 import Faq from "../../../components/Faq.astro";

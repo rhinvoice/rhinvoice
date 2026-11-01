@@ -27,14 +27,19 @@ issued documents open as a document.
   no longer match the preview.
 - **Archiving**: right after issuing or cancelling, the PDF is generated and stored
   (`document_pdfs`); its SHA-256 is stored on the document (`pdf_sha256`). If Gotenberg is unreachable at that point,
-  issuing is still possible and the PDF is archived on first retrieval. Database triggers prevent
+  issuing is still possible (also when generating the PDF fails otherwise) and the PDF is archived on first
+  retrieval. Everything it shows is frozen with the document, the logo too: issuing keeps it in `issued_logos`
+  under its SHA-256 and the snapshot names that hash (since 0.9), so a PDF archived later looks as on the day of
+  issuing. Database triggers prevent
   modification, deletion and TRUNCATE and check that the content matches the hash. Later retrievals return exactly this
   file; only verified PDFs (`application/pdf`, `%PDF-`) are archived. Drafts are generated anew every time.
-  The HTML view of issued documents is rendered with the current logo/theme; the PDF is authoritative.
+  The HTML view of issued documents is rendered with the logo of that day and the current theme; the PDF is
+  authoritative.
 - **Multiple pages**: page margins via `@page`, the table header repeats, the footer is printed on every page via the
   margin boxes `@bottom-left/center/right` (fixed elements shift from page to page in Chromium).
 - **Printing** in the browser prints the HTML page (identical to the PDF) via an invisible window.
 
 ## Consequences
 - Without Gotenberg (`RHINVOICE_GOTENBERG_URL` empty) everything works except PDF (response 503 `unavailable`).
-- A changed template or a new logo does not change PDFs that are already archived.
+- A changed template or a new logo does not change PDFs that are already archived. A new logo does not change
+  the PDF of a document issued before either; kept logos are never deleted (a few per installation).

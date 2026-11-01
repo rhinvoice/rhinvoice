@@ -4,9 +4,9 @@ Thank you for contributing to Rhinvoice. This agreement makes clear what you all
 your contribution. It is a licence, not a transfer: you keep the copyright of everything you
 contribute.
 
-You accept this agreement by ticking the box in your pull request (or by signing it through the
-CLA bot, once it asks you to). It applies to all your present and future contributions to
-Rhinvoice.
+You accept this agreement once, through CLA assistant: in your first pull request a bot posts a
+link, and you sign with your GitHub account. It applies to all your present and future
+contributions to Rhinvoice.
 
 ## 1. Definitions
 

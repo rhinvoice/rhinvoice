@@ -48,6 +48,7 @@ from rhinvoice.domain.document.calculation import Totals
 from rhinvoice.domain.document.document import (
     MAX_LINES,
     DisplayStatus,
+    Document,
     DocumentStatus,
     DocumentType,
     EventKind,
@@ -123,6 +124,8 @@ class DraftRequest(ApiModel):
     intro_text: str = text(4000)
     payment_text: str = text(4000)
     closing_text: str = text(4000)
+    bank_account_id: UUID | None = None
+    """The account to pay to; None: the default account of the currency."""
 
     def to_input(self) -> DraftInput:
         return DraftInput(
@@ -144,6 +147,7 @@ class DraftRequest(ApiModel):
             intro_text=self.intro_text,
             payment_text=self.payment_text,
             closing_text=self.closing_text,
+            bank_account_id=self.bank_account_id,
         )
 
 
@@ -290,6 +294,13 @@ class RecipientResponse(ApiModel):
     vat_number: str | None
 
 
+def _paid_to(document: Document) -> UUID | None:
+    if document.snapshot is None:
+        return document.content.bank_account_id
+    account = document.snapshot.bank_account
+    return None if account is None else account.id
+
+
 class DocumentResponse(ApiModel):
     id: UUID
     type: DocumentType
@@ -316,6 +327,9 @@ class DocumentResponse(ApiModel):
     intro_text: str
     payment_text: str
     closing_text: str
+    bank_account_id: UUID | None
+    """Drafts: the chosen account, None for the default of the currency. Issued documents:
+    the account frozen when issuing (None when it had none, e.g. cancellations)."""
     notice: str
     """Legal notices of the treatments, one per line; frozen once issued."""
     lines: list[LineResponse]
@@ -383,6 +397,7 @@ class DocumentResponse(ApiModel):
             intro_text=content.intro_text,
             payment_text=content.payment_text,
             closing_text=content.closing_text,
+            bank_account_id=_paid_to(document),
             notice=view.notice,
             lines=[
                 LineResponse(
@@ -1029,8 +1044,17 @@ def issue_document(
 
 
 def _archive(container: Container, document_id: UUID) -> None:
-    """Freeze the PDF right after issuing, so later template or logo changes do not affect it."""
-    if not container.printing.archive(document_id):
+    """Freeze the PDF right after issuing, so later template or logo changes do not affect it.
+
+    The document is issued already: a failure here must not report the issue as
+    failed. The PDF is then archived on the first download, which reports the error.
+    """
+    try:
+        archived = container.printing.archive(document_id)
+    except Exception:
+        logger.exception("PDF of document %s not archived yet", document_id)
+        return
+    if not archived:
         logger.warning("PDF of document %s not archived yet: no PDF service", document_id)
 
 

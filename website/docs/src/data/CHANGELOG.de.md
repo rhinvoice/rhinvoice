@@ -5,6 +5,52 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.9.0] – 2026-11-01
+
+### Neu
+- Das Bankkonto lässt sich pro Angebot und Rechnung wählen: Hat die Währung des Dokuments mehr
+  als ein Konto, zeigt die Karte *Daten* im Editor die *Bankverbindung*, mit dem Standardkonto
+  vorgewählt. Wiederkehrende Rechnungen geben die Wahl an ihre Rechnungen weiter. Entwürfe und
+  Pläne, deren Konto gelöscht wird, nehmen wieder das Standardkonto; ausgestellte Dokumente
+  behalten ihres (#45).
+- Konten von Dritten, etwa eines Finanzdienstleisters, der die Zahlung einzieht: *Konto gehört
+  einem Dritten* ankreuzen und die Adresse des Kontoinhabers erfassen. Dokumente auf dieses Konto
+  nennen Zahlungsempfänger, IBAN und BIC in einer kleinen Tabelle, die mit den
+  Zahlungsbedingungen auf einer Seite bleibt, die QR-Rechnung nennt ihn mit dieser Adresse, die
+  E-Rechnung nennt ihn als Zahlungsempfänger (BG-10). In der Fusszeile erscheint ein solches
+  Konto nur auf Dokumenten, die an es bezahlt werden. Die Demos zeigen eine Rechnung, die ein
+  solcher Dienstleister einzieht.
+- Platzhalter `{kontoinhaber}` und `{kontoinhaber_adresse}` für Texte und E-Mails: der Inhaber
+  des Kontos, auf das das Dokument bezahlt wird, und seine Adresse auf einer Zeile, die eines
+  Dritten oder bei eigenen Konten die der Firma. Ein Zahlungstext, der den Dienstleister nennt, an
+  den Forderungen abgetreten sind, folgt so dem Konto, das auf der Rechnung gewählt ist.
+- *Einstellungen → Druckvorlage → Fusszeile*: Die Bankverbindung lässt sich weglassen (*Keine*).
+  Zahlungsangaben und QR-Codes bleiben.
+- *Teilen* auf einem ausgestellten Dokument gibt sein PDF an das Teilen-Menü des Handys (und von
+  Safari auf dem Mac) weiter, etwa an Mail oder einen Messenger. Browser, die keine Dateien teilen
+  können, zeigen den Knopf nicht.
+- *Rechnungen → Exportieren* lädt die ausgestellten Rechnungen und Stornorechnungen eines Monats,
+  Quartals, Jahres oder freien Zeitraums nach Rechnungsdatum für die Buchhaltung herunter: als
+  Excel, CSV (UTF-8, Semikolon, Dezimaltrennzeichen der Firma) oder PDF-Liste, mit Netto und
+  Steuer pro Satz, Zahlungen, offenen und abgeschriebenen Beträgen und Summen pro Währung.
+  *Rechnungs-PDFs als ZIP beilegen* legt jedes PDF mit seiner Nummer als Namen neben die Liste.
+  Aus einem früheren Programm übernommene Rechnungen sind mit ihrem Original-PDF dabei (#47).
+
+### Geändert
+- Im Editor angekreuzte Textbausteine sind durch eine Leerzeile getrennt, und eine Leerzeile in
+  einem Text druckt als kleiner Abstand zwischen Absätzen statt als ganze leere Zeile.
+- Ein neues Angebot und eine neue Rechnung beginnen mit heute als *Datum*, ebenso Duplikate und
+  Rechnungen aus einem Angebot. Das Feld bleibt änderbar; geleert nimmt das Dokument wie bisher
+  das Datum des Ausstellens. Bestehende Entwürfe behalten ihre Daten, wiederkehrende Rechnungen
+  datiert ihr Plan.
+
+### Behoben
+- Das Ausstellen meldet keinen Fehler mehr, wenn die Rechnung ausgestellt ist, ihr PDF aber nicht
+  sofort gespeichert werden konnte. Der Editor blieb auf dem Entwurf stehen und späteres Speichern
+  schlug fehl; jetzt öffnet sich die ausgestellte Rechnung, und ihr erster Download speichert das
+  PDF. Das Ausstellen merkt sich das Logo des Tages, so zeigt ein solches PDF es auch dann, wenn
+  das Logo inzwischen geändert wurde.
+
 ## [0.8.8] – 2026-10-27
 
 ### Behoben

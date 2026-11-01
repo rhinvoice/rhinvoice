@@ -3,7 +3,7 @@ title: Domande frequenti su Rhinvoice
 description: Risposte su Rhinvoice, il programma di fatturazione gratuito e open source per CH, LI, DE e AT. Costi, licenza, dati, GoBD, backup, fatture elettroniche, demo.
 faq:
   - q: Quanto costa Rhinvoice?
-    a: Niente. Rhinvoice è gratuito e open source. Non esiste una versione a pagamento né un servizio in hosting, e non è previsto di trasformarlo in un servizio in hosting a pagamento. Rhinvoice funziona sul Suo server o sul Suo computer.
+    a: Niente. Rhinvoice è gratuito e open source. Non esiste una versione a pagamento né un servizio in hosting. Rhinvoice funziona sul Suo server o sul Suo computer.
   - q: Con quale licenza è pubblicato Rhinvoice?
     a: La GNU Affero General Public License v3.0 o successiva (AGPL-3.0). Può usare, modificare e distribuire Rhinvoice liberamente. Se offre ad altri una versione modificata come servizio, condivide le Sue modifiche con la stessa licenza.
   - q: Per quali Paesi è fatto Rhinvoice?
@@ -27,13 +27,17 @@ faq:
   - q: Rhinvoice funziona su un Raspberry Pi o su un NAS?
     a: Sì. Rhinvoice è pubblicato per linux/amd64 e linux/arm64, quindi anche per il Raspberry Pi 4 e 5. Funziona su un NAS che può eseguire Docker con Docker Compose.
   - q: Posso usare Rhinvoice sul telefono?
-    a: Sì. L’interfaccia si adatta al telefono. In giro controlla lo stato delle fatture, le segna come pagate, apre e condivide il PDF.
+    a: Sì. L’interfaccia si adatta al telefono. In giro controlla lo stato delle fatture, le segna come pagate, apre il PDF o lo inoltra con *Condividi* tramite il menu di condivisione del telefono.
   - q: Dove trovo aiuto, ed esiste una licenza commerciale?
     a: Domande e idee vanno nelle GitHub Discussions, gli errori nelle GitHub Issues di rhinvoice/rhinvoice. Per una licenza commerciale, una collaborazione o la ripresa del progetto scriva a hello@rhinvoice.com.
   - q: Posso provare Rhinvoice senza installarlo?
     a: Sì, nella demo pubblica per la Svizzera (ch.rhinvoice.com), la Germania (de.rhinvoice.com) e l’Austria (at.rhinvoice.com). Si azzera ogni ora e non accetta caricamenti, quindi niente importazioni, niente logo e niente file. Non invia e-mail.
   - q: "Perché la mia app bancaria rifiuta il codice QR della demo?"
     a: "La demo usa conti di esempio ufficiali, non conti reali. Per le fatture svizzere in CHF è il QR-IBAN di esempio di SIX, il cui codice bancario non appartiene a nessuna banca; per questo le app bancarie rifiutano il codice QR. Gli altri codici QR si possono scansionare, ma portano anch’essi a conti di esempio: per favore non bonificare nulla. Nella vostra installazione il codice QR contiene il vostro conto, e i vostri clienti lo scansionano come sempre."
+  - q: Una fattura può essere pagata su un altro conto, per esempio quello di una società di factoring?
+    a: "Sì. Dalla versione 0.9.0 può avere più conti bancari per valuta e sceglierne uno per ogni fattura nell’editor. Un conto può essere segnato come conto di terzi, per esempio di un fornitore di servizi finanziari: la fattura lo indica allora come beneficiario con IBAN e BIC, e la fattura QR e la fattura elettronica lo indicano come beneficiario."
+  - q: Posso esportare le mie fatture per la fiduciaria?
+    a: "Sì. Dalla versione 0.9.0 «Fatture → Esporta» scarica le fatture e note di credito emesse di un mese, trimestre, anno o periodo libero in Excel, CSV o PDF, con i totali per valuta. Se desiderato, tutti i PDF delle fatture arrivano in un file ZIP."
 ---
 
 import Faq from "../../../../components/Faq.astro";

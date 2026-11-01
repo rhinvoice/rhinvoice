@@ -1746,6 +1746,37 @@ export const de = {
   "mail.kind.reminder_2": "1. Mahnung",
   "mail.kind.reminder_3": "2. Mahnung",
   "mail.reminderSent": "{level} per E-Mail gesendet",
+
+  "export.open": "Exportieren",
+  "export.title": "Rechnungen exportieren",
+  "export.description":
+    "Die ausgestellten Rechnungen und Stornorechnungen eines Zeitraums nach Rechnungsdatum, für die Buchhaltung oder die Steuerberatung.",
+  "export.period": "Zeitraum",
+  "export.period.month": "Monat",
+  "export.period.quarter": "Quartal",
+  "export.period.year": "Jahr",
+  "export.period.custom": "Frei",
+  "export.month": "Monat",
+  "export.quarter": "Quartal",
+  "export.quarterName": "{quarter}. Quartal",
+  "export.year": "Jahr",
+  "export.from": "Von",
+  "export.to": "Bis",
+  "export.problem.missing": "Bitte beide Tage angeben.",
+  "export.problem.reversed": "Das Ende liegt vor dem Anfang.",
+  "export.problem.tooLong": "Höchstens zehn Jahre auf einmal.",
+  "export.format": "Format",
+  "export.format.xlsx": "Excel",
+  "export.format.csv": "CSV",
+  "export.format.pdf": "PDF",
+  "export.withPdfs": "Rechnungs-PDFs als ZIP beilegen",
+  "export.withPdfsHint":
+    "Eine ZIP-Datei mit der Liste und dem PDF jeder Rechnung; die Spalte «Datei» nennt seinen Namen.",
+  "export.download": "Herunterladen",
+  "export.preparing": "Wird erstellt …",
+  "error.period_reversed": "Das Ende des Zeitraums liegt vor dem Anfang.",
+  "error.period_too_long": "Ein Zeitraum umfasst höchstens zehn Jahre.",
+  "error.export_busy": "Ein anderer Export wird gerade erstellt. Bitte gleich nochmals versuchen.",
 } as const;
 
 export type MessageKey = keyof typeof de;

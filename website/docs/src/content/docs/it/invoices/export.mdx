@@ -1,0 +1,79 @@
+---
+title: Esportare le fatture per la contabilità
+description: "Esportare le fatture di un mese, trimestre o anno da Rhinvoice in Excel, CSV o PDF, se desiderato con tutti i PDF delle fatture in un file ZIP per la fiduciaria."
+since: 0.9.0
+faq:
+  - q: Come trasmetto alla mia fiduciaria le fatture di un mese?
+    a: In «Fatture» clicchi su «Esporta», scelga il mese e il formato (Excel, CSV o PDF) e clicchi su «Scarica». Con «Allega i PDF delle fatture (ZIP)» i PDF di tutte le fatture arrivano nello stesso file ZIP.
+  - q: Quali fatture contiene l’esportazione?
+    a: Tutte le fatture e note di credito emesse con data della fattura nel periodo scelto, comprese le fatture riprese da un programma precedente. Bozze e offerte non sono incluse.
+  - q: Perché le note di credito sono negative?
+    a: Una nota di credito (fattura di storno) annulla la sua fattura con importi negativi, così come è stata emessa. Fattura e nota di credito danno insieme zero; i totali sono quindi corretti senza ritocchi.
+  - q: Esiste un’esportazione per DATEV o BMD?
+    a: Non ancora. Questi formati vanno prima concordati con fiduciari e consulenti fiscali. Nel frattempo i file Excel e CSV si possono leggere nella maggior parte dei programmi di contabilità.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+In *Fatture → Esporta* scarica **tutte le fatture e note di credito emesse di un mese, trimestre, anno o di giorni scelti liberamente**: in **Excel**, **CSV** o **PDF**, se desiderato insieme a **tutti i PDF delle fatture in un file ZIP**. La Sua contabilità, fiduciaria o consulenza fiscale riceve così le fatture di un periodo in una volta.
+
+## Esportare le fatture
+
+<Steps>
+
+1. Apra *Fatture* e clicchi su **Esporta**.
+2. Scelga il *Periodo*: *Mese*, *Trimestre*, *Anno* o *Libero* con *Dal* e *Al*. È preselezionato l’ultimo mese intero.
+3. Scelga il *Formato*: *Excel*, *CSV* o *PDF*.
+4. Spunti *Allega i PDF delle fatture (ZIP)* se i PDF devono essere inclusi.
+5. Clicchi su **Scarica**.
+
+</Steps>
+
+Conta la **data della fattura**. L’esportazione contiene fatture emesse, note di credito e [fatture riprese](/docs/it/moving/old-invoices/) dal Suo programma precedente, ma né bozze né offerte. Un periodo libero comprende al massimo dieci anni. I titoli delle colonne sono nella lingua in cui usa Rhinvoice.
+
+## Formati
+
+| Formato | Contenuto |
+|---|---|
+| Excel (.xlsx) | Foglio *Fatture* con una riga per documento, filtro e riga del titolo bloccata; foglio *Totali* con una riga per valuta. Gli importi sono numeri con due decimali, le date sono vere date. |
+| CSV | UTF-8 con BOM, punto e virgola come separatore, date nel formato `AAAA-MM-GG`. Importi senza separatore delle migliaia, con il punto (azienda in Svizzera o nel Liechtenstein) o la virgola (azienda in Germania o in Austria). Dopo una riga vuota seguono i totali per valuta. |
+| PDF | A4 orizzontale, con azienda, periodo e numeri di pagina, i totali per valuta alla fine. |
+
+Con *Allega i PDF delle fatture (ZIP)* riceve un file ZIP con l’elenco nel formato scelto e il PDF di ogni documento. I PDF portano il loro numero, p. es. `R20260042.pdf`, e la colonna *File* dell’elenco ne indica il nome. Sono i PDF archiviati, invariati dall’emissione. Le fatture riprese portano il loro PDF originale; senza PDF, *File* resta vuota. Si prepara un’esportazione alla volta; la demo pubblica offre gli elenchi, ma nessun file ZIP con i PDF.
+
+<Aside type="caution">
+Se un testo nel file CSV inizia con `=`, `+`, `-` o `@`, Rhinvoice vi antepone un apostrofo. Così un foglio di calcolo non lo esegue come formula all’apertura. Il file Excel salva questi testi come testo e li lascia invariati.
+</Aside>
+
+## Colonne
+
+| Colonna | Significato |
+|---|---|
+| Numero, Tipo | Numero di fattura o di nota di credito; *Fattura* o *Nota di credito* |
+| Data | Data della fattura |
+| Prestazione dal, Prestazione al | Periodo della prestazione, se indicato |
+| N. cliente, Cliente, Paese, N. IVA cliente | Il cliente com’era all’emissione |
+| Valuta, Regime fiscale | P. es. *Nazionale*, *Inversione contabile*, *Esportazione*, *Piccola impresa* |
+| Netto | Importo netto del documento |
+| Netto x %, IVA x % | Una coppia per aliquota IVA presente nell’esportazione, anche 0 % |
+| IVA, Lordo | IVA totale e importo della fattura, arrotondamento compreso |
+| Pagato, Pagato il | Somma dei pagamenti; la data dell’ultimo pagamento quando la fattura è pagata per intero |
+| Aperto | Ciò che è ancora aperto |
+| Perdita | La perdita di una fattura [registrata come perdita](/docs/it/invoices/write-off/) |
+| Stato | P. es. *Pagata*, *Scaduta*, *Stornata* |
+| File | Nome del PDF nel file ZIP (solo con i PDF) |
+
+Le note di credito hanno **importi negativi**, così come sono state emesse. Una fattura stornata e la sua nota di credito danno insieme zero. Una nota di credito non è mai aperta. Le fatture riprese non hanno colonne per aliquota, poiché le loro posizioni non sono state riprese; netto, IVA e lordo sono quelli del programma precedente.
+
+I totali sono **per valuta**; franchi ed euro non vengono mai sommati.
+
+L’esportazione sceglie i documenti secondo la data della fattura. Se conteggia l’IVA secondo le controprestazioni ricevute, *Pagato* e *Pagato il* mostrano ciò che è entrato. I pagamenti su fatture di un periodo precedente figurano nell’esportazione di quel periodo.
+
+## DATEV e BMD
+
+Un’esportazione nel formato DATEV (Germania) o BMD (Austria) non esiste ancora. Questi formati vanno prima concordati con fiduciari e consulenti fiscali. Nel frattempo i file Excel e CSV si possono leggere nella maggior parte dei programmi di contabilità.
+
+## Domande frequenti
+
+<Faq />

@@ -36,6 +36,8 @@ faq:
     a: "La demo usa conti di esempio ufficiali, non conti reali. Per le fatture svizzere in CHF è il QR-IBAN di esempio di SIX, il cui codice bancario non appartiene a nessuna banca; per questo le app bancarie rifiutano il codice QR. Gli altri codici QR si possono scansionare, ma portano anch’essi a conti di esempio: per favore non bonificare nulla. Nella vostra installazione il codice QR contiene il vostro conto, e i vostri clienti lo scansionano come sempre."
   - q: Una fattura può essere pagata su un altro conto, per esempio quello di una società di factoring?
     a: "Sì. Dalla versione 0.9.0 può avere più conti bancari per valuta e sceglierne uno per ogni fattura nell’editor. Un conto può essere segnato come conto di terzi, per esempio di un fornitore di servizi finanziari: la fattura lo indica allora come beneficiario con IBAN e BIC, e la fattura QR e la fattura elettronica lo indicano come beneficiario."
+  - q: Posso esportare le mie fatture per la fiduciaria?
+    a: "Sì. Dalla versione 0.9.0 «Fatture → Esporta» scarica le fatture e note di credito emesse di un mese, trimestre, anno o periodo libero in Excel, CSV o PDF, con i totali per valuta. Se desiderato, tutti i PDF delle fatture arrivano in un file ZIP."
 ---
 
 import Faq from "../../../../components/Faq.astro";

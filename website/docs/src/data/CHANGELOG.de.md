@@ -5,7 +5,7 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
-## [0.9.0] – 2026-10-30
+## [0.9.0] – 2026-11-01
 
 ### Neu
 - Das Bankkonto lässt sich pro Angebot und Rechnung wählen: Hat die Währung des Dokuments mehr
@@ -29,6 +29,12 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 - *Teilen* auf einem ausgestellten Dokument gibt sein PDF an das Teilen-Menü des Handys (und von
   Safari auf dem Mac) weiter, etwa an Mail oder einen Messenger. Browser, die keine Dateien teilen
   können, zeigen den Knopf nicht.
+- *Rechnungen → Exportieren* lädt die ausgestellten Rechnungen und Stornorechnungen eines Monats,
+  Quartals, Jahres oder freien Zeitraums nach Rechnungsdatum für die Buchhaltung herunter: als
+  Excel, CSV (UTF-8, Semikolon, Dezimaltrennzeichen der Firma) oder PDF-Liste, mit Netto und
+  Steuer pro Satz, Zahlungen, offenen und abgeschriebenen Beträgen und Summen pro Währung.
+  *Rechnungs-PDFs als ZIP beilegen* legt jedes PDF mit seiner Nummer als Namen neben die Liste.
+  Aus einem früheren Programm übernommene Rechnungen sind mit ihrem Original-PDF dabei (#47).
 
 ### Geändert
 - Im Editor angekreuzte Textbausteine sind durch eine Leerzeile getrennt, und eine Leerzeile in

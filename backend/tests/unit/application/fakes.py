@@ -47,6 +47,7 @@ from rhinvoice.domain.document.document import (
     DocumentType,
     EventKind,
 )
+from rhinvoice.domain.document.export import ExportPeriod
 from rhinvoice.domain.dunning.reminder import DEFAULT_LEVELS, DunningLevel, Reminder
 from rhinvoice.domain.identity.session import Session
 from rhinvoice.domain.identity.user import User
@@ -468,6 +469,10 @@ class InMemoryDocumentRepository:
         if query.sort is DocumentSort.DUE_DATE:
             found.sort(key=lambda summary: summary.due_date or date.max, reverse=descending)
         return _page(found, query.page.offset, query.page.limit)
+
+    def issued_between(self, start: date, end: date) -> list[Document]:
+        period = ExportPeriod(start, end)
+        return [stored.document for stored in self.data.values() if period.selects(stored.document)]
 
     def get_pdf(self, document_id: UUID) -> bytes | None:
         return self.pdfs.get(document_id)

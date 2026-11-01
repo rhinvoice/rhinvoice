@@ -1,0 +1,99 @@
+{#- The export as a list on A4 landscape: company, period, the documents, the sums per currency.
+    Every word and number comes prepared from printed.py. -#}
+<!doctype html>
+<html lang="{{ page.language }}">
+<head>
+<meta charset="utf-8">
+<title>{{ page.labels.title }} {{ page.period }}</title>
+<style>
+{% for font in fonts %}
+@font-face { font-family: "{{ font.family }}"; font-style: normal; font-weight: {{ font.weight }}; font-display: block; src: url("{{ font.source }}") format("woff2"); unicode-range: {{ font.unicode_range }}; }
+{% endfor %}
+@page {
+  size: A4 landscape;
+  margin: 12mm 10mm 14mm;
+  @bottom-left {
+    content: "{{ page.footer }}";
+    color: #5b6273;
+    font-family: {{ font_stack }};
+    font-size: 7pt;
+  }
+  @bottom-right {
+    content: "{{ page.page_label }} " counter(page) " / " counter(pages);
+    color: #5b6273;
+    font-family: {{ font_stack }};
+    font-size: 7pt;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: {{ font_stack }};
+  font-size: 7pt;
+  line-height: 1.35;
+  color: #1c2030;
+  font-variant-numeric: tabular-nums;
+}
+header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4mm; }
+h1 { margin: 0; font-size: 13pt; font-weight: 600; }
+h2 { margin: 6mm 0 2mm; font-size: 9pt; font-weight: 600; }
+.period { font-size: 9pt; color: #5b6273; }
+table { width: 100%; border-collapse: collapse; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; }
+th, td { padding: 1.2mm 1.2mm; text-align: left; vertical-align: top; }
+th { font-weight: 600; border-bottom: 0.3mm solid #1c2030; }
+td { border-bottom: 0.2mm solid #e3e5ea; }
+.amount { text-align: right; white-space: nowrap; }
+.sub { display: block; color: #5b6273; font-size: 6pt; font-weight: 400; }
+.empty { color: #5b6273; }
+</style>
+</head>
+<body>
+<header>
+  <h1>{{ page.company }} · {{ page.labels.title }}</h1>
+  <div class="period">{{ page.labels.period }}: {{ page.period }}</div>
+</header>
+{% if page.rows %}
+<table>
+  <thead>
+    <tr>
+      {% for cell in page.header %}
+      <th scope="col"{% if cell.amount %} class="amount"{% endif %}>{{ cell.main }}{% if cell.sub %}<span class="sub">{{ cell.sub }}</span>{% endif %}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in page.rows %}
+    <tr>
+      {% for cell in row %}
+      <td{% if cell.amount %} class="amount"{% endif %}>{{ cell.main }}{% if cell.sub %}<span class="sub">{{ cell.sub }}</span>{% endif %}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<h2>{{ page.labels.sums }}</h2>
+<table>
+  <thead>
+    <tr>
+      {% for cell in page.sums_header %}
+      <th scope="col"{% if cell.amount %} class="amount"{% endif %}>{{ cell.main }}{% if cell.sub %}<span class="sub">{{ cell.sub }}</span>{% endif %}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in page.sums %}
+    <tr>
+      {% for cell in row %}
+      <td{% if cell.amount %} class="amount"{% endif %}>{{ cell.main }}{% if cell.sub %}<span class="sub">{{ cell.sub }}</span>{% endif %}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">{{ page.labels.empty }}</p>
+{% endif %}
+</body>
+</html>

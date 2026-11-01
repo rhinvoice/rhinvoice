@@ -36,6 +36,8 @@ faq:
     a: "The demo uses official example accounts, not real ones. For Swiss invoices in CHF it is the example QR-IBAN from SIX, whose bank code belongs to no bank, so banking apps reject the QR code. The other QR codes scan, but they lead to example accounts too: please do not transfer anything. In your own installation the QR code carries your account, and your customers scan it as usual."
   - q: Can invoices be paid to another account, for example a factoring company's?
     a: "Yes. Since version 0.9.0 you can keep several bank accounts per currency and choose one per invoice in the editor. An account can be marked as a third party's, for example a financial service provider's: the invoice then names it as payee with IBAN and BIC, and the QR-bill and e-invoice name it as payee."
+  - q: Can I export my invoices for my accountant?
+    a: "Yes. Since version 0.9.0, \"Invoices → Export\" downloads the issued invoices and credit notes of a month, quarter, year or custom period as Excel, CSV or PDF, with totals per currency. Optionally every invoice PDF comes along in one ZIP file."
 ---
 
 import Faq from "../../../components/Faq.astro";

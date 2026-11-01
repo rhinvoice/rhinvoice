@@ -13,6 +13,7 @@ from rhinvoice.application.company.handlers import CompanyHandlers
 from rhinvoice.application.customer.handlers import CustomerHandlers
 from rhinvoice.application.demo.handlers import DemoHandlers
 from rhinvoice.application.document.dashboard import DashboardHandlers
+from rhinvoice.application.document.export import ExportHandlers
 from rhinvoice.application.document.handlers import DocumentHandlers
 from rhinvoice.application.document.printing import PrintHandlers
 from rhinvoice.application.dunning.handlers import DunningHandlers
@@ -29,6 +30,7 @@ from rhinvoice.application.updates.handlers import UpdateHandlers
 from rhinvoice.domain.shared.clock import Clock, SystemClock
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork, make_engine
 from rhinvoice.infrastructure.einvoice.cii import CiiWriter
+from rhinvoice.infrastructure.export.writer import FileExportWriter
 from rhinvoice.infrastructure.identity.reset_file import FileResetDelivery, open_with_system
 from rhinvoice.infrastructure.importing.reader import SpreadsheetReader
 from rhinvoice.infrastructure.mail.content import PrintedMailContent
@@ -47,6 +49,7 @@ if TYPE_CHECKING:
     from rhinvoice.application.backup.ports import BackupArchive, BackupSetup
     from rhinvoice.application.document.printing import PdfRenderer
     from rhinvoice.application.updates.ports import SetupInstaller, UpdateInstaller
+    from rhinvoice.infrastructure.rendering.pdf import PagePrinter
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +67,7 @@ class Container:
     dashboard: DashboardHandlers
     texts: TextHandlers
     printing: PrintHandlers
+    exports: ExportHandlers
     backup: BackupHandlers
     imports: ImportHandlers
     onboarding: OnboardingHandlers
@@ -94,13 +98,19 @@ class OwnServices:
 NO_OWN_SERVICES = OwnServices()
 
 
-def pdf_renderer(settings: Settings, html: JinjaDocumentRenderer) -> PdfRenderer | None:
+def page_printer(settings: Settings) -> PagePrinter | None:
     """Gotenberg in the Docker setup, else a browser on this computer, else no PDFs."""
     if settings.gotenberg_url is not None:
-        return ChromiumPdfRenderer(html, GotenbergPrinter(settings.gotenberg_url))
+        return GotenbergPrinter(settings.gotenberg_url)
     if settings.chromium_path is not None:
-        return ChromiumPdfRenderer(html, LocalChromiumPrinter(settings.chromium_path))
+        return LocalChromiumPrinter(settings.chromium_path)
     return None
+
+
+def pdf_renderer(settings: Settings, html: JinjaDocumentRenderer) -> PdfRenderer | None:
+    """Return the renderer of the documents' PDFs; None without a ``page_printer``."""
+    printer = page_printer(settings)
+    return None if printer is None else ChromiumPdfRenderer(html, printer)
 
 
 def build_container(
@@ -122,7 +132,8 @@ def build_container(
     texts = TextHandlers(uow=uow)
     articles = ArticleHandlers(uow=uow, clock=effective_clock)
     html = JinjaDocumentRenderer(settings.theme_dir)
-    pdf = pdf_renderer(settings, html)
+    printer = page_printer(settings)
+    pdf = None if printer is None else ChromiumPdfRenderer(html, printer)
     printing = PrintHandlers(
         uow=uow,
         clock=effective_clock,
@@ -187,6 +198,9 @@ def build_container(
         dashboard=DashboardHandlers(uow=uow, clock=effective_clock),
         texts=texts,
         printing=printing,
+        exports=ExportHandlers(
+            uow=uow, clock=effective_clock, printing=printing, writer=FileExportWriter(printer)
+        ),
         backup=BackupHandlers(uow=uow, clock=effective_clock, setup=own.backup_setup),
         imports=imports,
         onboarding=OnboardingHandlers(uow=uow, clock=effective_clock),

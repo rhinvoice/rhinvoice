@@ -5,7 +5,7 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
-## [0.9.0] – 2026-10-30
+## [0.9.0] – 2026-11-01
 
 ### Added
 - Choose the bank account per quote or invoice: with more than one account in the document's
@@ -26,6 +26,12 @@ before 1.0, minor versions may contain breaking changes.
   details and QR codes stay.
 - *Share* on an issued document hands its PDF to the share sheet of the phone (and of Safari on a
   Mac), e.g. to mail or a messenger. Browsers that cannot share files show no such button.
+- *Invoices → Export* downloads the issued invoices and credit notes of a month, quarter, year or
+  custom period, by invoice date, for the bookkeeping: as Excel, CSV (UTF-8, semicolons, the
+  company's decimal separator) or a PDF list, with net and tax per VAT rate, payments, open and
+  written-off amounts and totals per currency. *Add the invoice PDFs as a ZIP* puts every PDF
+  next to the list, named after its number. Invoices taken over from a previous program are
+  included with their original PDF (#47).
 
 ### Changed
 - Text templates ticked in the editor are separated by a blank line, and a blank line in a text

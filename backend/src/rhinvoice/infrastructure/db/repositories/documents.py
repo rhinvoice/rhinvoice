@@ -589,6 +589,20 @@ class SqlDocumentRepository:
         ).mappings()
         return Page(items=[_summary(row, query.today) for row in rows], total=total)
 
+    def issued_between(self, start: date, end: date) -> list[Document]:
+        statement = (
+            select(documents.c.id)
+            .where(
+                documents.c.type.in_([DocumentType.INVOICE.value, DocumentType.CANCELLATION.value]),
+                documents.c.status != DocumentStatus.DRAFT.value,
+                documents.c.issue_date >= start,
+                documents.c.issue_date <= end,
+            )
+            .order_by(documents.c.issue_date, documents.c.number)
+        )
+        found = (self.get(row) for row in self._connection.execute(statement).scalars())
+        return [document for document in found if document is not None]
+
     def get_pdf(self, document_id: UUID) -> bytes | None:
         statement = select(document_pdfs.c.content).where(
             document_pdfs.c.document_id == document_id

@@ -23,11 +23,11 @@ Security issues go through a private report, never a public issue: see [SECURITY
 
 ## Contributor License Agreement
 
-Before we can merge your first pull request, you accept the
-[Contributor License Agreement](CLA.md) by ticking its box in the pull request. You keep the
-copyright of your work; the agreement lets the maintainer offer Rhinvoice under additional terms
-later (for example as a hosted service) without asking every contributor again. Rhinvoice itself
-stays under the GNU Affero General Public License.
+Before we can merge your first pull request, you accept the [Contributor License Agreement](CLA.md)
+once: a bot posts a link in your first pull request, and you sign with your GitHub account. You
+keep the copyright of your work; the agreement lets the maintainer offer Rhinvoice under additional
+terms later (for example as a hosted service) without asking every contributor again. Rhinvoice
+itself stays under the GNU Affero General Public License.
 
 ## Development
 

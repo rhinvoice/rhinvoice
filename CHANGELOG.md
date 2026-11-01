@@ -5,7 +5,7 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
-## [0.9.0] – 2026-10-30
+## [0.9.0] – 2026-11-01
 
 ### Added
 - Choose the bank account per quote or invoice: with more than one account in the document's

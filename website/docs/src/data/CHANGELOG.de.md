@@ -5,7 +5,7 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
-## [0.9.0] – 2026-10-30
+## [0.9.0] – 2026-11-01
 
 ### Neu
 - Das Bankkonto lässt sich pro Angebot und Rechnung wählen: Hat die Währung des Dokuments mehr

@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { LandmarkIcon, PencilIcon, PlusIcon, StarIcon, Trash2Icon } from "lucide-react";
+import { LandmarkIcon, PencilIcon, PlusIcon, StarIcon, Trash2Icon, UsersIcon } from "lucide-react";
 import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -40,12 +40,14 @@ import {
   type BankAccount,
 } from "@/features/company/api";
 import {
+  bankAccountFieldFor,
   bankAccountSchema,
   bankAccountToForm,
   emptyBankAccount,
   formToRequest,
   type BankAccountFormValues,
 } from "@/features/company/bank-account-form-model";
+import { AddressFields } from "@/features/shared/address-fields";
 import { FormAlert } from "@/features/shared/form-alert";
 import { applyServerErrors } from "@/features/shared/server-errors";
 import {
@@ -124,6 +126,12 @@ export function BankAccountsSettings({
                           {t("common.default")}
                         </Badge>
                       ) : null}
+                      {account.third_party ? (
+                        <Badge variant="neutral">
+                          <UsersIcon aria-hidden="true" />
+                          {t("bank.thirdPartyBadge")}
+                        </Badge>
+                      ) : null}
                     </CardTitle>
                     <CardDescription>{account.holder}</CardDescription>
                   </div>
@@ -175,7 +183,7 @@ export function BankAccountsSettings({
       {editing === null ? null : (
         <BankAccountDialog
           account={editing.account}
-          defaults={emptyBankAccount(defaultCurrency, defaultHolder)}
+          defaults={emptyBankAccount(defaultCurrency, defaultHolder, profile?.country)}
           profile={profile}
           onClose={() => {
             setEditing(null);
@@ -232,9 +240,11 @@ export function BankAccountDialog({
   const form = useForm<BankAccountFormValues>({
     resolver: zodResolver(bankAccountSchema(t, locale)),
     mode: "onTouched",
-    defaultValues: account === null ? defaults : bankAccountToForm(account),
+    defaultValues:
+      account === null ? defaults : bankAccountToForm(account, defaults.holder_country),
   });
   const currency = useWatch({ control: form.control, name: "currency" });
+  const thirdParty = useWatch({ control: form.control, name: "third_party" });
   const iban = useWatch({ control: form.control, name: "iban" });
   const { errors, isSubmitting, isDirty } = form.formState;
   useUnsavedChanges(isDirty);
@@ -245,9 +255,7 @@ export function BankAccountDialog({
       toast.success(t("bank.saved"));
       onClose();
     } catch (caught) {
-      const attached = applyServerErrors(caught, form.setError, t, (field) =>
-        field in defaults ? (field as keyof BankAccountFormValues) : null,
-      );
+      const attached = applyServerErrors(caught, form.setError, t, bankAccountFieldFor);
       if (!attached) form.setError("root", { type: "server", message: errorMessage(caught) ?? "" });
     }
   });
@@ -279,6 +287,35 @@ export function BankAccountDialog({
           <Field label={t("bank.holder")} error={error("holder")}>
             <Input id="bank-holder" {...form.register("holder")} />
           </Field>
+          <label className="grid cursor-pointer grid-cols-[auto_1fr] items-start gap-x-3 gap-y-0.5">
+            <input
+              id="bank-third_party"
+              type="checkbox"
+              className="mt-1 size-4 accent-primary"
+              {...form.register("third_party")}
+            />
+            <span className="font-medium">{t("bank.thirdParty")}</span>
+            <span className="col-start-2 text-sm text-muted-foreground">
+              {t("bank.thirdPartyHint")}
+            </span>
+          </label>
+          {thirdParty ? (
+            <fieldset className="flex flex-col gap-2">
+              <legend className="mb-2 text-sm font-medium">{t("bank.holderAddress")}</legend>
+              <AddressFields
+                names={{
+                  street: "holder_street",
+                  house_number: "holder_house_number",
+                  supplement: "holder_supplement",
+                  postal_code: "holder_postal_code",
+                  city: "holder_city",
+                  country: "holder_country",
+                }}
+                register={form.register}
+                errors={errors}
+              />
+            </fieldset>
+          ) : null}
           <Field label={t("bank.iban")} error={error("iban")}>
             <Input
               id="bank-iban"

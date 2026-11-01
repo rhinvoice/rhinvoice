@@ -167,6 +167,17 @@ h1 .number {
   white-space: pre-line;
 }
 
+/* A blank line in a text, e.g. between text templates, is a small gap, not a whole line. */
+.text > p,
+.payment-text > p {
+  margin: 0;
+}
+
+.text > p + p,
+.payment-text > p + p {
+  margin-top: 2mm;
+}
+
 table.lines {
   width: 100%;
   border-collapse: collapse;
@@ -266,10 +277,46 @@ table.lines {
   /* The EPC QR code sits on the right also without a payment text (reminders). */
   justify-content: flex-end;
   gap: 8mm;
+  /* Text, payee and QR code stay on one page; a longer block moves to the next. */
+  break-inside: avoid;
 }
 
 .payment .text {
   flex: 1;
+}
+
+/* A third party collects the payment: its name next to the IBAN (ADR 0037). */
+.payment .payee-block {
+  white-space: normal;
+}
+
+.payment .payment-text {
+  margin: 0 0 2mm;
+  white-space: pre-line;
+}
+
+.payment .payee {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 6mm;
+  row-gap: 0.8mm;
+  margin: 0;
+  /* Never split from the text that leads to it, nor between its rows. */
+  break-before: avoid;
+  break-inside: avoid;
+}
+
+.payment .payee dt {
+  color: var(--muted);
+}
+
+.payment .payee dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.payment .payee-block .payee {
+  margin: 0;
 }
 
 .epc {

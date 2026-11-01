@@ -215,6 +215,9 @@ def _settlement(parent: Element, invoice: EInvoice) -> None:
     if invoice.payment is not None:
         _ram(settlement, "PaymentReference", invoice.payment.remittance)
     _ram(settlement, "InvoiceCurrencyCode", invoice.currency.value)
+    if invoice.payment is not None and invoice.payment.payee is not None:
+        # BG-10: before the payment means, as the D16B schema orders the settlement.
+        _ram(_ram(settlement, "PayeeTradeParty"), "Name", invoice.payment.payee)
     _payment(settlement, invoice)
     for entry in invoice.breakdown:
         _breakdown(settlement, entry)

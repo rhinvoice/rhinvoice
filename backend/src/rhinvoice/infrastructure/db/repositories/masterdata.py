@@ -52,6 +52,7 @@ from rhinvoice.infrastructure.db.tables import (
     bank_accounts,
     company_logo,
     customers,
+    issued_logos,
     number_sequences,
     print_layout,
 )
@@ -165,6 +166,20 @@ class SqlCompanyRepository:
     def delete_logo(self) -> None:
         self._connection.execute(delete(company_logo))
 
+    def keep_issued_logo(self, logo: Logo) -> None:
+        statement = pg_insert(issued_logos).values(
+            sha256=logo.sha256, media_type=logo.media_type, content=logo.content
+        )
+        self._connection.execute(statement.on_conflict_do_nothing(index_elements=["sha256"]))
+
+    def issued_logo(self, sha256: str) -> Logo | None:
+        row = (
+            self._connection.execute(select(issued_logos).where(issued_logos.c.sha256 == sha256))
+            .mappings()
+            .first()
+        )
+        return None if row is None else Logo(content=row["content"], media_type=row["media_type"])
+
     def print_layout(self) -> PrintLayout:
         row = self._connection.execute(select(print_layout)).mappings().first()
         if row is None:
@@ -212,6 +227,10 @@ def _bank_account_from_row(row: RowMapping) -> BankAccount:
         qr_iban=_optional(row["qr_iban"], Iban),
         bic=_optional(row["bic"], Bic),
         is_default=row["is_default"],
+        third_party=row["third_party"],
+        holder_address=(
+            None if row["holder_postal_code"] is None else _address_from_row(row, "holder_")
+        ),
     )
 
 
@@ -225,6 +244,8 @@ def _bank_account_values(account: BankAccount) -> dict[str, Any]:
         "qr_iban": None if account.qr_iban is None else account.qr_iban.value,
         "bic": None if account.bic is None else account.bic.value,
         "is_default": account.is_default,
+        "third_party": account.third_party,
+        **_address_values(account.holder_address, "holder_"),
     }
 
 

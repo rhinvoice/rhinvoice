@@ -246,6 +246,9 @@ export const fr: Catalog<MessageKey> = {
     "Cette action n’est pas possible dans le statut actuel. Veuillez recharger la page.",
   "error.bank_account_missing":
     "Aucun compte bancaire n’est enregistré pour cette monnaie. Veuillez le créer sous Paramètres → Comptes bancaires.",
+  "error.bank_account_unknown": "Ce compte bancaire n’existe plus. Veuillez en choisir un autre.",
+  "error.bank_account_currency": "Le compte bancaire est dans une autre monnaie que le document.",
+  "error.holder_address_missing": "Le compte d’un tiers nécessite l’adresse du titulaire.",
   "error.no_positions": "Le document nécessite au moins une position avec un montant.",
   "error.non_positive_total":
     "Le total d’une facture doit être supérieur à zéro. Les notes de crédit résultent d’une annulation.",
@@ -279,7 +282,7 @@ export const fr: Catalog<MessageKey> = {
   "error.payment_before_write_off":
     "Ce paiement a été reçu avant le passage en perte. Annulez d’abord le passage en perte.",
   "error.unknown_placeholder":
-    "Espace réservé inconnu. Les possibilités sont {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung} et {firma}.",
+    "Espace réservé inconnu. Les possibilités sont {nummer}, {datum}, {faellig}, {kunde}, {betrag}, {waehrung}, {firma}, {kontoinhaber} et {kontoinhaber_adresse}.",
   "error.already_converted": "Une facture a déjà été créée à partir de cette offre.",
   "error.pageDescription":
     "Cette page n’a pas pu être affichée. Vos données enregistrées ne sont pas concernées.",
@@ -519,6 +522,8 @@ export const fr: Catalog<MessageKey> = {
   "texts.placeholder.betrag": "Montant",
   "texts.placeholder.waehrung": "Monnaie",
   "texts.placeholder.firma": "Votre entreprise",
+  "texts.placeholder.kontoinhaber": "Titulaire du compte",
+  "texts.placeholder.kontoinhaber_adresse": "Adresse du titulaire du compte",
   "texts.useAsDefault": "Insérer dans les nouveaux documents (par défaut)",
   "texts.notices": "Mentions légales",
   "texts.noticesHint":
@@ -579,7 +584,7 @@ export const fr: Catalog<MessageKey> = {
   "language.it": "Italien",
   "bank.title": "Comptes bancaires",
   "bank.description":
-    "Comptes pour les informations de paiement et les codes QR. Par monnaie, un compte est le compte par défaut.",
+    "Comptes pour les informations de paiement et les codes QR. Par monnaie, un compte est le compte par défaut; un document peut en choisir un autre.",
   "bank.add": "Ajouter un compte",
   "bank.edit": "Modifier le compte",
   "bank.emptyTitle": "Aucun compte bancaire pour l’instant",
@@ -594,10 +599,15 @@ export const fr: Catalog<MessageKey> = {
     "Nécessaire pour le code QR EPC sur les factures en euros aux clients de l’UE : sans BIC, il n’y en a pas.",
   "bank.currency": "Monnaie",
   "bank.isDefault": "Compte par défaut pour cette monnaie",
+  "bank.thirdParty": "Le compte appartient à un tiers (p. ex. un prestataire financier)",
+  "bank.thirdPartyHint":
+    "Les documents payés sur ce compte nomment le titulaire comme bénéficiaire. Son adresse figure sur la section paiement QR.",
+  "bank.thirdPartyBadge": "Compte de tiers",
+  "bank.holderAddress": "Adresse du titulaire du compte",
   "bank.saved": "Compte bancaire enregistré.",
   "bank.deleteTitle": "Supprimer le compte bancaire ?",
   "bank.deleteDescription":
-    "Les documents déjà émis conservent leurs coordonnées bancaires. Les nouveaux documents utilisent un autre compte.",
+    "Les documents déjà émis conservent leurs coordonnées bancaires. Les brouillons et les nouveaux documents utilisent le compte par défaut de leur monnaie.",
   "bank.deleted": "Compte bancaire supprimé.",
   "numbering.title": "Numérotations",
   "numbering.description":
@@ -928,8 +938,13 @@ export const fr: Catalog<MessageKey> = {
   "documents.language": "Langue",
   "documents.sectionDates": "Dates",
   "documents.issueDate": "Date",
-  "documents.issueDateHint": "Laisser vide pour utiliser la date d’émission.",
+  "documents.issueDateHint":
+    "Prérempli avec la date du jour. Laisser vide pour utiliser la date d’émission.",
   "documents.dueDate": "Échéance le",
+  "documents.bankAccount": "Coordonnées bancaires",
+  "documents.bankAccountHint": "Le compte sur lequel ce document est payé.",
+  "documents.bankAccountDefault": "(par défaut)",
+  "documents.bankAccountThirdParty": "(compte de tiers)",
   "documents.dueDateHint":
     "Laisser vide pour utiliser le délai de paiement du client ou de l’entreprise.",
   "documents.validUntil": "Valable jusqu’au",
@@ -1497,8 +1512,9 @@ export const fr: Catalog<MessageKey> = {
   "printLayout.footerAccounts": "Coordonnées bancaires",
   "printLayout.footerAccounts.all": "Tous les comptes",
   "printLayout.footerAccounts.invoice_currency": "Seulement la monnaie de la facture",
+  "printLayout.footerAccounts.none": "Aucune",
   "printLayout.footerHint":
-    "Les comptes d’une même banque sont regroupés. Le code QR de paiement utilise toujours le compte de la monnaie de la facture.",
+    "Les comptes d’une même banque sont regroupés. Les comptes de tiers n’apparaissent que sur les documents payés à ceux-ci. Le code QR de paiement utilise toujours le compte sur lequel la facture est payée.",
   "printLayout.reset": "Réinitialiser",
   "printLayout.issuedStay": "S’applique aux nouveaux PDF. Les documents émis conservent leur PDF.",
   "printLayout.preview": "Aperçu de la mise en page d’impression",

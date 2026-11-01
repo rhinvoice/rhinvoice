@@ -4,6 +4,7 @@ from datetime import timedelta
 from decimal import Decimal
 from typing import Any
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -402,8 +403,11 @@ class FakePdf:
     def __init__(self) -> None:
         self.calls = 0
         self.e_invoices: list[bytes | None] = []
+        self.failure: Exception | None = None
 
     def pdf(self, model: PrintModel, e_invoice: bytes | None = None) -> bytes:
+        if self.failure is not None:
+            raise self.failure
         self.calls += 1
         self.e_invoices.append(e_invoice)
         return f"%PDF-{model.view.document.number} {self.calls}".encode()
@@ -455,6 +459,84 @@ def test_documents_as_pdf(
     )
 
 
+def test_a_failed_archive_does_not_fail_the_issue(
+    user_client: TestClient,
+    customer_id: str,
+    app: FastAPI,
+    container: Container,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    fake = FakePdf()
+    fake.failure = RuntimeError("PDF service answered 500")
+    app.state.container = replace(
+        container, printing=replace(container.printing, pdf_renderer=fake)
+    )
+    created = create(user_client, customer_id)
+    response = user_client.post(f"/api/documents/{created['id']}/issue")
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "issued"
+    assert "not archived yet" in caplog.text
+
+    # The first download archives it.
+    fake.failure = None
+    pdf = user_client.get(f"/api/documents/{created['id']}/pdf")
+    assert pdf.status_code == 200
+    assert pdf.headers["cache-control"] == "private, max-age=31536000"
+    assert fake.calls == 1
+
+
 def cancellation_number(client: TestClient, cancelled: Json) -> str:
     response = client.get(f"/api/documents/{cancelled['cancelled_by_id']}")
     return str(response.json()["number"])
+
+
+def test_documents_are_paid_to_the_chosen_account(
+    user_client: TestClient, customer_id: str
+) -> None:
+    provider = {
+        "currency": "CHF",
+        "bank_name": "Inkassobank",
+        "holder": "Inkasso AG",
+        "iban": "CH5800791123000889012",
+        "third_party": True,
+        "holder_address": {
+            "street": "Zahlweg",
+            "house_number": "3",
+            "postal_code": "4001",
+            "city": "Basel",
+            "country": "CH",
+        },
+    }
+    created = user_client.post("/api/bank-accounts", json=provider)
+    assert created.status_code == 201, created.text
+    account = created.json()
+    assert account["third_party"] is True
+    assert account["holder_address"]["city"] == "Basel"
+    assert account["is_default"] is False
+
+    assert create(user_client, customer_id)["bank_account_id"] is None
+    draft = create(user_client, customer_id, bank_account_id=account["id"])
+    assert draft["bank_account_id"] == account["id"]
+    issued = create(user_client, customer_id, bank_account_id=account["id"])
+    assert (
+        post(user_client, f"/api/documents/{issued['id']}/issue")["bank_account_id"]
+        == (account["id"])
+    )
+    html = user_client.get(f"/api/documents/{issued['id']}/html").text
+    assert "<dt>Zahlungsempfänger</dt><dd>Inkasso AG</dd>" in html
+
+    unknown = user_client.post(
+        "/api/documents",
+        json={"type": "invoice", "customer_id": customer_id, "bank_account_id": draft["id"]},
+    )
+    assert unknown.status_code == 422
+    assert unknown.json()["error"]["code"] == "bank_account_unknown"
+
+    # Deleted: the draft falls back to the default, the issued invoice keeps its account.
+    assert user_client.delete(f"/api/bank-accounts/{account['id']}").status_code == 204
+    assert user_client.get(f"/api/documents/{draft['id']}").json()["bank_account_id"] is None
+    issued_html = user_client.get(f"/api/documents/{issued['id']}/html").text
+    assert "<dt>Zahlungsempfänger</dt><dd>Inkasso AG</dd>" in issued_html
+    # The issued invoice names the account frozen with it.
+    frozen = user_client.get(f"/api/documents/{issued['id']}").json()
+    assert frozen["bank_account_id"] == account["id"]

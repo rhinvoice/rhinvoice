@@ -23,7 +23,7 @@ from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.supply import Supply
 from rhinvoice.domain.tax.vat_number import VatNumber
-from rhinvoice.infrastructure.rendering.html import JinjaDocumentRenderer, css_string
+from rhinvoice.infrastructure.rendering.html import JinjaDocumentRenderer, css_string, paragraphs
 from tests.unit.application.conftest import NOW
 from tests.unit.application.fakes import InMemoryUnitOfWork, Store
 from tests.unit.domain import factories
@@ -154,7 +154,7 @@ def test_a_swiss_draft_invoice(printing: PrintHandlers) -> None:
     assert positions == sorted(positions)
     assert "Preise inkl." not in html
     # Texts with placeholders.
-    assert '<p class="text">Guten Tag Beispiel AG</p>' in html
+    assert '<div class="text"><p>Guten Tag Beispiel AG</p></div>' in html
     assert (
         "Zahlbar bis 08.04.2026, Nr. (folgt beim Ausstellen), 13’899.95 CHF vom 09.03.2026,"
         " Muster &amp; Co GmbH" in html
@@ -167,6 +167,25 @@ def test_a_swiss_draft_invoice(printing: PrintHandlers) -> None:
     assert "<span>IBAN CH93 0076 2011 6238 5295 7</span><span>BIC POFICHBEXXX</span>" in html
     assert "<span>MWST-Nr. CHE-123.456.788 MWST</span>" in html
     assert "<span>Steuernummer 12/345</span><span>Handelsregister CH-020.4.000.000-0</span>" in html
+
+
+def test_blank_lines_split_texts_into_paragraphs(printing: PrintHandlers) -> None:
+    assert paragraphs("  \nA\nB \n \t\n\nC\n\n") == ["A\nB ", "C"]
+    assert paragraphs("") == []
+    html = printing.preview_html(
+        DocumentType.INVOICE,
+        draft(
+            intro_text="Guten Tag\n\nDanke",
+            payment_text="Zahlbar bis {faellig}.\nOhne Abzug.\n\nAbgetreten an {kontoinhaber}.",
+            closing_text="Freundliche Grüsse",
+        ),
+    )
+    assert '<div class="text"><p>Guten Tag</p><p>Danke</p></div>' in html
+    assert (
+        '<div class="text"><p>Zahlbar bis 08.04.2026.\nOhne Abzug.</p>'
+        "<p>Abgetreten an Muster GmbH.</p></div>" in html
+    )
+    assert '<div class="text"><p>Freundliche Grüsse</p></div>' in html
 
 
 @pytest.mark.parametrize(

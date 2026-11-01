@@ -107,7 +107,13 @@ function issues(values: DocumentFormValues): Record<string, string> {
 describe("document form", () => {
   it("starts with the company defaults and one empty line", () => {
     const empty = emptyDocument({ ...COMPANY, default_currency: "EUR", default_language: "en" });
-    expect(empty).toMatchObject({ currency: "EUR", language: "en", customer_id: "" });
+    expect(empty).toMatchObject({
+      currency: "EUR",
+      language: "en",
+      customer_id: "",
+      issue_date: "",
+    });
+    expect(emptyDocument(COMPANY, "2026-10-29").issue_date).toBe("2026-10-29");
     expect(empty.lines).toHaveLength(1);
     expect(emptyLine()).toMatchObject({ kind: "item", quantity: "1", unit: "C62" });
     expect(emptyLine("text")).toMatchObject({ kind: "text", quantity: "", unit: "" });
@@ -296,6 +302,7 @@ const DETAIL: DocumentDetail = {
   intro_text: "Hallo",
   payment_text: "Sofort",
   closing_text: "Danke",
+  bank_account_id: "b1",
   notice: "",
   lines: [
     {
@@ -367,7 +374,9 @@ describe("conversion", () => {
       discount_value: "50",
       treatment: "export",
       override_reason: "",
+      bank_account_id: "b1",
     });
+    expect(documentToForm({ ...DETAIL, bank_account_id: null }, "de-DE").bank_account_id).toBe("");
     expect(form.lines).toEqual([
       {
         key: "l1",
@@ -481,6 +490,7 @@ describe("conversion", () => {
       discount_value: "50",
       treatment_override: "export",
       override_reason: "Ausfuhr",
+      bank_account_id: "b1",
     });
     expect(draft.lines).toEqual([
       {
@@ -519,6 +529,7 @@ describe("conversion", () => {
       discount_value: "0",
       treatment_override: null,
       override_reason: "",
+      bank_account_id: null,
     });
     expect(plain.lines?.[0]).toMatchObject({ unit: null, unit_price: "0", discount_percent: "0" });
   });

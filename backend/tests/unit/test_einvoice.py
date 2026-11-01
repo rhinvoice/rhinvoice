@@ -876,3 +876,26 @@ def test_gross_rounding_can_be_a_line_charge() -> None:
         f"{LINES}/ram:SpecifiedLineTradeSettlement/ram:SpecifiedTradeAllowanceCharge/ram:Reason",
     ) == ["Rundung"]
     check_sums(root)
+
+
+@pytest.mark.parametrize("profile", list(EInvoiceProfile))
+def test_a_third_party_that_collects_is_the_payee(profile: EInvoiceProfile) -> None:
+    root = xml("de-third-party", profile)
+    assert text(root, f"{SETTLEMENT}/ram:PayeeTradeParty/ram:Name") == "Factoring Beispiel GmbH"
+    account = f"{SETTLEMENT}/ram:SpecifiedTradeSettlementPaymentMeans"
+    assert text(root, f"{account}/ram:PayeePartyCreditorFinancialAccount/ram:IBANID") == (
+        "AT611904300234573201"
+    )
+    # The seller stays the company.
+    assert text(root, f"{SELLER}/ram:Name") == "Beispiel Software GmbH"
+    settlement = root.find(SETTLEMENT, NAMESPACES)
+    assert settlement is not None
+    names = [child.tag.rsplit("}", 1)[1] for child in settlement]
+    assert names.index("InvoiceCurrencyCode") < names.index("PayeeTradeParty")
+    assert names.index("PayeeTradeParty") < names.index("SpecifiedTradeSettlementPaymentMeans")
+
+
+def test_own_accounts_name_no_payee() -> None:
+    assert absent(xml("de-domestic-gross"), f"{SETTLEMENT}/ram:PayeeTradeParty")
+    swiss = xml("ch-third-party")
+    assert text(swiss, f"{SETTLEMENT}/ram:PayeeTradeParty/ram:Name") == "Inkasso Beispiel AG"

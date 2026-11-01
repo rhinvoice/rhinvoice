@@ -1,10 +1,13 @@
+# ruff: noqa: RUF001 - French and Italian elide with the typographic apostrophe.
 """Demo data for a test installation: customers, articles and a year of documents.
 
 Only for an empty installation (no customers, no documents), so real data is
 never mixed with invented records. Everything is made through the regular use
 cases: numbers, tax cases and the history are the same as for real documents.
 The names, addresses and numbers are invented; the IBANs are the official
-examples of SIX and the ECBS.
+examples of SIX and the ECBS. A financial service provider collects one invoice,
+paid to its own account: there is one official example IBAN per country, so in
+Germany and Austria it shares the company's.
 """
 
 from __future__ import annotations
@@ -27,6 +30,7 @@ from rhinvoice.application.identity.handlers import CreateUser
 from rhinvoice.application.importing.fields import ImportTarget
 from rhinvoice.application.importing.handlers import ImportRequest
 from rhinvoice.application.importing.results import RowStatus
+from rhinvoice.application.text.handlers import SaveTextTemplate
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.customer.customer import Customer, CustomerKind
 from rhinvoice.domain.document.document import DocumentType
@@ -34,9 +38,11 @@ from rhinvoice.domain.document.lines import LineKind
 from rhinvoice.domain.shared.country import Country
 from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.identifier import new_id
+from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
 from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.supply import Supply
+from rhinvoice.domain.text.template import TextKind
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -47,6 +53,7 @@ if TYPE_CHECKING:
     from rhinvoice.application.document.handlers import DocumentHandlers
     from rhinvoice.application.identity.handlers import IdentityHandlers
     from rhinvoice.application.importing.handlers import ImportHandlers
+    from rhinvoice.application.text.handlers import TextHandlers
     from rhinvoice.application.uow import UnitOfWorkFactory
     from rhinvoice.domain.catalog.article import Article
     from rhinvoice.domain.company.company import Company
@@ -294,6 +301,70 @@ DEMO_ACCOUNTS: dict[str, tuple[SaveBankAccount, ...]] = {
         ),
     ),
 }
+DEMO_PROVIDERS: dict[str, SaveBankAccount] = {
+    "swiss": SaveBankAccount(
+        currency=Currency.CHF,
+        bank_name="Demo-Bank",
+        holder="Muster Factoring AG",
+        iban="CH5800791123000889012",
+        third_party=True,
+        holder_address=AddressInput("8005", "Zürich", "CH", "Beispielweg", "3"),
+    ),
+    "german": SaveBankAccount(
+        currency=Currency.EUR,
+        bank_name="Demo-Bank",
+        holder="Muster Factoring GmbH",
+        iban="DE89370400440532013000",
+        bic="COBADEFFXXX",
+        third_party=True,
+        holder_address=AddressInput("40210", "Düsseldorf", "DE", "Musterstraße", "3"),
+    ),
+    "austrian": SaveBankAccount(
+        currency=Currency.EUR,
+        bank_name="Demo-Bank",
+        holder="Muster Factoring GmbH",
+        iban="AT611904300234573201",
+        bic="BKAUATWWXXX",
+        third_party=True,
+        holder_address=AddressInput("1010", "Wien", "AT", "Musterstraße", "3"),
+    ),
+}
+"""The account of the provider that collects one invoice, in the company's currency."""
+ASSIGNMENT_TEXTS: dict[Language, tuple[str, str]] = {
+    Language.DE: (
+        "Abtretung an Finanzdienstleister",
+        (
+            "Wir haben unsere Forderungen an {kontoinhaber}, {kontoinhaber_adresse} abgetreten."
+            " Bitte überweisen Sie den Betrag bis {faellig} mit schuldbefreiender Wirkung auf"
+            " folgendes Konto:"
+        ),
+    ),
+    Language.EN: (
+        "Assignment to a financial service provider",
+        (
+            "We have assigned our receivables to {kontoinhaber}, {kontoinhaber_adresse}."
+            " Please transfer the amount by {faellig}, with discharging effect, to the following"
+            " account:"
+        ),
+    ),
+    Language.FR: (
+        "Cession à un prestataire financier",
+        (
+            "Nous avons cédé nos créances à {kontoinhaber}, {kontoinhaber_adresse}."
+            " Veuillez virer le montant d’ici au {faellig}, avec effet libératoire, sur le compte"
+            " suivant\u00a0:"
+        ),
+    ),
+    Language.IT: (
+        "Cessione a un fornitore di servizi finanziari",
+        (
+            "Abbiamo ceduto i nostri crediti a {kontoinhaber}, {kontoinhaber_adresse}."
+            " La preghiamo di versare l’importo entro il {faellig}, con effetto liberatorio, sul"
+            " conto seguente:"
+        ),
+    ),
+}
+"""The payment terms of that invoice, also offered as a text template."""
 ACCOUNT_SETS = {
     Country.CH: "swiss",
     Country.LI: "swiss",
@@ -323,6 +394,7 @@ class DemoHandlers:
     articles: ArticleHandlers
     documents: DocumentHandlers
     imports: ImportHandlers
+    texts: TextHandlers
 
     def install(self, country: Country) -> DemoResult:
         """Set up an empty installation as a public demo of ``country``.
@@ -356,10 +428,26 @@ class DemoHandlers:
         if not documents:
             return DemoResult(len(customers), len(articles), accounts, 0, 0)
         currency = company.default_currency
-        invoices = self._invoices(customers, articles, currency)
+        provider = self._provider(company)
+        invoices = self._invoices(customers, articles, currency, provider)
         quotes = self._quotes(customers, articles, currency)
         imported = self._old_invoices(company, customers)
-        return DemoResult(len(customers), len(articles), accounts, invoices, quotes, imported)
+        return DemoResult(len(customers), len(articles), accounts + 1, invoices, quotes, imported)
+
+    def _provider(self, company: Company) -> _Provider:
+        """Add the provider's account and its payment terms, as a template that is no default."""
+        account = self.company.create_bank_account(DEMO_PROVIDERS[ACCOUNT_SETS[company.country]])
+        name, text = ASSIGNMENT_TEXTS[company.default_language]
+        self.texts.create_template(
+            SaveTextTemplate(
+                kind=TextKind.PAYMENT,
+                document_type=DocumentType.INVOICE,
+                language=company.default_language,
+                name=name,
+                text=text,
+            )
+        )
+        return _Provider(account.id, text)
 
     def _old_invoices(self, company: Company, customers: list[Customer]) -> int:
         """Take over a few invoices of the program the demo company used before."""
@@ -420,25 +508,42 @@ class DemoHandlers:
             )
 
     def _invoices(
-        self, customers: list[Customer], articles: list[Article], currency: Currency
+        self,
+        customers: list[Customer],
+        articles: list[Article],
+        currency: Currency,
+        provider: _Provider,
     ) -> int:
         today = self.clock.today()
         first = date(today.year - 1, *FIRST_INVOICE)
         count = (today - first).days // INVOICE_EVERY_DAYS + 1
+        invoiced = [
+            customers[INVOICE_CUSTOMERS[index % len(INVOICE_CUSTOMERS)]] for index in range(count)
+        ]
+        # The newest open invoice in the company's currency goes to the provider.
+        collected = next(
+            back
+            for back in range(1, count)
+            if back not in OVERDUE_BACK
+            and back != PARTLY_PAID_BACK
+            and invoiced[count - 1 - back].default_currency in {None, currency}
+        )
         issued: list[UUID] = []
         for index in range(count):
             back = count - 1 - index
             issue_date = today - timedelta(days=back * INVOICE_EVERY_DAYS)
-            invoice = self._issue(
-                DocumentType.INVOICE,
-                _draft(
-                    customers[INVOICE_CUSTOMERS[index % len(INVOICE_CUSTOMERS)]],
-                    articles,
-                    INVOICE_LINES[index % len(INVOICE_LINES)],
-                    issue_date,
-                    currency,
-                ),
+            draft = _draft(
+                invoiced[index],
+                articles,
+                INVOICE_LINES[index % len(INVOICE_LINES)],
+                issue_date,
+                currency,
             )
+            if back == collected:
+                draft = replace(
+                    draft, bank_account_id=provider.account_id, payment_text=provider.payment_text
+                )
+            invoice = self._issue(DocumentType.INVOICE, draft)
             issued.append(invoice)
             self._pay(invoice, index, back, issue_date, today)
         # A draft to finish, and the newest invoice cancelled.
@@ -485,6 +590,12 @@ class DemoHandlers:
     def _issue(self, document_type: DocumentType, draft: DraftInput) -> UUID:
         created = self.documents.create(document_type, draft).document.id
         return self.documents.issue(created).document.id
+
+
+@dataclass(frozen=True, slots=True)
+class _Provider:
+    account_id: UUID
+    payment_text: str
 
 
 def _draft(

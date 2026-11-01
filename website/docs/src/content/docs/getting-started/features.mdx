@@ -5,7 +5,7 @@ faq:
   - q: Do some features of Rhinvoice cost extra?
     a: "No. Every feature on this page is part of Rhinvoice, free under the AGPL. There is no paid version and there are no add-ons."
   - q: Which currencies can Rhinvoice invoice in?
-    a: "Swiss francs (CHF) and euros (EUR). Articles have a price per currency, each bank account has one currency, and an invoice uses the default account of its currency."
+    a: "Swiss francs (CHF) and euros (EUR). Articles have a price per currency, each bank account has one currency, and an invoice uses the default account of its currency or another account you choose in the editor."
   - q: What does Rhinvoice not do?
     a: "Rhinvoice is not an accounting program: no bookkeeping, no ledger, no VAT returns, no payroll. It is also not a hosted service, a web shop or a point-of-sale system."
   - q: Where do I see what is new?
@@ -83,7 +83,9 @@ Guides: [Switzerland](/docs/countries/switzerland/), [Liechtenstein](/docs/count
 - EPC QR code (GiroCode) on euro invoices from Germany and Austria
 - EPC QR code also on euro invoices from Switzerland and Liechtenstein to customers in the EEA, when the euro account has a BIC
 - Several bank accounts with IBAN, QR-IBAN, BIC and currency, one default account per currency
-- Footer with all bank accounts or only the account of the invoice currency
+- Choose the bank account per quote and invoice when the currency has several ([bank account per invoice](/docs/invoices/bank-accounts/))
+- Accounts of a third party, such as a financial service provider: the invoice names it as payee with IBAN and BIC, also in the QR-bill and the e-invoice
+- Footer with all bank accounts, only the invoice's account, or no bank details
 
 Guides: [Switzerland](/docs/countries/switzerland/), [Germany](/docs/countries/germany/)
 
@@ -116,8 +118,8 @@ Guide: [Customers and articles](/docs/moving/customers-and-articles/)
 
 ## Texts and print template
 
-- Text templates for introduction, payment terms and closing, per document type, one of them as the default
-- Placeholders in texts: `{nummer}`, `{datum}`, `{faellig}`, `{kunde}`, `{betrag}`, `{waehrung}`, `{firma}`
+- Text templates for introduction, payment terms and closing, per document type, one of them as the default; several print as paragraphs with a small gap
+- Placeholders in texts: `{nummer}`, `{datum}`, `{faellig}`, `{kunde}`, `{betrag}`, `{waehrung}`, `{firma}`, `{kontoinhaber}`, `{kontoinhaber_adresse}`
 - The country's legal notices as a suggestion, with your own wording if you like
 - Documents in German, English, French or Italian, chosen per document, per customer or as the company's default
 - Three print templates: *Classic*, *Modern*, *Plain*

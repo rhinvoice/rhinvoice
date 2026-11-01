@@ -1,3 +1,5 @@
+import hashlib
+
 import pytest
 
 from rhinvoice.domain.company.logo import MAX_LOGO_BYTES, Logo
@@ -40,3 +42,9 @@ def test_logo_size_boundary() -> None:
     exactly = PNG + b"\x00" * (MAX_LOGO_BYTES - len(PNG))
     assert len(Logo.from_upload(exactly).content) == MAX_LOGO_BYTES
     assert MAX_LOGO_BYTES == 1024 * 1024
+
+
+def test_a_logo_is_kept_by_its_fingerprint() -> None:
+    logo = Logo.from_upload(PNG)
+    assert logo.sha256 == hashlib.sha256(PNG).hexdigest()
+    assert Logo.from_upload(PNG + b"\x00").sha256 != logo.sha256

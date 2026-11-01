@@ -86,6 +86,8 @@ Rhinvoice creates only complete e-invoices. If something is missing, the dialog 
 | The customer's e-mail | on the customer |
 | A bank account | *Settings → Bank accounts* |
 
+The e-invoice names the account the invoice is paid to: the one chosen in the editor or the default account of the currency. If that account belongs to a third party, such as a financial service provider, the e-invoice also names the third party as payee (BG-10, BT-59), as EN 16931 asks. See [bank accounts per invoice](/docs/invoices/bank-accounts/). <Since version="0.9.0" />
+
 <Aside type="caution" title="Issued is issued">
 An issued invoice never changes, nor does its e-invoice. Whatever was missing when you issued it, add it for the next invoices.
 </Aside>

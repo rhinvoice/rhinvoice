@@ -49,10 +49,10 @@ describe("templatesFor and defaultTexts", () => {
     expect(templatesFor(ALL, "closing", "invoice", "de")).toEqual([]);
   });
 
-  it("joins the default templates", () => {
+  it("joins the default templates with a blank line", () => {
     expect(defaultTexts(ALL, "invoice", "de")).toEqual({
       intro_text: "Hallo",
-      payment_text: "Zahlbar bis {faellig}.\nBitte Nummer {nummer}\nals Zweck angeben.",
+      payment_text: "Zahlbar bis {faellig}.\n\nBitte Nummer {nummer}\nals Zweck angeben.",
       closing_text: "",
     });
     expect(defaultTexts(ALL, "invoice", "en").payment_text).toBe("Payable by {faellig}.");
@@ -67,13 +67,25 @@ describe("templatesFor and defaultTexts", () => {
 describe("toggleTemplate", () => {
   it("adds templates in their order and keeps own text at the end", () => {
     expect(toggleTemplate("", prompt, PAYMENTS)).toBe("Zahlbar prompt.");
-    expect(toggleTemplate("Zahlbar prompt.\nEigener Text", due, PAYMENTS)).toBe(
-      "Zahlbar bis {faellig}.\nZahlbar prompt.\nEigener Text",
+    expect(toggleTemplate("Zahlbar prompt.\n\nEigener Text", due, PAYMENTS)).toBe(
+      "Zahlbar bis {faellig}.\n\nZahlbar prompt.\n\nEigener Text",
+    );
+    // Own text keeps its lines; several blank lines become one.
+    expect(toggleTemplate("Eins\nZwei\n\n \n\nDrei", prompt, PAYMENTS)).toBe(
+      "Zahlbar prompt.\n\nEins\nZwei\n\nDrei",
+    );
+  });
+
+  it("separates the templates of texts written before the blank line", () => {
+    const text = "Zahlbar bis {faellig}.\nZahlbar prompt.\nEigener Text";
+    expect(toggleTemplate(text, reference, PAYMENTS)).toBe(
+      "Zahlbar bis {faellig}.\n\nBitte Nummer {nummer}\nals Zweck angeben.\n\n" +
+        "Zahlbar prompt.\n\nEigener Text",
     );
   });
 
   it("removes a template, also one spanning several lines", () => {
-    const text = "Zahlbar bis {faellig}.\nBitte Nummer {nummer}\nals Zweck angeben.";
+    const text = "Zahlbar bis {faellig}.\n\nBitte Nummer {nummer}\nals Zweck angeben.";
     expect(toggleTemplate(text, reference, PAYMENTS)).toBe("Zahlbar bis {faellig}.");
     expect(toggleTemplate(text, due, PAYMENTS)).toBe("Bitte Nummer {nummer}\nals Zweck angeben.");
     expect(toggleTemplate("Zahlbar prompt.", prompt, PAYMENTS)).toBe("");
@@ -85,7 +97,7 @@ describe("toggleTemplate", () => {
     expect(containsTemplate("Bitte Nummer {nummer}", reference)).toBe(false);
     expect(containsTemplate("", template({ text: "" }))).toBe(false);
     expect(toggleTemplate("Bitte Nummer {nummer}", reference, PAYMENTS)).toBe(
-      "Bitte Nummer {nummer}\nals Zweck angeben.\nBitte Nummer {nummer}",
+      "Bitte Nummer {nummer}\nals Zweck angeben.\n\nBitte Nummer {nummer}",
     );
   });
 });
@@ -100,5 +112,10 @@ describe("switchLanguage", () => {
     });
     const changed = { ...german, intro_text: "Guten Tag" };
     expect(switchLanguage(changed, ALL, "invoice", "de", "en").intro_text).toBe("Guten Tag");
+    // Defaults joined without the blank line, as before, still count as defaults.
+    const before = { ...german, payment_text: german.payment_text.replace("\n\n", "\n") };
+    expect(switchLanguage(before, ALL, "invoice", "de", "en").payment_text).toBe(
+      "Payable by {faellig}.",
+    );
   });
 });

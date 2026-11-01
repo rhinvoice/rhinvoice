@@ -160,6 +160,7 @@ def _document_values(document: Document, index: DocumentIndex) -> dict[str, Any]
         "intro_text": content.intro_text,
         "payment_text": content.payment_text,
         "closing_text": content.closing_text,
+        "bank_account_id": content.bank_account_id,
         "created_at": document.created_at,
         "issued_at": document.issued_at,
         "source_id": document.source_id,
@@ -400,6 +401,7 @@ class SqlDocumentRepository:
             intro_text=row["intro_text"],
             payment_text=row["payment_text"],
             closing_text=row["closing_text"],
+            bank_account_id=row["bank_account_id"],
         )
         return Document(
             id=row["id"],

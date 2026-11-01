@@ -19,6 +19,7 @@ from rhinvoice.application.numbering.handlers import (
     NumberingHandlers,
     allocate_number,
 )
+from rhinvoice.domain.company.logo import Logo
 from rhinvoice.domain.company.print_layout import (
     FooterAccounts,
     LogoPosition,
@@ -86,6 +87,38 @@ def test_company_and_logo(engine: Engine) -> None:
     assert handlers.get_logo() == replaced
     handlers.delete_logo()
     assert handlers.get_logo() is None
+
+
+def test_logos_of_issued_documents_are_kept_for_good(engine: Engine) -> None:
+    logo = Logo.from_upload(PNG)
+    for _ in range(2):  # Kept once, a second time is no error.
+        with factory(engine)() as uow:
+            uow.company.keep_issued_logo(logo)
+            uow.commit()
+    with factory(engine)() as uow:
+        assert uow.company.issued_logo(logo.sha256) == logo
+        assert uow.company.issued_logo("0" * 64) is None
+    for statement in (
+        "UPDATE issued_logos SET media_type = 'image/jpeg'",
+        "DELETE FROM issued_logos",
+        "TRUNCATE issued_logos",
+    ):
+        with (
+            engine.begin() as connection,
+            pytest.raises(IntegrityError, match="cannot be changed or deleted"),
+        ):
+            connection.execute(text(statement))
+    with (
+        engine.begin() as connection,
+        pytest.raises(IntegrityError, match="does not match its hash"),
+    ):
+        connection.execute(
+            text(
+                "INSERT INTO issued_logos (sha256, media_type, content)"
+                " VALUES (:sha, 'image/png', :content)"
+            ),
+            {"sha": "0" * 64, "content": PNG},
+        )
 
 
 def test_only_one_company_row_is_possible(engine: Engine) -> None:

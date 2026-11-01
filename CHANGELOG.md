@@ -8,8 +8,37 @@ before 1.0, minor versions may contain breaking changes.
 ## [0.9.0] – 2026-10-30
 
 ### Added
+- Choose the bank account per quote or invoice: with more than one account in the document's
+  currency, the editor's *Dates* card offers *Bank details*, the default account preselected.
+  Recurring invoices carry the choice to the invoices they write. Drafts and plans whose account
+  is deleted fall back to the default account; issued documents keep theirs (#45).
+- Accounts of a third party, e.g. a financial service provider that collects the payment: tick
+  *Account belongs to a third party* and enter the holder's address. Documents paid to it list
+  the payee, IBAN and BIC in a small table that stays on one page with the payment terms above it,
+  the Swiss QR-bill names the holder at that address, and the e-invoice names the payee (BG-10).
+  Such an account appears in the footer only on documents paid to it. The demos have an invoice
+  collected by such a provider.
+- Placeholders `{kontoinhaber}` and `{kontoinhaber_adresse}` for texts and e-mails: the holder of
+  the account the document is paid to and their address on one line, a third party's or, for own
+  accounts, the company's. A payment text naming the provider that receivables were assigned to
+  follows the account chosen on the invoice.
+- *Settings → Print template → Footer*: the bank details can be left out (*None*). The payment
+  details and QR codes stay.
 - *Share* on an issued document hands its PDF to the share sheet of the phone (and of Safari on a
   Mac), e.g. to mail or a messenger. Browsers that cannot share files show no such button.
+
+### Changed
+- Text templates ticked in the editor are separated by a blank line, and a blank line in a text
+  prints as a small gap between paragraphs instead of a whole empty line.
+- A new quote or invoice starts with today as its *Date*, and so do duplicates and invoices made
+  from a quote. The field stays editable; cleared, the document takes the date of issuing as
+  before. Existing drafts keep their dates, recurring invoices are dated by their plan.
+
+### Fixed
+- Issuing no longer reports an error when the invoice is issued but its PDF could not be stored
+  right away. The editor stayed on the draft and later saves failed; now the issued invoice
+  opens, and its first download stores the PDF. Issuing keeps the logo of that day, so such a
+  PDF shows it even when the logo was changed meanwhile.
 
 ## [0.8.8] – 2026-10-27
 

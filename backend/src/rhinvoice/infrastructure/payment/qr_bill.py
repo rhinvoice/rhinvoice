@@ -143,7 +143,8 @@ def swiss_qr_bill(model: PrintModel, remittance: str) -> str | None:
     total = model.payable
     # The creditor is the account holder (SIX IG 3.2.4), e.g. the owner of a sole
     # proprietorship rather than its trade name; the EPC QR code names the same.
-    creditor = _address(account.holder, model.company.address)
+    # A third party that collects the payment comes with its own address.
+    creditor = _address(account.holder, account.creditor_address(model.company.address))
     recipient = model.recipient
     debtors = (
         [None] if recipient is None else [_address(recipient.display_name, recipient.address), None]

@@ -8,6 +8,7 @@ be overridden by placing files of the same name in a theme directory.
 from __future__ import annotations
 
 import base64
+import re
 from dataclasses import dataclass
 from functools import cache
 from importlib.resources import files
@@ -23,7 +24,7 @@ from jinja2 import (
 )
 from markupsafe import Markup
 
-from rhinvoice.domain.company.print_layout import FooterAccounts, PrintFont, PrintTemplate
+from rhinvoice.domain.company.print_layout import PrintFont, PrintTemplate, accounts_in_footer
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.document.document import DocumentType
 from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
@@ -140,6 +141,14 @@ class TotalRow:
     emphasis: bool = False
 
 
+_BLANK_LINES = re.compile(r"\n[ \t]*\n\s*")
+
+
+def paragraphs(text: str) -> list[str]:
+    """Split a text at its blank lines: text blocks print with a small gap between them."""
+    return [part for part in _BLANK_LINES.split(text.strip()) if part]
+
+
 class JinjaDocumentRenderer:
     def __init__(self, theme_dir: Path | None = None) -> None:
         loaders: list[BaseLoader] = [] if theme_dir is None else [FileSystemLoader(theme_dir)]
@@ -199,6 +208,9 @@ def _context(model: PrintModel) -> dict[str, object]:
     labels = setting.labels
     recipient = model.recipient
     values = _placeholder_values(model, setting)
+    intro = fill_placeholders(content.intro_text, values)
+    payment = fill_placeholders(content.payment_text, values)
+    closing = fill_placeholders(content.closing_text, values)
     gross = content.price_mode is PriceMode.GROSS and content.charges_vat
     title = TITLES[language][document.type]
     layout = model.layout
@@ -235,7 +247,8 @@ def _context(model: PrintModel) -> dict[str, object]:
             if model.cancelled_number is None
             else labels["cancels"].format(number=model.cancelled_number)
         ),
-        "intro": fill_placeholders(content.intro_text, values),
+        "intro": intro,
+        "intro_paragraphs": paragraphs(intro),
         "labels": labels,
         "show_rate": content.charges_vat,
         "lines": _lines(model, setting),
@@ -244,8 +257,12 @@ def _context(model: PrintModel) -> dict[str, object]:
         "notices": [text for _, text in model.view.notices if text],
         # Themes written before 0.4 print one notice: all of them, one per line.
         "notice": model.view.notice,
-        "payment": fill_placeholders(content.payment_text, values),
-        "closing": fill_placeholders(content.closing_text, values),
+        "payment": payment,
+        "payment_paragraphs": paragraphs(payment),
+        "payee": _payee(model, labels),
+        "payee_rows": _payee_rows(model, labels),
+        "closing": closing,
+        "closing_paragraphs": paragraphs(closing),
         "footer": _footer(model, language),
         "footer_boxes": _footer_boxes(_footer(model, language)),
         **_payment_codes(model, title),
@@ -278,6 +295,7 @@ def _reminder_context(printed: ReminderPrint) -> dict[str, object]:
         )
     )
     issued_total = model.view.totals.total
+    intro = fill_placeholders(printed.text, values)
     return {
         **_context(model),
         "title": REMINDER_TITLES[setting.language][reminder.level],
@@ -285,7 +303,8 @@ def _reminder_context(printed: ReminderPrint) -> dict[str, object]:
         "number_pending": False,
         "draft": False,
         "meta": meta,
-        "intro": fill_placeholders(printed.text, values),
+        "intro": intro,
+        "intro_paragraphs": paragraphs(intro),
         "reminder_invoice": {
             "number": number,
             "date": day(model.issue_date, setting.locale),
@@ -433,6 +452,7 @@ def _placeholder_values(model: PrintModel, setting: _Setting) -> dict[Placeholde
     document = model.view.document
     recipient = model.recipient
     total = model.view.totals.total
+    account = model.bank_account
     return {
         Placeholder.NUMBER: document.number or f"({setting.labels['number_pending']})",
         Placeholder.DATE: day(model.issue_date, setting.locale),
@@ -441,7 +461,22 @@ def _placeholder_values(model: PrintModel, setting: _Setting) -> dict[Placeholde
         Placeholder.AMOUNT: setting.amount(total.amount),
         Placeholder.CURRENCY: total.currency.value,
         Placeholder.COMPANY: model.company.name,
+        Placeholder.ACCOUNT_HOLDER: "" if account is None else account.holder,
+        Placeholder.ACCOUNT_HOLDER_ADDRESS: _holder_address(model, setting.language),
     }
+
+
+def _holder_address(model: PrintModel, language: Language) -> str:
+    """Put the address of the paid account's holder on one line, as texts quote it."""
+    account = model.bank_account
+    if account is None:
+        return ""
+    company = model.company.address
+    address = account.creditor_address(company)
+    lines = _company_lines(address)
+    if address.country.value != company.country.value:
+        lines.append(country_name(address.country.value, language))
+    return ", ".join(lines)
 
 
 def _accent(model: PrintModel) -> str:
@@ -525,6 +560,26 @@ def _register_lines(register: str, label: str) -> list[str]:
     return parts if named else [f"{label} {parts[0]}", *parts[1:]]
 
 
+def _payee_rows(model: PrintModel, labels: dict[str, str]) -> list[tuple[str, str]]:
+    """List the third party that collects the payment, its IBAN and BIC; [] for own accounts."""
+    account = model.bank_account
+    if account is None or not account.third_party:
+        return []
+    rows = [(labels["payee"], account.holder), ("IBAN", account.iban.formatted())]
+    if account.bic is not None:
+        rows.append(("BIC", account.bic.value))
+    return rows
+
+
+def _payee(model: PrintModel, labels: dict[str, str]) -> str:
+    """Put the payee on one line, for themes written before the table (ADR 0037)."""
+    rows = _payee_rows(model, labels)
+    if not rows:
+        return ""
+    (_, holder), *details = rows
+    return SEPARATOR.join([f"{labels['pay_to']} {holder}", *(f"{k} {v}" for k, v in details)])
+
+
 def _bank_columns(model: PrintModel, labels: dict[str, str]) -> list[list[str]]:
     """List the bank details as one footer column, short enough for the bottom margin.
 
@@ -532,11 +587,10 @@ def _bank_columns(model: PrintModel, labels: dict[str, str]) -> list[list[str]]:
     banks are listed one after the other, each in two to four lines.
     """
     company = model.company
-    if model.layout.footer_accounts is FooterAccounts.ALL and model.accounts:
-        accounts = list(model.accounts)
-    elif model.bank_account is not None:
-        accounts = [model.bank_account]
-    else:
+    accounts = list(
+        accounts_in_footer(model.layout.footer_accounts, model.bank_account, model.accounts)
+    )
+    if not accounts:
         return []
     banks: dict[tuple[str, str], list[BankAccount]] = {}
     for account in accounts:

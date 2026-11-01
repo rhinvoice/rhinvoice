@@ -4,7 +4,7 @@
   <h1>{{ title }}{% if number %} <span class="number">{{ number }}</span>{% endif %}</h1>
   {% if subject %}<p class="subject">{{ subject }}</p>{% endif %}
   {% if cancels %}<p class="cancels">{{ cancels }}</p>{% endif %}
-  {% if intro %}<p class="text">{{ intro }}</p>{% endif %}
+  {% if intro %}<div class="text">{% for part in intro_paragraphs %}<p>{{ part }}</p>{% endfor %}</div>{% endif %}
 
   {% if lines %}
   <table class="lines">
@@ -50,9 +50,16 @@
   {% endif %}
 
   {% for notice in notices %}<p class="notice">{{ notice }}</p>{% endfor %}
-  {% if payment or epc_qr or epc_pending %}
+  {% if payment or payee or epc_qr or epc_pending %}
   <div class="payment">
-    {% if payment %}<p class="text">{{ payment }}</p>{% endif %}
+    {% if payee %}
+    <div class="text payee-block">
+      {% if payment %}<div class="payment-text">{% for part in payment_paragraphs %}<p>{{ part }}</p>{% endfor %}</div>{% endif %}
+      <dl class="payee">
+        {% for label, value in payee_rows %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}
+      </dl>
+    </div>
+    {% elif payment %}<div class="text">{% for part in payment_paragraphs %}<p>{{ part }}</p>{% endfor %}</div>{% endif %}
     {% if epc_qr %}
     <figure class="epc">
       {{ epc_qr }}
@@ -66,5 +73,5 @@
     {% endif %}
   </div>
   {% endif %}
-  {% if closing %}<p class="text">{{ closing }}</p>{% endif %}
+  {% if closing %}<div class="text">{% for part in closing_paragraphs %}<p>{{ part }}</p>{% endfor %}</div>{% endif %}
 {% endblock %}

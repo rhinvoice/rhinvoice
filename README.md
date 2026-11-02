@@ -149,6 +149,9 @@ Rhinvoice is free to use, change and share under the AGPL. There is no paid vers
 service. If you would like a hosted Rhinvoice, say so in the
 [GitHub discussions](https://github.com/rhinvoice/rhinvoice/discussions).
 
+If Rhinvoice saves you time or money, you can support it through
+[GitHub Sponsors](https://github.com/sponsors/rhinvoice).
+
 Interested in a commercial licence, a partnership or taking over the project? Write to us at
 hello@rhinvoice.com.
 

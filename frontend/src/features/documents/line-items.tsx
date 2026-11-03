@@ -385,6 +385,7 @@ function LineSummary({
               {line.discount_percent === "" || line.discount_percent === "0"
                 ? ""
                 : ` · −${display(line.discount_percent, (value) => formatNumber(value, locale, 2))} %`}
+              {line.tax_category === "pass_through" ? ` · ${t("documents.passThroughShort")}` : ""}
               {line.supply === "goods" ? ` · ${t("supply.goods")}` : ""}
             </span>
           ) : null}

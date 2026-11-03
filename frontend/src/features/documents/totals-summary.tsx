@@ -60,6 +60,10 @@ export function TotalsSummary({ totals, taxName, className }: TotalsSummaryProps
           value={money(group.tax)}
         />
       ))}
+      {Number(totals.pass_through) === 0 ? null : (
+        // Paid in the customer's name: outside the tax, part of the total (ADR 0039).
+        <Row label={t("documents.passThrough")} value={money(totals.pass_through)} />
+      )}
       {Number(totals.rounding) === 0 ? null : (
         <Row label={t("documents.rounding")} value={money(totals.rounding)} />
       )}

@@ -13,6 +13,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Dans Rhinvoice, vous enregistrez les paiements sur chaque facture émise avec **date et montant**, paiements partiels compris, et marquez une ou plusieurs factures comme payées en une fois. Une facture encore ouverte après son échéance est *En retard* et peut être relancée en **trois niveaux de rappel**.
@@ -90,7 +91,7 @@ Rhinvoice enregistre le texte avec le rappel, si bien que le PDF a toujours l’
 
 ## Envoyer factures et rappels par e-mail
 
-Lorsqu’un serveur de messagerie est configuré sous *Paramètres → E-mail*, **Envoyer par e-mail** envoie les factures émises et les rappels établis directement depuis Rhinvoice, avec le PDF en pièce jointe. Vous vérifiez les destinataires, l’objet et le texte avant chaque e-mail; l’adresse du client est préremplie, et jusqu’à cinq destinataires sont possibles. Chaque e-mail est noté dans l’historique de la facture. Si le serveur de messagerie refuse, Rhinvoice affiche sa réponse. Sans serveur de messagerie, téléchargez le PDF et envoyez-le vous-même.
+Lorsqu’un serveur de messagerie est configuré sous *Paramètres → E-mail*, **Envoyer par e-mail** envoie les factures émises et les rappels établis directement depuis Rhinvoice, avec le PDF en pièce jointe. Les pièces jointes d’un document suivent son PDF, après la XRechnung si vous la choisissez; la fenêtre d’envoi les liste ([débours](/docs/fr/invoices/pass-through/)). <Since version="0.10.0" /> Vous vérifiez les destinataires, l’objet et le texte avant chaque e-mail; l’adresse du client est préremplie, et jusqu’à cinq destinataires sont possibles. Chaque e-mail est noté dans l’historique de la facture. Si le serveur de messagerie refuse, Rhinvoice affiche sa réponse. Sans serveur de messagerie, téléchargez le PDF et envoyez-le vous-même.
 
 ## Questions fréquentes
 

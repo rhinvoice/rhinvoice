@@ -385,6 +385,7 @@ function LineSummary({
               {line.discount_percent === "" || line.discount_percent === "0"
                 ? ""
                 : ` · −${display(line.discount_percent, (value) => formatNumber(value, locale, 2))} %`}
+              {line.tax_category === "pass_through" ? ` · ${t("documents.passThroughShort")}` : ""}
               {line.supply === "goods" ? ` · ${t("supply.goods")}` : ""}
             </span>
           ) : null}
@@ -627,6 +628,9 @@ function LineEditor({
             </label>
             <NativeSelect
               id={id("tax_category")}
+              aria-describedby={
+                taxCategory === "pass_through" ? `${id("tax_category")}-pass-through` : undefined
+              }
               onKeyDown={onKeyDown}
               {...register(`lines.${index}.tax_category`)}
             >
@@ -635,7 +639,8 @@ function LineEditor({
                 // are not offered, unless the line already uses one.
                 (category) => rates === undefined || category in rates || category === taxCategory,
               ).map((category) => {
-                const rate = offered?.[category];
+                // Pass-through items carry no tax at all, not a rate of 0 %.
+                const rate = category === "pass_through" ? undefined : offered?.[category];
                 const label = taxCategoryLabel(category, profile, locale, t);
                 return (
                   <option key={category} value={category}>
@@ -644,29 +649,40 @@ function LineEditor({
                 );
               })}
             </NativeSelect>
-          </div>
-          <div className="col-span-2 flex flex-col gap-1.5">
-            <label htmlFor={id("supply")} className="text-sm font-medium">
-              {t("documents.lineSupply")}
-            </label>
-            <NativeSelect
-              id={id("supply")}
-              aria-describedby={own === null ? undefined : `${id("supply")}-treatment`}
-              onKeyDown={onKeyDown}
-              {...register(`lines.${index}.supply`)}
-            >
-              {SUPPLIES.map((option) => (
-                <option key={option} value={option}>
-                  {t(`supply.${option}`)}
-                </option>
-              ))}
-            </NativeSelect>
-            {own === null ? null : (
-              <p id={`${id("supply")}-treatment`} className="text-xs text-muted-foreground">
-                {t("documents.goodsTreatment", { treatment: t(`treatment.${own}`) })}
+            {taxCategory === "pass_through" ? (
+              <p
+                id={`${id("tax_category")}-pass-through`}
+                className="text-xs text-muted-foreground"
+              >
+                {t("documents.passThroughHint")}
               </p>
-            )}
+            ) : null}
           </div>
+          {/* Goods or services matter for the tax only: not for pass-through items. */}
+          {taxCategory === "pass_through" ? null : (
+            <div className="col-span-2 flex flex-col gap-1.5">
+              <label htmlFor={id("supply")} className="text-sm font-medium">
+                {t("documents.lineSupply")}
+              </label>
+              <NativeSelect
+                id={id("supply")}
+                aria-describedby={own === null ? undefined : `${id("supply")}-treatment`}
+                onKeyDown={onKeyDown}
+                {...register(`lines.${index}.supply`)}
+              >
+                {SUPPLIES.map((option) => (
+                  <option key={option} value={option}>
+                    {t(`supply.${option}`)}
+                  </option>
+                ))}
+              </NativeSelect>
+              {own === null ? null : (
+                <p id={`${id("supply")}-treatment`} className="text-xs text-muted-foreground">
+                  {t("documents.goodsTreatment", { treatment: t(`treatment.${own}`) })}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       ) : null}
 

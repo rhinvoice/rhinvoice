@@ -110,6 +110,22 @@ LABELS = LineInput(
 CREDIT = LineInput(
     kind=LineKind.ITEM, description="Gutschrift Anzahlung", quantity="-1", unit_price="100"
 )
+# Paid in the customer's name (ADR 0039): exempt with VATEX-EU-79-C, outside the discount.
+FEE = LineInput(
+    kind=LineKind.ITEM,
+    description="Gebühr Handelsregister",
+    details="Rechnung des Amts auf den Namen des Kunden",
+    unit_price="250.37",
+    tax_category=TaxCategory.PASS_THROUGH,
+)
+COPIES = LineInput(
+    kind=LineKind.ITEM,
+    description="Grundbuchauszüge",
+    quantity="2",
+    unit="C62",
+    unit_price="20",
+    tax_category=TaxCategory.PASS_THROUGH,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -216,6 +232,45 @@ def samples() -> dict[str, Sample]:
         ),
     )
     return {
+        # Pass-through items next to a taxed line, with a document discount (ADR 0039).
+        "de-pass-through": Sample(
+            german,
+            replace(german_customer, kind=CustomerKind.COMPANY, company_name="Kunde GmbH"),
+            (berlin_account,),
+            _draft((CONSULTING, FEE, COPIES), discount_value="5", reference="Bestellung 42"),
+        ),
+        # Exempt lines of another reason share the breakdown of the pass-through lines.
+        "de-pass-through-exempt": Sample(
+            german,
+            replace(german_customer, kind=CustomerKind.COMPANY, company_name="Kunde GmbH"),
+            (berlin_account,),
+            _draft((CONSULTING, EXEMPT, FEE)),
+        ),
+        # Two rates, the pass-through block before the 5-centime rounding, a QR reference.
+        "ch-pass-through": Sample(
+            swiss,
+            factories.customer(id=CUSTOMER),
+            (_chf_qr_account(),),
+            _draft((CONSULTING, REDUCED, FEE), discount_value="2.5"),
+        ),
+        "ch-pass-through-cancellation": Sample(
+            swiss,
+            factories.customer(id=CUSTOMER),
+            (_chf_qr_account(),),
+            _draft((CONSULTING, FEE)),
+            cancel=True,
+        ),
+        # Outside VAT ("O"), which stands alone: the pass-through lines join it.
+        "ch-small-business-pass-through": Sample(
+            factories.company(
+                name="Kleinbetrieb Muster",
+                vat_number=VatNumber.parse("CHE-123.456.788"),
+                small_business=True,
+            ),
+            factories.customer(id=CUSTOMER),
+            (factories.bank_account(is_default=True),),
+            _draft((CONSULTING, FEE)),
+        ),
         "de-third-party": Sample(
             german,
             german_customer,

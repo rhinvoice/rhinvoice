@@ -2,7 +2,8 @@
 
 The list comes as Excel, CSV or PDF; with ``with_pdfs`` a ZIP holds the list and the
 PDF of every document, named as the list's column "file" says. Own documents add their
-archived PDF (archived now if it was not yet), imported invoices their original.
+archived PDF (archived now if it was not yet) and the files attached to them (ADR 0040),
+imported invoices their original.
 """
 
 from __future__ import annotations
@@ -105,6 +106,11 @@ class ExportHandlers:
         with self.uow() as uow:
             company = uow.company.get()
             documents = uow.documents.issued_between(period.start, period.end)
+            attachments = (
+                uow.documents.attachments_of([document.id for document in documents])
+                if request.with_pdfs
+                else {}
+            )
         if company is None:
             raise ConflictError("set up the company before exporting", code="company_not_set_up")
         language = request.language or company.default_language
@@ -116,6 +122,7 @@ class ExportHandlers:
             self.clock.today(),
             with_files=request.with_pdfs,
             reserved=(list_name,),
+            attachments=attachments,
         )
         content = self.writer.write(listing, company, request.format, language)
         if not request.with_pdfs:
@@ -126,8 +133,13 @@ class ExportHandlers:
     def _files(
         self, list_name: str, content: bytes, listing: ExportListing
     ) -> Iterator[tuple[str, bytes]]:
-        """Yield the list, then each PDF: only one PDF is in memory at a time."""
+        """Yield the list, then each PDF and its attachments: one file in memory at a time."""
         yield list_name, content
         for row in listing.rows:
             if row.file_name is not None:
                 yield row.file_name, self.printing.pdf(row.document_id).content
+            for attachment_id, name in row.attachment_files:
+                with self.uow() as uow:
+                    found = uow.documents.get_attachment(row.document_id, attachment_id)
+                if found is not None:
+                    yield name, found[1]

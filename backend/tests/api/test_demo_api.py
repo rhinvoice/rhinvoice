@@ -81,6 +81,13 @@ def test_the_demo_tells_how_to_get_in(demo_client: TestClient) -> None:
         ("post", "/api/documents/00000000-0000-0000-0000-000000000000/mail"),
         ("post", "/api/reminders/00000000-0000-0000-0000-000000000000/mail"),
         ("post", "/api/documents/00000000-0000-0000-0000-000000000000/files"),
+        (
+            "delete",
+            (
+                "/api/documents/00000000-0000-0000-0000-000000000000/attachments/"
+                "00000000-0000-0000-0000-000000000000"
+            ),
+        ),
         ("post", "/api/backup"),
         ("put", "/api/backup/setup"),
         ("get", "/api/backup/key"),

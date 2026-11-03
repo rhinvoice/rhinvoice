@@ -164,6 +164,27 @@ describe("document form", () => {
     });
     expect(issues(valid({ discount_kind: "amount", discount_value: "120" }))).toEqual({});
     expect(issues(valid({ discount_value: "12,5" }))).toEqual({});
+    // Pass-through items alone take no discount; with a taxed line or a text they do.
+    const fee = {
+      ...emptyLine(),
+      key: "f",
+      description: "Gebühr",
+      tax_category: "pass_through" as const,
+    };
+    const text = { ...emptyLine("text"), key: "t", description: "Hinweis" };
+    const taxed = { ...emptyLine(), key: "b", description: "Beratung" };
+    const refused = {
+      discount_value:
+        "Durchlaufende Posten erhalten keinen Rabatt; ohne andere Positionen bleibt er wirkungslos.",
+    };
+    expect(issues(valid({ discount_value: "10", lines: [fee, text] }))).toEqual(refused);
+    expect(
+      issues(valid({ discount_kind: "amount", discount_value: "0,01", lines: [fee] })),
+    ).toEqual(refused);
+    expect(issues(valid({ discount_value: "10", lines: [fee, taxed] }))).toEqual({});
+    expect(issues(valid({ discount_value: "0", lines: [fee] }))).toEqual({});
+    expect(issues(valid({ discount_value: "", lines: [fee] }))).toEqual({});
+    expect(issues(valid({ discount_value: "10", lines: [text] }))).toEqual({});
     expect(issues(valid({ issue_date: "2026-02-01", due_date: "2026-01-31" }))).toEqual({
       due_date: "Das Fälligkeitsdatum liegt vor dem Datum.",
     });
@@ -342,6 +363,7 @@ const DETAIL: DocumentDetail = {
     discount: "0.00",
     net: "0.00",
     tax: "0.00",
+    pass_through: "0.00",
     gross: "0.00",
     rounding: "0.00",
     total: "0.00",

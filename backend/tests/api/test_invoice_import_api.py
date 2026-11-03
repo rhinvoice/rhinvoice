@@ -83,6 +83,7 @@ def test_invoices_come_with_their_pdf_files(user_client: TestClient) -> None:
         "attachment; filename=\"Mahnung R20150001.pdf\"; filename*=UTF-8''Mahnung%20R20150001.pdf"
     )
     assert file.headers["etag"] == f'"{attachment["sha256"]}"'
+    assert file.headers["cache-control"] == "private, no-cache"
     inline = user_client.get(f"/api/documents/{document_id}/attachments/{attachment['id']}")
     assert inline.headers["content-disposition"].startswith("inline; ")
     missing = user_client.get(

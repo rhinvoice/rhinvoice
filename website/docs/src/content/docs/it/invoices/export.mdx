@@ -40,7 +40,7 @@ Conta la **data della fattura**. L’esportazione contiene fatture emesse, note 
 | CSV | UTF-8 con BOM, punto e virgola come separatore, date nel formato `AAAA-MM-GG`. Importi senza separatore delle migliaia, con il punto (azienda in Svizzera o nel Liechtenstein) o la virgola (azienda in Germania o in Austria). Dopo una riga vuota seguono i totali per valuta. |
 | PDF | A4 orizzontale, con azienda, periodo e numeri di pagina, i totali per valuta alla fine. |
 
-Con *Allega i PDF delle fatture (ZIP)* riceve un file ZIP con l’elenco nel formato scelto e il PDF di ogni documento. I PDF portano il loro numero, p. es. `R20260042.pdf`, e la colonna *File* dell’elenco ne indica il nome. Sono i PDF archiviati, invariati dall’emissione. Le fatture riprese portano il loro PDF originale; senza PDF, *File* resta vuota. Si prepara un’esportazione alla volta; la demo pubblica offre gli elenchi, ma nessun file ZIP con i PDF.
+Con *Allega i PDF delle fatture (ZIP)* riceve un file ZIP con l’elenco nel formato scelto e il PDF di ogni documento. I PDF portano il loro numero, p. es. `R20260042.pdf`, e la colonna *File* dell’elenco ne indica il nome. Sono i PDF archiviati, invariati dall’emissione. Le fatture riprese portano il loro PDF originale; senza PDF, *File* resta vuota. Gli allegati di un documento, come la fattura del terzo di una [spesa anticipata](/docs/it/invoices/pass-through/), seguono il suo PDF, con il numero e il loro nome: `R20260042_Handelsregister.pdf`. Si prepara un’esportazione alla volta; la demo pubblica offre gli elenchi, ma nessun file ZIP con i PDF.
 
 <Aside type="caution">
 Se un testo nel file CSV inizia con `=`, `+`, `-` o `@`, Rhinvoice vi antepone un apostrofo. Così un foglio di calcolo non lo esegue come formula all’apertura. Il file Excel salva questi testi come testo e li lascia invariati.
@@ -58,6 +58,8 @@ Se un testo nel file CSV inizia con `=`, `+`, `-` o `@`, Rhinvoice vi antepone u
 | Netto | Importo netto del documento |
 | Netto x %, IVA x % | Una coppia per aliquota IVA presente nell’esportazione, anche 0 % |
 | IVA, Lordo | IVA totale e importo della fattura, arrotondamento compreso |
+| Spese anticipate | Le [spese anticipate](/docs/it/invoices/pass-through/) del documento, solo se il periodo ne contiene. *Netto* e *IVA* le escludono, *Lordo* le comprende |
+| Arrotondamento | L'arrotondamento del documento, solo se il periodo ne contiene. Con esso gli importi danno esattamente il *Lordo* |
 | Pagato, Pagato il | Somma dei pagamenti; la data dell’ultimo pagamento quando la fattura è pagata per intero |
 | Aperto | Ciò che è ancora aperto |
 | Perdita | La perdita di una fattura [registrata come perdita](/docs/it/invoices/write-off/) |

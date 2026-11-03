@@ -38,6 +38,8 @@ faq:
     a: "Ja. Seit Version 0.9.0 erfassen Sie mehrere Bankkonten pro Währung und wählen im Editor pro Rechnung eines. Ein Konto lässt sich als Konto eines Dritten markieren, etwa eines Finanzdienstleisters: Die Rechnung nennt ihn dann als Zahlungsempfänger mit IBAN und BIC, QR-Rechnung und E-Rechnung nennen ihn als Zahlungsempfänger."
   - q: Kann ich meine Rechnungen für die Buchhaltung exportieren?
     a: "Ja. Seit Version 0.9.0 lädt «Rechnungen → Exportieren» die ausgestellten Rechnungen und Stornorechnungen eines Monats, Quartals, Jahres oder freien Zeitraums als Excel, CSV oder PDF herunter, mit Summen pro Währung. Auf Wunsch kommen alle Rechnungs-PDFs in einer ZIP-Datei mit."
+  - q: Wie verrechne ich eine Gebühr weiter, die ich im Namen meines Kunden bezahlt habe?
+    a: "Als durchlaufenden Posten. Seit Version 0.10.0 wählen Sie als Steuersatz der Position «Durchlaufender Posten (ohne MWST)» bzw. «(ohne USt.)»: Sie hat keine Steuer, keinen Rabatt auf das Dokument und einen eigenen Block auf dem PDF, und Sie hängen die Fremdrechnung als PDF an. Das gilt nur, wenn die Fremdrechnung auf den Namen Ihres Kunden lautet."
 ---
 
 import Faq from "../../../../components/Faq.astro";

@@ -75,6 +75,12 @@ class _Printer:
             )
         return cells
 
+    def pass_through(self, row: ExportRow | CurrencySum) -> list[PrintedCell]:
+        return [self.amount(row.pass_through)] if self.listing.has_pass_through else []
+
+    def rounding(self, row: ExportRow | CurrencySum) -> list[PrintedCell]:
+        return [self.amount(row.rounding)] if self.listing.has_rounding else []
+
     def row(self, row: ExportRow) -> tuple[PrintedCell, ...]:
         language = self.language
         customer = SEPARATOR.join(
@@ -96,6 +102,8 @@ class _Printer:
             self.amount(row.net),
             *self.rates(row),
             self.amount(row.tax),
+            *self.pass_through(row),
+            *self.rounding(row),
             self.amount(row.total),
             PrintedCell(money(row.paid.amount, self.locale), day(row.paid_on), amount=True),
             self.amount(row.open),
@@ -113,6 +121,8 @@ class _Printer:
             self.amount(found.net),
             *self.rates(found),
             self.amount(found.tax),
+            *self.pass_through(found),
+            *self.rounding(found),
             self.amount(found.total),
             self.amount(found.paid),
             self.amount(found.open),
@@ -130,6 +140,8 @@ def printed_list(listing: ExportListing, company: Company, language: Language) -
     rates = tuple(
         PrintedCell(rate_text(rate, separator), net_tax, amount=True) for rate in listing.rates
     )
+    passed = (PrintedCell(labels["pass_through"], amount=True),) if listing.has_pass_through else ()
+    rounded = (PrintedCell(labels["rounding"], amount=True),) if listing.has_rounding else ()
     header = (
         PrintedCell(labels["number"], labels["type"]),
         PrintedCell(labels["date"], f"{labels['service_from']}{EN_DASH}{labels['service_to']}"),
@@ -143,6 +155,8 @@ def printed_list(listing: ExportListing, company: Company, language: Language) -
         PrintedCell(labels["net"], amount=True),
         *rates,
         PrintedCell(labels["tax"], amount=True),
+        *passed,
+        *rounded,
         PrintedCell(labels["total"], amount=True),
         PrintedCell(labels["paid"], labels["paid_on"], amount=True),
         PrintedCell(labels["open"], amount=True),
@@ -155,6 +169,8 @@ def printed_list(listing: ExportListing, company: Company, language: Language) -
         PrintedCell(labels["net"], amount=True),
         *rates,
         PrintedCell(labels["tax"], amount=True),
+        *passed,
+        *rounded,
         PrintedCell(labels["total"], amount=True),
         PrintedCell(labels["paid"], amount=True),
         PrintedCell(labels["open"], amount=True),

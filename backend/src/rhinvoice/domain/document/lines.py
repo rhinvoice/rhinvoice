@@ -93,6 +93,11 @@ class DocumentLine:
     def is_item(self) -> bool:
         return self.kind is LineKind.ITEM
 
+    @property
+    def is_pass_through(self) -> bool:
+        """A position paid in the customer's name and for the customer's account (ADR 0039)."""
+        return self.is_item and self.tax_category is TaxCategory.PASS_THROUGH
+
     def raw_amount(self) -> Decimal:
         """Quantity x unit price minus line discount, unrounded."""
         return self.quantity * self.unit_price * (HUNDRED - self.discount_percent) / HUNDRED

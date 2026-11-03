@@ -422,6 +422,9 @@ class InMemoryDocumentRepository:
 
     def delete(self, document_id: UUID) -> None:
         del self.data[document_id]
+        for attachment_id, (attachment, _) in list(self.saved_attachments.items()):
+            if attachment.document_id == document_id:
+                del self.saved_attachments[attachment_id]
 
     def number_exists(self, document_type: DocumentType, number: str) -> bool:
         return any(
@@ -493,11 +496,18 @@ class InMemoryDocumentRepository:
             self.e_invoices[document.id] = e_invoice
 
     def add_attachment(self, attachment: Attachment, content: bytes) -> None:
-        # Like the database trigger: issued documents only, and the content must match.
-        assert not self.data[attachment.document_id].document.is_draft
+        # Like the database trigger: drafts and imported invoices only, the content must match.
+        document = self.data[attachment.document_id].document
+        assert document.is_draft or document.is_imported
         assert attachment.sha256 == hashlib.sha256(content).hexdigest()
         assert attachment.id not in self.saved_attachments
         self.saved_attachments[attachment.id] = (attachment, content)
+
+    def remove_attachment(self, document_id: UUID, attachment_id: UUID) -> None:
+        # Like the database trigger: drafts only.
+        assert self.data[document_id].document.is_draft
+        stored = self.saved_attachments.pop(attachment_id)
+        assert stored[0].document_id == document_id
 
     def attachments(self, document_id: UUID) -> list[Attachment]:
         found = [
@@ -506,6 +516,14 @@ class InMemoryDocumentRepository:
             if attachment.document_id == document_id
         ]
         return sorted(found, key=lambda attachment: (attachment.file_name, str(attachment.id)))
+
+    def attachments_of(self, document_ids: Sequence[UUID]) -> dict[UUID, list[Attachment]]:
+        found = {document_id: self.attachments(document_id) for document_id in document_ids}
+        return {document_id: listed for document_id, listed in found.items() if listed}
+
+    def find_attachment(self, document_id: UUID, attachment_id: UUID) -> Attachment | None:
+        stored = self.get_attachment(document_id, attachment_id)
+        return None if stored is None else stored[0]
 
     def get_attachment(
         self, document_id: UUID, attachment_id: UUID

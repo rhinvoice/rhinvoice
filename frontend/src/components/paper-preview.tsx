@@ -10,8 +10,8 @@ const PAGE_HEIGHT = 1123;
 
 /** Highlighting for clickable lines, only in the editor. */
 const CLICKABLE_LINES = `
-tr[data-index] { cursor: pointer; }
-tr[data-index]:hover td { background: #eef3fb; }
+tr[data-index], .pass-through[data-index] { cursor: pointer; }
+tr[data-index]:hover td, .pass-through[data-index]:hover > span { background: #eef3fb; }
 `;
 
 interface PaperPreviewProps {
@@ -69,7 +69,8 @@ export function PaperPreview({
     style.textContent = CLICKABLE_LINES;
     page.head.append(style);
     page.addEventListener("click", (event) => {
-      const row = (event.target as Element | null)?.closest("tr[data-index]");
+      // Positions are table rows; pass-through items sit in their own block (ADR 0039).
+      const row = (event.target as Element | null)?.closest("[data-index]");
       const index = Number(row?.getAttribute("data-index"));
       if (row !== null && row !== undefined && Number.isInteger(index)) clickRef.current?.(index);
     });

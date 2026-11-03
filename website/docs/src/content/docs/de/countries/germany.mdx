@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside } from "@astrojs/starlight/components";
 
 Eine deutsche Rechnung mit Rhinvoice hat **19 % oder 7 % USt.** (§ 12 UStG) zum Leistungsdatum, Ihre **Steuernummer oder USt-IdNr.** (§ 14 Abs. 4 Nr. 2 UStG), das Leistungsdatum, den gesetzlichen Hinweis für Reverse Charge, Kleinunternehmer oder steuerfreie Lieferungen, einen **GiroCode** (EPC-QR-Code) und eine eingebettete **E-Rechnung** (ZUGFeRD). Für Behörden erstellt Rhinvoice zusätzlich die **XRechnung**.
@@ -34,6 +35,8 @@ Stand: Oktober 2026. Die Sätze und Regeln sind gegen UStG und UStDV geprüft, a
 Quelle: § 12 UStG; die Sätze von 2020 aus dem Zweiten Corona-Steuerhilfegesetz.
 
 Massgebend ist der Satz am **Leistungsdatum**: das Ende des Leistungszeitraums, sonst sein Beginn, sonst das Rechnungsdatum. Beim Ausstellen friert Rhinvoice den Satz jeder Position ein.
+
+Beträge, die Sie im Namen und für Rechnung Ihres Kunden bezahlen, etwa eine Gebühr des Handelsregisters, sind **durchlaufende Posten** und gehören nicht zum Entgelt (§ 10 Abs. 1 Satz 4 UStG). Rhinvoice zeigt sie ohne USt. in einem eigenen Block: [Durchlaufende Posten](/docs/de/invoices/pass-through/). <Since version="0.10.0" />
 
 ## Pflichtangaben nach § 14 UStG
 

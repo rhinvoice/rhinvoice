@@ -8,6 +8,7 @@ from rhinvoice.application.common import PageRequest, SortDirection
 from rhinvoice.domain.shared.clock import DEFAULT_TIMEZONE
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from datetime import date, datetime
     from uuid import UUID
     from zoneinfo import ZoneInfo
@@ -183,10 +184,22 @@ class DocumentRepository(Protocol):
         ...
 
     def add_attachment(self, attachment: Attachment, content: bytes) -> None:
-        """Store a further file of an issued document; it can never be replaced."""
+        """Store a further file of a draft or an imported invoice; it can never be replaced."""
+        ...
+
+    def remove_attachment(self, document_id: UUID, attachment_id: UUID) -> None:
+        """Remove a file of a draft; issued documents keep theirs."""
         ...
 
     def attachments(self, document_id: UUID) -> list[Attachment]: ...
+    def attachments_of(self, document_ids: Sequence[UUID]) -> dict[UUID, list[Attachment]]:
+        """List the attachments of several documents at once; those without any are left out."""
+        ...
+
+    def find_attachment(self, document_id: UUID, attachment_id: UUID) -> Attachment | None:
+        """Return an attachment without its content."""
+        ...
+
     def get_attachment(
         self, document_id: UUID, attachment_id: UUID
     ) -> tuple[Attachment, bytes] | None: ...

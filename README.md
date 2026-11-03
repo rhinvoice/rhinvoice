@@ -54,6 +54,8 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 - Tax treatment decided automatically: domestic, reverse charge, intra-Community supply of goods,
   export, small business, exempt; a manual override is logged
 - Goods and services kept apart, also on mixed invoices, each with its legal notice
+- Pass-through items such as fees paid in the customer's name, without VAT and in a block of
+  their own; PDF attachments on drafts, such as the third-party invoice, sent along by e-mail
 - Mandatory invoice details checked before issuing
 - Swiss 5-cent rounding, number formats and wording per country (MWST / USt, «Jänner», ss / ß)
 

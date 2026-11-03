@@ -22,6 +22,7 @@ from rhinvoice.domain.document.document import (
     EventKind,
 )
 from rhinvoice.domain.shared.clock import FixedClock
+from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork
@@ -119,7 +120,17 @@ def test_imported_invoices_are_stored_with_their_files(
     documents.add_file(unpaid, "Mahnung.pdf", b"%PDF-1.4 mahnung")
     with SqlUnitOfWork(engine) as uow:
         assert uow.documents.get_pdf(unpaid) == b"%PDF-1.4 scan"
-        assert [a.file_name for a in uow.documents.attachments(unpaid)] == ["Mahnung.pdf"]
+        [later] = uow.documents.attachments(unpaid)
+        assert later.file_name == "Mahnung.pdf"
+        # Several documents at once, and one without its content.
+        paid_id = summaries["R20150001"].id
+        assert uow.documents.attachments_of([paid_id, unpaid, new_id()]) == {
+            paid_id: uow.documents.attachments(paid_id),
+            unpaid: [later],
+        }
+        assert uow.documents.attachments_of([]) == {}
+        assert uow.documents.find_attachment(unpaid, later.id) == later
+        assert uow.documents.find_attachment(paid_id, later.id) is None
         stored = uow.documents.get(unpaid)
         assert stored is not None
         assert stored.status is DocumentStatus.PAID
@@ -160,8 +171,11 @@ def test_attachments_and_the_origin_are_protected(engine: Engine, importer: Impo
     )
 
 
-def test_drafts_have_no_attachments(engine: Engine, importer: ImportHandlers) -> None:
+def test_attachments_of_drafts_are_frozen_when_issued(
+    engine: Engine, importer: ImportHandlers
+) -> None:
     run(importer, commit=True)
+    draft = "00000000-0000-0000-0000-000000000001"
     with engine.begin() as connection:
         customer_id = connection.execute(text("SELECT id FROM customers")).scalar_one()
         connection.execute(
@@ -169,22 +183,43 @@ def test_drafts_have_no_attachments(engine: Engine, importer: ImportHandlers) ->
                 "INSERT INTO documents (id, type, status, customer_id, currency, language,"
                 " price_mode, treatment, treatment_overridden, discount_kind, discount_value,"
                 " created_at, net_amount, total_amount, open_amount, search_vector)"
-                " VALUES ('00000000-0000-0000-0000-000000000001', 'invoice', 'draft', :customer,"
+                " VALUES (:id, 'invoice', 'draft', :customer,"
                 " 'CHF', 'de', 'net', 'domestic', false, 'percent', 0, now(), 0, 0, 0, '')"
             ),
-            {"customer": customer_id},
+            {"id": draft, "customer": customer_id},
         )
     content = b"%PDF-1.4"
+    insert = text(
+        "INSERT INTO document_attachments (id, document_id, file_name, sha256, content, added_at)"
+        " VALUES (gen_random_uuid(), :id, 'x.pdf', :sha, :content, now())"
+    )
+    values = {"id": draft, "sha": hashlib.sha256(content).hexdigest(), "content": content}
+    remove = text("DELETE FROM document_attachments WHERE document_id = :id")
+    # A draft takes files and gives them up again.
+    with engine.begin() as connection:
+        connection.execute(insert, values)
+        assert connection.execute(remove, {"id": draft}).rowcount == 1
+        connection.execute(insert, values)
+    with engine.begin() as connection, pytest.raises(IntegrityError, match="does not match"):
+        connection.execute(insert, {**values, "sha": "a" * 64})
     with (
         engine.begin() as connection,
-        pytest.raises(IntegrityError, match="drafts have no attachments"),
+        pytest.raises(IntegrityError, match="attachments cannot be changed or deleted"),
     ):
+        connection.execute(text("UPDATE document_attachments SET file_name = 'y.pdf'"))
+    with engine.begin() as connection:
         connection.execute(
-            text(
-                "INSERT INTO document_attachments"
-                " (id, document_id, file_name, sha256, content, added_at)"
-                " VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000001', 'x.pdf',"
-                " :sha, :content, now())"
-            ),
-            {"sha": hashlib.sha256(content).hexdigest(), "content": content},
+            text("UPDATE documents SET status = 'issued', number = 'R1' WHERE id = :id"),
+            {"id": draft},
         )
+    # Issued, its files stay and no more are added.
+    with (
+        engine.begin() as connection,
+        pytest.raises(IntegrityError, match="attachments cannot be changed or deleted"),
+    ):
+        connection.execute(remove, {"id": draft})
+    with (
+        engine.begin() as connection,
+        pytest.raises(IntegrityError, match="issued documents take no further attachments"),
+    ):
+        connection.execute(insert, values)

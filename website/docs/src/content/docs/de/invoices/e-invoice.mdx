@@ -112,6 +112,8 @@ Rhinvoice ordnet jede Steuergruppe einer Kategorie nach UNCL 5305 zu:
 | G | Export und Ausfuhrlieferung |
 | O | nicht steuerpflichtig: Kleinunternehmer ohne MWST-Nummer und Steuernummer (Schweiz, Liechtenstein) |
 
+[Durchlaufende Posten](/docs/de/invoices/pass-through/) sind steuerbefreit, Kategorie E, mit dem Befreiungsgrund-Code VATEX-EU-79-C (Erstattung von Auslagen, Art. 79 Buchst. c MwStSystRL) und einem kurzen Grundtext, in einer eigenen Steueraufschlüsselung. Hat das Dokument weitere steuerbefreite Positionen, teilen sie sich deren Aufschlüsselung, denn EN 16931 kennt nur eine je Kategorie und Satz (BR-E-08); dann stehen beide Gründe als Text, ohne Code. Bei Kleinunternehmern ohne MWST-Nummer und Steuernummer (Schweiz, Liechtenstein) stehen sie wie die übrigen Positionen in der Kategorie O. <Since version="0.10.0" />
+
 Eine Schweizer UID steht als Kennung der Firma in der E-Rechnung (Schema 0183) und bei MWST-pflichtigen Firmen zugleich als MWST-Nummer. Deutsche Steuernummern stehen in einem eigenen Feld.
 
 ## Geprüft mit KoSIT und Mustang

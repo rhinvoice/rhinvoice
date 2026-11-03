@@ -8,6 +8,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from rhinvoice.domain.document.attachment import Attachment
 from rhinvoice.domain.document.document import (
     DisplayStatus,
     Document,
@@ -15,6 +16,8 @@ from rhinvoice.domain.document.document import (
     Payment,
 )
 from rhinvoice.domain.document.export import (
+    MAX_ENTRY_NAME,
+    MAX_ENTRY_NAME_BYTES,
     MAX_PERIOD_YEARS,
     ExportListing,
     ExportPeriod,
@@ -460,3 +463,129 @@ def test_reserved_names_and_unicode_forms_are_taken() -> None:
     ]
     listing = export_listing(MARCH, [numbered("L")], TODAY, with_files=True, reserved=["L.pdf"])
     assert listing.rows[0].file_name == "L (2).pdf"
+
+
+# --- Pass-through items and attachments (ADR 0039, 0040) ------------------------------
+
+
+def test_pass_through_items_are_neither_net_nor_tax() -> None:
+    fee = line("1", "250.35", TaxCategory.PASS_THROUGH)
+    invoice = issued(lines=(line(), fee))
+    row = export_row(invoice, TODAY)
+    assert row.net == chf("1500.00")
+    assert row.tax == chf("121.50")
+    assert row.pass_through == chf("250.35")
+    assert row.total == chf("1871.85")
+    assert row.rates == (RateAmounts(Decimal("8.1"), chf("1500.00"), chf("121.50")),)
+    plain = issued()
+    listing = export_listing(MARCH, [plain, invoice], TODAY, with_files=False)
+    assert listing.has_pass_through
+    [franc] = listing.sums
+    assert franc.pass_through == chf("250.35")
+    assert franc.total == chf("1659.50") + chf("1871.85")
+    assert not export_listing(MARCH, [plain], TODAY, with_files=False).has_pass_through
+    assert export_row(plain, TODAY).pass_through == chf("0")
+
+
+def test_an_attachment_does_not_take_the_name_of_a_pdf() -> None:
+    first = numbered("R2026")
+    second = numbered("R2026_0001")
+    file = Attachment(new_id(), first.id, "0001.pdf", "b" * 64, 1, NOW)
+    listing = export_listing(
+        MARCH, [first, second], TODAY, with_files=True, attachments={first.id: [file]}
+    )
+    named = {row.number: row for row in listing.rows}
+    assert named["R2026_0001"].file_name == "R2026_0001.pdf"
+    assert named["R2026"].attachment_files == ((file.id, "R2026_0001 (2).pdf"),)
+
+
+def test_the_cash_rounding_makes_the_amounts_add_up_to_the_total() -> None:
+    fee = line("1", "250.37", TaxCategory.PASS_THROUGH)
+    rounded = issued(lines=(line(), fee))
+    row = export_row(rounded, TODAY)
+    assert row.rounding == chf("-0.02")
+    assert row.total == chf("1871.85")
+    assert row.net + row.tax + row.pass_through + row.rounding == row.total
+    plain = issued(lines=(line(),))
+    listing = export_listing(MARCH, [plain, rounded, rounded], TODAY, with_files=False)
+    assert listing.has_rounding
+    [franc] = listing.sums
+    assert franc.rounding == chf("-0.04")
+    assert not export_listing(MARCH, [plain], TODAY, with_files=False).has_rounding
+    assert export_row(plain, TODAY).rounding == chf("0")
+
+
+def test_attachments_follow_the_pdf_named_after_the_number() -> None:
+    invoice = numbered("R20260042")
+    other = numbered("R20260043")
+    old = imported(issue_date=TODAY, due_date=TODAY).archive_pdf("a" * 64)
+
+    def attachment(document: Document, name: str) -> Attachment:
+        return Attachment(
+            id=new_id(),
+            document_id=document.id,
+            file_name=name,
+            sha256="b" * 64,
+            size=1,
+            added_at=NOW,
+        )
+
+    notary, office, twice = (
+        attachment(invoice, "Notar.pdf"),
+        attachment(invoice, "Amt: 3.pdf"),
+        attachment(invoice, "notar.pdf"),
+    )
+    reminder = attachment(old, "Mahnung.pdf")
+    listing = export_listing(
+        MARCH,
+        [invoice, other, old],
+        TODAY,
+        with_files=True,
+        attachments={invoice.id: [notary, office, twice], old.id: [reminder]},
+    )
+    rows = {row.number: row for row in listing.rows}
+    assert rows["R20260042"].file_name == "R20260042.pdf"
+    assert rows["R20260042"].attachment_files == (
+        (notary.id, "R20260042_Notar.pdf"),
+        (office.id, "R20260042_Amt- 3.pdf"),
+        (twice.id, "R20260042_notar (2).pdf"),
+    )
+    assert rows["R20260043"].attachment_files == ()
+    # An imported invoice's further files stay in the archive.
+    assert rows["R20150001"].attachment_files == ()
+    without = export_listing(MARCH, [invoice], TODAY, with_files=True)
+    assert without.rows[0].attachment_files == ()
+    no_files = with_file_names([(export_row(invoice, TODAY), False)], (), {invoice.id: [notary]})
+    assert no_files[0].attachment_files == ()
+
+
+def test_long_attachment_names_are_shortened_in_the_zip() -> None:
+    invoice = numbered("R20260042")
+
+    def attachment(name: str) -> Attachment:
+        return Attachment(new_id(), invoice.id, name, "b" * 64, 1, NOW)
+
+    first, second = attachment("x" * 251 + ".pdf"), attachment("X" * 251 + ".pdf")
+    spaced = attachment("y" * 184 + " ." + "z" * 60 + ".pdf")
+    wide = attachment("a" + "ü" * 200 + ".pdf")
+    kept = attachment("Notar .pdf")
+    emoji = attachment("\U0001f4c4" * 100 + ".pdf")
+    row = export_row(invoice, TODAY)
+    [named] = with_file_names(
+        [(row, True)], (), {invoice.id: [first, second, spaced, wide, emoji, kept]}
+    )
+    names = dict(named.attachment_files)
+    assert names[first.id] == "R20260042_" + "x" * 186 + ".pdf"
+    assert names[second.id] == "R20260042_" + "X" * 182 + " (2).pdf"
+    # Shortened: no space or dot left before ".pdf".
+    assert names[spaced.id] == "R20260042_" + "y" * 184 + ".pdf"
+    # Two bytes each: 255 bytes before 200 characters.
+    assert names[wide.id] == "R20260042_a" + "ü" * 120 + ".pdf"
+    assert len(names[wide.id].encode()) == MAX_ENTRY_NAME_BYTES
+    assert names[emoji.id] == "R20260042_" + "\U0001f4c4" * 60 + ".pdf"
+    for name in names.values():
+        assert len(name) <= MAX_ENTRY_NAME
+        assert len(name.encode()) <= MAX_ENTRY_NAME_BYTES
+    # Short names stay as they are.
+    assert names[kept.id] == "R20260042_Notar .pdf"
+    assert with_file_names([(row, True)])[0].file_name == "R20260042.pdf"

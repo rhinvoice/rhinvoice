@@ -3408,6 +3408,7 @@
           "reminder_emailed",
           "imported",
           "file_added",
+          "file_removed",
           "written_off",
           "write_off_removed"
         ],
@@ -4415,6 +4416,13 @@
           "attachment": {
             "title": "Attachment",
             "type": "string"
+          },
+          "attachments": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Attachments",
+            "type": "array"
           },
           "body": {
             "title": "Body",
@@ -5906,7 +5914,8 @@
           "reduced",
           "special",
           "zero",
-          "exempt"
+          "exempt",
+          "pass_through"
         ],
         "title": "TaxCategory",
         "type": "string"
@@ -6189,6 +6198,10 @@
             "title": "Net",
             "type": "string"
           },
+          "pass_through": {
+            "title": "Pass Through",
+            "type": "string"
+          },
           "rounding": {
             "title": "Rounding",
             "type": "string"
@@ -6212,6 +6225,7 @@
           "discount",
           "net",
           "tax",
+          "pass_through",
           "gross",
           "rounding",
           "total",
@@ -11632,7 +11646,7 @@
     },
     "/api/documents/{document_id}/attachments": {
       "get": {
-        "description": "Further files of an imported invoice: reminders, corrected copies, versions.",
+        "description": "List the further files of a document.\n\nImported invoices keep reminders, corrected copies and versions; documents written here\nthe PDFs added to the draft, e.g. third-party invoices of pass-through items.",
         "operationId": "documents_list_attachments",
         "parameters": [
           {
@@ -11734,6 +11748,113 @@
       }
     },
     "/api/documents/{document_id}/attachments/{attachment_id}": {
+      "delete": {
+        "description": "Take an attachment off a draft. Issued documents keep their files (409).",
+        "operationId": "documents_remove_attachment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attachment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Attachment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Remove Attachment",
+        "tags": [
+          "documents"
+        ]
+      },
       "get": {
         "description": "Return an attachment, shown in the browser or (``download``) saved as a file.",
         "operationId": "documents_attachment_file",
@@ -12348,7 +12469,7 @@
     },
     "/api/documents/{document_id}/files": {
       "post": {
-        "description": "Add a PDF to an imported invoice: its original if it has none, else an attachment.\n\nNeither can be replaced or removed afterwards.",
+        "description": "Add a PDF to an imported invoice or a draft.\n\nAn imported invoice takes its original if it has none, else an attachment; a draft an\nattachment (at most ten, at most 20 MB together), which can be removed until the draft\nis issued. Files of imported invoices and issued documents are never replaced or removed.",
         "operationId": "documents_add_file",
         "parameters": [
           {

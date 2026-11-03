@@ -3,6 +3,8 @@
 A period holds the invoices (written here and imported) and the cancellation invoices
 issued in it, by their issue date; never drafts or quotes. Amounts stay as they were
 issued, so cancellations are negative. Sums are per currency: currencies are never added.
+Pass-through items are neither net nor tax: they have a column of their own and are in the
+total (ADR 0039). Cash rounding gets a column too, so that the amounts add up to the total.
 """
 
 from __future__ import annotations
@@ -23,10 +25,11 @@ from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
 from rhinvoice.domain.shared.money import Money
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping, Sequence
     from decimal import Decimal
     from uuid import UUID
 
+    from rhinvoice.domain.document.attachment import Attachment
     from rhinvoice.domain.shared.money import Currency
     from rhinvoice.domain.tax.treatment import TaxTreatment
 
@@ -34,6 +37,10 @@ MAX_PERIOD_YEARS = 10
 MONTHS_PER_QUARTER = 3
 EXPORTED_TYPES = frozenset({DocumentType.INVOICE, DocumentType.CANCELLATION})
 REFUSED_IN_FILE_NAMES = '/\\:*?"<>|'
+MAX_ENTRY_NAME = 200
+"""Characters of a file name in the ZIP: room for the folder it is unpacked into."""
+MAX_ENTRY_NAME_BYTES = 255
+"""UTF-8 bytes of a file name, the limit of most file systems."""
 
 
 def _years_later(day: date, years: int) -> date:
@@ -133,6 +140,10 @@ class ExportRow:
     rates: tuple[RateAmounts, ...]
     """Net and tax per rate, the highest rate first; none for imported invoices."""
     tax: Money
+    pass_through: Money
+    """Paid in the customer's name: outside net and tax, part of the total (ADR 0039)."""
+    rounding: Money
+    """Cash rounding: net + tax + pass-through items + rounding = total."""
     total: Money
     """The payable total, cash rounding included."""
     paid: Money
@@ -144,6 +155,8 @@ class ExportRow:
     status: DisplayStatus
     file_name: str | None = None
     """The PDF's name in the ZIP; None without ZIP or when there is no PDF."""
+    attachment_files: tuple[tuple[UUID, str], ...] = ()
+    """The document's own attachments in the ZIP (ADR 0040): their id and name there."""
 
     def at_rate(self, rate: Decimal) -> RateAmounts | None:
         return next((amounts for amounts in self.rates if amounts.rate == rate), None)
@@ -189,6 +202,8 @@ def export_row(document: Document, today: date) -> ExportRow:
         net=totals.net,
         rates=_rates(document),
         tax=totals.tax,
+        pass_through=totals.pass_through,
+        rounding=totals.rounding,
         total=totals.total,
         paid=document.paid_amount,
         paid_on=max(payment.paid_on for payment in document.payments) if paid else None,
@@ -203,33 +218,67 @@ def _file_name(number: str) -> str:
     return "".join("-" if character in REFUSED_IN_FILE_NAMES else character for character in number)
 
 
+def _fitted(base: str, suffix: str) -> str:
+    """Shorten ``base`` so that it and ``suffix`` make a file name within the limits."""
+    stem = base[: MAX_ENTRY_NAME - len(suffix)]
+    while len((stem + suffix).encode()) > MAX_ENTRY_NAME_BYTES:
+        stem = stem[:-1]
+    if stem != base:
+        stem = stem.rstrip(" .")
+    return stem + suffix
+
+
 def with_file_names(
-    rows: Iterable[tuple[ExportRow, bool]], reserved: Iterable[str] = ()
+    rows: Iterable[tuple[ExportRow, bool]],
+    reserved: Iterable[str] = (),
+    attachments: Mapping[UUID, Sequence[Attachment]] | None = None,
 ) -> tuple[ExportRow, ...]:
     """Name the PDF of each row that has one after its number, e.g. "R20260042.pdf".
 
     Invoices and cancellations are numbered apart, and imported invoices bring numbers of
     their own: a name taken already (in any case and Unicode form, for file systems that
     ignore them) or ``reserved`` (the list beside the PDFs) gets " (2)", " (3)" and so on.
+    The ``attachments`` of a document follow its PDF, named after the number and their own
+    name, e.g. "R20260042_Notar.pdf". A name is shortened before ".pdf" (and the number) to
+    at most 200 characters and 255 bytes.
     """
 
     def key(name: str) -> str:
         return unicodedata.normalize("NFC", name).casefold()
 
     taken = {key(name) for name in reserved}
-    named: list[ExportRow] = []
-    for row, has_file in rows:
-        if not has_file:
-            named.append(row)
-            continue
-        base = _file_name(row.number)
-        name, count = f"{base}.pdf", 1
+
+    def free(base: str) -> str:
+        name, count = _fitted(base, ".pdf"), 1
         while key(name) in taken:
             count += 1
-            name = f"{base} ({count}).pdf"
+            name = _fitted(base, f" ({count}).pdf")
         taken.add(key(name))
-        named.append(replace(row, file_name=name))
-    return tuple(named)
+        return name
+
+    # The PDFs first: a file attached to one document must not take the name of another's PDF.
+    named = [
+        replace(row, file_name=free(_file_name(row.number))) if has_file else row
+        for row, has_file in rows
+    ]
+    return tuple(
+        replace(
+            row,
+            attachment_files=tuple(
+                (
+                    attachment.id,
+                    free(
+                        f"{_file_name(row.number)}_"
+                        f"{_file_name(attachment.file_name.removesuffix('.pdf'))}"
+                    ),
+                )
+                for attachment in (attachments or {}).get(row.document_id, ())
+            ),
+        )
+        if row.file_name is not None
+        else row
+        for row in named
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -239,6 +288,8 @@ class CurrencySum:
     net: Money
     rates: tuple[RateAmounts, ...]
     tax: Money
+    pass_through: Money
+    rounding: Money
     total: Money
     paid: Money
     open: Money
@@ -268,6 +319,8 @@ def _currency_sum(currency: Currency, rows: list[ExportRow]) -> CurrencySum:
             for rate in rates
         ),
         tax=total(row.tax for row in rows),
+        pass_through=total(row.pass_through for row in rows),
+        rounding=total(row.rounding for row in rows),
         total=total(row.total for row in rows),
         paid=total(row.paid for row in rows),
         open=total(row.open for row in rows),
@@ -290,6 +343,16 @@ class ExportListing:
         )
 
     @property
+    def has_pass_through(self) -> bool:
+        """Whether any document holds pass-through items: only then they get a column."""
+        return any(row.pass_through.amount for row in self.rows)
+
+    @property
+    def has_rounding(self) -> bool:
+        """Whether any document was cash rounded: only then the rounding gets a column."""
+        return any(row.rounding.amount for row in self.rows)
+
+    @property
     def sums(self) -> tuple[CurrencySum, ...]:
         """One sum per currency, in the order of the currency codes."""
         currencies = sorted({row.currency for row in self.rows})
@@ -304,21 +367,32 @@ def has_file(document: Document) -> bool:
     return not document.is_imported or document.pdf_sha256 is not None
 
 
-def export_listing(
+def export_listing(  # noqa: PLR0913 - the period, its documents and what the ZIP holds
     period: ExportPeriod,
     documents: Iterable[Document],
     today: date,
     *,
     with_files: bool,
     reserved: Iterable[str] = (),
+    attachments: Mapping[UUID, Sequence[Attachment]] | None = None,
 ) -> ExportListing:
-    """List the documents of the period by date, then number; no PDF is named ``reserved``."""
+    """List the documents of the period by date, then number; no PDF is named ``reserved``.
+
+    With files, the ``attachments`` of own documents come along after each one's PDF; an
+    imported invoice's further files stay in the archive.
+    """
+    selected = [document for document in documents if period.selects(document)]
     rows = sorted(
-        (
-            (export_row(document, today), with_files and has_file(document))
-            for document in documents
-            if period.selects(document)
-        ),
+        ((export_row(document, today), with_files and has_file(document)) for document in selected),
         key=lambda found: (found[0].issue_date, found[0].number),
     )
-    return ExportListing(period=period, rows=with_file_names(rows, reserved), with_files=with_files)
+    own = {
+        document.id: (attachments or {}).get(document.id, ())
+        for document in selected
+        if not document.is_imported
+    }
+    return ExportListing(
+        period=period,
+        rows=with_file_names(rows, reserved, own),
+        with_files=with_files,
+    )

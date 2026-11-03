@@ -699,7 +699,10 @@ export interface paths {
         };
         /**
          * List Attachments
-         * @description Further files of an imported invoice: reminders, corrected copies, versions.
+         * @description List the further files of a document.
+         *
+         *     Imported invoices keep reminders, corrected copies and versions; documents written here
+         *     the PDFs added to the draft, e.g. third-party invoices of pass-through items.
          */
         get: operations["documents_list_attachments"];
         put?: never;
@@ -724,7 +727,11 @@ export interface paths {
         get: operations["documents_attachment_file"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Remove Attachment
+         * @description Take an attachment off a draft. Issued documents keep their files (409).
+         */
+        delete: operations["documents_remove_attachment"];
         options?: never;
         head?: never;
         patch?: never;
@@ -835,9 +842,11 @@ export interface paths {
         put?: never;
         /**
          * Add File
-         * @description Add a PDF to an imported invoice: its original if it has none, else an attachment.
+         * @description Add a PDF to an imported invoice or a draft.
          *
-         *     Neither can be replaced or removed afterwards.
+         *     An imported invoice takes its original if it has none, else an attachment; a draft an
+         *     attachment (at most ten, at most 20 MB together), which can be removed until the draft
+         *     is issued. Files of imported invoices and issued documents are never replaced or removed.
          */
         post: operations["documents_add_file"];
         delete?: never;
@@ -2988,7 +2997,7 @@ export interface components {
          * EventKind
          * @enum {string}
          */
-        EventKind: "created" | "created_from" | "issued" | "sent" | "accepted" | "declined" | "converted" | "payment_added" | "payment_removed" | "cancelled" | "tax_overridden" | "reminded" | "emailed" | "reminder_emailed" | "imported" | "file_added" | "written_off" | "write_off_removed";
+        EventKind: "created" | "created_from" | "issued" | "sent" | "accepted" | "declined" | "converted" | "payment_added" | "payment_removed" | "cancelled" | "tax_overridden" | "reminded" | "emailed" | "reminder_emailed" | "imported" | "file_added" | "file_removed" | "written_off" | "write_off_removed";
         /** EventResponse */
         EventResponse: {
             /**
@@ -3347,6 +3356,8 @@ export interface components {
         MailDraftResponse: {
             /** Attachment */
             attachment: string;
+            /** Attachments */
+            attachments?: string[];
             /** Body */
             body: string;
             /** Copy To */
@@ -3968,7 +3979,7 @@ export interface components {
          * @description Which VAT rate of the country profile applies to a line.
          * @enum {string}
          */
-        TaxCategory: "standard" | "reduced" | "special" | "zero" | "exempt";
+        TaxCategory: "standard" | "reduced" | "special" | "zero" | "exempt" | "pass_through";
         /** TaxGroupResponse */
         TaxGroupResponse: {
             /** Amount */
@@ -4085,6 +4096,8 @@ export interface components {
             groups: components["schemas"]["TaxGroupResponse"][];
             /** Net */
             net: string;
+            /** Pass Through */
+            pass_through: string;
             /** Rounding */
             rounding: string;
             /** Subtotal */
@@ -8348,6 +8361,83 @@ export interface operations {
                 };
                 content: {
                     "application/pdf": string;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    documents_remove_attachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentResponse"];
                 };
             };
             /** @description Bad Request */

@@ -117,18 +117,32 @@ def downgrade() -> None:
     """Undo the wider column and the attachments of drafts.
 
     Drafts lose their attachments; their pass-through lines, such articles and the lines of
-    recurring plans fall back to "exempt", the category without VAT closest to them. Issued
-    documents are never changed: once one holds a pass-through line, the downgrade stops.
+    recurring plans fall back to "exempt", the category without VAT closest to them, and their
+    history forgets removed files, which older versions cannot read. Issued documents are never
+    changed: once one holds a pass-through line or such an event, the downgrade stops.
     """
-    issued = op.get_bind().execute(
+    bind = op.get_bind()
+    issued = bind.execute(
         sa.text(
             "SELECT count(*) FROM document_lines JOIN documents ON documents.id = document_id "
             "WHERE tax_category = 'pass_through' AND status <> 'draft'"
         )
     )
     if issued.scalar_one():
-        msg = "issued documents hold pass-through items: they need version 0.9 or later"
+        msg = "issued documents hold pass-through items: they need version 0.10 or later"
         raise RuntimeError(msg)
+    removed = bind.execute(
+        sa.text(
+            "SELECT count(*) FROM document_events JOIN documents ON documents.id = document_id "
+            "WHERE kind = 'file_removed' AND status <> 'draft'"
+        )
+    )
+    if removed.scalar_one():
+        msg = "issued documents record removed files: they need version 0.10 or later"
+        raise RuntimeError(msg)
+    op.execute("ALTER TABLE document_events DISABLE TRIGGER protect_document_events")
+    op.execute("DELETE FROM document_events WHERE kind = 'file_removed'")
+    op.execute("ALTER TABLE document_events ENABLE TRIGGER protect_document_events")
     op.execute(PROTECT_ATTACHMENTS_0017)
     op.execute("ALTER TABLE document_attachments DISABLE TRIGGER protect_document_attachments")
     op.execute(

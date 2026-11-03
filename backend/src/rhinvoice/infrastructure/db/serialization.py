@@ -356,7 +356,7 @@ def totals_from_json(data: Json) -> Totals:
         discount=money(data["discount"]),
         net=money(data["net"]),
         tax=money(data["tax"]),
-        # Totals frozen before version 0.9 had no pass-through lines (ADR 0039).
+        # Totals frozen before version 0.10 had no pass-through lines (ADR 0039).
         pass_through=(
             money(data["pass_through"])
             if "pass_through" in data

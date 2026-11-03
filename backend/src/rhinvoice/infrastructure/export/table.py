@@ -107,7 +107,16 @@ def table(listing: ExportListing, company: Company, language: Language) -> Table
     ]
     # Pass-through items get a column only when the export holds some (ADR 0039).
     passed = [labels["pass_through"]] if listing.has_pass_through else []
-    amounts = [*columns.rate_headers(), labels["tax"], *passed, labels["total"], labels["paid"]]
+    # So does the cash rounding: with it, the amounts add up to the total.
+    rounded = [labels["rounding"]] if listing.has_rounding else []
+    amounts = [
+        *columns.rate_headers(),
+        labels["tax"],
+        *passed,
+        *rounded,
+        labels["total"],
+        labels["paid"],
+    ]
     tail = [labels["paid_on"], labels["open"], labels["written_off"], labels["status"]]
     header = [*lead, *amounts, *tail] + ([labels["file"]] if listing.with_files else [])
     first_amount = len(lead) - 1
@@ -127,6 +136,7 @@ def table(listing: ExportListing, company: Company, language: Language) -> Table
             *columns.rate_headers(),
             labels["tax"],
             *passed,
+            *rounded,
             labels["total"],
             labels["paid"],
             labels["open"],
@@ -149,6 +159,10 @@ def _pass_through(row: ExportRow | CurrencySum, listing: ExportListing) -> list[
     return [_amount(row.pass_through)] if listing.has_pass_through else []
 
 
+def _rounding(row: ExportRow | CurrencySum, listing: ExportListing) -> list[Cell]:
+    return [_amount(row.rounding)] if listing.has_rounding else []
+
+
 def _row(row: ExportRow, listing: ExportListing, language: Language) -> tuple[Cell, ...]:
     treatments = TREATMENT_SEPARATOR.join(
         TREATMENTS[language][treatment] for treatment in row.treatments
@@ -169,6 +183,7 @@ def _row(row: ExportRow, listing: ExportListing, language: Language) -> tuple[Ce
         *_rate_cells(row, listing),
         _amount(row.tax),
         *_pass_through(row, listing),
+        *_rounding(row, listing),
         _amount(row.total),
         _amount(row.paid),
         row.paid_on,
@@ -191,6 +206,7 @@ def _sum_row(found: CurrencySum, listing: ExportListing, label: str) -> tuple[Ce
         *_rate_cells(found, listing),
         _amount(found.tax),
         *_pass_through(found, listing),
+        *_rounding(found, listing),
         _amount(found.total),
         _amount(found.paid),
         None,
@@ -211,6 +227,7 @@ def _sum(found: CurrencySum, listing: ExportListing) -> tuple[Cell, ...]:
         *_rate_cells(found, listing),
         _amount(found.tax),
         *_pass_through(found, listing),
+        *_rounding(found, listing),
         _amount(found.total),
         _amount(found.paid),
         _amount(found.open),

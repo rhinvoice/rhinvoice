@@ -487,6 +487,22 @@ def test_pass_through_items_are_neither_net_nor_tax() -> None:
     assert export_row(plain, TODAY).pass_through == chf("0")
 
 
+def test_the_cash_rounding_makes_the_amounts_add_up_to_the_total() -> None:
+    fee = line("1", "250.37", TaxCategory.PASS_THROUGH)
+    rounded = issued(lines=(line(), fee))
+    row = export_row(rounded, TODAY)
+    assert row.rounding == chf("-0.02")
+    assert row.total == chf("1871.85")
+    assert row.net + row.tax + row.pass_through + row.rounding == row.total
+    plain = issued(lines=(line(),))
+    listing = export_listing(MARCH, [plain, rounded, rounded], TODAY, with_files=False)
+    assert listing.has_rounding
+    [franc] = listing.sums
+    assert franc.rounding == chf("-0.04")
+    assert not export_listing(MARCH, [plain], TODAY, with_files=False).has_rounding
+    assert export_row(plain, TODAY).rounding == chf("0")
+
+
 def test_attachments_follow_the_pdf_named_after_the_number() -> None:
     invoice = numbered("R20260042")
     other = numbered("R20260043")

@@ -88,6 +88,7 @@ def test_csv_for_a_swiss_company() -> None:
         "Netto 2.6 %",
         "Steuer 2.6 %",
         "Steuer",
+        "Rundung",
         "Brutto",
         "Bezahlt",
         "Bezahlt am",
@@ -116,6 +117,7 @@ def test_csv_for_a_swiss_company() -> None:
         "",
         "",
         "96.00",
+        "0.00",
         "1296.00",
         "1296.00",
         "2026-03-09",
@@ -126,20 +128,21 @@ def test_csv_for_a_swiss_company() -> None:
     assert lines[1][5:7] == ["'-1", '\'=HYPERLINK("x")']
     assert lines[1][3:5] == ["2026-02-01", "2026-02-28"]
     assert lines[1][12:16] == ["1500.00", "121.50", "37.05", "0.96"]
+    assert lines[1][16:19] == ["122.46", "-0.01", "1659.50"]
     cancellation = by_number["S20260001"]
     assert cancellation[1] == "Storno"
     assert cancellation[11] == "-1537.05"
-    assert cancellation[17] == "-1659.50"
-    assert cancellation[22] == "Ausgestellt"
-    written_off = [line for line in lines if line and line[22] == "Abgeschrieben"]
-    assert written_off[0][21] == "1000.00"
+    assert cancellation[18] == "-1659.50"
+    assert cancellation[23] == "Ausgestellt"
+    written_off = [line for line in lines if line and line[23] == "Abgeschrieben"]
+    assert written_off[0][22] == "1000.00"
     # The sums per currency follow after an empty line.
     blank = lines.index([])
     franc, euro = lines[blank + 1 :]
     assert franc[0] == "Summe"
     assert franc[9] == "CHF"
-    assert franc[17] == "4615.00"
-    assert franc[21] == "1000.00"
+    assert franc[18] == "4615.00"
+    assert franc[22] == "1000.00"
     assert euro[9] == "EUR"
     assert euro[12:14] == ["100.00", "8.10"]
     assert euro[14:16] == ["", ""]
@@ -238,6 +241,7 @@ def test_excel_holds_numbers_dates_and_text() -> None:
         "Netto 2.6 %",
         "Steuer 2.6 %",
         "Steuer",
+        "Rundung",
         "Brutto",
         "Bezahlt",
         "Offen",
@@ -356,7 +360,8 @@ def test_a_file_that_cannot_be_had_ends_the_zip() -> None:
 
 def with_pass_through() -> ExportListing:
     fee = line("1", "250.35", TaxCategory.PASS_THROUGH)
-    return export_listing(MARCH, [issued(lines=(line(), fee)), issued()], TODAY, with_files=False)
+    plain = issued(lines=(line(),))
+    return export_listing(MARCH, [issued(lines=(line(), fee)), plain], TODAY, with_files=False)
 
 
 def test_pass_through_items_have_a_column_when_there_are_some() -> None:
@@ -371,7 +376,7 @@ def test_pass_through_items_have_a_column_when_there_are_some() -> None:
         "1871.85",
     )
     assert second[at] == "0.00"
-    assert (total[at], total[at + 1]) == ("250.35", "3531.35")
+    assert (total[at], total[at + 1]) == ("250.35", "3493.35")
     workbook = load_workbook(
         io.BytesIO(
             FileExportWriter().write(with_pass_through(), SWISS, ExportFormat.XLSX, Language.EN)
@@ -398,4 +403,48 @@ def test_the_printed_list_with_pass_through_items(language: Language, title: str
     assert page.count(">250.35<") == 2  # the invoice and the sum of the francs
     printer = RecordingPrinter()
     FileExportWriter(printer).write(listing(), SWISS, ExportFormat.PDF, language)
+    assert title not in printer.pages[0]
+
+
+# --- Cash rounding -------------------------------------------------------------------------
+
+
+def with_rounding() -> ExportListing:
+    fee = line("1", "250.37", TaxCategory.PASS_THROUGH)
+    plain = issued(lines=(line(),))
+    return export_listing(MARCH, [issued(lines=(line(), fee)), plain], TODAY, with_files=False)
+
+
+def test_the_rounding_has_a_column_when_there_is_some() -> None:
+    content = FileExportWriter().write(with_rounding(), SWISS, ExportFormat.CSV, Language.DE)
+    header, first, second, _, total = rows(content)
+    at = header.index("Rundung")
+    assert header[at - 1 : at + 2] == ["Durchlaufende Posten", "Rundung", "Brutto"]
+    assert (first[at - 1], first[at], first[at + 1]) == ("250.37", "-0.02", "1871.85")
+    assert second[at] == "0.00"
+    assert (total[at], total[at + 1]) == ("-0.02", "3493.35")
+    workbook = load_workbook(
+        io.BytesIO(FileExportWriter().write(with_rounding(), SWISS, ExportFormat.XLSX, Language.EN))
+    )
+    sums = workbook.worksheets[1]
+    titles = [cell.value for cell in sums[1]]
+    assert titles[titles.index("Rounding") + 1] == "Gross"
+    assert sums.cell(2, titles.index("Rounding") + 1).value == pytest.approx(-0.02)
+    # Without rounding the list stays as it was.
+    plain = FileExportWriter().write(with_pass_through(), SWISS, ExportFormat.CSV, Language.DE)
+    assert "Rundung" not in rows(plain)[0]
+
+
+@pytest.mark.parametrize(
+    ("language", "title"),
+    [(Language.FR, "Arrondi"), (Language.IT, "Arrotondamento")],
+)
+def test_the_printed_list_with_rounding(language: Language, title: str) -> None:
+    printer = RecordingPrinter()
+    FileExportWriter(printer).write(with_rounding(), SWISS, ExportFormat.PDF, language)
+    [page] = printer.pages
+    assert page.count(f'<th scope="col" class="amount">{title}</th>') == 2
+    assert page.count(">\u22120.02<") == 2  # the invoice and the sum of the francs
+    printer = RecordingPrinter()
+    FileExportWriter(printer).write(with_pass_through(), SWISS, ExportFormat.PDF, language)
     assert title not in printer.pages[0]

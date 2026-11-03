@@ -4,7 +4,7 @@ A period holds the invoices (written here and imported) and the cancellation inv
 issued in it, by their issue date; never drafts or quotes. Amounts stay as they were
 issued, so cancellations are negative. Sums are per currency: currencies are never added.
 Pass-through items are neither net nor tax: they have a column of their own and are in the
-total (ADR 0039).
+total (ADR 0039). Cash rounding gets a column too, so that the amounts add up to the total.
 """
 
 from __future__ import annotations
@@ -142,6 +142,8 @@ class ExportRow:
     tax: Money
     pass_through: Money
     """Paid in the customer's name: outside net and tax, part of the total (ADR 0039)."""
+    rounding: Money
+    """Cash rounding: net + tax + pass-through items + rounding = total."""
     total: Money
     """The payable total, cash rounding included."""
     paid: Money
@@ -201,6 +203,7 @@ def export_row(document: Document, today: date) -> ExportRow:
         rates=_rates(document),
         tax=totals.tax,
         pass_through=totals.pass_through,
+        rounding=totals.rounding,
         total=totals.total,
         paid=document.paid_amount,
         paid_on=max(payment.paid_on for payment in document.payments) if paid else None,
@@ -275,6 +278,7 @@ class CurrencySum:
     rates: tuple[RateAmounts, ...]
     tax: Money
     pass_through: Money
+    rounding: Money
     total: Money
     paid: Money
     open: Money
@@ -305,6 +309,7 @@ def _currency_sum(currency: Currency, rows: list[ExportRow]) -> CurrencySum:
         ),
         tax=total(row.tax for row in rows),
         pass_through=total(row.pass_through for row in rows),
+        rounding=total(row.rounding for row in rows),
         total=total(row.total for row in rows),
         paid=total(row.paid for row in rows),
         open=total(row.open for row in rows),
@@ -330,6 +335,11 @@ class ExportListing:
     def has_pass_through(self) -> bool:
         """Whether any document holds pass-through items: only then they get a column."""
         return any(row.pass_through.amount for row in self.rows)
+
+    @property
+    def has_rounding(self) -> bool:
+        """Whether any document was cash rounded: only then the rounding gets a column."""
+        return any(row.rounding.amount for row in self.rows)
 
     @property
     def sums(self) -> tuple[CurrencySum, ...]:

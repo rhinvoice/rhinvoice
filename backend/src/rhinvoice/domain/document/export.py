@@ -256,18 +256,29 @@ def with_file_names(
         taken.add(key(name))
         return name
 
-    named: list[ExportRow] = []
-    for row, has_file in rows:
-        if not has_file:
-            named.append(row)
-            continue
-        base = _file_name(row.number)
-        files = tuple(
-            (attachment.id, free(f"{base}_{_file_name(attachment.file_name.removesuffix('.pdf'))}"))
-            for attachment in (attachments or {}).get(row.document_id, ())
+    # The PDFs first: a file attached to one document must not take the name of another's PDF.
+    named = [
+        replace(row, file_name=free(_file_name(row.number))) if has_file else row
+        for row, has_file in rows
+    ]
+    return tuple(
+        replace(
+            row,
+            attachment_files=tuple(
+                (
+                    attachment.id,
+                    free(
+                        f"{_file_name(row.number)}_"
+                        f"{_file_name(attachment.file_name.removesuffix('.pdf'))}"
+                    ),
+                )
+                for attachment in (attachments or {}).get(row.document_id, ())
+            ),
         )
-        named.append(replace(row, file_name=free(base), attachment_files=files))
-    return tuple(named)
+        if row.file_name is not None
+        else row
+        for row in named
+    )
 
 
 @dataclass(frozen=True, slots=True)

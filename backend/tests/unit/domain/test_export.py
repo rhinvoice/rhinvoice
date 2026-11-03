@@ -487,6 +487,18 @@ def test_pass_through_items_are_neither_net_nor_tax() -> None:
     assert export_row(plain, TODAY).pass_through == chf("0")
 
 
+def test_an_attachment_does_not_take_the_name_of_a_pdf() -> None:
+    first = numbered("R2026")
+    second = numbered("R2026_0001")
+    file = Attachment(new_id(), first.id, "0001.pdf", "b" * 64, 1, NOW)
+    listing = export_listing(
+        MARCH, [first, second], TODAY, with_files=True, attachments={first.id: [file]}
+    )
+    named = {row.number: row for row in listing.rows}
+    assert named["R2026_0001"].file_name == "R2026_0001.pdf"
+    assert named["R2026"].attachment_files == ((file.id, "R2026_0001 (2).pdf"),)
+
+
 def test_the_cash_rounding_makes_the_amounts_add_up_to_the_total() -> None:
     fee = line("1", "250.37", TaxCategory.PASS_THROUGH)
     rounded = issued(lines=(line(), fee))

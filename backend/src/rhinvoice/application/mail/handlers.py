@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from rhinvoice.application.errors import DeliveryError, NotFoundError, UnavailableError
 from rhinvoice.application.mail.ports import Attachment, OutgoingMail
-from rhinvoice.domain.document.attachment import MAX_ATTACHED_BYTES
+from rhinvoice.domain.document.attachment import MAX_ATTACHED_BYTES, unique_name
 from rhinvoice.domain.document.document import (
     MAX_EVENT_DETAIL,
     OPEN_INVOICE_STATUSES,
@@ -217,10 +217,8 @@ class MailHandlers:
         mail = _mail(to, command)
         with self.uow() as uow:
             server = _require_server(uow)
-        files = (
-            *self.content.document_files(document_id, xrechnung=command.xrechnung),
-            *self._attachments(view),
-        )
+        files = self.content.document_files(document_id, xrechnung=command.xrechnung)
+        files = (*files, *self._attachments(view, files))
         accepted, refused = self._send(server, replace(mail, attachments=files))
         view = self._record(document_id, EventKind.EMAILED, _names(accepted, MAX_EVENT_DETAIL))
         _report_refused(refused)
@@ -268,10 +266,13 @@ class MailHandlers:
             return []
         return self.documents.attachments(view.document.id)
 
-    def _attachments(self, view: DocumentView) -> tuple[Attachment, ...]:
+    def _attachments(
+        self, view: DocumentView, sent: tuple[Attachment, ...]
+    ) -> tuple[Attachment, ...]:
         """Load the files of a document written here, to send them; refuse too many bytes.
 
-        Drafts take no more than that (ADR 0040); the check stays as a safeguard.
+        Drafts take no more than that (ADR 0040); the check stays as a safeguard. A file named
+        like one of those ``sent`` with it is numbered.
         """
         attached = self._attached(view)
         if sum(attachment.size for attachment in attached) > MAX_ATTACHED_BYTES:
@@ -283,7 +284,12 @@ class MailHandlers:
         found = (
             self.documents.attachment(view.document.id, attachment.id) for attachment in attached
         )
-        return tuple(Attachment(item.file_name, content, PDF) for item, content in found)
+        taken = [file.name for file in sent]
+        files: list[Attachment] = []
+        for item, content in found:
+            taken.append(unique_name(item.file_name, taken))
+            files.append(Attachment(taken[-1], content, PDF))
+        return tuple(files)
 
     def _open_invoice(self, reminder: Reminder) -> DocumentView:
         """Reminders only go out while their invoice is still open (not paid, not cancelled)."""

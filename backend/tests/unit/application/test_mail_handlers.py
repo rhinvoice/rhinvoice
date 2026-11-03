@@ -621,3 +621,19 @@ def test_a_document_that_vanished_while_sending(
     sender.meanwhile = vanish
     with raises_exactly(NotFoundError, "document not found"):
         mail.send_document(invoice, SendMail(to=("a@example.com",), subject="R", body="x"))
+
+
+def test_a_file_named_like_the_pdf_is_numbered(
+    mail: MailHandlers, documents: DocumentHandlers, sender: FakeSender
+) -> None:
+    created = documents.create(
+        DocumentType.INVOICE, DraftInput(customer_id=CUSTOMER, lines=(LINE,))
+    )
+    invoice = created.document.id
+    documents.add_file(invoice, PDF.name, b"%PDF-1.4 other")
+    documents.issue(invoice)
+    configure(mail)
+    mail.send_document(invoice, SendMail(to=("a@example.com",), subject="x", body="y"))
+    [(_, sent)] = sender.sent
+    stem = PDF.name.removesuffix(".pdf")
+    assert [file.name for file in sent.attachments] == [PDF.name, f"{stem} (2).pdf"]

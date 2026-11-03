@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Protocol
 
 from rhinvoice.application.errors import ConflictError
 from rhinvoice.domain.document.export import ExportListing, export_listing
+from rhinvoice.domain.shared.errors import ValidationError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -84,6 +85,10 @@ class ExportWriter(Protocol):
         ...
 
 
+MAX_ZIP_BYTES = 2 * 1024 * 1024 * 1024
+"""What a ZIP may hold: it is written to the server's disk before the download starts."""
+
+
 @dataclass(frozen=True, slots=True)
 class ExportHandlers:
     uow: UnitOfWorkFactory
@@ -127,7 +132,7 @@ class ExportHandlers:
         content = self.writer.write(listing, company, request.format, language)
         if not request.with_pdfs:
             return ExportFile(list_name, request.format.media_type, BytesIO(content))
-        archive = self.writer.archive(self._files(list_name, content, listing))
+        archive = self.writer.archive(_limited(self._files(list_name, content, listing)))
         return ExportFile(f"{name}.zip", ZIP_MEDIA_TYPE, archive)
 
     def _files(
@@ -143,3 +148,15 @@ class ExportHandlers:
                     found = uow.documents.get_attachment(row.document_id, attachment_id)
                 if found is not None:
                     yield name, found[1]
+
+
+def _limited(files: Iterable[tuple[str, bytes]]) -> Iterator[tuple[str, bytes]]:
+    """Pass the files on until they hold too much: that ends the export, and the ZIP with it."""
+    held = 0
+    for name, content in files:
+        held += len(content)
+        if held > MAX_ZIP_BYTES:
+            raise ValidationError(
+                "end", "the PDFs of this period are too large for one ZIP", code="export_too_large"
+            )
+        yield name, content

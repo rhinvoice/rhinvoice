@@ -1834,6 +1834,8 @@ export const fr: Catalog<MessageKey> = {
   "export.preparing": "Préparation …",
   "error.period_reversed": "La période se termine avant de commencer.",
   "error.period_too_long": "Une période couvre dix ans au plus.",
+  "error.export_too_large":
+    "Les PDF de cette période sont trop volumineux pour un seul fichier ZIP (2 Go au plus). Choisissez une période plus courte.",
   "error.export_busy":
     "Un autre export est en cours de préparation. Veuillez réessayer dans un instant.",
 };

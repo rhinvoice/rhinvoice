@@ -1810,5 +1810,7 @@ export const it: Catalog<MessageKey> = {
   "export.preparing": "Preparazione …",
   "error.period_reversed": "Il periodo termina prima di iniziare.",
   "error.period_too_long": "Un periodo comprende al massimo dieci anni.",
+  "error.export_too_large":
+    "I PDF di questo periodo sono troppo grandi per un solo file ZIP (al massimo 2 GB). Scelga un periodo più breve.",
   "error.export_busy": "Un’altra esportazione è in preparazione. Riprovi tra un momento.",
 };

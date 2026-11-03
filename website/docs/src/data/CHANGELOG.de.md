@@ -19,6 +19,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 ### Geändert
 - Der Export für die Buchhaltung hat eine Spalte *Rundung*, wenn ein Beleg darin gerundet wurde:
   Mit ihr ergeben die Beträge genau *Brutto*.
+- Eine ZIP-Datei des Exports fasst höchstens 2 GB; darüber bittet der Export um einen kürzeren
+  Zeitraum.
 
 ## [0.9.0] – 2026-11-01
 

@@ -1748,5 +1748,7 @@ export const en: Catalog<MessageKey> = {
   "export.preparing": "Preparing …",
   "error.period_reversed": "The period ends before it starts.",
   "error.period_too_long": "A period spans at most ten years.",
+  "error.export_too_large":
+    "The PDFs of this period are too large for one ZIP file (2 GB at most). Choose a shorter period.",
   "error.export_busy": "Another export is being prepared. Please try again in a moment.",
 };

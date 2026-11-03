@@ -1800,6 +1800,8 @@ export const de = {
   "export.preparing": "Wird erstellt …",
   "error.period_reversed": "Das Ende des Zeitraums liegt vor dem Anfang.",
   "error.period_too_long": "Ein Zeitraum umfasst höchstens zehn Jahre.",
+  "error.export_too_large":
+    "Die PDFs dieses Zeitraums sind für eine ZIP-Datei zu gross (höchstens 2 GB). Wählen Sie einen kürzeren Zeitraum.",
   "error.export_busy": "Ein anderer Export wird gerade erstellt. Bitte gleich nochmals versuchen.",
 } as const;
 

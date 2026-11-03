@@ -24,6 +24,7 @@ before 1.0, minor versions may contain breaking changes.
 ### Changed
 - The export for bookkeeping has a column *Rounding* when a document in it was cash rounded: with
   it, the amounts add up to *Gross* exactly.
+- A ZIP of the export holds 2 GB at most; beyond that, the export asks for a shorter period.
 
 ## [0.9.0] – 2026-11-01
 

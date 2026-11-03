@@ -9,6 +9,7 @@ from uuid import UUID
 
 import pytest
 
+from rhinvoice.application.document import export as export_handlers
 from rhinvoice.application.document.export import (
     ZIP_MEDIA_TYPE,
     ExportFormat,
@@ -28,6 +29,7 @@ from rhinvoice.domain.document.document import DocumentType
 from rhinvoice.domain.document.export import ExportListing, ExportPeriod
 from rhinvoice.domain.document.lines import LineKind
 from rhinvoice.domain.shared.clock import FixedClock
+from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.language import Language
 from tests.helpers import raises_exactly
 from tests.unit.application.conftest import NOW
@@ -282,3 +284,27 @@ def test_no_pdf_is_named_like_the_list(
         "Rechnungen-fr 2026-03.pdf",
         "Rechnungen-fr 2026-03 (2).pdf",
     ]
+
+
+def test_a_zip_holds_no_more_than_the_limit(
+    exports: ExportHandlers,
+    documents: DocumentHandlers,
+    writer: RecordingWriter,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    invoice(documents)
+    request = ExportRequest(MARCH, ExportFormat.CSV, with_pdfs=True)
+    exports.export(request)
+    [packed] = writer.archived
+    size = sum(len(content) for _, content in packed)
+    monkeypatch.setattr(export_handlers, "MAX_ZIP_BYTES", size)
+    exports.export(request)
+    assert len(writer.archived) == 2
+    monkeypatch.setattr(export_handlers, "MAX_ZIP_BYTES", size - 1)
+    with raises_exactly(
+        ValidationError, "the PDFs of this period are too large for one ZIP"
+    ) as error:
+        exports.export(request)
+    assert (error.value.field, error.value.code) == ("end", "export_too_large")
+    assert len(writer.archived) == 2
+    assert not exports.running.locked()

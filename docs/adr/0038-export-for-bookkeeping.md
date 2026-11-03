@@ -37,7 +37,8 @@ want a printable list and the PDFs.
     number with the characters `/\:*?"<>|` replaced; a name taken already (case-insensitive)
     gets " (2)", " (3)" … The column *Datei* exists only in ZIP exports, where it names
     something. An imported invoice without PDF leaves it empty. The ZIP is written into a
-    spooled temporary file (in memory up to 16 MB), one PDF at a time, and streamed.
+    spooled temporary file (in memory up to 16 MB), one PDF at a time, and streamed. It holds at
+    most 2 GB of files (`export_too_large`), which keeps the temporary file from filling the disk.
 - **Sums per currency, never across currencies.** In Excel a separate sheet, so that the list
   stays one clean table for filters and pivot tables. CSV has no sheets: the sums follow the
   list after an empty line, one row per currency in the list's columns ("Summe" in *Nummer*).

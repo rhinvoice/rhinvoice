@@ -44,7 +44,7 @@ Il numero segue la numerazione in *Impostazioni → Numerazioni*. Lo schema pred
 - **Contenuto e aliquote IVA.** Posizioni, importi e l’aliquota IVA di ogni posizione sono fissati. Vale l’aliquota della data della prestazione; le modifiche di aliquota successive non si applicano retroattivamente.
 - **Mittente, destinatario e conto bancario.** Rhinvoice salva azienda, cliente e conto bancario così come erano al momento dell’emissione. Se più tardi cambia l’indirizzo di un cliente, la fattura resta com’era. Vengono conservati anche il layout di stampa e il logo di quel giorno.
 - **Il PDF.** La fattura conserva il suo primo PDF, salvato con la sua somma di controllo SHA-256.
-- **Gli allegati.** I PDF allegati alla bozza, come la fattura del terzo di una [spesa anticipata](/docs/it/invoices/pass-through/), restano con il documento e non vengono mai modificati né rimossi. Duplicati e fatture di storno non li riprendono. <Since version="0.9.0" />
+- **Gli allegati.** I PDF allegati alla bozza, come la fattura del terzo di una [spesa anticipata](/docs/it/invoices/pass-through/), restano con il documento e non vengono mai modificati né rimossi. Duplicati e fatture di storno non li riprendono. <Since version="0.10.0" />
 
 Il blocco non è solo nell’interfaccia: la banca dati stessa rifiuta le modifiche al contenuto e l’eliminazione dei documenti emessi. I cambiamenti di stato come pagamenti e storno restano possibili. Lo *Cronologia* di ogni fattura registra quando è stata creata, emessa, pagata o stornata.
 

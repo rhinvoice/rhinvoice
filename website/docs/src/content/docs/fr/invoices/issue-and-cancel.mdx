@@ -44,7 +44,7 @@ Le numéro suit la série sous *Paramètres → Numérotations*. Le modèle pré
 - **Le contenu et les taux de TVA.** Les lignes, les montants et le taux de TVA de chaque ligne sont figés. Le taux à la date de la prestation s’applique; les changements de taux ultérieurs ne s’appliquent pas rétroactivement.
 - **L’expéditeur, le destinataire et le compte bancaire.** Rhinvoice enregistre l’entreprise, le client et le compte bancaire tels qu’ils étaient à l’émission. Si vous modifiez plus tard l’adresse d’un client, la facture reste telle quelle. La mise en page d’impression et le logo du jour sont conservés eux aussi.
 - **Le PDF.** La facture garde son premier PDF, enregistré avec sa somme de contrôle SHA-256.
-- **Les pièces jointes.** Les PDF joints au brouillon, comme la facture du tiers d’un [débours](/docs/fr/invoices/pass-through/), restent avec le document et ne sont jamais modifiés ni retirés. Les duplicatas et les factures d’annulation ne les reprennent pas. <Since version="0.9.0" />
+- **Les pièces jointes.** Les PDF joints au brouillon, comme la facture du tiers d’un [débours](/docs/fr/invoices/pass-through/), restent avec le document et ne sont jamais modifiés ni retirés. Les duplicatas et les factures d’annulation ne les reprennent pas. <Since version="0.10.0" />
 
 Le verrouillage ne se limite pas à l’interface : la base de données elle-même refuse les modifications du contenu et la suppression des documents émis. Les changements de statut comme les paiements et l’annulation restent permis. L’*Historique* de chaque facture indique quand elle a été créée, émise, payée ou annulée.
 

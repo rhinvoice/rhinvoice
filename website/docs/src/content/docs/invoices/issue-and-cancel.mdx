@@ -44,7 +44,7 @@ The number follows the sequence under *Settings → Number sequences*. The prese
 - **Content and VAT rates.** Lines, amounts and the VAT rate of every line are frozen. The rate of the date of supply applies; later rate changes do not apply retroactively.
 - **Sender, recipient and bank account.** Rhinvoice stores company, customer and bank account as they were when issuing. If you change a customer's address later, the invoice stays as it was. The print template and the logo of that day are kept too.
 - **The PDF.** The invoice keeps its first PDF, stored with its SHA-256 checksum.
-- **The attachments.** PDFs attached to the draft, such as the third-party invoice of a [pass-through item](/docs/invoices/pass-through/), stay with the document and are never changed or removed. Duplicates and cancellation invoices do not copy them. <Since version="0.9.0" />
+- **The attachments.** PDFs attached to the draft, such as the third-party invoice of a [pass-through item](/docs/invoices/pass-through/), stay with the document and are never changed or removed. Duplicates and cancellation invoices do not copy them. <Since version="0.10.0" />
 
 The lock is not only in the interface: the database itself refuses changes to the content and the deletion of issued documents. Status changes such as payments and cancellation remain allowed. Each invoice's *History* records when it was created, issued, paid or cancelled.
 

@@ -191,6 +191,24 @@ def staple(path: Path) -> None:
     # "staple" validates what it attached; another lookup would only meet the service again.
 
 
+def hdiutil(verb: str, *arguments: str | Path) -> None:
+    """Run hdiutil, which on the hosted runners fails now and then at fresh files.
+
+    "Resource busy" or "Resource temporarily unavailable": a scan of them still holds them.
+    Try again a few times before giving up.
+    """
+    command = ["/usr/bin/hdiutil", verb, *(str(argument) for argument in arguments)]
+    for attempt in range(1, ATTEMPTS + 1):
+        print("$", " ".join(command), flush=True)
+        if subprocess.run(command, check=False).returncode == 0:  # noqa: S603 - Apple's tool
+            return
+        if attempt == ATTEMPTS:
+            msg = f"hdiutil {verb} failed {ATTEMPTS} times"
+            raise SystemExit(msg)
+        print(f"hdiutil {verb} failed (attempt {attempt}), trying again", flush=True)
+        time.sleep(10)
+
+
 def pack(app: Path, folder: Path) -> Path:
     """Pack ``app`` with a link to /Applications into a disk image named after it."""
     info = plistlib.loads((app / "Contents" / "Info.plist").read_bytes())
@@ -202,22 +220,9 @@ def pack(app: Path, folder: Path) -> Path:
         (Path(staging) / "Applications").symlink_to("/Applications")
         # ULMO (LZMA) packs far tighter than the usual UDZO (zlib); macOS opens it from
         # 10.15 on, below the app's minimum of 12.
-        # hdiutil on the hosted runners fails now and then with "Resource busy" (a scan of
-        # the fresh files still holds them): try again a few times before giving up.
-        for attempt in range(1, ATTEMPTS + 1):
-            created = subprocess.run(  # noqa: S603 - Apple's tool
-                ["/usr/bin/hdiutil", "create", "-volname", f"{name} {version}",
-                 "-srcfolder", staging, "-format", "ULMO", "-ov", str(image)],
-                check=False,
-            )  # fmt: skip
-            if created.returncode == 0:
-                break
-            if attempt == ATTEMPTS:
-                msg = f"hdiutil could not pack {app.name}"
-                raise SystemExit(msg)
-            print(f"hdiutil failed (attempt {attempt}), trying again", flush=True)
-            time.sleep(10)
-    run("/usr/bin/hdiutil", "verify", image)
+        hdiutil("create", "-volname", f"{name} {version}", "-srcfolder", staging,
+                "-format", "ULMO", "-ov", image)  # fmt: skip
+    hdiutil("verify", image)
     print(f"{image}: {image.stat().st_size // 2**20} MB", flush=True)
     return image
 

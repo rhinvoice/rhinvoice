@@ -1,14 +1,10 @@
 import { useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
 
+import { inProgramWindow } from "@/lib/program-window";
+
 /** How long after the start the pages are loaded: the first page comes first. */
 export const PRELOAD_DELAY_MS = 1_500;
-
-/** Whether the page runs in the program window of the installation without Docker. */
-export function inProgramWindow(target: object): boolean {
-  // pywebview adds its bridge to every page its windows show.
-  return "pywebview" in target;
-}
 
 /**
  * Load the code of every page shortly after the start, in the program window only.

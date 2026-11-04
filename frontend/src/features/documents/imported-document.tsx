@@ -27,6 +27,7 @@ import {
   type DocumentDetail,
 } from "@/features/documents/api";
 import { demoQuery } from "@/features/shared/demo-api";
+import { FileLink } from "@/features/shared/file-link";
 import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { cn } from "@/lib/cn";
@@ -106,16 +107,13 @@ export function AttachmentsCard({ document }: { readonly document: DocumentDetai
         <ul className="flex flex-col divide-y text-sm">
           {attachments.map((attachment) => (
             <li key={attachment.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
-              <a
+              <FileLink
                 href={attachmentUrl(document.id, attachment.id)}
-                target="_blank"
-                rel="noreferrer"
                 className="inline-flex min-h-6 min-w-0 items-center gap-1.5 font-medium break-all text-primary underline-offset-4 hover:underline"
               >
                 <PaperclipIcon className="size-3.5 shrink-0" aria-hidden="true" />
                 {attachment.file_name}
-                <span className="sr-only">{t("common.opensInNewTab")}</span>
-              </a>
+              </FileLink>
               <span className="text-xs text-muted-foreground tabular-nums">
                 {formatBytes(attachment.size, locale)} ·{" "}
                 {formatDate(attachment.added_at.slice(0, 10), locale)}

@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-query";
 
 import { api, CLIENT_HEADER, unwrap, type components } from "@/api/client";
-import { fetchFile } from "@/features/documents/file-download";
+import { fetchFile } from "@/features/shared/file-download";
 import { markItemsPaid } from "@/features/documents/paid-rows";
 import { toApiError } from "@/lib/api-error";
 

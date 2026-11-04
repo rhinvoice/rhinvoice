@@ -13,6 +13,7 @@ import {
   type Attachment,
 } from "@/features/documents/api";
 import { demoQuery } from "@/features/shared/demo-api";
+import { FileLink } from "@/features/shared/file-link";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { cn } from "@/lib/cn";
 import { formatBytes } from "@/lib/format";
@@ -34,16 +35,13 @@ function AttachmentList({
     <ul className="flex flex-col divide-y text-sm">
       {attachments.map((attachment) => (
         <li key={attachment.id} className="flex items-center gap-x-3 py-1.5">
-          <a
+          <FileLink
             href={attachmentUrl(documentId, attachment.id)}
-            target="_blank"
-            rel="noreferrer"
             className="inline-flex min-h-6 min-w-0 items-center gap-1.5 font-medium break-all text-primary underline-offset-4 hover:underline"
           >
             <PaperclipIcon className="size-3.5 shrink-0" aria-hidden="true" />
             {attachment.file_name}
-            <span className="sr-only">{t("common.opensInNewTab")}</span>
-          </a>
+          </FileLink>
           <span className="text-xs whitespace-nowrap text-muted-foreground tabular-nums">
             {formatBytes(attachment.size, locale)}
           </span>

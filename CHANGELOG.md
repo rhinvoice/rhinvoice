@@ -26,6 +26,11 @@ before 1.0, minor versions may contain breaking changes.
   it, the amounts add up to *Gross* exactly.
 - A ZIP of the export holds 2 GB at most; beyond that, the export asks for a shorter period.
 
+### Fixed
+- In the program for Windows and Mac, a click on an attachment or on the PDF of a reminder saves
+  the file. It opened the default browser, which only answered "session expired". The *PDF* button
+  of a document saves the file there, too.
+
 ## [0.9.0] – 2026-11-01
 
 ### Added

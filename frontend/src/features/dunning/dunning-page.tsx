@@ -36,10 +36,13 @@ import {
   type DunningItem,
 } from "@/features/dunning/api";
 import { BackLink } from "@/features/shared/back-link";
+import { FileLink } from "@/features/shared/file-link";
 import { FormAlert } from "@/features/shared/form-alert";
 import { SendMailDialog } from "@/features/shared/send-mail-dialog";
 import { useErrorMessage } from "@/features/shared/use-error-message";
+import { useSaveFile } from "@/features/shared/use-save-file";
 import { formatDate, formatMoney } from "@/lib/format";
+import { inProgramWindow } from "@/lib/program-window";
 
 /** Overdue invoices with their reminders and the next step. */
 export function DunningPage() {
@@ -106,6 +109,7 @@ function levelKey(level: number): `dunning.level.${Level}` {
 function DunningRow({ item }: { readonly item: DunningItem }) {
   const { t, locale } = useI18n();
   const errorMessage = useErrorMessage();
+  const saveFile = useSaveFile();
   const write = useWriteReminder();
   const [confirming, setConfirming] = useState(false);
   const [mailing, setMailing] = useState<{ id: string; level: number } | null>(null);
@@ -138,10 +142,8 @@ function DunningRow({ item }: { readonly item: DunningItem }) {
           <ul className="flex flex-col gap-1">
             {item.reminders.map((reminder) => (
               <li key={reminder.id} className="flex items-center gap-1">
-                <a
+                <FileLink
                   href={reminderPdfUrl(reminder)}
-                  target="_blank"
-                  rel="noreferrer"
                   className="inline-flex min-h-6 items-center gap-1 text-primary underline-offset-4 hover:underline"
                 >
                   <FileTextIcon className="size-3.5" aria-hidden="true" />
@@ -149,8 +151,7 @@ function DunningRow({ item }: { readonly item: DunningItem }) {
                   <span className="text-muted-foreground">
                     {formatDate(reminder.issued_on, locale)}
                   </span>
-                  <span className="sr-only">{t("common.opensInNewTab")}</span>
-                </a>
+                </FileLink>
                 <Button
                   type="button"
                   size="icon-sm"
@@ -231,7 +232,10 @@ function DunningRow({ item }: { readonly item: DunningItem }) {
                                 action: {
                                   label: t("dunning.openPdf"),
                                   onClick: () => {
-                                    window.open(reminderPdfUrl(reminder), "_blank", "noopener");
+                                    const url = reminderPdfUrl(reminder);
+                                    // The program window has no tabs: see FileLink.
+                                    if (inProgramWindow(window)) saveFile(url);
+                                    else window.open(url, "_blank", "noopener");
                                   },
                                 },
                               },

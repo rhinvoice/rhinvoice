@@ -22,6 +22,11 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 - Eine ZIP-Datei des Exports fasst höchstens 2 GB; darüber bittet der Export um einen kürzeren
   Zeitraum.
 
+### Behoben
+- Im Programm für Windows und Mac speichert ein Klick auf einen Anhang oder das PDF einer Mahnung
+  die Datei. Bisher öffnete sich der Standardbrowser und meldete nur «session expired». Auch der
+  Button *PDF* eines Belegs speichert die Datei dort.
+
 ## [0.9.0] – 2026-11-01
 
 ### Neu

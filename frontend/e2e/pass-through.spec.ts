@@ -130,6 +130,14 @@ test("pass-through items print apart and third-party invoices go with the invoic
   const attachments = page.getByRole("region", { name: "Anhänge" });
   await expect(attachments.getByRole("link", { name: /Handelsregister\.pdf/ })).toBeVisible();
   await expect(attachments.getByRole("button")).toHaveCount(0);
+  // The program window hands new tabs to a browser without the login: there, a click saves.
+  await page.evaluate(() => Object.assign(window, { pywebview: {} }));
+  const saved = page.waitForEvent("download");
+  // Keyboard: on phones the toast of the refused file still lies over the link.
+  await attachments.getByRole("link", { name: /Handelsregister\.pdf/ }).focus();
+  await page.keyboard.press("Enter");
+  expect((await saved).suggestedFilename()).toBe("Handelsregister.pdf");
+  expect(page.context().pages()).toHaveLength(1);
   await page.getByRole("button", { name: "Details" }).click();
   const totals = page.getByRole("region", { name: "Summen" });
   await expect(totals.getByText("Durchlaufende Posten")).toBeVisible();

@@ -1,11 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  PRELOAD_DELAY_MS,
-  inProgramWindow,
-  usePreloadedPages,
-} from "@/app/shell/use-preloaded-pages";
+import { PRELOAD_DELAY_MS, usePreloadedPages } from "@/app/shell/use-preloaded-pages";
 
 const loadRouteChunk = vi.fn<(route: string) => Promise<void> | undefined>();
 const router = {
@@ -55,12 +51,5 @@ describe("usePreloadedPages", () => {
     unmount();
     vi.advanceTimersByTime(PRELOAD_DELAY_MS);
     expect(loadRouteChunk).not.toHaveBeenCalled();
-  });
-});
-
-describe("inProgramWindow", () => {
-  it("knows the program window by the bridge of its web view", () => {
-    expect(inProgramWindow({ pywebview: {} })).toBe(true);
-    expect(inProgramWindow({})).toBe(false);
   });
 });

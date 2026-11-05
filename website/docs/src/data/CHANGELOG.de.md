@@ -5,7 +5,7 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
-## [0.10.0] – 2026-11-03
+## [0.10.0] – 2026-11-05
 
 ### Neu
 - Durchlaufende Posten, etwa im Namen und für Rechnung des Kunden bezahlte Gebühren: Der

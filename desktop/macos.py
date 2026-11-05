@@ -21,6 +21,7 @@ import argparse
 import json
 import os
 import plistlib
+import shutil
 import struct
 import subprocess
 import tempfile
@@ -191,21 +192,23 @@ def staple(path: Path) -> None:
     # "staple" validates what it attached; another lookup would only meet the service again.
 
 
-def hdiutil(verb: str, *arguments: str | Path) -> None:
-    """Run hdiutil, which on the hosted runners fails now and then at fresh files.
+def create_image(staging: str, volume: str, image: Path) -> None:
+    """Pack ``staging`` into ``image``; hdiutil fails now and then at the runners' fresh files.
 
-    "Resource busy" or "Resource temporarily unavailable": a scan of them still holds them.
-    Try again a few times before giving up.
+    "Resource busy": a scan of them still holds them. Try again a few times before giving up.
     """
-    command = ["/usr/bin/hdiutil", verb, *(str(argument) for argument in arguments)]
+    # ULMO (LZMA) packs far tighter than the usual UDZO (zlib); macOS opens it from
+    # 10.15 on, below the app's minimum of 12.
+    command = ["/usr/bin/hdiutil", "create", "-volname", volume, "-srcfolder", staging,
+               "-format", "ULMO", "-ov", str(image)]  # fmt: skip
     for attempt in range(1, ATTEMPTS + 1):
         print("$", " ".join(command), flush=True)
         if subprocess.run(command, check=False).returncode == 0:  # noqa: S603 - Apple's tool
             return
         if attempt == ATTEMPTS:
-            msg = f"hdiutil {verb} failed {ATTEMPTS} times"
+            msg = f"hdiutil could not pack {image.name}"
             raise SystemExit(msg)
-        print(f"hdiutil {verb} failed (attempt {attempt}), trying again", flush=True)
+        print(f"hdiutil failed (attempt {attempt}), trying again", flush=True)
         time.sleep(10)
 
 
@@ -214,15 +217,16 @@ def pack(app: Path, folder: Path) -> Path:
     info = plistlib.loads((app / "Contents" / "Info.plist").read_bytes())
     name, version = info["CFBundleName"], info["CFBundleShortVersionString"]
     image = folder / f"{name.replace(' ', '-')}-{version}.dmg"
-    with tempfile.TemporaryDirectory() as staging:
+    with tempfile.TemporaryDirectory() as staging, tempfile.TemporaryDirectory() as built:
         # ditto keeps the extended attributes, which hold the start script's signature.
         run("/usr/bin/ditto", app, Path(staging) / app.name)
         (Path(staging) / "Applications").symlink_to("/Applications")
-        # ULMO (LZMA) packs far tighter than the usual UDZO (zlib); macOS opens it from
-        # 10.15 on, below the app's minimum of 12.
-        hdiutil("create", "-volname", f"{name} {version}", "-srcfolder", staging,
-                "-format", "ULMO", "-ov", image)  # fmt: skip
-    hdiutil("verify", image)
+        fresh = Path(built) / image.name
+        create_image(staging, f"{name} {version}", fresh)
+        # A helper of hdiutil can keep the file it wrote locked for minutes, and verify then
+        # fails with "Resource temporarily unavailable". A copy is a new file without the lock.
+        shutil.copyfile(fresh, image)
+    run("/usr/bin/hdiutil", "verify", image)
     print(f"{image}: {image.stat().st_size // 2**20} MB", flush=True)
     return image
 

@@ -24,7 +24,7 @@ PAGES = ("/invoices", "/quotes")
 MIN_ROWS = 2
 WAIT_SECONDS = 60
 
-# Synchronous: evaluate_js does not wait for a promise.
+# Synchronous: a script's result does not wait for a promise.
 LOG_IN = """
 (() => {
   const request = new XMLHttpRequest();
@@ -65,12 +65,26 @@ WRONG_TARGETS = """
 """
 
 
+def evaluate(window: Any, script: str) -> Any:  # noqa: ANN401 - pywebview's window, JSON
+    """Return the value of ``script``, None while the page cannot tell.
+
+    Not evaluate_js: it wraps the script in eval, which the program's Content-Security-Policy
+    forbids in Apple's WebKit.
+    """
+    result = window.run_js(f"JSON.stringify({script})")
+    if result is None:
+        return None
+    value = json.loads(result)
+    # WebView2 encodes what a script returns once more.
+    return json.loads(value) if isinstance(value, str) else value
+
+
 def wait_for_rows(window: Any) -> int:  # noqa: ANN401 - pywebview's window
     """Wait until the list shows its documents; return how many."""
     deadline = time.monotonic() + WAIT_SECONDS
     rows = 0
     while time.monotonic() < deadline:
-        rows = window.evaluate_js(ROWS) or 0
+        rows = evaluate(window, ROWS) or 0
         if rows >= MIN_ROWS:
             break
         time.sleep(1)
@@ -80,7 +94,7 @@ def wait_for_rows(window: Any) -> int:  # noqa: ANN401 - pywebview's window
 def check(window: Any, address: str, email: str, password: str) -> str | None:  # noqa: ANN401
     """Return what is wrong, None if every row leads to its own document."""
     credentials = json.dumps({"email": email, "password": password})
-    status = window.evaluate_js(LOG_IN % credentials)
+    status = evaluate(window, LOG_IN % credentials)
     if status != 200:  # noqa: PLR2004 - HTTP
         return f"login answered {status}"
     for page in PAGES:
@@ -90,7 +104,7 @@ def check(window: Any, address: str, email: str, password: str) -> str | None:  
         rows = wait_for_rows(window)
         if rows < MIN_ROWS:
             return f"{page} shows {rows} documents, the check needs {MIN_ROWS}"
-        wrong = window.evaluate_js(WRONG_TARGETS)
+        wrong = evaluate(window, WRONG_TARGETS)
         print(f"{page}: {rows} documents checked", flush=True)
         if wrong:
             return f"{page}: " + "; ".join(wrong)

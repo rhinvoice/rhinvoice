@@ -5,7 +5,7 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
-## [0.10.0] – 2026-11-03
+## [0.10.0] – 2026-11-05
 
 ### Added
 - Pass-through items, such as fees paid in the customer's name and for their account: a line's or an

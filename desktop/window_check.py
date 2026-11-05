@@ -46,10 +46,12 @@ WRONG_TARGETS = """
   for (const row of document.querySelectorAll("tbody tr")) {
     const own = row.querySelector("a[href^='/documents/']");
     if (own === null) continue;
-    row.scrollIntoView({ block: "center" });
     for (const cell of row.cells) {
+      if (cell.getBoundingClientRect().width === 0) continue;
+      if (getComputedStyle(cell).position !== "static") continue;
+      // In a narrow window the table scrolls sideways, and the box around it clips the rest.
+      cell.scrollIntoView({ block: "center", inline: "center" });
       const box = cell.getBoundingClientRect();
-      if (box.width === 0 || getComputedStyle(cell).position !== "static") continue;
       const reached = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
       const link = reached === null ? null : reached.closest("a");
       if (link !== own) {

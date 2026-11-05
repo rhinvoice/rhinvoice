@@ -30,6 +30,8 @@ before 1.0, minor versions may contain breaking changes.
 - In the program for Windows and Mac, a click on an attachment or on the PDF of a reminder saves
   the file. It opened the default browser, which only answered "session expired". The *PDF* button
   of a document saves the file there, too.
+- In the program on a Mac and in Safari, a click on a row of the document list opens that document.
+  It opened the last one in the list, whichever row was clicked.
 
 ## [0.9.0] – 2026-11-01
 

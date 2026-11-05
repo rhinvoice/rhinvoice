@@ -3,7 +3,7 @@ title: Häufige Fragen zu Rhinvoice
 description: Antworten zu Rhinvoice, dem kostenlosen Open-Source-Rechnungsprogramm für CH, FL, DE und AT. Kosten, Lizenz, Daten, GoBD, Backup, E-Rechnung, Demo.
 faq:
   - q: Was kostet Rhinvoice?
-    a: Nichts. Rhinvoice ist kostenlos und Open Source. Es gibt keine Bezahlversion und keinen Hosting-Dienst. Sie betreiben Rhinvoice auf Ihrem eigenen Server oder Computer.
+    a: Nichts. Rhinvoice ist kostenlos und Open Source. Es gibt keine Bezahlversion und keinen Hosting-Dienst. Sie betreiben Rhinvoice auf Ihrem eigenen Server oder Computer. Wer das Projekt unterstützen möchte, kann das über GitHub Sponsors tun.
   - q: Unter welcher Lizenz steht Rhinvoice?
     a: Unter der GNU Affero General Public License v3.0 oder später (AGPL-3.0). Sie dürfen Rhinvoice frei nutzen, verändern und weitergeben. Wer eine veränderte Fassung anderen als Dienst anbietet, legt seine Änderungen unter derselben Lizenz offen.
   - q: Für welche Länder ist Rhinvoice gedacht?
@@ -38,6 +38,8 @@ faq:
     a: "Ja. Seit Version 0.9.0 erfassen Sie mehrere Bankkonten pro Währung und wählen im Editor pro Rechnung eines. Ein Konto lässt sich als Konto eines Dritten markieren, etwa eines Finanzdienstleisters: Die Rechnung nennt ihn dann als Zahlungsempfänger mit IBAN und BIC, QR-Rechnung und E-Rechnung nennen ihn als Zahlungsempfänger."
   - q: Kann ich meine Rechnungen für die Buchhaltung exportieren?
     a: "Ja. Seit Version 0.9.0 lädt «Rechnungen → Exportieren» die ausgestellten Rechnungen und Stornorechnungen eines Monats, Quartals, Jahres oder freien Zeitraums als Excel, CSV oder PDF herunter, mit Summen pro Währung. Auf Wunsch kommen alle Rechnungs-PDFs in einer ZIP-Datei mit."
+  - q: Wie verrechne ich eine Gebühr weiter, die ich im Namen meines Kunden bezahlt habe?
+    a: "Als durchlaufenden Posten. Seit Version 0.10.0 wählen Sie als Steuersatz der Position «Durchlaufender Posten (ohne MWST)» bzw. «(ohne USt.)»: Sie hat keine Steuer, keinen Rabatt auf das Dokument und einen eigenen Block auf dem PDF, und Sie hängen die Fremdrechnung als PDF an. Das gilt nur, wenn die Fremdrechnung auf den Namen Ihres Kunden lautet."
 ---
 
 import Faq from "../../../../components/Faq.astro";

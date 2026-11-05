@@ -18,6 +18,7 @@ import { remindersQuery, type DocumentDetail } from "@/features/documents/api";
 import { EInvoiceCard } from "@/features/documents/e-invoice-card";
 import { TotalsSummary } from "@/features/documents/totals-summary";
 import { parseWriteOffEvent } from "@/features/documents/write-off-model";
+import { FileLink } from "@/features/shared/file-link";
 import { SendMailDialog } from "@/features/shared/send-mail-dialog";
 import { formatDate, formatDateTime, formatMoney, formatNumber, formatPercent } from "@/lib/format";
 
@@ -159,9 +160,11 @@ export function DocumentView({ document, taxName, onRemovePayment }: DocumentVie
                         {money(line.unit_price, 4)}
                       </TableCell>
                       <TableCell className="hidden text-right tabular-nums lg:table-cell">
-                        {line.tax_rate === null
-                          ? t("common.none")
-                          : formatPercent(line.tax_rate, locale)}
+                        {line.tax_category === "pass_through"
+                          ? t("documents.passThroughShort")
+                          : line.tax_rate === null
+                            ? t("common.none")
+                            : formatPercent(line.tax_rate, locale)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {line.amount === null ? t("common.none") : money(line.amount)}
@@ -327,10 +330,8 @@ function DocumentReminders({
       <ul className="flex flex-col gap-1 text-sm">
         {reminders.map((reminder) => (
           <li key={reminder.id} className="flex flex-wrap items-center justify-between gap-2">
-            <a
+            <FileLink
               href={`/api/reminders/${reminder.id}/pdf`}
-              target="_blank"
-              rel="noreferrer"
               className="inline-flex min-h-6 items-center gap-1 text-primary underline-offset-4 hover:underline"
             >
               <FileTextIcon className="size-3.5" aria-hidden="true" />
@@ -338,8 +339,7 @@ function DocumentReminders({
               <span className="text-muted-foreground">
                 {formatDate(reminder.issued_on, locale)}
               </span>
-              <span className="sr-only">{t("common.opensInNewTab")}</span>
-            </a>
+            </FileLink>
             {open ? (
               <Button
                 type="button"

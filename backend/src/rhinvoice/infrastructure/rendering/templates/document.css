@@ -244,6 +244,23 @@ table.lines {
   text-align: right;
 }
 
+/* Pass-through items (ADR 0039): a block of their own between the tax and the total. */
+.totals .pass-through-title {
+  grid-column: 1 / -1;
+  margin-top: 1.6mm;
+  padding-top: 1.4mm;
+  border-top: 0.2mm solid var(--line);
+  font-weight: 600;
+}
+
+.totals .pass-through {
+  display: contents;
+}
+
+.totals .pass-through > span:first-child {
+  padding-left: 3mm;
+}
+
 .totals .grand {
   margin-top: 1mm;
   padding-top: 1.4mm;

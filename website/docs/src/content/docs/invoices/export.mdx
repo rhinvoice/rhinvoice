@@ -40,7 +40,7 @@ What counts is the **invoice date**. The export holds issued invoices, credit no
 | CSV | UTF-8 with BOM, semicolons as separators, dates as `YYYY-MM-DD`. Amounts without thousands separators, with a point (company in Switzerland or Liechtenstein) or a comma (company in Germany or Austria). After an empty line follow the totals per currency. |
 | PDF | A4 landscape, with company, period and page numbers, the totals per currency at the end. |
 
-With *Add the invoice PDFs as a ZIP* you get one ZIP file with the list in the chosen format and the PDF of every document. The PDFs are named after their number, such as `R20260042.pdf`, and the list's column *File* names each. They are the archived PDFs, unchanged since issuing. Invoices taken over bring their original PDF; without one, *File* stays empty. One export runs at a time; the public demo offers the lists but no ZIP file with PDFs.
+With *Add the invoice PDFs as a ZIP* you get one ZIP file with the list in the chosen format and the PDF of every document. The PDFs are named after their number, such as `R20260042.pdf`, and the list's column *File* names each. They are the archived PDFs, unchanged since issuing. Invoices taken over bring their original PDF; without one, *File* stays empty. The attachments of a document, such as the third-party invoice of a [pass-through item](/docs/invoices/pass-through/), follow its PDF, named after the number and their own name: `R20260042_Handelsregister.pdf`. One export runs at a time; the public demo offers the lists but no ZIP file with PDFs. A ZIP file holds 2 GB at most. Beyond that, Rhinvoice says so and you choose a shorter period.
 
 <Aside type="caution">
 When a text in the CSV file starts with `=`, `+`, `-` or `@`, Rhinvoice puts an apostrophe in front of it, so that a spreadsheet does not run it as a formula when opening the file. The Excel file stores such texts as text and keeps them unchanged.
@@ -58,6 +58,8 @@ When a text in the CSV file starts with `=`, `+`, `-` or `@`, Rhinvoice puts an 
 | Net | Net amount of the document |
 | Net x %, Tax x % | One pair per VAT rate that occurs in the export, also 0 % |
 | Tax, Gross | Total tax and the invoice amount, cash rounding included |
+| Pass-through items | The [pass-through items](/docs/invoices/pass-through/) of the document, only when the period has some. *Net* and *Tax* leave them out, *Gross* includes them |
+| Rounding | The cash rounding of the document, only when the period has some. With it, the amounts add up to *Gross* exactly |
 | Paid, Paid on | Sum of the payments; the date of the last payment once the invoice is paid in full |
 | Open | What is still open |
 | Written off | The loss of a [written-off](/docs/invoices/write-off/) invoice |

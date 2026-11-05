@@ -40,7 +40,7 @@ C’est la **date de la facture** qui compte. L’export contient les factures �
 | CSV | UTF-8 avec BOM, point-virgule comme séparateur, dates au format `AAAA-MM-JJ`. Montants sans séparateur de milliers, avec un point (entreprise en Suisse ou au Liechtenstein) ou une virgule (entreprise en Allemagne ou en Autriche). Après une ligne vide suivent les totaux par monnaie. |
 | PDF | A4 paysage, avec l’entreprise, la période et les numéros de page, les totaux par monnaie à la fin. |
 
-Avec *Joindre les PDF des factures (ZIP)*, vous recevez un fichier ZIP avec la liste dans le format choisi et le PDF de chaque document. Les PDF portent leur numéro, p. ex. `R20260042.pdf`, et la colonne *Fichier* de la liste en donne le nom. Ce sont les PDF archivés, inchangés depuis l’émission. Les factures reprises apportent leur PDF d’origine; sans PDF, *Fichier* reste vide. Un seul export à la fois; la démo publique propose les listes, mais pas de fichier ZIP avec les PDF.
+Avec *Joindre les PDF des factures (ZIP)*, vous recevez un fichier ZIP avec la liste dans le format choisi et le PDF de chaque document. Les PDF portent leur numéro, p. ex. `R20260042.pdf`, et la colonne *Fichier* de la liste en donne le nom. Ce sont les PDF archivés, inchangés depuis l’émission. Les factures reprises apportent leur PDF d’origine; sans PDF, *Fichier* reste vide. Les pièces jointes d’un document, comme la facture du tiers d’un [débours](/docs/fr/invoices/pass-through/), suivent son PDF, nommées d’après le numéro et leur propre nom: `R20260042_Handelsregister.pdf`. Un seul export à la fois; la démo publique propose les listes, mais pas de fichier ZIP avec les PDF. Un fichier ZIP contient 2 Go au plus. Au-delà, Rhinvoice vous le signale et vous choisissez une période plus courte.
 
 <Aside type="caution">
 Lorsqu’un texte du fichier CSV commence par `=`, `+`, `-` ou `@`, Rhinvoice le fait précéder d’une apostrophe. Ainsi, un tableur ne l’exécute pas comme formule à l’ouverture. Le fichier Excel enregistre ces textes comme texte et les garde tels quels.
@@ -58,6 +58,8 @@ Lorsqu’un texte du fichier CSV commence par `=`, `+`, `-` ou `@`, Rhinvoice le
 | Net | Montant net du document |
 | Net x %, TVA x % | Une paire par taux de TVA présent dans l’export, y compris 0 % |
 | TVA, Brut | TVA totale et montant de la facture, arrondi compris |
+| Débours | Les [débours](/docs/fr/invoices/pass-through/) du document, seulement si la période en contient. *Net* et *TVA* les laissent de côté, *Brut* les comprend |
+| Arrondi | L'arrondi du document, seulement si la période en contient. Avec lui, les montants donnent exactement le *Brut* |
 | Payé, Payé le | Somme des paiements; la date du dernier paiement dès que la facture est entièrement payée |
 | Ouvert | Ce qui reste ouvert |
 | Passé en perte | La perte d’une facture [passée en perte](/docs/fr/invoices/write-off/) |

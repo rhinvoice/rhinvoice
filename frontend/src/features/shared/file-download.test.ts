@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { fetchFile, fileNameFromDisposition, saveFile } from "@/features/documents/file-download";
+import { fetchFile, fileNameFromDisposition, saveFile } from "@/features/shared/file-download";
 import { ApiError } from "@/lib/api-error";
 
 describe("fileNameFromDisposition", () => {

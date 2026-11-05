@@ -16,7 +16,12 @@ from rhinvoice.application.text.handlers import effective_notice
 from rhinvoice.domain.catalog.unit import Unit
 from rhinvoice.domain.company.bank_account import paying_account
 from rhinvoice.domain.country.registry import profile_of
-from rhinvoice.domain.document.attachment import Attachment
+from rhinvoice.domain.document.attachment import (
+    Attachment,
+    check_room,
+    unique_name,
+    upload_name,
+)
 from rhinvoice.domain.document.document import (
     DisplayStatus,
     Document,
@@ -71,7 +76,7 @@ if TYPE_CHECKING:
 
 
 MAX_ADDED_FILE_BYTES = 20 * 1024 * 1024
-"""A PDF added to an imported invoice; scans of many pages stay below."""
+"""A PDF added to an imported invoice or a draft; scans of many pages stay below."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -482,7 +487,7 @@ class DocumentHandlers:
         with self.uow() as uow:
             return bad_debts_by_year(uow.documents.bad_debts())
 
-    # --- Files of imported invoices ------------------------------------------------------
+    # --- Files of imported invoices and drafts --------------------------------------------
 
     def attachments(self, document_id: UUID) -> list[Attachment]:
         with self.uow() as uow:
@@ -497,33 +502,55 @@ class DocumentHandlers:
         return found
 
     def add_file(self, document_id: UUID, file_name: str, content: bytes) -> DocumentView:
-        """Add a PDF to an imported invoice: its original if it has none, else an attachment.
+        """Add a PDF: to an imported invoice its original if it has none, else an attachment.
 
-        Neither can be replaced or removed afterwards (GoBD, OR 958f).
+        Drafts take attachments, such as the third-party invoices of pass-through items
+        (ADR 0040); they are removed again while the document is a draft. From issuing on
+        no file can be replaced or removed (GoBD, OR 958f). A name the document's files carry
+        already gets " (2)", " (3)" and so on.
         """
         if not content.startswith(b"%PDF-"):
             raise ValidationError("file", "the file is no PDF", code="not_a_pdf")
         if len(content) > MAX_ADDED_FILE_BYTES:
             raise ValidationError("file", "the file is larger than 20 MB", code="file_too_large")
+        name = upload_name(file_name)
         sha256 = hashlib.sha256(content).hexdigest()
         now = self.clock.now()
         with self.uow() as uow:
-            document = self._require(uow, document_id, for_update=True).record_file(file_name, now)
-            if document.pdf_sha256 is None:
-                document = document.archive_pdf(sha256)
+            document = self._require(uow, document_id, for_update=True)
+            if document.is_imported and document.pdf_sha256 is None:
+                document = document.record_file(name, now).archive_pdf(sha256)
                 view = self._save(uow, document, new=False)
                 uow.documents.archive_pdf(document, content)
             else:
+                attached = uow.documents.attachments(document_id)
+                if document.is_draft:
+                    check_room(attached, len(content))
+                name = unique_name(name, (attachment.file_name for attachment in attached))
+                document = document.record_file(name, now)
                 view = self._save(uow, document, new=False)
                 attachment = Attachment(
                     id=new_id(),
                     document_id=document_id,
-                    file_name=file_name,
+                    file_name=name,
                     sha256=sha256,
                     size=len(content),
                     added_at=now,
                 )
                 uow.documents.add_attachment(attachment, content)
+            uow.commit()
+        return view
+
+    def remove_file(self, document_id: UUID, attachment_id: UUID) -> DocumentView:
+        """Take an attachment off a draft; issued documents keep theirs."""
+        with self.uow() as uow:
+            document = self._require(uow, document_id, for_update=True)
+            found = uow.documents.find_attachment(document_id, attachment_id)
+            if found is None:
+                raise NotFoundError("attachment not found")
+            document = document.remove_file(found.file_name, self.clock.now())
+            view = self._save(uow, document, new=False)
+            uow.documents.remove_attachment(document_id, attachment_id)
             uow.commit()
         return view
 

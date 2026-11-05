@@ -32,6 +32,12 @@ test("overdue invoices get payment reminders", async ({ page }, testInfo) => {
   await page.getByRole("button", { name: "Details" }).click();
   const reminders = page.getByRole("region", { name: "Mahnungen" });
   await expect(reminders.getByRole("link", { name: /^Zahlungserinnerung/ })).toBeVisible();
+  // The program window hands new tabs to a browser without the login: there, a click saves.
+  await page.evaluate(() => Object.assign(window, { pywebview: {} }));
+  const saved = page.waitForEvent("download");
+  await reminders.getByRole("link", { name: /^Zahlungserinnerung/ }).click();
+  expect((await saved).suggestedFilename()).toMatch(/\.pdf$/);
+  expect(page.context().pages()).toHaveLength(1);
 });
 
 test("the dunning levels are set in the settings", async ({ page }) => {

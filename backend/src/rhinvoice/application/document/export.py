@@ -2,7 +2,8 @@
 
 The list comes as Excel, CSV or PDF; with ``with_pdfs`` a ZIP holds the list and the
 PDF of every document, named as the list's column "file" says. Own documents add their
-archived PDF (archived now if it was not yet), imported invoices their original.
+archived PDF (archived now if it was not yet) and the files attached to them (ADR 0040),
+imported invoices their original.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from typing import TYPE_CHECKING, Protocol
 
 from rhinvoice.application.errors import ConflictError
 from rhinvoice.domain.document.export import ExportListing, export_listing
+from rhinvoice.domain.shared.errors import ValidationError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -83,6 +85,10 @@ class ExportWriter(Protocol):
         ...
 
 
+MAX_ZIP_BYTES = 2 * 1024 * 1024 * 1024
+"""What a ZIP may hold: it is written to the server's disk before the download starts."""
+
+
 @dataclass(frozen=True, slots=True)
 class ExportHandlers:
     uow: UnitOfWorkFactory
@@ -105,6 +111,11 @@ class ExportHandlers:
         with self.uow() as uow:
             company = uow.company.get()
             documents = uow.documents.issued_between(period.start, period.end)
+            attachments = (
+                uow.documents.attachments_of([document.id for document in documents])
+                if request.with_pdfs
+                else {}
+            )
         if company is None:
             raise ConflictError("set up the company before exporting", code="company_not_set_up")
         language = request.language or company.default_language
@@ -116,18 +127,36 @@ class ExportHandlers:
             self.clock.today(),
             with_files=request.with_pdfs,
             reserved=(list_name,),
+            attachments=attachments,
         )
         content = self.writer.write(listing, company, request.format, language)
         if not request.with_pdfs:
             return ExportFile(list_name, request.format.media_type, BytesIO(content))
-        archive = self.writer.archive(self._files(list_name, content, listing))
+        archive = self.writer.archive(_limited(self._files(list_name, content, listing)))
         return ExportFile(f"{name}.zip", ZIP_MEDIA_TYPE, archive)
 
     def _files(
         self, list_name: str, content: bytes, listing: ExportListing
     ) -> Iterator[tuple[str, bytes]]:
-        """Yield the list, then each PDF: only one PDF is in memory at a time."""
+        """Yield the list, then each PDF and its attachments: one file in memory at a time."""
         yield list_name, content
         for row in listing.rows:
             if row.file_name is not None:
                 yield row.file_name, self.printing.pdf(row.document_id).content
+            for attachment_id, name in row.attachment_files:
+                with self.uow() as uow:
+                    found = uow.documents.get_attachment(row.document_id, attachment_id)
+                if found is not None:
+                    yield name, found[1]
+
+
+def _limited(files: Iterable[tuple[str, bytes]]) -> Iterator[tuple[str, bytes]]:
+    """Pass the files on until they hold too much: that ends the export, and the ZIP with it."""
+    held = 0
+    for name, content in files:
+        held += len(content)
+        if held > MAX_ZIP_BYTES:
+            raise ValidationError(
+                "end", "the PDFs of this period are too large for one ZIP", code="export_too_large"
+            )
+        yield name, content

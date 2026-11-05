@@ -249,6 +249,17 @@ function MailForm({ subject, draft, xrechnung, warning, onDone }: MailFormProps)
             </Label>
           </div>
         ) : null}
+        {/* The files attached to the draft go after the PDF (and the XRechnung). */}
+        {/* Keyed by position: two files may carry the same name. */}
+        {(draft.attachments ?? []).map((name, index) => (
+          <span
+            key={`${String(index)}:${name}`}
+            className="inline-flex items-center gap-1.5 text-muted-foreground"
+          >
+            <PaperclipIcon className="size-4" aria-hidden="true" />
+            {name}
+          </span>
+        ))}
         {draft.copy_to === null ? null : (
           <span className="text-muted-foreground">
             {t("mail.copyTo", { address: draft.copy_to })}

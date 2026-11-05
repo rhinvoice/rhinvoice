@@ -447,6 +447,8 @@ export const en: Catalog<MessageKey> = {
   "tax.special": "Special rate",
   "tax.zero": "0 % (taxable)",
   "tax.exempt": "Exempt",
+  "tax.pass_through": "Pass-through item (no {tax})",
+  "tax.name": "VAT",
   "supply.service": "Service",
   "supply.goods": "Goods",
   "settings.tabMail": "E-mail",
@@ -707,6 +709,7 @@ export const en: Catalog<MessageKey> = {
   "event.reminded": "Reminder written",
   "event.imported": "Taken over from a program used before",
   "event.file_added": "File added",
+  "event.file_removed": "Attachment removed",
   "event.written_off": "Written off",
   "event.write_off_removed": "Write-off taken back",
 
@@ -799,6 +802,16 @@ export const en: Catalog<MessageKey> = {
     "No PDF was found for this invoice when it was taken over. Add it to make the invoice complete; it cannot be replaced afterwards.",
   "documents.addPdf": "Add PDF",
   "documents.attachmentsTitle": "Attachments",
+  "documents.draftAttachmentsHint": "PDFs sent along with the document",
+  "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDFs" },
+  "documents.draftAttachmentsNote":
+    "For example third-party invoices of pass-through items, at most 10 PDFs and 20 MB together. They can be removed until the document is issued; then they stay with it unchanged and are sent after its PDF by e-mail.",
+  "documents.attachmentsAdding": "Uploading …",
+  "documents.attachmentsAdded": { one: "PDF attached.", other: "{count} PDFs attached." },
+  "documents.removeAttachment": "Remove “{name}”",
+  "documents.attachmentRemoved": "“{name}” removed.",
+  "documents.issuedAttachmentsHint":
+    "Issued with the document and kept unchanged; they are sent along by e-mail.",
   "documents.attachmentsHint": "Reminders, corrections and copies from the program used before.",
   "documents.attachmentsEmpty": "No attachments.",
   "documents.addPdfTitle": "Add the PDF?",
@@ -957,6 +970,10 @@ export const en: Catalog<MessageKey> = {
   "documents.totals": "Totals",
   "documents.totalsPending": "The totals appear once all entries are valid.",
   "documents.subtotal": "Subtotal",
+  "documents.passThrough": "Pass-through items",
+  "documents.passThroughShort": "Pass-through",
+  "documents.passThroughHint":
+    "Only if the third-party invoice is made out in your customer’s name.",
   "documents.documentDiscount": "Discount",
   "documents.net": "Net",
   "documents.taxGroup": "{tax} {rate} on {amount}",
@@ -1351,7 +1368,15 @@ export const en: Catalog<MessageKey> = {
   "error.imported_without_pdf": "This invoice was taken over without PDF so far.",
   "error.imported_document":
     "A taken over invoice consists of its PDF; this is not possible with it.",
-  "error.not_imported": "Files can only be attached to invoices taken over.",
+  "error.attachments_frozen":
+    "Attachments can only be changed on drafts; issued documents keep their files.",
+  "error.discount_on_pass_through_only":
+    "Pass-through items take no discount; without other items it would reduce nothing.",
+  "error.too_many_attachments": "A draft has at most 10 attachments.",
+  "error.attachments_too_large":
+    "The attachments of a draft are at most 20 MB together, so that they fit into one e-mail.",
+  "error.mail_attachments_too_large":
+    "The attachments are larger than 20 MB together; many mail servers refuse that much.",
   "error.too_many_rows": "The file has more than 10,000 rows. Please split it into several files.",
   "error.too_many_columns": "The file has more than 100 columns.",
   "error.company_not_set_up": "Please set up the company first.",
@@ -1723,5 +1748,7 @@ export const en: Catalog<MessageKey> = {
   "export.preparing": "Preparing …",
   "error.period_reversed": "The period ends before it starts.",
   "error.period_too_long": "A period spans at most ten years.",
+  "error.export_too_large":
+    "The PDFs of this period are too large for one ZIP file (2 GB at most). Choose a shorter period.",
   "error.export_busy": "Another export is being prepared. Please try again in a moment.",
 };

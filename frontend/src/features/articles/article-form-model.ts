@@ -14,7 +14,14 @@ const unitCode = z.custom<UnitCode>(
   (value) => typeof value === "string" && /^[A-Z0-9]{2,3}$/.test(value),
 );
 
-export const TAX_CATEGORIES = ["standard", "reduced", "special", "zero", "exempt"] as const;
+export const TAX_CATEGORIES = [
+  "standard",
+  "reduced",
+  "special",
+  "zero",
+  "exempt",
+  "pass_through",
+] as const;
 export const SUPPLIES = ["service", "goods"] as const;
 export const MAX_PRICE = 99_999_999.9999;
 

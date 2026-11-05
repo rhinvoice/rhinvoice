@@ -5,6 +5,30 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.10.0] – 2026-11-03
+
+### Neu
+- Durchlaufende Posten, etwa im Namen und für Rechnung des Kunden bezahlte Gebühren: Der
+  *Steuersatz* einer Position und eines Artikels bietet *Durchlaufender Posten (ohne MWST)* bzw.
+  *(ohne USt.)*, nur für Fremdrechnungen auf den Namen des Kunden. Solche Positionen haben keine
+  Steuer und keinen Rabatt auf das Dokument, zählen voll zu Total, QR-Codes, Zahlungen und Mahnungen
+  und stehen in einem eigenen Block nach den Steuerzeilen, mehrere mit ihrer Summe. Im Dashboard
+  sind sie kein Umsatz; der Export zeigt sie in einer eigenen Spalte, die E-Rechnung als Kategorie E
+  mit VATEX-EU-79-C. Der Artikelimport liest «durchlaufend» und «pass-through» (#46).
+
+### Geändert
+- Der Export für die Buchhaltung hat eine Spalte *Rundung*, wenn ein Beleg darin gerundet wurde:
+  Mit ihr ergeben die Beträge genau *Brutto*.
+- Eine ZIP-Datei des Exports fasst höchstens 2 GB; darüber bittet der Export um einen kürzeren
+  Zeitraum.
+
+### Behoben
+- Im Programm für Windows und Mac speichert ein Klick auf einen Anhang oder das PDF einer Mahnung
+  die Datei. Bisher öffnete sich der Standardbrowser und meldete nur «session expired». Auch der
+  Button *PDF* eines Belegs speichert die Datei dort.
+- Im Programm auf dem Mac und in Safari öffnet ein Klick auf eine Zeile der Belegliste diesen Beleg.
+  Bisher öffnete er den letzten der Liste, egal welche Zeile angeklickt wurde.
+
 ## [0.9.0] – 2026-11-01
 
 ### Neu
@@ -35,6 +59,11 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   Steuer pro Satz, Zahlungen, offenen und abgeschriebenen Beträgen und Summen pro Währung.
   *Rechnungs-PDFs als ZIP beilegen* legt jedes PDF mit seiner Nummer als Namen neben die Liste.
   Aus einem früheren Programm übernommene Rechnungen sind mit ihrem Original-PDF dabei (#47).
+- *Anhänge* an gespeicherten Entwürfen von Rechnungen und Angeboten: *PDF hinzufügen* hängt bis zu
+  10 PDFs mit zusammen bis zu 20 MB an, damit sie in eine E-Mail passen, etwa die Fremdrechnung
+  eines durchlaufenden Postens; eine Datei darüber hinaus lehnt das Hochladen ab. Das Ausstellen
+  friert sie mit dem Dokument ein. Per E-Mail gehen sie nach PDF und XRechnung mit, und
+  die ZIP-Datei des Exports legt sie neben das PDF des Dokuments (#46).
 
 ### Geändert
 - Im Editor angekreuzte Textbausteine sind durch eine Leerzeile getrennt, und eine Leerzeile in

@@ -28,7 +28,7 @@ import {
   yearOptions,
   type ExportChoice,
 } from "@/features/documents/export-model";
-import { fetchFile, saveFile } from "@/features/documents/file-download";
+import { fetchFile, saveFile } from "@/features/shared/file-download";
 import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { todayIso } from "@/lib/dates";

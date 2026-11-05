@@ -39,6 +39,7 @@ from typing import Any
 
 HEADERS = {"X-Rhinvoice-Client": "smoke-test", "Content-Type": "application/json"}
 START_SECONDS = 180
+WINDOW_CHECK_SECONDS = 180
 NOT_RUNNING = 3
 PDF_MIN_BYTES = 10_000
 BACKUP_SECONDS = 180
@@ -241,6 +242,8 @@ def check(install: Path, data: Path, update_package: Path | None) -> None:
         env={**environment, "RHINVOICE_DATABASE_URL": program.database_url()},
         check=True,
     )
+    step("a click on a document in the program's web view opens that document")
+    check_window(install, first_port)
     step("the browser of this computer prints a page")
     print_directly(install)
     step("an invoice printed as PDF by the browser of this computer")
@@ -311,6 +314,24 @@ pdf = printer.print_pdf("<!doctype html><title>Test</title><p>Rhinvoice</p>")
 printer.close()
 print("PDF bytes:", len(pdf))
 """
+
+
+def check_window(install: Path, port: int) -> None:
+    """Run desktop/window_check.py with the installed Python, whose pywebview shows the window."""
+    site_packages = install / "app" / "site-packages"
+    script = Path(__file__).with_name("window_check.py")
+    python, environment = interpreter(install)
+    run = (
+        f"import runpy, site; site.addsitedir(r'{site_packages}'); "
+        f"runpy.run_path(r'{script}', run_name='__main__')"
+    )
+    address = f"http://127.0.0.1:{port}"
+    subprocess.run(  # noqa: S603 - the installed program
+        [python, "-c", run, address, "anna@example.com", "smoke-test-password"],
+        env=environment,
+        check=True,
+        timeout=WINDOW_CHECK_SECONDS,
+    )
 
 
 def print_directly(install: Path) -> None:

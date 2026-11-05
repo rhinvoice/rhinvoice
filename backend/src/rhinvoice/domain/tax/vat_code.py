@@ -16,6 +16,14 @@ class VatCode(StrEnum):
 
 
 def vat_code(treatment: TaxTreatment, category: TaxCategory) -> VatCode:
+    if category is TaxCategory.PASS_THROUGH:
+        # Exempt whatever the treatment: EN 16931 allows no "O" next to other categories
+        # (BR-O-11); the e-invoice names the reason VATEX-EU-79-C (ADR 0039).
+        return VatCode.EXEMPT
+    return _of_treatment(treatment, category)
+
+
+def _of_treatment(treatment: TaxTreatment, category: TaxCategory) -> VatCode:
     if treatment is TaxTreatment.REVERSE_CHARGE:
         return VatCode.REVERSE_CHARGE
     if treatment in {TaxTreatment.EXPORT, TaxTreatment.GOODS_EXPORT}:

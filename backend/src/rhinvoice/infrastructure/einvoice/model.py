@@ -11,6 +11,10 @@ needed on the way:
 * Small businesses without any tax number (CH/LI, not registered for VAT)
   are outside the scope of VAT ("O"); German and Austrian small businesses
   are exempt ("E") and state their tax number.
+* Pass-through lines are exempt ("E", reason VATEX-EU-79-C) in a breakdown of
+  their own, numbered after the printed positions. "O" may stand alone only
+  (BR-O-11), and EN 16931 knows one breakdown per category and rate (BR-E-08):
+  next to "O" or other exempt lines they join that breakdown (ADR 0039).
 
 See ADR 0013.
 """
@@ -75,6 +79,9 @@ EXEMPTION_CODES = {
     NOT_SUBJECT: "VATEX-EU-O",
 }
 EXEMPT_CATEGORIES = frozenset({VatCode.EXEMPT.value, *EXEMPTION_CODES})
+PASS_THROUGH_CODE = "VATEX-EU-79-C"  # noqa: S105 - an exemption code, no password
+"""Peppol VATEX list: "Exemptions relating to repayment of expenditures" (Art. 79 lit. c
+VAT Directive), the reason of pass-through lines (BT-121)."""
 FALLBACK_EXEMPTION = {
     Language.DE: "Steuerbefreite Leistung",
     Language.EN: "Exempt supply",
@@ -331,14 +338,15 @@ def _line(
     position: int,
     line: DocumentLine,
     net: Decimal,
-    group: TaxGroup,
+    tax: tuple[VatCode, Decimal],
 ) -> Line:
     content = model.view.document.content
+    code, rate = tax
     sign = _sign(model)
     step = model.view.totals.currency.minor_step
     price = line.unit_price
     if content.price_mode is PriceMode.GROSS:
-        price = round_half_up(price * HUNDRED / (HUNDRED + group.rate), PRICE_STEP).normalize()
+        price = round_half_up(price * HUNDRED / (HUNDRED + rate), PRICE_STEP).normalize()
     # Unit prices are never negative (DocumentLine), credits have a negative quantity.
     quantity = line.quantity * sign
     amount = net * sign
@@ -352,7 +360,7 @@ def _line(
         allowance = difference or None
     elif difference:
         charge = -difference
-    category = vat_category(model, group.vat_code)
+    category = vat_category(model, code)
     return Line(
         position=position,
         name=line.description,
@@ -366,7 +374,7 @@ def _line(
         rounding=LABELS[content.language]["rounding"],
         net_amount=amount,
         category=category,
-        rate=None if category == NOT_SUBJECT else group.rate,
+        rate=None if category == NOT_SUBJECT else rate,
     )
 
 
@@ -387,6 +395,31 @@ def _exemption(model: PrintModel, category: str) -> tuple[str | None, str | None
     ]
     reason = " ".join(notices) or FALLBACK_EXEMPTION[language]
     return reason, EXEMPTION_CODES.get(category)
+
+
+def _with_pass_through(
+    model: PrintModel, breakdown: list[VatBreakdown], basis: Decimal
+) -> list[VatBreakdown]:
+    """Add the pass-through lines' breakdown, or join the one of their category (ADR 0039)."""
+    category = vat_category(model, VatCode.EXEMPT)
+    rate = None if category == NOT_SUBJECT else Decimal(0)
+    text = LABELS[model.view.document.content.language]["pass_through"]
+    for index, entry in enumerate(breakdown):
+        if entry.category == category:
+            # One breakdown per category and rate. Exempt lines of another reason: both
+            # reasons as text, no single code; "O" keeps its reason.
+            reason, code = entry.exemption_reason, entry.exemption_code
+            if category != NOT_SUBJECT:
+                reason, code = f"{reason} {text}", None
+            joined = VatBreakdown(category, rate, entry.basis + basis, entry.tax, reason, code)
+            return [*breakdown[:index], joined, *breakdown[index + 1 :]]
+    if category == NOT_SUBJECT:
+        reason, code = _exemption(model, category)
+        return [*breakdown, VatBreakdown(category, rate, basis, Decimal(0), reason, code)]
+    return [
+        *breakdown,
+        VatBreakdown(category, rate, basis, Decimal(0), text, PASS_THROUGH_CODE),
+    ]
 
 
 def _deliver_to(model: PrintModel, categories: set[str]) -> tuple[str, Address] | None:
@@ -417,7 +450,7 @@ def build(model: PrintModel, profile: EInvoiceProfile) -> EInvoice:
     language: Language = content.language
     labels = LABELS[language]
 
-    nets: dict[UUID, tuple[Decimal, TaxGroup]] = {}
+    nets: dict[UUID, tuple[Decimal, tuple[VatCode, Decimal]]] = {}
     allowances: list[Allowance] = []
     breakdown: list[VatBreakdown] = []
     for item in _groups(model):
@@ -425,7 +458,7 @@ def build(model: PrintModel, profile: EInvoiceProfile) -> EInvoice:
         category = vat_category(model, group.vat_code)
         rate = None if category == NOT_SUBJECT else group.rate
         for (line, _), net in zip(item.lines, item.line_nets, strict=True):
-            nets[line.id] = (net, group)
+            nets[line.id] = (net, (group.vat_code, group.rate))
         if item.allowance:
             allowances.append(Allowance(item.allowance * sign, category, rate, labels["discount"]))
         reason, code = _exemption(model, category)
@@ -434,10 +467,19 @@ def build(model: PrintModel, profile: EInvoiceProfile) -> EInvoice:
                 category, rate, group.net.amount * sign, group.tax.amount * sign, reason, code
             )
         )
-    # In the order and with the numbers of the printed positions.
+    passed = [amount for amount in totals.lines if amount.pass_through]
+    for amount in passed:
+        nets[amount.line_id] = (amount.amount.amount, (VatCode.EXEMPT, Decimal(0)))
+    if passed:
+        breakdown = _with_pass_through(model, breakdown, totals.pass_through.amount * sign)
+    # Numbered as printed: the positions first, then the block of pass-through lines.
     items = [line for line in content.lines if line.kind is LineKind.ITEM]
+    ordered = [line for line in items if not line.is_pass_through] + [
+        line for line in items if line.is_pass_through
+    ]
     lines = [
-        _line(model, position, line, *nets[line.id]) for position, line in enumerate(items, start=1)
+        _line(model, position, line, *nets[line.id])
+        for position, line in enumerate(ordered, start=1)
     ]
     delivery_date, period = _dates(model)
     number, issued = model.cancelled_number, model.cancelled_issue_date
@@ -472,7 +514,7 @@ def build(model: PrintModel, profile: EInvoiceProfile) -> EInvoice:
         breakdown=tuple(breakdown),
         line_total=sum((line.net_amount for line in lines), Decimal(0)),
         allowance_total=sum((allowance.amount for allowance in allowances), Decimal(0)),
-        tax_basis=totals.net.amount * sign,
+        tax_basis=(totals.net.amount + totals.pass_through.amount) * sign,
         tax_total=totals.tax.amount * sign,
         grand_total=totals.gross.amount * sign,
         rounding=totals.rounding.amount * sign,

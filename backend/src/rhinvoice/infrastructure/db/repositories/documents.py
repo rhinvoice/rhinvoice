@@ -9,7 +9,10 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy import (
     ColumnElement,
     Date,
+    Uuid,
     and_,
+    any_,
+    bindparam,
     case,
     cast,
     delete,
@@ -21,7 +24,7 @@ from sqlalchemy import (
     true,
     update,
 )
-from sqlalchemy.dialects.postgresql import aggregate_order_by
+from sqlalchemy.dialects.postgresql import ARRAY, aggregate_order_by
 
 from rhinvoice.application.common import Page, SortDirection
 from rhinvoice.application.document.ports import (
@@ -78,7 +81,7 @@ from rhinvoice.infrastructure.db.tables import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
     from datetime import datetime
     from uuid import UUID
     from zoneinfo import ZoneInfo
@@ -226,6 +229,17 @@ def _write_off(row: RowMapping, currency: Currency) -> WriteOff:
         recorded_at=row["recorded_at"],
         note=row["note"],
     )
+
+
+_ATTACHMENTS = select(
+    document_attachments.c.id,
+    document_attachments.c.document_id,
+    document_attachments.c.file_name,
+    document_attachments.c.sha256,
+    func.length(document_attachments.c.content).label("size"),
+    document_attachments.c.added_at,
+).order_by(document_attachments.c.file_name, document_attachments.c.id)
+"""The attachments without their content, by name."""
 
 
 def _attachment(row: RowMapping) -> Attachment:
@@ -486,6 +500,10 @@ class SqlDocumentRepository:
         self._append_events(document, stored=stored_events)
 
     def delete(self, document_id: UUID) -> None:
+        # A draft's attachments go with it; the triggers refuse both for issued documents.
+        self._connection.execute(
+            delete(document_attachments).where(document_attachments.c.document_id == document_id)
+        )
         self._connection.execute(delete(documents).where(documents.c.id == document_id))
 
     def _insert_lines(self, document: Document) -> None:
@@ -631,7 +649,8 @@ class SqlDocumentRepository:
         )
 
     def add_attachment(self, attachment: Attachment, content: bytes) -> None:
-        # The trigger checks the content against the hash and refuses drafts.
+        # The trigger checks the content against the hash and refuses issued documents
+        # of this program.
         self._connection.execute(
             insert(document_attachments).values(
                 id=attachment.id,
@@ -643,20 +662,36 @@ class SqlDocumentRepository:
             ),
         )
 
-    def attachments(self, document_id: UUID) -> list[Attachment]:
-        statement = (
-            select(
-                document_attachments.c.id,
-                document_attachments.c.document_id,
-                document_attachments.c.file_name,
-                document_attachments.c.sha256,
-                func.length(document_attachments.c.content).label("size"),
-                document_attachments.c.added_at,
+    def remove_attachment(self, document_id: UUID, attachment_id: UUID) -> None:
+        # The trigger refuses it unless the document is a draft.
+        self._connection.execute(
+            delete(document_attachments).where(
+                document_attachments.c.id == attachment_id,
+                document_attachments.c.document_id == document_id,
             )
-            .where(document_attachments.c.document_id == document_id)
-            .order_by(document_attachments.c.file_name, document_attachments.c.id)
         )
+
+    def attachments(self, document_id: UUID) -> list[Attachment]:
+        statement = _ATTACHMENTS.where(document_attachments.c.document_id == document_id)
         return [_attachment(row) for row in self._connection.execute(statement).mappings()]
+
+    def attachments_of(self, document_ids: Sequence[UUID]) -> dict[UUID, list[Attachment]]:
+        # One array parameter: an export of years may list more documents than a query
+        # takes parameters.
+        ids = bindparam("document_ids", list(document_ids), type_=ARRAY(Uuid()))
+        statement = _ATTACHMENTS.where(document_attachments.c.document_id == any_(ids))
+        found: dict[UUID, list[Attachment]] = {}
+        for row in self._connection.execute(statement).mappings():
+            found.setdefault(row["document_id"], []).append(_attachment(row))
+        return found
+
+    def find_attachment(self, document_id: UUID, attachment_id: UUID) -> Attachment | None:
+        statement = _ATTACHMENTS.where(
+            document_attachments.c.id == attachment_id,
+            document_attachments.c.document_id == document_id,
+        )
+        row = self._connection.execute(statement).mappings().first()
+        return None if row is None else _attachment(row)
 
     def get_attachment(
         self, document_id: UUID, attachment_id: UUID

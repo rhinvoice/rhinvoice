@@ -21,7 +21,14 @@ export type LineRequest = NonNullable<DraftRequest["lines"]>[number];
 export type UnitCode = NonNullable<LineRequest["unit"]>;
 export type Currency = "CHF" | "EUR";
 
-export const TAX_CATEGORIES = ["standard", "reduced", "special", "zero", "exempt"] as const;
+export const TAX_CATEGORIES = [
+  "standard",
+  "reduced",
+  "special",
+  "zero",
+  "exempt",
+  "pass_through",
+] as const;
 export const SUPPLIES = ["service", "goods"] as const;
 /** Treatments that can be chosen for a document; goods get theirs from it. */
 export const TREATMENTS = [
@@ -105,6 +112,16 @@ export function documentSchema(t: T, locale: Locale) {
       if (values.discount_kind === "percent" && values.discount_value !== "") {
         const percent = Number(toApiDecimal(values.discount_value, locale));
         if (percent > 100) issue("discount_value", t("validation.percent"));
+      }
+      // Pass-through items take no discount: alone, it would reduce nothing (ADR 0039).
+      const items = values.lines.filter((line) => line.kind === "item");
+      if (
+        values.discount_value !== "" &&
+        Number(toApiDecimal(values.discount_value, locale)) > 0 &&
+        items.length > 0 &&
+        items.every((line) => line.tax_category === "pass_through")
+      ) {
+        issue("discount_value", t("error.discount_on_pass_through_only"));
       }
       if (values.treatment !== "" && values.override_reason === "") {
         issue("override_reason", t("documents.overrideReasonRequired"));

@@ -5,6 +5,34 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.10.0] – 2026-11-03
+
+### Added
+- Pass-through items, such as fees paid in the customer's name and for their account: a line's or an
+  article's *Tax rate* offers *Pass-through item (no VAT)*, for third-party invoices made out in the
+  customer's name only. Such lines carry no VAT and no document discount, count in full in the
+  total, QR codes, payments and reminders, and print in a block of their own after the VAT lines,
+  several with their sum. They are not revenue on the dashboard; the export shows them in a column
+  of their own, the e-invoice as category E with VATEX-EU-79-C. The article import reads
+  "durchlaufend" and "pass-through" (#46).
+- *Attachments* on saved drafts of invoices and quotes: *Add PDF* attaches up to 10 PDFs of up to
+  20 MB together, so that they fit into one e-mail, such as the third-party invoice of a
+  pass-through item; the upload refuses a file beyond that. Issuing freezes them with the
+  document. They go out by e-mail after the PDF and the XRechnung, and the export's ZIP puts them
+  next to the document's PDF (#46).
+
+### Changed
+- The export for bookkeeping has a column *Rounding* when a document in it was cash rounded: with
+  it, the amounts add up to *Gross* exactly.
+- A ZIP of the export holds 2 GB at most; beyond that, the export asks for a shorter period.
+
+### Fixed
+- In the program for Windows and Mac, a click on an attachment or on the PDF of a reminder saves
+  the file. It opened the default browser, which only answered "session expired". The *PDF* button
+  of a document saves the file there, too.
+- In the program on a Mac and in Safari, a click on a row of the document list opens that document.
+  It opened the last one in the list, whichever row was clicked.
+
 ## [0.9.0] – 2026-11-01
 
 ### Added

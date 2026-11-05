@@ -3,7 +3,7 @@ title: Domande frequenti su Rhinvoice
 description: Risposte su Rhinvoice, il programma di fatturazione gratuito e open source per CH, LI, DE e AT. Costi, licenza, dati, GoBD, backup, fatture elettroniche, demo.
 faq:
   - q: Quanto costa Rhinvoice?
-    a: Niente. Rhinvoice è gratuito e open source. Non esiste una versione a pagamento né un servizio in hosting. Rhinvoice funziona sul Suo server o sul Suo computer.
+    a: Niente. Rhinvoice è gratuito e open source. Non esiste una versione a pagamento né un servizio in hosting. Rhinvoice funziona sul Suo server o sul Suo computer. Se desidera sostenere il progetto, può farlo tramite GitHub Sponsors.
   - q: Con quale licenza è pubblicato Rhinvoice?
     a: La GNU Affero General Public License v3.0 o successiva (AGPL-3.0). Può usare, modificare e distribuire Rhinvoice liberamente. Se offre ad altri una versione modificata come servizio, condivide le Sue modifiche con la stessa licenza.
   - q: Per quali Paesi è fatto Rhinvoice?
@@ -38,6 +38,8 @@ faq:
     a: "Sì. Dalla versione 0.9.0 può avere più conti bancari per valuta e sceglierne uno per ogni fattura nell’editor. Un conto può essere segnato come conto di terzi, per esempio di un fornitore di servizi finanziari: la fattura lo indica allora come beneficiario con IBAN e BIC, e la fattura QR e la fattura elettronica lo indicano come beneficiario."
   - q: Posso esportare le mie fatture per la fiduciaria?
     a: "Sì. Dalla versione 0.9.0 «Fatture → Esporta» scarica le fatture e note di credito emesse di un mese, trimestre, anno o periodo libero in Excel, CSV o PDF, con i totali per valuta. Se desiderato, tutti i PDF delle fatture arrivano in un file ZIP."
+  - q: Come rifatturo un emolumento pagato in nome del mio cliente?
+    a: "Come spesa anticipata. Dalla versione 0.10.0 sceglie «Spesa anticipata (senza IVA)» come aliquota della posizione: non ha IVA, nessuno sconto sul documento e un blocco a sé sul PDF, e allega la fattura del terzo in PDF. Vale solo se la fattura del terzo è intestata al Suo cliente."
 ---
 
 import Faq from "../../../../components/Faq.astro";

@@ -216,7 +216,11 @@ def _xrechnung_problems(model: PrintModel) -> list[EInvoiceProblem]:
 def problems(model: PrintModel, profile: EInvoiceProfile) -> tuple[EInvoiceProblem, ...]:
     """Name what keeps the document from being a valid e-invoice of the profile."""
     customer = customer_of(model)
-    categories = {vat_category(model, group.vat_code) for group in model.view.totals.groups}
+    totals = model.view.totals
+    categories = {vat_category(model, group.vat_code) for group in totals.groups}
+    if any(line.pass_through for line in totals.lines):
+        # Pass-through lines are exempt (ADR 0039): BR-E-02 asks for the seller's tax ID.
+        categories.add(vat_category(model, VatCode.EXEMPT))
     ids = seller_ids(model.company)
     found: list[EInvoiceProblem] = []
     if ids.vat_id is None and ids.legal_id is None:

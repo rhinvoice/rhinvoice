@@ -864,6 +864,7 @@ def test_preview_calculates_without_saving(
         TaxCategory.SPECIAL: Decimal("3.8"),
         TaxCategory.ZERO: Decimal(0),
         TaxCategory.EXEMPT: Decimal(0),
+        TaxCategory.PASS_THROUGH: Decimal(0),
     }
     export = handlers.preview(
         DocumentType.INVOICE,

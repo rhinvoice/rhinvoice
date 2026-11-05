@@ -50,6 +50,19 @@ describe("country profile", () => {
     expect(taxCategoryLabel("reduced", SWISS_PROFILE, "en", en)).toBe("Reduced rate");
   });
 
+  it("names the country's tax on pass-through items", () => {
+    expect(taxCategoryLabel("pass_through", SWISS_PROFILE, "de-CH", de)).toBe(
+      "Durchlaufender Posten (ohne MWST)",
+    );
+    expect(taxCategoryLabel("pass_through", GERMAN_PROFILE, "de-DE", de)).toBe(
+      "Durchlaufender Posten (ohne USt.)",
+    );
+    expect(taxCategoryLabel("pass_through", null, "en", en)).toBe("Pass-through item (no VAT)");
+    expect(taxCategoryLabel("exempt", SWISS_PROFILE, "de-CH", de)).toBe(
+      "Von der Steuer ausgenommen",
+    );
+  });
+
   it("offers only the rates the country has", () => {
     expect(offersCategory("special", SWISS_PROFILE)).toBe(true);
     expect(offersCategory("special", GERMAN_PROFILE)).toBe(false);

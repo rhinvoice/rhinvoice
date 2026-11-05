@@ -45,6 +45,7 @@ def test_rates_on_date_of_supply(
     assert rates.rate(TaxCategory.REDUCED) == Decimal(reduced)
     assert rates.rate(TaxCategory.ZERO) == 0
     assert rates.rate(TaxCategory.EXEMPT) == 0
+    assert rates.rate(TaxCategory.PASS_THROUGH) == 0
     if special is None:
         with pytest.raises(ValidationError) as error:
             rates.rate(TaxCategory.SPECIAL)
@@ -229,6 +230,10 @@ def test_a_missing_vat_number_is_noticed_where_it_would_reverse_charge(
         (TaxTreatment.INTRA_COMMUNITY, TaxCategory.STANDARD, VatCode.INTRA_COMMUNITY),
         (TaxTreatment.SMALL_BUSINESS, TaxCategory.STANDARD, VatCode.EXEMPT),
         (TaxTreatment.EXEMPT, TaxCategory.REDUCED, VatCode.EXEMPT),
+        (TaxTreatment.DOMESTIC, TaxCategory.PASS_THROUGH, VatCode.EXEMPT),
+        (TaxTreatment.REVERSE_CHARGE, TaxCategory.PASS_THROUGH, VatCode.EXEMPT),
+        (TaxTreatment.EXPORT, TaxCategory.PASS_THROUGH, VatCode.EXEMPT),
+        (TaxTreatment.INTRA_COMMUNITY, TaxCategory.PASS_THROUGH, VatCode.EXEMPT),
     ],
 )
 def test_vat_codes(treatment: TaxTreatment, category: TaxCategory, code: VatCode) -> None:

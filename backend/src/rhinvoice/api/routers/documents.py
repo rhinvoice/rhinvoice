@@ -225,8 +225,12 @@ class TotalsResponse(ApiModel):
     subtotal: str
     discount: str
     net: str
+    """Of the VAT groups after the discount; pass-through amounts are not in it."""
     tax: str
+    pass_through: str
+    """The sum of the pass-through lines: no VAT, no discount (ADR 0039)."""
     gross: str
+    """net + tax + pass_through, before cash rounding."""
     rounding: str
     total: str
     groups: list[TaxGroupResponse]
@@ -239,6 +243,7 @@ class TotalsResponse(ApiModel):
             discount=amount(totals.discount),
             net=amount(totals.net),
             tax=amount(totals.tax),
+            pass_through=amount(totals.pass_through),
             gross=amount(totals.gross),
             rounding=amount(totals.rounding),
             total=amount(totals.total),
@@ -941,7 +946,11 @@ def document_pdf(
 def list_attachments(
     document_id: UUID, _user: CurrentUser, container: ContainerDep
 ) -> list[AttachmentResponse]:
-    """Further files of an imported invoice: reminders, corrected copies, versions."""
+    """List the further files of a document.
+
+    Imported invoices keep reminders, corrected copies and versions; documents written here
+    the PDFs added to the draft, e.g. third-party invoices of pass-through items.
+    """
     return [AttachmentResponse.of(item) for item in container.documents.attachments(document_id)]
 
 
@@ -973,10 +982,19 @@ def attachment_file(
         media_type="application/pdf",
         headers={
             "Content-Disposition": file_disposition(attachment.file_name, download=download),
-            "Cache-Control": "private, max-age=31536000",
+            # A draft's file may be removed: revalidate instead of keeping a copy for a year.
+            "Cache-Control": "private, no-cache",
             "ETag": f'"{attachment.sha256}"',
         },
     )
+
+
+@router.delete("/documents/{document_id}/attachments/{attachment_id}", dependencies=[NOT_IN_DEMO])
+def remove_attachment(
+    document_id: UUID, attachment_id: UUID, _user: CurrentUser, container: ContainerDep
+) -> DocumentResponse:
+    """Take an attachment off a draft. Issued documents keep their files (409)."""
+    return DocumentResponse.of(container.documents.remove_file(document_id, attachment_id))
 
 
 def file_disposition(file_name: str, *, download: bool) -> str:
@@ -999,14 +1017,18 @@ def add_file(
     _user: CurrentUser,
     container: ContainerDep,
 ) -> DocumentResponse:
-    """Add a PDF to an imported invoice: its original if it has none, else an attachment.
+    """Add a PDF to an imported invoice or a draft.
 
-    Neither can be replaced or removed afterwards.
+    An imported invoice takes its original if it has none, else an attachment; a draft an
+    attachment (at most ten, at most 20 MB together), which can be removed until the draft
+    is issued. Files of imported invoices and issued documents are never replaced or removed.
     """
     # Synchronous on purpose (thread pool); one byte more lets the handler refuse large files.
     content = file.file.read(MAX_ADDED_FILE_BYTES + 1)
-    name = (file.filename or "").replace("\\", "/").rsplit("/", 1)[-1] or "document.pdf"
-    return DocumentResponse.of(container.documents.add_file(document_id, name, content))
+    # The handler takes folders, control and reserved characters out of the name.
+    return DocumentResponse.of(
+        container.documents.add_file(document_id, file.filename or "", content)
+    )
 
 
 @router.get("/documents/{document_id}")

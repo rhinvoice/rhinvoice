@@ -160,6 +160,26 @@ def test_an_invoice_goes_out_by_mail(
     assert len(inbox.envelopes) == 1
 
 
+@pytest.mark.usefixtures("printing")
+def test_the_files_of_the_draft_go_out_after_the_pdf(
+    user_client: TestClient, customer_id: str, mailbox: int, inbox: Inbox
+) -> None:
+    invoice = create(user_client, customer_id)
+    user_client.post(
+        f"/api/documents/{invoice['id']}/files",
+        files={"file": ("Amt.pdf", b"%PDF-1.4 office", "application/pdf")},
+    )
+    post(user_client, f"/api/documents/{invoice['id']}/issue")
+    path = f"/api/documents/{invoice['id']}/mail"
+    number = user_client.get(f"/api/documents/{invoice['id']}").json()["number"]
+    assert user_client.get(path).json()["attachments"] == ["Amt.pdf"]
+    assert user_client.put("/api/mail/server", json={**SERVER, "port": mailbox}).status_code == 200
+    post(user_client, path, {"to": ["a@kunde.example"], "subject": "Rechnung", "body": "Hallo"})
+    parts = list(inbox.parsed().iter_attachments())
+    assert [part.get_filename() for part in parts] == [f"Rechnung {number}.pdf", "Amt.pdf"]
+    assert parts[1].get_content() == b"%PDF-1.4 office"
+
+
 def test_a_server_that_is_not_there(user_client: TestClient, customer_id: str) -> None:
     del customer_id
     user_client.put("/api/mail/server", json={**SERVER, "port": free_port()})

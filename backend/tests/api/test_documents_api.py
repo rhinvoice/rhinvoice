@@ -194,6 +194,75 @@ def test_duplicate_and_delete_drafts(user_client: TestClient, customer_id: str) 
     assert user_client.get(f"/api/documents/{copy['id']}").status_code == 404
 
 
+PASS_THROUGH = {
+    "description": "Gebühr Handelsregister",
+    "quantity": "1",
+    "unit_price": "250.35",
+    "tax_category": "pass_through",
+}
+
+
+def test_pass_through_lines_stay_outside_vat_and_discount(
+    user_client: TestClient, customer_id: str
+) -> None:
+    document = create(user_client, customer_id, lines=[*LINES, PASS_THROUGH], discount_value="10")
+    assert document["lines"][-1]["tax_category"] == "pass_through"
+    assert document["lines"][-1]["amount"] == "250.35"
+    totals = document["totals"]
+    assert (totals["subtotal"], totals["discount"], totals["net"]) == (
+        "1537.05",
+        "153.71",
+        "1383.34",
+    )
+    assert totals["pass_through"] == "250.35"
+    assert totals["gross"] == "1743.91"
+    assert totals["total"] == "1743.90"
+    issued = post(user_client, f"/api/documents/{document['id']}/issue")
+    assert issued["totals"]["pass_through"] == "250.35"
+    assert issued["lines"][-1]["tax_rate"] == "0"
+    assert issued["open_amount"] == "1743.90"
+
+
+def test_drafts_take_attachments_until_issued(user_client: TestClient, customer_id: str) -> None:
+    document = create(user_client, customer_id)
+    files = f"/api/documents/{document['id']}/files"
+    added = user_client.post(
+        files, files={"file": ("../Notar: Gebühr.PDF", b"%PDF-1.7 fee", "application/pdf")}
+    )
+    assert added.status_code == 200, added.text
+    assert added.json()["has_pdf"] is False
+    assert added.json()["events"][-1]["detail"] == "Notar_ Gebühr.pdf"
+    [attachment] = user_client.get(f"/api/documents/{document['id']}/attachments").json()
+    assert attachment["file_name"] == "Notar_ Gebühr.pdf"
+    path = f"/api/documents/{document['id']}/attachments/{attachment['id']}"
+    assert user_client.get(path).content == b"%PDF-1.7 fee"
+    removed = user_client.delete(path)
+    assert removed.status_code == 200, removed.text
+    assert removed.json()["events"][-1]["kind"] == "file_removed"
+    assert user_client.get(f"/api/documents/{document['id']}/attachments").json() == []
+    assert user_client.delete(path).status_code == 404
+
+    user_client.post(files, files={"file": ("fee.pdf", b"%PDF-1.7 fee", "application/pdf")})
+    post(user_client, f"/api/documents/{document['id']}/issue")
+    [kept] = user_client.get(f"/api/documents/{document['id']}/attachments").json()
+    refused = user_client.delete(f"/api/documents/{document['id']}/attachments/{kept['id']}")
+    assert refused.status_code == 409
+    assert refused.json()["error"]["code"] == "attachments_frozen"
+    late = user_client.post(
+        files, files={"file": ("late.pdf", b"%PDF-1.7 late", "application/pdf")}
+    )
+    assert late.status_code == 409
+    assert late.json()["error"]["code"] == "attachments_frozen"
+
+    # A deleted draft takes its files along.
+    other = create(user_client, customer_id)
+    user_client.post(
+        f"/api/documents/{other['id']}/files",
+        files={"file": ("fee.pdf", b"%PDF-1.7 fee", "application/pdf")},
+    )
+    assert user_client.delete(f"/api/documents/{other['id']}").status_code == 204
+
+
 def test_search_filters_and_sorts(
     user_client: TestClient, customer_id: str, clock: FixedClock
 ) -> None:
@@ -360,6 +429,22 @@ def test_dashboard(user_client: TestClient, customer_id: str) -> None:
     ]
 
 
+def test_pass_through_items_are_owed_but_no_revenue(
+    user_client: TestClient, customer_id: str
+) -> None:
+    invoice = create(user_client, customer_id, lines=[LINES[0], PASS_THROUGH])
+    post(user_client, f"/api/documents/{invoice['id']}/issue")
+    overview = user_client.get("/api/dashboard").json()
+    # 1500 + 121.50 VAT + 250.35 pass-through = 1871.85 owed, of which 1500 are revenue.
+    assert overview["figures"][0]["open"] == "1871.85"
+    assert overview["aging"][0]["not_due"] == "1871.85"
+    assert overview["revenue"] == [{"month": "2026-01-01", "currency": "CHF", "net": "1500.00"}]
+    assert overview["top_customers"][0]["net"] == "1500.00"
+    assert overview["year_to_date"][0]["current"] == "1500.00"
+    listed = user_client.get("/api/documents?type=invoice").json()
+    assert listed["items"][0]["total"] == "1871.85"
+
+
 def test_preview_calculates_without_saving(user_client: TestClient, customer_id: str) -> None:
     body = {"type": "invoice", "customer_id": customer_id, "lines": LINES, "discount_value": "10"}
     preview = post(user_client, "/api/documents/preview", body)
@@ -374,6 +459,7 @@ def test_preview_calculates_without_saving(user_client: TestClient, customer_id:
         "special": "3.8",
         "zero": "0",
         "exempt": "0",
+        "pass_through": "0",
     }
     assert user_client.get("/api/documents").json()["total"] == 0
     invalid = user_client.post(

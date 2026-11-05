@@ -12,7 +12,7 @@ import {
   type EInvoiceProblem,
   type EInvoiceStatus,
 } from "@/features/documents/api";
-import { fetchFile, saveFile } from "@/features/documents/file-download";
+import { fetchFile, saveFile } from "@/features/shared/file-download";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 
 /** Whether the PDF of an issued invoice is an e-invoice, and its XRechnung. */

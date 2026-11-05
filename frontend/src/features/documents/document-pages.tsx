@@ -71,12 +71,13 @@ import { defaultTexts } from "@/features/documents/document-texts";
 import { DocumentEditor, type EditableType } from "@/features/documents/document-editor";
 import { documentToForm, emptyDocument } from "@/features/documents/document-form-model";
 import { DocumentView } from "@/features/documents/document-view";
+import { IssuedAttachments } from "@/features/documents/document-attachments";
 import { AttachmentsCard, ImportedPdf } from "@/features/documents/imported-document";
 import { PaperPreview } from "@/components/paper-preview";
 import { PaymentDialog } from "@/features/documents/payment-dialog";
 import { RemoveWriteOffDialog, WriteOffDialog } from "@/features/documents/write-off-dialog";
 import { canRemoveWriteOff, canWriteOff } from "@/features/documents/write-off-model";
-import { fetchFile, saveFile } from "@/features/documents/file-download";
+import { fetchFile, saveFile } from "@/features/shared/file-download";
 import { printPage } from "@/features/documents/print-page";
 import { BackLink } from "@/features/shared/back-link";
 import { companyQuery, type Company } from "@/features/shared/company-api";
@@ -90,6 +91,7 @@ import { cn } from "@/lib/cn";
 import { todayIso } from "@/lib/dates";
 import { formatMoney } from "@/lib/format";
 import type { MessageKey } from "@/lib/i18n";
+import { inProgramWindow } from "@/lib/program-window";
 import { canSharePdf, pdfFile, shareFile } from "@/lib/share";
 import { readStorage, writeStorage } from "@/lib/storage";
 import { termsFor } from "@/features/shared/country-profile-model";
@@ -273,6 +275,7 @@ function DraftPage({ document, company }: PageProps) {
         company={company}
         isNew={false}
         autosave
+        documentId={document.id}
         defaultValues={documentToForm(document, locale)}
         onSave={(draft) => update.mutateAsync(draft)}
         onSaved={async (saved, shouldIssue) => {
@@ -494,11 +497,13 @@ function IssuedPage({ document, company }: PageProps) {
           />
         </div>
       ) : null}
-      {document.imported ? (
-        <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto w-full max-w-3xl empty:hidden">
+        {document.imported ? (
           <AttachmentsCard document={document} />
-        </div>
-      ) : null}
+        ) : (
+          <IssuedAttachments documentId={document.id} />
+        )}
+      </div>
       {view === "details" ? (
         <DocumentView
           document={document}
@@ -862,7 +867,24 @@ function OutputActions({
   // The first PDF of an issued invoice archives it with its e-invoice.
   const archived = () => client.invalidateQueries({ queryKey: eInvoiceQuery(documentId).queryKey });
 
+  const download = () => {
+    setBusy(true);
+    fetchFile(documentPdfUrl(documentId, true), "document.pdf")
+      .then((file) => {
+        saveFile(file);
+        void archived();
+      }, fail)
+      .finally(() => {
+        setBusy(false);
+      });
+  };
+
   const show = () => {
+    // The program window has no tabs: see FileLink.
+    if (inProgramWindow(window)) {
+      download();
+      return;
+    }
     // Opened right away: browsers only allow new tabs directly after a click.
     const tab = window.open("", "_blank");
     setBusy(true);
@@ -886,24 +908,14 @@ function OutputActions({
       });
   };
 
-  const download = () => {
-    setBusy(true);
-    fetchFile(documentPdfUrl(documentId, true), "document.pdf")
-      .then((file) => {
-        saveFile(file);
-        void archived();
-      }, fail)
-      .finally(() => {
-        setBusy(false);
-      });
-  };
-
   return (
     <>
       <Button variant="outline" disabled={busy} onClick={show}>
         <FileTextIcon aria-hidden="true" />
         {t("documents.pdf")}
-        <span className="sr-only">{t("common.opensInNewTab")}</span>
+        {inProgramWindow(window) ? null : (
+          <span className="sr-only">{t("common.opensInNewTab")}</span>
+        )}
       </Button>
       <Button variant="outline" disabled={busy} onClick={download}>
         <DownloadIcon aria-hidden="true" />

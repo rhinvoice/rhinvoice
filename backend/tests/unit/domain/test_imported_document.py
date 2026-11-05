@@ -6,7 +6,15 @@ from decimal import Decimal
 
 import pytest
 
-from rhinvoice.domain.document.attachment import Attachment
+from rhinvoice.domain.document.attachment import (
+    MAX_ATTACHED_BYTES,
+    MAX_ATTACHMENTS,
+    MAX_FILE_NAME,
+    Attachment,
+    check_room,
+    unique_name,
+    upload_name,
+)
 from rhinvoice.domain.document.document import (
     Document,
     DocumentOrigin,
@@ -249,9 +257,13 @@ def test_files_are_recorded_on_imported_invoices_only() -> None:
         "Mahnung R20150001.pdf",
     )
     assert len(imported().record_file("y" * 600, NOW).events[-1].detail) == 500
-    with raises_exactly(InvalidStateError, "files are added to imported invoices only") as caught:
+    with raises_exactly(
+        InvalidStateError, "files are added to drafts and imported invoices only"
+    ) as caught:
         issued().record_file("x.pdf", NOW)
-    assert caught.value.code == "not_imported"
+    assert caught.value.code == "attachments_frozen"
+    with raises_exactly(InvalidStateError, "attachments are removed from drafts only"):
+        imported().remove_file("x.pdf", NOW)
 
 
 def test_documents_written_here_are_no_imports() -> None:
@@ -288,6 +300,72 @@ def test_attachments_are_checked() -> None:
         replace(attachment, size=0)
     with raises_exactly(ValidationError, "a SHA-256 hash has 64 lowercase hex digits"):
         replace(attachment, sha256="x")
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("Notar.pdf", "Notar.pdf"),
+        ("../../R 42: Notar.PDF", "R 42_ Notar.pdf"),
+        ("C:\\Users\\x\\Gebühr.pdf", "Gebühr.pdf"),
+        ("Gebu\u0308hr.pdf", "Gebühr.pdf"),
+        ('a*b?c"d<e>f|g\x07.pdf', "a_b_c_d_e_f_g_.pdf"),
+        ("scan", "scan.pdf"),
+        ("  . .pdf", "document.pdf"),
+        ("", "document.pdf"),
+        ("dir/", "document.pdf"),
+        ("x" * 300 + ".pdf", "x" * 251 + ".pdf"),
+        ("x" * 250 + " .pdf", "x" * 250 + ".pdf"),
+        ("Rechnung.pdf.exe", "Rechnung.pdf.exe.pdf"),
+        ("Rechnung\u202eexe.pdf", "Rechnung_exe.pdf"),
+        ("a\u200bb\u2028c\x85d.pdf", "a_b_c_d.pdf"),
+    ],
+)
+def test_upload_names_are_safe(raw: str, expected: str) -> None:
+    assert upload_name(raw) == expected
+    assert len(upload_name(raw)) <= MAX_FILE_NAME
+
+
+@pytest.mark.parametrize(
+    ("name", "taken", "expected"),
+    [
+        ("Notar.pdf", [], "Notar.pdf"),
+        ("Notar.pdf", ["Amt.pdf", "2016/Notar.pdf"], "Notar.pdf"),
+        ("Notar.pdf", ["notar.PDF"], "Notar (2).pdf"),
+        ("Notar.pdf", ["Notar.pdf", "Notar (2).pdf", "NOTAR (3).pdf"], "Notar (4).pdf"),
+        ("x" * 251 + ".pdf", ["x" * 251 + ".pdf"], "x" * 247 + " (2).pdf"),
+        ("x" * 246 + " y.pdf", ["x" * 246 + " y.pdf"], "x" * 246 + " (2).pdf"),
+    ],
+)
+def test_names_of_one_document_stay_apart(name: str, taken: list[str], expected: str) -> None:
+    assert unique_name(name, taken) == expected
+    assert len(unique_name(name, taken)) <= MAX_FILE_NAME
+
+
+def stored(size: int) -> Attachment:
+    return Attachment(new_id(), new_id(), "x.pdf", SHA, size, ADDED)
+
+
+def test_a_draft_takes_a_limited_number_of_attachments() -> None:
+    check_room([stored(1)] * (MAX_ATTACHMENTS - 1), 1)
+    with raises_exactly(ValidationError, "a draft has at most 10 attachments") as caught:
+        check_room([stored(1)] * MAX_ATTACHMENTS, 1)
+    assert (caught.value.field, caught.value.code) == ("file", "too_many_attachments")
+    assert MAX_ATTACHMENTS == 10
+
+
+def test_the_attachments_of_a_draft_fit_into_one_mail() -> None:
+    half = MAX_ATTACHED_BYTES // 2
+    check_room([], MAX_ATTACHED_BYTES)
+    check_room([stored(half), stored(half - 10)], 10)
+    with raises_exactly(
+        ValidationError, "the attachments of a draft are at most 20 MB together"
+    ) as caught:
+        check_room([stored(half), stored(half - 10)], 11)
+    assert (caught.value.field, caught.value.code) == ("file", "attachments_too_large")
+    with pytest.raises(ValidationError):
+        check_room([], MAX_ATTACHED_BYTES + 1)
+    assert MAX_ATTACHED_BYTES == 20 * 1024 * 1024
 
 
 def test_lines_are_never_taken_over_and_the_history_has_the_time() -> None:

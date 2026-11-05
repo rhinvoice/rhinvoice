@@ -538,7 +538,12 @@ function DocumentTable({
           return (
             <TableRow
               key={item.id}
-              className={cn("relative", selected.has(item.id) && "bg-accent/60")}
+              // The row's link covers the row. "relative" alone does not contain it in Apple's
+              // WebKit, there it covers the table: desktop/window_check.py.
+              className={cn(
+                "relative [transform:translate(0)]",
+                selected.has(item.id) && "bg-accent/60",
+              )}
             >
               {invoices ? (
                 <TableCell className="relative z-10 hidden pr-0 sm:table-cell">

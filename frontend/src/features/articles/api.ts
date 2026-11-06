@@ -1,6 +1,7 @@
 import { keepPreviousData, queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api, unwrap, type components } from "@/api/client";
+import { useIdempotentMutation } from "@/features/shared/use-idempotent-mutation";
 
 export type Article = components["schemas"]["ArticleResponse"];
 export type ArticleRequest = components["schemas"]["ArticleRequest"];
@@ -62,8 +63,9 @@ function useOnSaved() {
 
 export function useCreateArticle() {
   const onSuccess = useOnSaved();
-  return useMutation({
-    mutationFn: (body: ArticleRequest) => unwrap(api.POST("/api/articles", { body })),
+  return useIdempotentMutation({
+    mutationFn: (body: ArticleRequest, { headers }) =>
+      unwrap(api.POST("/api/articles", { body, headers })),
     onSuccess,
   });
 }

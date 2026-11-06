@@ -169,6 +169,8 @@ class SetupDownloader:
         self._lock = threading.Lock()
         self._progress = SetupProgress()
         self._file: tuple[Path, PackageFile] | None = None
+        self._started = False
+        """The setup runs and the program is about to close: it is started once (ADR 0041)."""
         self._forget_installed(current)
 
     def download(self, version: str, setup: PackageFile) -> None:
@@ -191,6 +193,8 @@ class SetupDownloader:
 
     def run(self) -> None:
         with self._lock:
+            if self._started:
+                raise ConflictError("the setup has been started already", code="setup_running")
             ready = self._file
             if self._progress.state is not SetupState.READY or ready is None:
                 raise ConflictError("the setup is not downloaded yet", code="setup_not_ready")
@@ -207,7 +211,14 @@ class SetupDownloader:
                 raise ConflictError(
                     "the downloaded setup has changed since it was checked", code="setup_not_ready"
                 )
-        self._start(self._command(path, setup.sha256))
+            self._started = True
+        try:
+            self._start(self._command(path, setup.sha256))
+        except BaseException:
+            # Not started after all: it may be tried again.
+            with self._lock:
+                self._started = False
+            raise
         timer = threading.Timer(self._close_delay, self._close)
         timer.daemon = True
         timer.start()

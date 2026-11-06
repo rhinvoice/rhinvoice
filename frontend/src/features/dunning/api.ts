@@ -1,6 +1,7 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api, unwrap, type components } from "@/api/client";
+import { useIdempotentMutation } from "@/features/shared/use-idempotent-mutation";
 
 export type DunningItem = components["schemas"]["DunningItemResponse"];
 export type Reminder = components["schemas"]["ReminderResponse"];
@@ -25,12 +26,13 @@ export function reminderPdfUrl(reminder: Pick<Reminder, "id">, download = false)
 
 export function useWriteReminder() {
   const client = useQueryClient();
-  return useMutation({
-    mutationFn: (request: { invoiceId: string; level: number; early: boolean }) =>
+  return useIdempotentMutation({
+    mutationFn: (request: { invoiceId: string; level: number; early: boolean }, { headers }) =>
       unwrap(
         api.POST("/api/documents/{document_id}/reminders", {
           params: { path: { document_id: request.invoiceId } },
           body: { level: request.level, early: request.early },
+          headers,
         }),
       ),
     onSuccess: () => {

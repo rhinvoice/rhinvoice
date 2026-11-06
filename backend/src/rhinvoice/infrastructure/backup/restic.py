@@ -87,6 +87,8 @@ class ResticArchive:
             "--stdin-from-command", "--",
             str(self._pg_dump), "--no-owner", "--no-privileges",
             "--exclude-table-data=backup_runs", "--exclude-table-data=backup_requests",
+            # Answers to repeated requests (ADR 0041): copies, meaningless after a restore.
+            "--exclude-table-data=idempotency_keys",
         )  # fmt: skip
         if result.returncode != 0:
             raise BackupFailed(summary(result.stderr))

@@ -193,6 +193,15 @@ export const fr: Catalog<MessageKey> = {
 
   "error.demo_locked": "Ce n’est pas possible dans la démo publique.",
   "error.update_running": "La mise à jour est déjà en cours d’installation.",
+  "error.request_in_progress": "Cette action est encore en cours. Veuillez patienter un instant.",
+  "error.request_unfinished":
+    "On ne sait pas si cette action a abouti. Veuillez vérifier avant de réessayer.",
+  "error.request_done": "Cette action est déjà effectuée. Veuillez recharger la page.",
+  "error.idempotency_key_reused":
+    "La requête ne correspond pas à la précédente. Veuillez réessayer.",
+  "error.invalid_idempotency_key":
+    "La requête n’a pas pu être attribuée. Veuillez recharger la page.",
+  "error.setup_running": "Le programme d’installation a déjà été lancé.",
   "error.update_check_failed":
     "Les informations sur les nouvelles versions n’ont pas pu être récupérées. L’ordinateur est-il connecté à Internet ?",
   "error.update_check_off": "La recherche de mises à jour est désactivée dans cette installation.",

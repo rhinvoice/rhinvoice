@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 
 from rhinvoice.api.errors import register_error_handlers
+from rhinvoice.api.idempotency import IdempotencyMiddleware
 from rhinvoice.api.middleware import BodyLimitMiddleware, SecurityMiddleware
 from rhinvoice.api.rate_limit import ClientLimits
 from rhinvoice.api.routers import (
@@ -91,6 +92,8 @@ def create_app(container: Container) -> FastAPI:
     )
     app.state.container = container
     settings = container.settings
+    # Innermost: the body it holds to identify a request was counted by BodyLimitMiddleware.
+    app.add_middleware(IdempotencyMiddleware, container=container)
     # Inside SecurityMiddleware (added later), so that its 413 carries the security headers.
     app.add_middleware(BodyLimitMiddleware, demo=settings.demo)
     app.add_middleware(

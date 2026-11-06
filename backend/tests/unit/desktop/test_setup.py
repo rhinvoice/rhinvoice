@@ -102,6 +102,33 @@ def test_the_setup_is_downloaded_checked_and_run_after_the_program_closes(tmp_pa
     setup.run()
     assert surroundings.started == [[str(saved), "/SILENT", hashlib.sha256(CONTENT).hexdigest()]]
     assert surroundings.closed.wait(5)
+    # Started once: a second click while the program closes starts nothing more.
+    with raises_exactly(ConflictError, "the setup has been started already"):
+        setup.run()
+    assert len(surroundings.started) == 1
+
+
+class Refusing(Surroundings):
+    """The system refuses to start the first setup (e.g. a security tool holds the file)."""
+
+    def start(self, command: Sequence[str]) -> None:
+        if not self.started:
+            self.started.append([])
+            raise OSError
+        super().start(command)
+
+
+def test_a_setup_the_system_did_not_start_may_be_started_again(tmp_path: Path) -> None:
+    surroundings = Refusing()
+    setup = downloader(tmp_path, github(), surroundings)
+    setup.download("0.9.0", setup_file())
+    wait_until_done(setup)
+    with pytest.raises(OSError):  # noqa: PT011 - the system's own error
+        setup.run()
+    assert not surroundings.closed.is_set()
+    setup.run()
+    assert surroundings.started[1][1] == "/SILENT"
+    assert surroundings.closed.wait(5)
 
 
 def replaced(path: Path) -> None:

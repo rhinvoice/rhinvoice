@@ -841,6 +841,8 @@ export const de = {
   "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDFs" },
   "documents.draftAttachmentsNote":
     "Zum Beispiel Fremdrechnungen durchlaufender Posten, höchstens 10 PDFs und zusammen 20 MB. Bis zum Ausstellen lassen sie sich entfernen; danach bleiben sie unverändert beim Dokument und gehen beim Versand per E-Mail nach dem PDF mit.",
+  "documents.pendingAttachmentsNote":
+    "Sie werden mit dem ersten Speichern angehängt. Ohne Speichern bleibt nichts zurück.",
   "documents.attachmentsAdding": "Wird hochgeladen …",
   "documents.attachmentsAdded": { one: "PDF angehängt.", other: "{count} PDFs angehängt." },
   "documents.removeAttachment": "«{name}» entfernen",

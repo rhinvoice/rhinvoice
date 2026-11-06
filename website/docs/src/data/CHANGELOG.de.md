@@ -5,6 +5,17 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Neu
+- *Anhänge* auch bei neuen Rechnungen und Angeboten: *PDF hinzufügen* geht schon vor dem ersten
+  Speichern. Die PDFs warten im Browser und werden beim Speichern des Entwurfs angehängt; ein neues
+  Dokument, das nie gespeichert wird, hinterlässt nichts (#75).
+
+### Behoben
+- Beim Speichern oder Ausstellen einer neuen Rechnung oder eines neuen Angebots bleiben *Speichern* und
+  *Ausstellen* gesperrt, bis alles erledigt ist, und der geklickte Button zeigt, dass er arbeitet.
+  Bisher wurden sie schon nach dem Anlegen des Entwurfs wieder frei, und ein weiterer Klick legte
+  ein zweites Dokument an.
+
 ## [0.10.0] – 2026-11-05
 
 ### Neu

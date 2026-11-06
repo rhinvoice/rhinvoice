@@ -806,6 +806,8 @@ export const en: Catalog<MessageKey> = {
   "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDFs" },
   "documents.draftAttachmentsNote":
     "For example third-party invoices of pass-through items, at most 10 PDFs and 20 MB together. They can be removed until the document is issued; then they stay with it unchanged and are sent after its PDF by e-mail.",
+  "documents.pendingAttachmentsNote":
+    "They are attached when the draft is first saved. Without saving, nothing is kept.",
   "documents.attachmentsAdding": "Uploading …",
   "documents.attachmentsAdded": { one: "PDF attached.", other: "{count} PDFs attached." },
   "documents.removeAttachment": "Remove “{name}”",

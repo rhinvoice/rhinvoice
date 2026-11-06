@@ -519,6 +519,21 @@ export function useAddAttachments(documentId: string) {
   });
 }
 
+/** Attach the PDFs chosen before a new draft had been saved, once it exists. */
+export function useAttachToNewDraft() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ documentId, files }: { documentId: string; files: readonly File[] }) => {
+      for (const file of files) await postFile(documentId, file);
+    },
+    onSettled: (_data, _error, { documentId }) =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: attachmentsQuery(documentId).queryKey }),
+        client.invalidateQueries({ queryKey: documentKeys.detail(documentId) }),
+      ]),
+  });
+}
+
 /** Take an attachment off a draft; issued documents keep theirs. */
 export function useRemoveAttachment(documentId: string) {
   const onSettled = useOnFilesChanged(documentId);

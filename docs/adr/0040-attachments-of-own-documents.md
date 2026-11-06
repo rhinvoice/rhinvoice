@@ -29,10 +29,11 @@ files (ADR 0019); documents written here had none.
   same transaction; nothing is left behind. Copies (duplicate, quote to invoice, cancellation)
   do not take the files along.
 - **History.** Adding and removing note "file_added" / "file_removed" with the file name.
-- **Editor.** A folded section *Anhänge* below *Weitere Angaben* on a saved draft lists the
-  files (open, remove) and adds one or more PDFs. A new document attaches after its first save
-  (the editor then continues on the draft's page); recurring plans have none. Issued documents
-  show their files in a card *Anhänge* when they have some.
+- **Editor.** A folded section *Anhänge* below *Weitere Angaben* on a draft lists the files
+  (open, remove) and adds one or more PDFs. A new document keeps the chosen PDFs in the browser
+  and uploads them right after its first save, before issuing if that was chosen; one that is
+  never saved leaves nothing behind (#75). Recurring plans have none. Issued documents show
+  their files in a card *Anhänge* when they have some.
 - **Mail.** Sending a document attaches its PDF, then the XRechnung if chosen, then the files
   in the order of their names, at most 20 MB of them together: mail servers often refuse more.
   The upload keeps drafts within it; the mail checks it again as a safeguard

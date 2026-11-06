@@ -852,6 +852,8 @@ export const fr: Catalog<MessageKey> = {
   "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDF" },
   "documents.draftAttachmentsNote":
     "Par exemple les factures de tiers des débours, au plus 10 PDF et 20 Mo au total. Ils peuvent être retirés jusqu’à l’émission du document ; ensuite, ils restent inchangés avec lui et sont envoyés après son PDF par e-mail.",
+  "documents.pendingAttachmentsNote":
+    "Ils sont joints au premier enregistrement. Sans enregistrement, rien n’est conservé.",
   "documents.attachmentsAdding": "Envoi en cours …",
   "documents.attachmentsAdded": { one: "{count} PDF joint.", other: "{count} PDF joints." },
   "documents.removeAttachment": "Retirer « {name} »",

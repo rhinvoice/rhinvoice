@@ -57,6 +57,7 @@ import {
   eInvoiceQuery,
   documentQuery,
   useAddPayment,
+  useAttachToNewDraft,
   useCreateDocument,
   useDeleteDocument,
   useDocumentAction,
@@ -161,7 +162,9 @@ export function NewDocumentPage({
   const { company, error } = useCompany();
   const errorMessage = useErrorMessage();
   const create = useCreateDocument();
+  const attach = useAttachToNewDraft();
   const issue = useDocumentAction("issue");
+  const [pending, setPending] = useState<readonly File[]>([]);
   // New documents start with the default texts; without templates they start empty.
   const templates = useQuery(textTemplatesQuery);
 
@@ -184,13 +187,22 @@ export function NewDocumentPage({
             ...defaultTexts(templates.data ?? [], type, company.default_language),
             customer_id: customerId ?? "",
           }}
+          pending={{ files: pending, onChange: setPending }}
           onSave={(draft) => create.mutateAsync({ type, ...draft })}
           onSaved={async (saved, shouldIssue) => {
-            // The draft exists now: whatever happens when issuing, continue on its
-            // page so that a second click cannot create another draft.
+            // The draft exists now: whatever happens when attaching or issuing, continue
+            // on its page so that a second click cannot create another draft.
             let message = t("documents.draftSaved");
             let failure: unknown = null;
-            if (shouldIssue) {
+            if (pending.length > 0) {
+              try {
+                await attach.mutateAsync({ documentId: saved.id, files: pending });
+              } catch (caught) {
+                // The draft's page lists the files that did arrive; it is not issued without the rest.
+                failure = caught;
+              }
+            }
+            if (shouldIssue && failure === null) {
               try {
                 message = issuedToast(t, await issue.mutateAsync(saved.id));
               } catch (caught) {

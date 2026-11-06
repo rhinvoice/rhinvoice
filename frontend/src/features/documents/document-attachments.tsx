@@ -20,6 +20,7 @@ import { formatBytes } from "@/lib/format";
 
 /** As many as the server takes for one draft (domain/document/attachment.py). */
 const MAX_ATTACHMENTS = 10;
+const MAX_ATTACHED_BYTES = 20 * 1024 * 1024;
 
 function AttachmentList({
   documentId,
@@ -105,34 +106,123 @@ export function DraftAttachments({ documentId }: { readonly documentId: string }
       )}
       <p className="text-xs text-muted-foreground">{t("documents.draftAttachmentsNote")}</p>
       {demo || full ? null : (
-        // The browser's own file button cannot be translated or styled; the label is the button.
-        <label
-          className={cn(
-            buttonVariants({ variant: "outline", size: "sm" }),
-            "w-fit cursor-pointer has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-background",
-            add.isPending && "pointer-events-none opacity-50",
-          )}
-        >
-          <FilePlusIcon aria-hidden="true" />
-          {add.isPending ? t("documents.attachmentsAdding") : t("documents.addPdf")}
-          <input
-            type="file"
-            accept=".pdf,application/pdf"
-            multiple
-            className="sr-only"
-            disabled={add.isPending}
-            onChange={(event) => {
-              const files = [...(event.target.files ?? [])];
-              event.target.value = "";
-              if (files.length === 0) return;
-              add.mutate(files, {
-                onSuccess: () =>
-                  toast.success(t("documents.attachmentsAdded", { count: files.length })),
-                onError: fail,
-              });
-            }}
-          />
-        </label>
+        <AddPdfs
+          busy={add.isPending}
+          onFiles={(files) => {
+            add.mutate(files, {
+              onSuccess: () =>
+                toast.success(t("documents.attachmentsAdded", { count: files.length })),
+              onError: fail,
+            });
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function AddPdfs({
+  busy = false,
+  onFiles,
+}: {
+  readonly busy?: boolean;
+  readonly onFiles: (files: File[]) => void;
+}) {
+  const { t } = useI18n();
+  return (
+    // The browser's own file button cannot be translated or styled; the label is the button.
+    <label
+      className={cn(
+        buttonVariants({ variant: "outline", size: "sm" }),
+        "w-fit cursor-pointer has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-background",
+        busy && "pointer-events-none opacity-50",
+      )}
+    >
+      <FilePlusIcon aria-hidden="true" />
+      {busy ? t("documents.attachmentsAdding") : t("documents.addPdf")}
+      <input
+        type="file"
+        accept=".pdf,application/pdf"
+        multiple
+        className="sr-only"
+        disabled={busy}
+        onChange={(event) => {
+          const files = [...(event.target.files ?? [])];
+          event.target.value = "";
+          if (files.length > 0) onFiles(files);
+        }}
+      />
+    </label>
+  );
+}
+
+/**
+ * PDFs chosen for a new draft. They stay in the browser and are attached once the draft is
+ * saved, so a draft that is never saved leaves nothing behind. The server checks them then;
+ * the limits are checked here already, so that saving does not fail on them.
+ */
+export function PendingAttachments({
+  files,
+  onChange,
+  locked,
+}: {
+  readonly files: readonly File[];
+  readonly onChange: (files: readonly File[]) => void;
+  /** While saving: the files being uploaded are the ones listed, nothing changes them. */
+  readonly locked: boolean;
+}) {
+  const { t, locale } = useI18n();
+  const demo = useQuery(demoQuery).data?.enabled === true;
+  const size = (chosen: readonly File[]) => chosen.reduce((sum, file) => sum + file.size, 0);
+  return (
+    <div className="flex flex-col gap-3">
+      {files.length === 0 ? null : (
+        <ul className="flex flex-col divide-y text-sm">
+          {files.map((file, index) => (
+            // Files have no id before saving, and the same one may be chosen twice.
+            <li key={index} className="flex items-center gap-x-3 py-1.5">
+              <span className="inline-flex min-h-6 min-w-0 items-center gap-1.5 font-medium break-all">
+                <PaperclipIcon className="size-3.5 shrink-0" aria-hidden="true" />
+                {file.name}
+              </span>
+              <span className="text-xs whitespace-nowrap text-muted-foreground tabular-nums">
+                {formatBytes(file.size, locale)}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="ml-auto size-8 shrink-0"
+                aria-label={t("documents.removeAttachment", { name: file.name })}
+                disabled={locked}
+                onClick={() => {
+                  onChange(files.filter((_, other) => other !== index));
+                }}
+              >
+                <XIcon aria-hidden="true" />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="text-xs text-muted-foreground">
+        {files.length === 0
+          ? t("documents.draftAttachmentsNote")
+          : t("documents.pendingAttachmentsNote")}
+      </p>
+      {demo || files.length >= MAX_ATTACHMENTS ? null : (
+        <AddPdfs
+          busy={locked}
+          onFiles={(chosen) => {
+            if (files.length + chosen.length > MAX_ATTACHMENTS) {
+              toast.error(t("error.too_many_attachments"), { duration: Infinity });
+            } else if (size(files) + size(chosen) > MAX_ATTACHED_BYTES) {
+              toast.error(t("error.attachments_too_large"), { duration: Infinity });
+            } else {
+              onChange([...files, ...chosen]);
+            }
+          }}
+        />
       )}
     </div>
   );

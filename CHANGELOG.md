@@ -5,6 +5,16 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Added
+- *Attachments* on new invoices and quotes too: *Add PDF* works before the first save. The PDFs
+  wait in the browser and are attached when the draft is saved; a new document that is never
+  saved leaves nothing behind (#75).
+
+### Fixed
+- Saving or issuing a new invoice or quote keeps *Save* and *Issue* locked until it is done, and
+  the clicked button shows that it is working. Before, they unlocked as soon as the draft had been
+  created, and a further click created another document.
+
 ## [0.10.0] – 2026-11-05
 
 ### Added

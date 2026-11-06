@@ -844,6 +844,8 @@ export const it: Catalog<MessageKey> = {
   "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDF" },
   "documents.draftAttachmentsNote":
     "Per esempio le fatture di terzi delle spese anticipate, al massimo 10 PDF e 20 MB in totale. Si possono rimuovere fino all’emissione del documento; poi restano invariati con esso e vengono inviati dopo il suo PDF per e-mail.",
+  "documents.pendingAttachmentsNote":
+    "Vengono allegati al primo salvataggio. Senza salvare non resta nulla.",
   "documents.attachmentsAdding": "Caricamento …",
   "documents.attachmentsAdded": { one: "PDF allegato.", other: "{count} PDF allegati." },
   "documents.removeAttachment": "Rimuovere «{name}»",

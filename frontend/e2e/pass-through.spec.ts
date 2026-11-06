@@ -145,3 +145,82 @@ test("pass-through items print apart and third-party invoices go with the invoic
   await expectAccessible(page);
   await expectDocumentAccessible(page, draft.id);
 });
+
+test("PDFs chosen for a new invoice are attached when it is first saved", async ({
+  page,
+}, testInfo) => {
+  const suffix = unique(testInfo.project.name);
+  const customerId = await createCustomer(page, `Neu ${suffix} AG`);
+  await openApp(page, `/invoices/new?customer=${customerId}`, "Neue Rechnung");
+  await page.locator("#lines-0-description").fill("Gründungsgebühr Handelsregister");
+  await page.locator("#lines-0-unit_price").fill("250.35");
+
+  // The section is there before the first save; the files wait in the browser.
+  await page.getByText("Anhänge", { exact: true }).click();
+  await page.getByLabel("PDF hinzufügen").setInputFiles([
+    { name: "Handelsregister.pdf", mimeType: "application/pdf", buffer: pdf("Handelsregister") },
+    { name: "Irrtum.pdf", mimeType: "application/pdf", buffer: pdf("Irrtum") },
+  ]);
+  await expect(page.getByText("2 PDFs", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^Sie werden mit dem ersten Speichern angehängt\./)).toBeVisible();
+  await page.getByRole("button", { name: "«Irrtum.pdf» entfernen" }).click();
+  await expect(page.getByText("Irrtum.pdf")).toHaveCount(0);
+  await expect(page.getByText("1 PDF", { exact: true })).toBeVisible();
+  await expectAccessible(page);
+
+  await page.getByRole("button", { name: "Speichern" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Rechnung (Entwurf)" })).toBeVisible();
+  await expect(page.getByText("Entwurf gespeichert.")).toBeVisible();
+  await page.getByText("Anhänge", { exact: true }).click();
+  await expect(page.getByRole("link", { name: /Handelsregister\.pdf/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Irrtum\.pdf/ })).toHaveCount(0);
+  await expect(page.getByText("1 PDF", { exact: true })).toBeVisible();
+});
+
+test("issuing a new invoice with PDFs runs once, however often the buttons are clicked", async ({
+  page,
+}, testInfo) => {
+  const suffix = unique(testInfo.project.name);
+  const customerId = await createCustomer(page, `Einmal ${suffix} AG`);
+  // A slow upload: saving, attaching and issuing take a while, as with large files.
+  let release: () => void = () => undefined;
+  const uploaded = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/documents/*/files", async (route) => {
+    await uploaded;
+    await route.continue();
+  });
+  await openApp(page, `/invoices/new?customer=${customerId}`, "Neue Rechnung");
+  await page.locator("#lines-0-description").fill("Gründungsgebühr Handelsregister");
+  await page.locator("#lines-0-unit_price").fill("250.35");
+  await page.getByText("Anhänge", { exact: true }).click();
+  await page
+    .getByLabel("PDF hinzufügen")
+    .setInputFiles({ name: "Notar.pdf", mimeType: "application/pdf", buffer: pdf("Notar") });
+
+  const issue = page.getByRole("button", { name: "Ausstellen", exact: true });
+  await issue.click();
+  // Several clicks at once, while the dialog closes.
+  await page
+    .getByRole("alertdialog", { name: "Rechnung ausstellen?" })
+    .getByRole("button", { name: "Ausstellen" })
+    .click({ clickCount: 3 });
+  // The draft exists and the upload waits: everything stays locked, the clicked button spins.
+  await expect(issue).toBeDisabled();
+  await expect(issue.locator(".lucide-loader-circle")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: /^Speichern/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "«Notar.pdf» entfernen" })).toBeDisabled();
+  await expect(page.getByText("Wird gespeichert …")).toBeVisible();
+  await page.keyboard.press("ControlOrMeta+Enter");
+  release();
+
+  await expect(page.getByText(/^Rechnung .+ ausgestellt\.$/)).toBeVisible();
+  const documents = (await (
+    await page.request.get(`/api/documents?customer_id=${customerId}`)
+  ).json()) as { total: number };
+  expect(documents.total).toBe(1);
+  await expect(
+    page.getByRole("region", { name: "Anhänge" }).getByRole("link", { name: /Notar\.pdf/ }),
+  ).toBeVisible();
+});

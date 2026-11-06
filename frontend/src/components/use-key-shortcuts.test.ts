@@ -18,6 +18,9 @@ describe("useSaveShortcut", () => {
     document.body.append(input);
     fireEvent.keyDown(input, { key: "Enter", ctrlKey: true });
     expect(save).toHaveBeenCalledOnce();
+    // Held down, the key repeats: that is no second save.
+    fireEvent.keyDown(input, { key: "Enter", ctrlKey: true, repeat: true });
+    expect(save).toHaveBeenCalledOnce();
     fireEvent.keyDown(input, { key: "Enter" });
     expect(save).toHaveBeenCalledOnce();
     rerender({ enabled: false });
@@ -55,6 +58,8 @@ describe("usePageShortcut", () => {
       usePageShortcut("c", handler);
     });
     fireEvent.keyDown(window, { key: "c" });
+    expect(handler).toHaveBeenCalledOnce();
+    fireEvent.keyDown(window, { key: "c", repeat: true });
     expect(handler).toHaveBeenCalledOnce();
     const input = document.createElement("input");
     document.body.append(input);

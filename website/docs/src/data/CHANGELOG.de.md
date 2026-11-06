@@ -15,6 +15,13 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   *Ausstellen* gesperrt, bis alles erledigt ist, und der geklickte Button zeigt, dass er arbeitet.
   Bisher wurden sie schon nach dem Anlegen des Entwurfs wieder frei, und ein weiterer Klick legte
   ein zweites Dokument an.
+- Jeder Button, der speichert, sendet, druckt oder etwas ändert, tut das pro Klick einmal: Er
+  bleibt mit einem Ladekreis gesperrt, bis seine Arbeit erledigt ist, und wird bei einem Fehler
+  wieder frei. Bisher konnte ein gedrücktes ⌘↵ / Strg+↵ einen Kunden oder Artikel mehrfach
+  anlegen, Enter beim Schliessen des Zahlungsdialogs eine Zahlung doppelt erfassen, und eine
+  E-Mail ging doppelt hinaus, wenn ihr Dialog während des Sendens geschlossen und wieder geöffnet
+  wurde; auch Duplizieren, Drucken und das Bestätigen von Dialogen konnten doppelt laufen. Das
+  Löschen einer Import-Vorlage meldet jetzt einen Fehler.
 
 ## [0.10.0] – 2026-11-05
 

@@ -8,7 +8,6 @@ import {
   FileCheckIcon,
   InfoIcon,
   LandmarkIcon,
-  LoaderCircleIcon,
   PaperclipIcon,
   PencilIcon,
   PrinterIcon,
@@ -42,6 +41,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { RadioCard } from "@/components/ui/radio-cards";
 import { useDebouncedValue } from "@/components/use-debounced-value";
 import { useSaveShortcut } from "@/components/use-key-shortcuts";
+import { useRunOnce } from "@/components/use-run-once";
 import {
   customerOptionQuery,
   customerOptionsQuery,
@@ -284,25 +284,18 @@ export function DocumentEditor<Saved = DocumentDetail>({
 
   // What is being saved, from the click until saving, attaching and issuing are done. Not the
   // form's isSubmitting: resetting the form after the save clears it while the files and the
-  // issuing still follow, and a second click then would create another document. The ref
-  // also stops a click that comes before the next render, such as one on the closing dialog.
-  const [busy, setBusy] = useState<"save" | "issue" | null>(null);
-  const busyRef = useRef(false);
-  const submit = (intent: "save" | "issue") => async (event?: SyntheticEvent) => {
-    if (busyRef.current) {
-      event?.preventDefault();
-      return;
-    }
-    busyRef.current = true;
-    setBusy(intent);
-    try {
-      await save(intent, event);
-    } finally {
-      busyRef.current = false;
-      setBusy(null);
-    }
+  // issuing still follow, and a second click then would create another document.
+  const once = useRunOnce();
+  const [intent, setIntent] = useState<"save" | "issue">("save");
+  const busy = once.busy ? intent : null;
+  const submit = (next: "save" | "issue") => (event?: SyntheticEvent) => {
+    event?.preventDefault();
+    void once.run(() => {
+      setIntent(next);
+      return save(next);
+    });
   };
-  const save = (intent: "save" | "issue", event?: SyntheticEvent) => {
+  const save = (intent: "save" | "issue") => {
     // The plan's settings are checked together with the form, so all errors show at once.
     const planValid = plan === undefined || plan.validate();
     return form.handleSubmit(async (submitted) => {
@@ -322,10 +315,15 @@ export function DocumentEditor<Saved = DocumentDetail>({
           form.setError("root", { type: "server", message: errorMessage(caught) ?? "" });
         }
       }
-    })(event);
+    })();
   };
   // Like the buttons: a second save while the first runs would create another draft.
-  useSaveShortcut(() => void submit("save")(), !sheetOpen && busy === null);
+  useSaveShortcut(
+    () => {
+      submit("save")();
+    },
+    !sheetOpen && busy === null,
+  );
 
   // Existing drafts save themselves once the form has been valid and unchanged
   // for a moment (principles.md 4.4). Edits made while saving stay unsaved.
@@ -410,7 +408,9 @@ export function DocumentEditor<Saved = DocumentDetail>({
     <FormProvider {...form}>
       <form
         className="flex flex-col gap-6"
-        onSubmit={(event) => void submit("save")(event)}
+        onSubmit={(event) => {
+          submit("save")(event);
+        }}
         noValidate
       >
         {isSubmitted ? (
@@ -862,9 +862,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
             type="button"
             variant="ghost"
             disabled={page.data === undefined}
-            onClick={() => {
-              if (page.data !== undefined) printPage(page.data);
-            }}
+            onClick={() => (page.data === undefined ? undefined : printPage(page.data))}
           >
             <PrinterIcon aria-hidden="true" />
             {t("documents.print")}
@@ -873,8 +871,8 @@ export function DocumentEditor<Saved = DocumentDetail>({
             type="submit"
             variant={plan === undefined ? "outline" : "default"}
             disabled={busy !== null}
+            busy={busy === "save"}
           >
-            {busy === "save" ? <Spinner /> : null}
             {plan?.saveLabel ?? t("common.save")}
             <span className="sr-only">{` (${modifierLabel(navigator.platform)} Enter)`}</span>
           </Button>
@@ -882,6 +880,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
             <Button
               type="button"
               disabled={busy !== null}
+              busy={busy === "issue"}
               onClick={() => {
                 // Missing details first: issuing would only fail on them.
                 if (blockers.length > 0) {
@@ -892,7 +891,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
                 setConfirmIssue(true);
               }}
             >
-              {busy === "issue" ? <Spinner /> : <FileCheckIcon aria-hidden="true" />}
+              <FileCheckIcon aria-hidden="true" />
               {issueLabel}
             </Button>
           ) : null}
@@ -927,7 +926,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
             <AlertDialogAction
               disabled={busy !== null}
               onClick={() => {
-                void submit("issue")();
+                submit("issue")();
               }}
             >
               {issueLabel}
@@ -1194,9 +1193,4 @@ function MoreFields({ tax, autoTreatment, plan }: MoreFieldsProps) {
       )}
     </div>
   );
-}
-
-/** Shown in a button while what it started still runs; the status line says what. */
-function Spinner() {
-  return <LoaderCircleIcon className="motion-safe:animate-spin" aria-hidden="true" />;
 }

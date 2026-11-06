@@ -112,7 +112,7 @@ export function FolderChooser({
         ) : null}
         <FormAlert message={unusable ?? (failure === null ? null : errorMessage(failure))} />
         <div className="flex flex-wrap gap-2">
-          <Button type="submit" disabled={setUp.isPending}>
+          <Button type="submit" busy={setUp.isPending}>
             {t(changing ? "backup.setup.change" : "backup.setup.continue")}
           </Button>
           {onCancel === undefined ? null : (

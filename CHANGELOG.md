@@ -14,6 +14,12 @@ before 1.0, minor versions may contain breaking changes.
 - Saving or issuing a new invoice or quote keeps *Save* and *Issue* locked until it is done, and
   the clicked button shows that it is working. Before, they unlocked as soon as the draft had been
   created, and a further click created another document.
+- Every button that saves, sends, prints or changes something does so once per click: it stays
+  locked, with a spinner, until its work is done, and unlocks again on an error. Before, a held
+  ⌘↵ / Ctrl+↵ could create a customer or article several times, Enter while the payment dialog
+  closed recorded a payment twice, and a mail could go out twice when its dialog was closed and
+  opened again while sending; duplicating, printing and confirming dialogs could run twice, too.
+  Deleting an import template now reports a failure.
 
 ## [0.10.0] – 2026-11-05
 

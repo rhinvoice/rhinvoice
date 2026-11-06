@@ -275,7 +275,7 @@ function ServerForm({
           </Label>
         </div>
         <div className="flex justify-end">
-          <Button type="submit" disabled={save.isPending}>
+          <Button type="submit" busy={save.isPending}>
             {t("common.save")}
           </Button>
         </div>
@@ -495,7 +495,7 @@ function TemplateForm({ template }: { readonly template: MailTemplate }) {
           <Button
             type="button"
             variant="outline"
-            disabled={save.isPending}
+            busy={save.isPending}
             onClick={() => {
               store({ subject: "", body: "" }, t("mail.templateRestored"));
             }}
@@ -503,7 +503,7 @@ function TemplateForm({ template }: { readonly template: MailTemplate }) {
             {t("mail.restoreTemplate")}
           </Button>
         ) : null}
-        <Button type="submit" disabled={save.isPending}>
+        <Button type="submit" busy={save.isPending}>
           {t("common.save")}
         </Button>
       </div>

@@ -428,6 +428,7 @@ function ImportSettings({
   onMapping,
 }: ImportSettingsProps) {
   const { t } = useI18n();
+  const errorMessage = useErrorMessage();
   const templates = useQuery(templatesQuery(target)).data ?? [];
   const removeTemplate = useDeleteTemplate(target);
   const [saving, setSaving] = useState(false);
@@ -478,7 +479,7 @@ function ImportSettings({
               <Button
                 variant="ghost"
                 size="sm"
-                disabled={removeTemplate.isPending}
+                busy={removeTemplate.isPending}
                 onClick={() => {
                   setConfirming(true);
                 }}
@@ -498,13 +499,18 @@ function ImportSettings({
                   <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => {
-                      if (selected === undefined) return;
-                      removeTemplate.mutate(selected, {
-                        onSuccess: () => {
+                      if (selected === undefined) return undefined;
+                      return removeTemplate.mutateAsync(selected).then(
+                        () => {
                           onTemplate("", null);
                           toast.success(t("import.templateDeleted"));
                         },
-                      });
+                        (caught: unknown) => {
+                          toast.error(errorMessage(caught) ?? t("error.generic"), {
+                            duration: Infinity,
+                          });
+                        },
+                      );
                     }}
                   >
                     {t("common.delete")}

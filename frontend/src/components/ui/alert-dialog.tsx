@@ -1,7 +1,8 @@
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
-import type { ComponentProps } from "react";
+import { useRef, type ComponentProps, type MouseEvent } from "react";
 
-import { buttonVariants } from "@/components/ui/button";
+import { BUSY_ICONS, buttonVariants, Spinner } from "@/components/ui/button";
+import { useRunOnce } from "@/components/use-run-once";
 import { cn } from "@/lib/cn";
 
 export const AlertDialog = AlertDialogPrimitive.Root;
@@ -62,19 +63,55 @@ export function AlertDialogDescription({
   );
 }
 
+/**
+ * The dialog's confirming button. It acts once per opening: the dialog stays clickable while
+ * it closes, and a second click then would run the action again. An action that keeps the
+ * dialog open (preventDefault) may run again once a promise it returns has settled.
+ */
 export function AlertDialogAction({
   className,
   destructive = false,
+  onClick,
+  disabled,
+  children,
   ...props
-}: ComponentProps<typeof AlertDialogPrimitive.Action> & { readonly destructive?: boolean }) {
+}: Omit<ComponentProps<typeof AlertDialogPrimitive.Action>, "onClick"> & {
+  readonly destructive?: boolean;
+  readonly onClick?: ((event: MouseEvent<HTMLButtonElement>) => unknown) | undefined;
+}) {
+  const once = useRunOnce();
+  const done = useRef(false);
   return (
     <AlertDialogPrimitive.Action
       className={cn(
         buttonVariants({ variant: destructive ? "destructive" : "default" }),
+        once.busy && BUSY_ICONS,
         className,
       )}
+      disabled={disabled === true || once.busy}
+      aria-busy={once.busy || undefined}
+      onClick={(event) => {
+        const click = { started: false };
+        if (!done.current) {
+          once
+            .run(async () => {
+              click.started = true;
+              await onClick?.(event);
+            })
+            .catch(() => undefined);
+        }
+        // The action runs synchronously up to its first await: whether it started is known here.
+        if (!click.started) {
+          event.preventDefault();
+        } else if (!event.defaultPrevented) {
+          done.current = true;
+        }
+      }}
       {...props}
-    />
+    >
+      {once.busy ? <Spinner /> : null}
+      {children}
+    </AlertDialogPrimitive.Action>
   );
 }
 

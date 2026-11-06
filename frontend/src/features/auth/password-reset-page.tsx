@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { useSubmitOnce } from "@/components/use-run-once";
 import { CopyLine } from "@/components/copy-line";
 import { useI18n } from "@/components/i18n/use-i18n";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -87,6 +88,7 @@ function ByFile({ location }: { readonly location: string }) {
       () => undefined,
     );
   });
+  const once = useSubmitOnce(onSubmit);
 
   if (confirm.isSuccess) {
     return (
@@ -107,14 +109,11 @@ function ByFile({ location }: { readonly location: string }) {
       <Button
         type="button"
         variant={requested ? "outline" : "default"}
-        disabled={request.isPending}
-        onClick={() => {
-          request.mutate(undefined, {
-            onSuccess: () => {
-              setRequested(true);
-            },
-          });
-        }}
+        onClick={() =>
+          request.mutateAsync(undefined).then(() => {
+            setRequested(true);
+          })
+        }
       >
         {requested ? t("auth.reset.again") : t("auth.reset.request")}
       </Button>
@@ -133,11 +132,7 @@ function ByFile({ location }: { readonly location: string }) {
             </p>
             <code className="font-mono text-xs break-all">{location}</code>
           </div>
-          <form
-            className="flex flex-col gap-4"
-            onSubmit={(event) => void onSubmit(event)}
-            noValidate
-          >
+          <form className="flex flex-col gap-4" onSubmit={once.submit} noValidate>
             {isSubmitted ? (
               <ErrorSummary
                 title={t("validation.summary", { count: Object.keys(errors).length })}
@@ -177,7 +172,7 @@ function ByFile({ location }: { readonly location: string }) {
                 {...form.register("new_password")}
               />
             </Field>
-            <Button type="submit" disabled={confirm.isPending}>
+            <Button type="submit" busy={once.busy}>
               {t("auth.reset.save")}
             </Button>
           </form>

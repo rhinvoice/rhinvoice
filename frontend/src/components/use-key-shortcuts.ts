@@ -3,7 +3,10 @@ import { useEffect, useRef } from "react";
 import { useSingleKeyShortcuts } from "@/components/use-single-key-shortcuts";
 import { isModified, isPlainKey } from "@/lib/shortcuts";
 
-/** ⌘↵ / Ctrl+↵ saves, also while an input has focus. */
+/**
+ * ⌘↵ / Ctrl+↵ saves, also while an input has focus. Held down, the key repeats: only the
+ * first press counts, and ``enabled`` is false while a save runs.
+ */
 export function useSaveShortcut(onSave: () => void, enabled = true): void {
   const latest = useRef(onSave);
   useEffect(() => {
@@ -14,7 +17,7 @@ export function useSaveShortcut(onSave: () => void, enabled = true): void {
     const listener = (event: KeyboardEvent) => {
       if (isModified(event, "Enter", navigator.platform)) {
         event.preventDefault();
-        latest.current();
+        if (!event.repeat) latest.current();
       }
     };
     window.addEventListener("keydown", listener);
@@ -39,7 +42,7 @@ export function usePageShortcut(key: string, handler: () => void): void {
     const listener = (event: KeyboardEvent) => {
       if (!event.defaultPrevented && isPlainKey(event, key)) {
         event.preventDefault();
-        latest.current();
+        if (!event.repeat) latest.current();
       }
     };
     window.addEventListener("keydown", listener);

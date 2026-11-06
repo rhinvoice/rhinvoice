@@ -15,6 +15,7 @@ import {
 import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 
+import { useRunOnce } from "@/components/use-run-once";
 import { useI18n } from "@/components/i18n/use-i18n";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -127,11 +128,12 @@ export function DocumentListPage({ kind, search, onSearchChange }: DocumentListP
           });
     toast.error(message ?? t("error.generic"), { duration: Infinity });
   };
-  const pay = (documents: readonly DocumentSummary[]) => {
-    markPaid.mutate(
-      documents.map((document) => document.id),
-      {
-        onSuccess: (result) => {
+  // One marking at a time: a second click, on the same row or another, waits for it.
+  const paying = useRunOnce();
+  const pay = (documents: readonly DocumentSummary[]) =>
+    paying.run(() =>
+      markPaid.mutateAsync(documents.map((document) => document.id)).then(
+        (result) => {
           select(NO_SELECTION);
           const [only] = documents;
           const message =
@@ -147,12 +149,11 @@ export function DocumentListPage({ kind, search, onSearchChange }: DocumentListP
             });
           });
         },
-        onError: (caught) => {
+        (caught: unknown) => {
           fail(caught, documents);
         },
-      },
+      ),
     );
-  };
 
   const filtered =
     search.q !== "" || search.view !== "all" || search.year !== "all" || search.customer !== "";
@@ -271,7 +272,7 @@ export function DocumentListPage({ kind, search, onSearchChange }: DocumentListP
             selected={selected}
             onSelect={select}
             onPay={pay}
-            paying={markPaid.isPending}
+            paying={paying.busy}
             onSearchChange={onSearchChange}
           />
           <Totals kind={kind} data={data} />
@@ -293,7 +294,7 @@ export function DocumentListPage({ kind, search, onSearchChange }: DocumentListP
       {selected.size > 0 ? (
         <SelectionBar
           selected={[...selected.values()]}
-          paying={markPaid.isPending}
+          paying={paying.busy}
           onPay={pay}
           onClear={() => {
             select(NO_SELECTION);
@@ -437,7 +438,7 @@ interface DocumentTableProps {
   readonly items: readonly DocumentSummary[];
   readonly selected: ReadonlyMap<string, DocumentSummary>;
   readonly onSelect: (items: ReadonlyMap<string, DocumentSummary>) => void;
-  readonly onPay: (documents: readonly DocumentSummary[]) => void;
+  readonly onPay: (documents: readonly DocumentSummary[]) => Promise<unknown>;
   readonly paying: boolean;
   readonly onSearchChange: (update: Partial<DocumentListSearch>) => void;
 }
@@ -527,9 +528,7 @@ function DocumentTable({
               size="sm"
               disabled={paying}
               aria-label={t("documents.markPaidRow", { number: label })}
-              onClick={() => {
-                onPay([item]);
-              }}
+              onClick={() => onPay([item])}
             >
               <CheckIcon aria-hidden="true" />
               {t("documents.markPaidShort")}
@@ -694,7 +693,7 @@ function Totals({ kind, data }: { readonly kind: ListKind; readonly data: Docume
 interface SelectionBarProps {
   readonly selected: readonly DocumentSummary[];
   readonly paying: boolean;
-  readonly onPay: (documents: readonly DocumentSummary[]) => void;
+  readonly onPay: (documents: readonly DocumentSummary[]) => Promise<unknown>;
   readonly onClear: () => void;
 }
 
@@ -730,9 +729,7 @@ function SelectionBar({ selected, paying, onPay, onClear }: SelectionBarProps) {
           size="sm"
           disabled={paying}
           className="bg-background text-foreground hover:bg-background/90"
-          onClick={() => {
-            onPay(selected);
-          }}
+          onClick={() => onPay(selected)}
         >
           <CheckIcon aria-hidden="true" />
           {t("documents.markSelectedPaid")}

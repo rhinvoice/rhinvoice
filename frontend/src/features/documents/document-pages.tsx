@@ -48,6 +48,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRunOnce } from "@/components/use-run-once";
 import { useDocumentTitle } from "@/components/use-document-title";
 import { usePageShortcut } from "@/components/use-key-shortcuts";
 import {
@@ -327,6 +328,8 @@ function IssuedPage({ document, company }: PageProps) {
   const fail = (caught: unknown) => {
     toast.error(errorMessage(caught) ?? t("error.generic"), { duration: Infinity });
   };
+  // The document's actions run one at a time: a second click, or another action, waits.
+  const action = useRunOnce();
 
   const undoPayment = (changed: DocumentDetail) => {
     const payment = changed.payments.at(-1);
@@ -345,17 +348,17 @@ function IssuedPage({ document, company }: PageProps) {
       open_amount: "0.00",
       paid_amount: document.totals.total,
     });
-    markPaid.mutate(todayIso(), {
-      onSuccess: (changed) => {
+    return markPaid.mutateAsync(todayIso()).then(
+      (changed) => {
         showUndoToast(t("documents.markedPaid"), t("common.undo"), () => {
           undoPayment(changed);
         });
       },
-      onError: (caught) => {
+      (caught: unknown) => {
         client.setQueryData(key, previous);
         fail(caught);
       },
-    });
+    );
   };
 
   usePageShortcut("p", () => {
@@ -389,7 +392,7 @@ function IssuedPage({ document, company }: PageProps) {
       <div className="flex flex-wrap items-center gap-2">
         {payable ? (
           <>
-            <Button onClick={onMarkPaid} disabled={markPaid.isPending}>
+            <Button onClick={() => action.run(onMarkPaid)} disabled={action.busy}>
               <CircleCheckIcon aria-hidden="true" />
               {t("documents.markPaid")}
             </Button>
@@ -419,24 +422,28 @@ function IssuedPage({ document, company }: PageProps) {
           <>
             <Button
               variant="outline"
-              onClick={() => {
-                accept.mutate(document.id, {
-                  onSuccess: () => toast.success(t("documents.acceptedToast")),
-                  onError: fail,
-                });
-              }}
+              disabled={action.busy}
+              onClick={() =>
+                action.run(() =>
+                  accept.mutateAsync(document.id).then(() => {
+                    toast.success(t("documents.acceptedToast"));
+                  }, fail),
+                )
+              }
             >
               <ThumbsUpIcon aria-hidden="true" />
               {t("documents.accept")}
             </Button>
             <Button
               variant="outline"
-              onClick={() => {
-                decline.mutate(document.id, {
-                  onSuccess: () => toast.success(t("documents.declinedToast")),
-                  onError: fail,
-                });
-              }}
+              disabled={action.busy}
+              onClick={() =>
+                action.run(() =>
+                  decline.mutateAsync(document.id).then(() => {
+                    toast.success(t("documents.declinedToast"));
+                  }, fail),
+                )
+              }
             >
               <ThumbsDownIcon aria-hidden="true" />
               {t("documents.decline")}
@@ -524,8 +531,8 @@ function IssuedPage({ document, company }: PageProps) {
             document.type === "invoice" && document.status !== "cancelled"
               ? (paymentId) => {
                   const removed = document.payments.find((payment) => payment.id === paymentId);
-                  removePayment.mutate(paymentId, {
-                    onSuccess: () => {
+                  return action.run(() =>
+                    removePayment.mutateAsync(paymentId).then(() => {
                       showUndoToast(t("documents.paymentRemoved"), t("common.undo"), () => {
                         if (removed === undefined) return;
                         // Undo records the same payment again.
@@ -534,9 +541,8 @@ function IssuedPage({ document, company }: PageProps) {
                           { onError: fail },
                         );
                       });
-                    },
-                    onError: fail,
-                  });
+                    }, fail),
+                  );
                 }
               : undefined
           }
@@ -559,12 +565,13 @@ function IssuedPage({ document, company }: PageProps) {
       <RemoveWriteOffDialog
         open={removeWriteOffOpen}
         onOpenChange={setRemoveWriteOffOpen}
-        onConfirm={() => {
-          removeWriteOff.mutate(undefined, {
-            onSuccess: () => toast.success(t("writeOff.removed")),
-            onError: fail,
-          });
-        }}
+        onConfirm={() =>
+          action.run(() =>
+            removeWriteOff.mutateAsync(undefined).then(() => {
+              toast.success(t("writeOff.removed"));
+            }, fail),
+          )
+        }
       />
       {payable || writtenOff ? (
         <PaymentDialog
@@ -627,7 +634,10 @@ function MoreActions({ document, onWriteOff, onRemoveWriteOff }: MoreActionsProp
   const { t } = useI18n();
   const navigate = useNavigate();
   const errorMessage = useErrorMessage();
+  // The dialog keeps saying what it asks while it closes: "confirm" only opens it.
   const [confirm, setConfirm] = useState<Confirmation>(null);
+  const [asked, setAsked] = useState<"cancel" | "delete">("delete");
+  const action = useRunOnce();
   const duplicate = useDocumentAction("duplicate");
   const convert = useDocumentAction("convert");
   const cancel = useDocumentAction("cancel");
@@ -672,14 +682,14 @@ function MoreActions({ document, onWriteOff, onRemoveWriteOff }: MoreActionsProp
         <DropdownMenuContent align="end" className="min-w-56">
           {canConvert ? (
             <DropdownMenuItem
+              disabled={action.busy}
               onSelect={() => {
-                convert.mutate(document.id, {
-                  onSuccess: (invoice) => {
+                void action.run(() =>
+                  convert.mutateAsync(document.id).then(async (invoice) => {
                     toast.success(t("documents.convertedToast"));
-                    void open(invoice);
-                  },
-                  onError: fail,
-                });
+                    await open(invoice);
+                  }, fail),
+                );
               }}
             >
               <FileOutputIcon aria-hidden="true" />
@@ -688,14 +698,14 @@ function MoreActions({ document, onWriteOff, onRemoveWriteOff }: MoreActionsProp
           ) : null}
           {canDuplicate ? (
             <DropdownMenuItem
+              disabled={action.busy}
               onSelect={() => {
-                duplicate.mutate(document.id, {
-                  onSuccess: (copy) => {
+                void action.run(() =>
+                  duplicate.mutateAsync(document.id).then(async (copy) => {
                     toast.success(t("documents.duplicatedToast"));
-                    void open(copy);
-                  },
-                  onError: fail,
-                });
+                    await open(copy);
+                  }, fail),
+                );
               }}
             >
               <CopyIcon aria-hidden="true" />
@@ -727,7 +737,9 @@ function MoreActions({ document, onWriteOff, onRemoveWriteOff }: MoreActionsProp
           )}
           {canCancel ? (
             <DropdownMenuItem
+              disabled={action.busy}
               onSelect={() => {
+                setAsked("cancel");
                 setConfirm("cancel");
               }}
             >
@@ -737,7 +749,9 @@ function MoreActions({ document, onWriteOff, onRemoveWriteOff }: MoreActionsProp
           ) : null}
           {canDelete ? (
             <DropdownMenuItem
+              disabled={action.busy}
               onSelect={() => {
+                setAsked("delete");
                 setConfirm("delete");
               }}
             >
@@ -757,10 +771,10 @@ function MoreActions({ document, onWriteOff, onRemoveWriteOff }: MoreActionsProp
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {confirm === "cancel" ? t("documents.cancelTitle") : t("documents.deleteTitle")}
+              {asked === "cancel" ? t("documents.cancelTitle") : t("documents.deleteTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {confirm === "cancel"
+              {asked === "cancel"
                 ? t("documents.cancelDescription")
                 : t("documents.deleteDescription")}
             </AlertDialogDescription>
@@ -769,32 +783,26 @@ function MoreActions({ document, onWriteOff, onRemoveWriteOff }: MoreActionsProp
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               destructive
-              onClick={() => {
-                if (confirm === "cancel") {
-                  cancel.mutate(document.id, {
-                    onSuccess: (cancelled) => {
-                      toast.success(t("documents.cancelledToast"));
-                      if (cancelled.cancelled_by_id !== null) {
-                        void navigate({
-                          to: "/documents/$documentId",
-                          params: { documentId: cancelled.cancelled_by_id },
-                        });
-                      }
-                    },
-                    onError: fail,
-                  });
-                } else {
-                  remove.mutate(document.id, {
-                    onSuccess: () => {
-                      toast.success(t("documents.deletedToast"));
-                      void navigate({ to: LIST_PATH[document.type] });
-                    },
-                    onError: fail,
-                  });
-                }
-              }}
+              onClick={() =>
+                action.run(() =>
+                  asked === "cancel"
+                    ? cancel.mutateAsync(document.id).then(async (cancelled) => {
+                        toast.success(t("documents.cancelledToast"));
+                        if (cancelled.cancelled_by_id !== null) {
+                          await navigate({
+                            to: "/documents/$documentId",
+                            params: { documentId: cancelled.cancelled_by_id },
+                          });
+                        }
+                      }, fail)
+                    : remove.mutateAsync(document.id).then(async () => {
+                        toast.success(t("documents.deletedToast"));
+                        await navigate({ to: LIST_PATH[document.type] });
+                      }, fail),
+                )
+              }
             >
-              {confirm === "cancel" ? t("documents.cancel") : t("common.delete")}
+              {asked === "cancel" ? t("documents.cancel") : t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -872,73 +880,62 @@ function OutputActions({
   const { t } = useI18n();
   const client = useQueryClient();
   const errorMessage = useErrorMessage();
-  const [busy, setBusy] = useState(false);
+  // Showing, saving and printing: one at a time, so that no click opens or prints twice.
+  const output = useRunOnce();
   const fail = (caught: unknown) => {
     toast.error(errorMessage(caught) ?? t("error.generic"), { duration: Infinity });
   };
   // The first PDF of an issued invoice archives it with its e-invoice.
   const archived = () => client.invalidateQueries({ queryKey: eInvoiceQuery(documentId).queryKey });
 
-  const download = () => {
-    setBusy(true);
-    fetchFile(documentPdfUrl(documentId, true), "document.pdf")
-      .then((file) => {
-        saveFile(file);
-        void archived();
-      }, fail)
-      .finally(() => {
-        setBusy(false);
-      });
-  };
+  const download = () =>
+    fetchFile(documentPdfUrl(documentId, true), "document.pdf").then((file) => {
+      saveFile(file);
+      void archived();
+    }, fail);
 
   const show = () => {
     // The program window has no tabs: see FileLink.
-    if (inProgramWindow(window)) {
-      download();
-      return;
-    }
-    // Opened right away: browsers only allow new tabs directly after a click.
+    if (inProgramWindow(window)) return download();
+    // Opened right away (the action starts within the click): browsers only allow new tabs
+    // directly after one.
     const tab = window.open("", "_blank");
-    setBusy(true);
-    fetchFile(documentPdfUrl(documentId), "document.pdf")
-      .then(
-        (file) => {
-          if (tab === null) {
-            fail(new Error(t("documents.popupBlocked")));
-            return;
-          }
-          tab.location.href = URL.createObjectURL(file.blob);
-          void archived();
-        },
-        (caught: unknown) => {
-          tab?.close();
-          fail(caught);
-        },
-      )
-      .finally(() => {
-        setBusy(false);
-      });
+    return fetchFile(documentPdfUrl(documentId), "document.pdf").then(
+      (file) => {
+        if (tab === null) {
+          fail(new Error(t("documents.popupBlocked")));
+          return;
+        }
+        tab.location.href = URL.createObjectURL(file.blob);
+        void archived();
+      },
+      (caught: unknown) => {
+        tab?.close();
+        fail(caught);
+      },
+    );
   };
 
   return (
     <>
-      <Button variant="outline" disabled={busy} onClick={show}>
+      <Button variant="outline" disabled={output.busy} onClick={() => output.run(show)}>
         <FileTextIcon aria-hidden="true" />
         {t("documents.pdf")}
         {inProgramWindow(window) ? null : (
           <span className="sr-only">{t("common.opensInNewTab")}</span>
         )}
       </Button>
-      <Button variant="outline" disabled={busy} onClick={download}>
+      <Button variant="outline" disabled={output.busy} onClick={() => output.run(download)}>
         <DownloadIcon aria-hidden="true" />
         {t("documents.download")}
       </Button>
       {printable ? (
         <Button
           variant="outline"
-          onClick={() => {
-            client.query(documentHtmlQuery(documentId)).then(printPage, fail);
-          }}
+          disabled={output.busy}
+          onClick={() =>
+            output.run(() => client.query(documentHtmlQuery(documentId)).then(printPage, fail))
+          }
         >
           <PrinterIcon aria-hidden="true" />
           {t("documents.print")}
@@ -979,9 +976,9 @@ function ShareAction({
       onClick={() => {
         if (pdf.data === undefined) {
           onError(pdf.error);
-          return;
+          return undefined;
         }
-        shareFile(pdfFile(pdf.data.blob, pdf.data.name), title).catch(onError);
+        return shareFile(pdfFile(pdf.data.blob, pdf.data.name), title).catch(onError);
       }}
     >
       <Share2Icon aria-hidden="true" />

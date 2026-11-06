@@ -6,30 +6,40 @@ export const PRINT_FRAME_LIFETIME_MS = 10 * 60_000;
  * goes into an invisible frame that is removed afterwards; its print CSS makes
  * the result identical to the PDF. The frame runs no scripts: it may only be
  * printed from here (same origin) and show the print dialog (modals).
+ *
+ * Settles once the print dialog has been opened (most browsers return from print() only
+ * when it closes): until then, a second click would print the page a second time.
  */
-export function printPage(html: string, ownerDocument: Document = document): void {
-  const frame = ownerDocument.createElement("iframe");
-  frame.setAttribute("sandbox", "allow-same-origin allow-modals");
-  frame.setAttribute("aria-hidden", "true");
-  frame.tabIndex = -1;
-  frame.style.position = "fixed";
-  frame.style.width = "0";
-  frame.style.height = "0";
-  frame.style.border = "0";
-  frame.style.opacity = "0";
-  const timer = setTimeout(() => {
-    frame.remove();
-  }, PRINT_FRAME_LIFETIME_MS);
-  frame.addEventListener("load", () => {
-    const view = frame.contentWindow;
-    if (view === null) return;
-    view.addEventListener("afterprint", () => {
-      clearTimeout(timer);
+export function printPage(html: string, ownerDocument: Document = document): Promise<void> {
+  return new Promise((resolve) => {
+    const frame = ownerDocument.createElement("iframe");
+    frame.setAttribute("sandbox", "allow-same-origin allow-modals");
+    frame.setAttribute("aria-hidden", "true");
+    frame.tabIndex = -1;
+    frame.style.position = "fixed";
+    frame.style.width = "0";
+    frame.style.height = "0";
+    frame.style.border = "0";
+    frame.style.opacity = "0";
+    const timer = setTimeout(() => {
       frame.remove();
+      resolve();
+    }, PRINT_FRAME_LIFETIME_MS);
+    frame.addEventListener("load", () => {
+      const view = frame.contentWindow;
+      if (view === null) {
+        resolve();
+        return;
+      }
+      view.addEventListener("afterprint", () => {
+        clearTimeout(timer);
+        frame.remove();
+      });
+      view.focus();
+      view.print();
+      resolve();
     });
-    view.focus();
-    view.print();
+    frame.srcdoc = html;
+    ownerDocument.body.append(frame);
   });
-  frame.srcdoc = html;
-  ownerDocument.body.append(frame);
 }

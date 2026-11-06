@@ -22,7 +22,7 @@ export function FormFooter({ saving, dirty, label }: FormFooterProps) {
       <p className="text-sm text-muted-foreground" aria-live="polite">
         {saving ? t("common.saving") : dirty ? t("common.unsavedChanges") : ""}
       </p>
-      <Button type="submit" disabled={saving}>
+      <Button type="submit" busy={saving}>
         {label ?? t("common.save")}
         <span className="sr-only">{` (${modifierLabel(navigator.platform)} Enter)`}</span>
       </Button>

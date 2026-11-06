@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { useRunOnce, useSubmitOnce } from "@/components/use-run-once";
 import { useI18n } from "@/components/i18n/use-i18n";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,13 +43,14 @@ export function PasswordCard() {
       () => undefined,
     );
   });
+  const once = useSubmitOnce(onSubmit);
   const { errors } = form.formState;
   return (
     <Card aria-labelledby="password-title">
       <CardHeader>
         <CardTitle id="password-title">{t("settings.changePassword")}</CardTitle>
       </CardHeader>
-      <form className="flex flex-col gap-4" onSubmit={(event) => void onSubmit(event)} noValidate>
+      <form className="flex flex-col gap-4" onSubmit={once.submit} noValidate>
         <FormAlert message={errorMessage(change.error)} />
         <Field label={t("settings.currentPassword")} error={errors.current_password?.message}>
           <Input
@@ -71,7 +73,7 @@ export function PasswordCard() {
           />
         </Field>
         <div>
-          <Button type="submit" disabled={change.isPending}>
+          <Button type="submit" busy={once.busy}>
             {t("common.save")}
           </Button>
         </div>
@@ -92,28 +94,31 @@ export function TotpCard({ user }: { readonly user: User }) {
   const [disabling, setDisabling] = useState(false);
   const Icon = user.totp_enabled ? ShieldCheckIcon : ShieldIcon;
 
-  const onConfirm = () => {
-    confirm.mutate(code.trim(), {
-      onSuccess: () => {
-        setCode("");
-        setup.reset();
-        toast.success(t("settings.totpActivated"));
-      },
-    });
-  };
-  const onDisable = () => {
-    disable.mutate(
-      { password, code: disableCode.trim() },
-      {
-        onSuccess: () => {
+  // Confirming and switching off: one at a time. A failure shows above (the mutation's error).
+  const once = useRunOnce();
+  const onConfirm = () =>
+    once.run(() =>
+      confirm.mutateAsync(code.trim()).then(
+        () => {
+          setCode("");
+          setup.reset();
+          toast.success(t("settings.totpActivated"));
+        },
+        () => undefined,
+      ),
+    );
+  const onDisable = () =>
+    once.run(() =>
+      disable.mutateAsync({ password, code: disableCode.trim() }).then(
+        () => {
           setPassword("");
           setDisableCode("");
           setDisabling(false);
           toast.success(t("settings.totpDeactivated"));
         },
-      },
+        () => undefined,
+      ),
     );
-  };
 
   return (
     <Card aria-labelledby="totp-title">
@@ -134,7 +139,7 @@ export function TotpCard({ user }: { readonly user: User }) {
             className="flex flex-col gap-4"
             onSubmit={(event) => {
               event.preventDefault();
-              onDisable();
+              void onDisable();
             }}
           >
             <Field label={t("auth.password")} description={t("settings.totpDisableConfirm")}>
@@ -161,7 +166,7 @@ export function TotpCard({ user }: { readonly user: User }) {
               />
             </Field>
             <div className="flex gap-2">
-              <Button type="submit" variant="destructive" disabled={disable.isPending}>
+              <Button type="submit" variant="destructive" busy={once.busy}>
                 {t("settings.totpDisable")}
               </Button>
               <Button
@@ -188,13 +193,7 @@ export function TotpCard({ user }: { readonly user: User }) {
         )
       ) : setup.data === undefined ? (
         <div>
-          <Button
-            variant="outline"
-            disabled={setup.isPending}
-            onClick={() => {
-              setup.mutate();
-            }}
-          >
+          <Button variant="outline" onClick={() => setup.mutateAsync()}>
             {t("settings.totpEnable")}
           </Button>
         </div>
@@ -203,7 +202,7 @@ export function TotpCard({ user }: { readonly user: User }) {
           className="flex flex-col gap-4"
           onSubmit={(event) => {
             event.preventDefault();
-            onConfirm();
+            void onConfirm();
           }}
         >
           <p className="text-sm">{t("settings.totpScan")}</p>
@@ -223,7 +222,7 @@ export function TotpCard({ user }: { readonly user: User }) {
             />
           </Field>
           <div>
-            <Button type="submit" disabled={confirm.isPending}>
+            <Button type="submit" busy={once.busy}>
               {t("settings.totpConfirm")}
             </Button>
           </div>

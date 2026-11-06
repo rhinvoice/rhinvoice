@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { useSubmitOnce } from "@/components/use-run-once";
 import { useI18n } from "@/components/i18n/use-i18n";
 import {
   AlertDialog,
@@ -107,7 +108,7 @@ function WriteOffForm({ document, hint, onCancel, onSubmit }: WriteOffFormProps)
     mode: "onTouched",
     defaultValues: { written_off_on: today, reason: "gone" as const, note: "" },
   });
-  const { errors, isSubmitting } = form.formState;
+  const { errors } = form.formState;
   const setDate = (value: string) => {
     form.setValue("written_off_on", value, { shouldValidate: true, shouldDirty: true });
   };
@@ -119,13 +120,16 @@ function WriteOffForm({ document, hint, onCancel, onSubmit }: WriteOffFormProps)
         reason: values.reason,
         note: values.note,
       });
+      once.finish();
     } catch (caught) {
       form.setError("root", { type: "server", message: errorMessage(caught) ?? "" });
     }
   });
 
+  const once = useSubmitOnce(submit);
+
   return (
-    <form className="flex flex-col gap-4" onSubmit={(event) => void submit(event)} noValidate>
+    <form className="flex flex-col gap-4" onSubmit={once.submit} noValidate>
       <FormAlert message={errors.root?.message ?? null} />
       <dl className="flex justify-between gap-4 text-sm">
         <dt className="text-muted-foreground">{t("writeOff.openAmount")}</dt>
@@ -189,7 +193,7 @@ function WriteOffForm({ document, hint, onCancel, onSubmit }: WriteOffFormProps)
         <Button type="button" variant="outline" onClick={onCancel}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" busy={once.busy}>
           {t("writeOff.submit")}
         </Button>
       </DialogFooter>
@@ -200,7 +204,7 @@ function WriteOffForm({ document, hint, onCancel, onSubmit }: WriteOffFormProps)
 interface RemoveWriteOffDialogProps {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
-  readonly onConfirm: () => void;
+  readonly onConfirm: () => Promise<unknown>;
 }
 
 /** Taking a write-off back reopens the invoice; asked first, as it is noted in the history. */

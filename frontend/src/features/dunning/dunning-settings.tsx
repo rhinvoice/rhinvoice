@@ -174,7 +174,7 @@ function DunningForm({ saved }: { readonly saved: DunningLevel[] }) {
         );
       })}
       <div>
-        <Button type="submit" disabled={save.isPending}>
+        <Button type="submit" busy={save.isPending}>
           {t("common.save")}
         </Button>
       </div>

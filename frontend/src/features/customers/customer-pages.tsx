@@ -97,20 +97,13 @@ function CustomerEditor({
     toast.error(errorMessage(caught) ?? t("error.generic"), { duration: Infinity });
   };
 
-  const setArchived = (archived: boolean) => {
-    archive.mutate(
-      { id: customer.id, archived },
-      {
-        onSuccess: (changed) => {
-          const message = archived ? "customers.archivedToast" : "customers.restoredToast";
-          showUndoToast(t(message, { name: changed.display_name }), t("common.undo"), () => {
-            archive.mutate({ id: changed.id, archived: !archived }, { onError: fail });
-          });
-        },
-        onError: fail,
-      },
-    );
-  };
+  const setArchived = (archived: boolean) =>
+    archive.mutateAsync({ id: customer.id, archived }).then((changed) => {
+      const message = archived ? "customers.archivedToast" : "customers.restoredToast";
+      showUndoToast(t(message, { name: changed.display_name }), t("common.undo"), () => {
+        archive.mutate({ id: changed.id, archived: !archived }, { onError: fail });
+      });
+    }, fail);
 
   return (
     <>
@@ -123,22 +116,12 @@ function CustomerEditor({
         })}
         actions={
           customer.archived ? (
-            <Button
-              variant="outline"
-              onClick={() => {
-                setArchived(false);
-              }}
-            >
+            <Button variant="outline" onClick={() => setArchived(false)}>
               <ArchiveRestoreIcon aria-hidden="true" />
               {t("common.restore")}
             </Button>
           ) : (
-            <Button
-              variant="outline"
-              onClick={() => {
-                setArchived(true);
-              }}
-            >
+            <Button variant="outline" onClick={() => setArchived(true)}>
               <ArchiveIcon aria-hidden="true" />
               {t("common.archive")}
             </Button>

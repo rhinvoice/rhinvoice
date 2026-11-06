@@ -419,7 +419,7 @@ function TemplateDialog({ editing, type, language, onClose }: TemplateDialogProp
             <Button type="button" variant="outline" onClick={onClose}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit" disabled={save.isPending}>
+            <Button type="submit" busy={save.isPending}>
               {t("common.save")}
             </Button>
           </DialogFooter>
@@ -502,7 +502,7 @@ function NoticeEditor({ notice }: { readonly notice: LegalNotice }) {
           <Button
             size="sm"
             variant="ghost"
-            disabled={save.isPending}
+            busy={save.isPending}
             onClick={() => {
               store("");
             }}

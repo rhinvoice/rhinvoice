@@ -9,6 +9,7 @@ import { Fieldset } from "@/components/ui/fieldset";
 import { Input, Textarea } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { useSaveShortcut } from "@/components/use-key-shortcuts";
+import { useSubmitOnce } from "@/components/use-run-once";
 import {
   ARTICLE_FIELD_ORDER,
   articleFieldFor,
@@ -45,7 +46,7 @@ export function ArticleForm({ defaultValues, onSubmit }: ArticleFormProps) {
     shouldFocusError: false,
     defaultValues,
   });
-  const { errors, isSubmitted, submitCount, isSubmitting, isDirty } = form.formState;
+  const { errors, isSubmitted, submitCount, isDirty } = form.formState;
   const error = (name: keyof ArticleFormValues) => errors[name]?.message;
 
   const submit = form.handleSubmit(async (values) => {
@@ -58,14 +59,11 @@ export function ArticleForm({ defaultValues, onSubmit }: ArticleFormProps) {
       }
     }
   });
-  useSaveShortcut(() => void submit());
+  const once = useSubmitOnce(submit);
+  useSaveShortcut(once.submit, !once.busy);
 
   return (
-    <form
-      className="flex max-w-2xl flex-col gap-8"
-      onSubmit={(event) => void submit(event)}
-      noValidate
-    >
+    <form className="flex max-w-2xl flex-col gap-8" onSubmit={once.submit} noValidate>
       {isSubmitted ? (
         <ErrorSummary
           title={t("validation.summary", {
@@ -175,7 +173,7 @@ export function ArticleForm({ defaultValues, onSubmit }: ArticleFormProps) {
           })}
         </div>
       </Fieldset>
-      <FormFooter saving={isSubmitting} dirty={isDirty} />
+      <FormFooter saving={once.busy} dirty={isDirty} />
     </form>
   );
 }

@@ -4,6 +4,7 @@ import { MailIcon, PaperclipIcon } from "lucide-react";
 import { useState, type SyntheticEvent } from "react";
 import { toast } from "sonner";
 
+import { useRunOnce, type RunOnce } from "@/components/use-run-once";
 import { useI18n } from "@/components/i18n/use-i18n";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +53,9 @@ export function SendMailDialog({
   warning,
 }: SendMailDialogProps) {
   const { t } = useI18n();
+  // Kept across openings: closing and reopening the dialog while a mail goes out must not
+  // send it a second time.
+  const sending = useRunOnce();
   const close = () => {
     onOpenChange(false);
   };
@@ -64,7 +68,13 @@ export function SendMailDialog({
         </DialogHeader>
         {/* Mounted per opening: the mail is prepared anew each time. */}
         {open ? (
-          <MailContent subject={subject} xrechnung={xrechnung} warning={warning} onDone={close} />
+          <MailContent
+            subject={subject}
+            xrechnung={xrechnung}
+            warning={warning}
+            sending={sending}
+            onDone={close}
+          />
         ) : null}
       </DialogContent>
     </Dialog>
@@ -75,10 +85,11 @@ interface MailContentProps {
   readonly subject: MailSubject;
   readonly warning: string | undefined;
   readonly xrechnung: boolean;
+  readonly sending: RunOnce;
   readonly onDone: () => void;
 }
 
-function MailContent({ subject, xrechnung, warning, onDone }: MailContentProps) {
+function MailContent({ subject, xrechnung, warning, sending, onDone }: MailContentProps) {
   const { t } = useI18n();
   const errorMessage = useErrorMessage();
   const server = useQuery(mailServerQuery);
@@ -112,6 +123,7 @@ function MailContent({ subject, xrechnung, warning, onDone }: MailContentProps) 
       draft={draft.data}
       xrechnung={xrechnung}
       warning={warning}
+      sending={sending}
       onDone={onDone}
     />
   );
@@ -122,6 +134,7 @@ interface MailFormProps {
   readonly warning: string | undefined;
   readonly draft: MailDraft;
   readonly xrechnung: boolean;
+  readonly sending: RunOnce;
   readonly onDone: () => void;
 }
 
@@ -132,7 +145,7 @@ interface MailErrors {
   readonly root?: string;
 }
 
-function MailForm({ subject, draft, xrechnung, warning, onDone }: MailFormProps) {
+function MailForm({ subject, draft, xrechnung, warning, sending, onDone }: MailFormProps) {
   const { t } = useI18n();
   const errorMessage = useErrorMessage();
   const send = useSendMail(subject);
@@ -167,23 +180,29 @@ function MailForm({ subject, draft, xrechnung, warning, onDone }: MailFormProps)
       document.getElementById(`mail-${invalid}`)?.focus();
       return;
     }
-    send.mutate(
-      { to: recipients, subject: mailSubject, body, xrechnung: xrechnung && attachXml },
-      {
-        onSuccess: () => {
-          toast.success(t("mail.sent", { to: recipients.join(", ") }));
-          onDone();
-        },
-        onError: (caught) => {
-          // The server's checks of a field belong to the field.
-          const field =
-            caught instanceof ApiError && caught.status === 422
-              ? (["to", "subject", "body"] as const).find((name) => name in caught.details)
-              : undefined;
-          const message = errorMessage(caught) ?? t("error.generic");
-          setErrors(field === undefined ? { root: message } : { [field]: message });
-        },
-      },
+    void sending.run(() =>
+      send
+        .mutateAsync({
+          to: recipients,
+          subject: mailSubject,
+          body,
+          xrechnung: xrechnung && attachXml,
+        })
+        .then(
+          () => {
+            toast.success(t("mail.sent", { to: recipients.join(", ") }));
+            onDone();
+          },
+          (caught: unknown) => {
+            // The server's checks of a field belong to the field.
+            const field =
+              caught instanceof ApiError && caught.status === 422
+                ? (["to", "subject", "body"] as const).find((name) => name in caught.details)
+                : undefined;
+            const message = errorMessage(caught) ?? t("error.generic");
+            setErrors(field === undefined ? { root: message } : { [field]: message });
+          },
+        ),
     );
   };
 
@@ -270,9 +289,9 @@ function MailForm({ subject, draft, xrechnung, warning, onDone }: MailFormProps)
         <Button type="button" variant="outline" onClick={onDone}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" disabled={send.isPending}>
+        <Button type="submit" busy={sending.busy}>
           <MailIcon aria-hidden="true" />
-          {send.isPending ? t("mail.sending") : t("mail.send")}
+          {sending.busy ? t("mail.sending") : t("mail.send")}
         </Button>
       </DialogFooter>
     </form>

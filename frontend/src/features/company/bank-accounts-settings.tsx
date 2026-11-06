@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
+import { useSubmitOnce } from "@/components/use-run-once";
 import { useI18n } from "@/components/i18n/use-i18n";
 import {
   AlertDialog,
@@ -246,19 +247,22 @@ export function BankAccountDialog({
   const currency = useWatch({ control: form.control, name: "currency" });
   const thirdParty = useWatch({ control: form.control, name: "third_party" });
   const iban = useWatch({ control: form.control, name: "iban" });
-  const { errors, isSubmitting, isDirty } = form.formState;
+  const { errors, isDirty } = form.formState;
   useUnsavedChanges(isDirty);
   const error = (name: keyof BankAccountFormValues) => errors[name]?.message;
   const submit = form.handleSubmit(async (values) => {
     try {
       await save.mutateAsync(formToRequest(values));
       toast.success(t("bank.saved"));
+      once.finish();
       onClose();
     } catch (caught) {
       const attached = applyServerErrors(caught, form.setError, t, bankAccountFieldFor);
       if (!attached) form.setError("root", { type: "server", message: errorMessage(caught) ?? "" });
     }
   });
+
+  const once = useSubmitOnce(submit);
 
   return (
     <Dialog
@@ -271,7 +275,7 @@ export function BankAccountDialog({
         <DialogHeader>
           <DialogTitle>{account === null ? t("bank.add") : t("bank.edit")}</DialogTitle>
         </DialogHeader>
-        <form className="flex flex-col gap-4" onSubmit={(event) => void submit(event)} noValidate>
+        <form className="flex flex-col gap-4" onSubmit={once.submit} noValidate>
           <FormAlert message={errors.root?.message ?? null} />
           <div className="grid gap-4 sm:grid-cols-[1fr_8rem]">
             <Field label={t("bank.bankName")} error={error("bank_name")}>
@@ -375,7 +379,7 @@ export function BankAccountDialog({
             <Button variant="outline" onClick={onClose}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" busy={once.busy}>
               {t("common.save")}
             </Button>
           </DialogFooter>

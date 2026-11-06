@@ -74,7 +74,7 @@ export function OnboardingChecklist() {
         <Button
           variant="ghost"
           size="sm"
-          disabled={dismiss.isPending}
+          busy={dismiss.isPending}
           onClick={() => {
             dismiss.mutate(undefined, {
               onSuccess: () =>
@@ -122,7 +122,7 @@ function StepAction({ step }: { readonly step: OnboardingStep }) {
         <Button
           variant="outline"
           size="sm"
-          disabled={checkNumbering.isPending}
+          busy={checkNumbering.isPending}
           onClick={() => {
             checkNumbering.mutate(undefined, {
               onSuccess: () => {

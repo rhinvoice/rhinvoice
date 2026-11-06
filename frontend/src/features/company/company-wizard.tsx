@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { useSubmitOnce } from "@/components/use-run-once";
 import { useI18n } from "@/components/i18n/use-i18n";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -300,12 +301,13 @@ function CompanyStep({
       small_business: smallBusiness,
     },
   });
-  const { errors, isSubmitted, submitCount, isSubmitting } = form.formState;
+  const { errors, isSubmitted, submitCount } = form.formState;
   const error = (name: keyof CompanyFormValues) => errors[name]?.message;
   const submit = form.handleSubmit(async (values) => {
     try {
       await save.mutateAsync(formToRequest(values));
       toast.success(t("wizard.saved"));
+      once.finish();
       onDone();
     } catch (caught) {
       if (!applyServerErrors(caught, form.setError, t, companyFieldFor)) {
@@ -313,9 +315,11 @@ function CompanyStep({
       }
     }
   });
+  const once = useSubmitOnce(submit);
+
   return (
     <Card>
-      <form className="flex flex-col gap-6" onSubmit={(event) => void submit(event)} noValidate>
+      <form className="flex flex-col gap-6" onSubmit={once.submit} noValidate>
         <div className="flex flex-col gap-1">
           <h1 ref={heading} tabIndex={-1} className="text-xl font-semibold outline-none">
             {t("wizard.companyTitle")}
@@ -392,7 +396,7 @@ function CompanyStep({
           >
             {t("wizard.back")}
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" busy={once.busy}>
             {t("wizard.finish")}
           </Button>
         </div>

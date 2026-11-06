@@ -29,7 +29,8 @@ function AttachmentList({
 }: {
   readonly documentId: string;
   readonly attachments: readonly Attachment[];
-  readonly onRemove?: ((attachment: Attachment) => void) | undefined;
+  /** Its promise locks the button until the file is removed. */
+  readonly onRemove?: ((attachment: Attachment) => Promise<unknown>) | undefined;
 }) {
   const { t, locale } = useI18n();
   return (
@@ -53,9 +54,7 @@ function AttachmentList({
               size="icon"
               className="ml-auto size-8 shrink-0"
               aria-label={t("documents.removeAttachment", { name: attachment.file_name })}
-              onClick={() => {
-                onRemove(attachment);
-              }}
+              onClick={() => onRemove(attachment)}
             >
               <XIcon aria-hidden="true" />
             </Button>
@@ -92,15 +91,10 @@ export function DraftAttachments({ documentId }: { readonly documentId: string }
           onRemove={
             demo
               ? undefined
-              : (attachment) => {
-                  remove.mutate(attachment.id, {
-                    onSuccess: () =>
-                      toast.success(
-                        t("documents.attachmentRemoved", { name: attachment.file_name }),
-                      ),
-                    onError: fail,
-                  });
-                }
+              : (attachment) =>
+                  remove.mutateAsync(attachment.id).then(() => {
+                    toast.success(t("documents.attachmentRemoved", { name: attachment.file_name }));
+                  }, fail)
           }
         />
       )}

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { useSubmitOnce } from "@/components/use-run-once";
 import { useI18n } from "@/components/i18n/use-i18n";
 import { Button } from "@/components/ui/button";
 import {
@@ -76,13 +77,14 @@ function CompanyTaxForm({
     mode: "onTouched",
     defaultValues: companyToForm(company),
   });
-  const { errors, isSubmitting } = form.formState;
+  const { errors } = form.formState;
   const terms = termsFor(company.profile, locale);
   const submit = form.handleSubmit(
     async (values) => {
       try {
         await save.mutateAsync(formToRequest(values));
         toast.success(t("common.saved"));
+        once.finish();
         onClose();
       } catch (caught) {
         if (!applyServerErrors(caught, form.setError, t, companyFieldFor)) {
@@ -98,6 +100,8 @@ function CompanyTaxForm({
     },
   );
 
+  const once = useSubmitOnce(submit);
+
   return (
     <Dialog
       open
@@ -110,7 +114,7 @@ function CompanyTaxForm({
           <DialogTitle>{t("company.taxDialogTitle")}</DialogTitle>
           <DialogDescription>{t("company.taxDialogHint")}</DialogDescription>
         </DialogHeader>
-        <form className="flex flex-col gap-4" onSubmit={(event) => void submit(event)} noValidate>
+        <form className="flex flex-col gap-4" onSubmit={once.submit} noValidate>
           <FormAlert message={errors.root?.message ?? null} />
           <Field
             label={terms.vat_number_field}
@@ -147,7 +151,7 @@ function CompanyTaxForm({
             <Button variant="outline" onClick={onClose}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" busy={once.busy}>
               {t("common.save")}
             </Button>
           </DialogFooter>

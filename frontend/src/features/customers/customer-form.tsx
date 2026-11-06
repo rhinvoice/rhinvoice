@@ -11,6 +11,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { RadioCard } from "@/components/ui/radio-cards";
 import { Switch } from "@/components/ui/switch";
 import { useSaveShortcut } from "@/components/use-key-shortcuts";
+import { useSubmitOnce } from "@/components/use-run-once";
 import {
   CUSTOMER_FIELD_ORDER,
   customerFieldFor,
@@ -42,7 +43,7 @@ export function CustomerForm({ defaultValues, onSubmit, submitLabel }: CustomerF
     shouldFocusError: false,
     defaultValues,
   });
-  const { errors, isSubmitted, submitCount, isSubmitting, isDirty } = form.formState;
+  const { errors, isSubmitted, submitCount, isDirty } = form.formState;
   const kind = useWatch({ control: form.control, name: "kind" });
   const hasDelivery = useWatch({ control: form.control, name: "has_delivery" });
   const country = useWatch({ control: form.control, name: "country" });
@@ -61,14 +62,11 @@ export function CustomerForm({ defaultValues, onSubmit, submitLabel }: CustomerF
       }
     }
   });
-  useSaveShortcut(() => void submit());
+  const once = useSubmitOnce(submit);
+  useSaveShortcut(once.submit, !once.busy);
 
   return (
-    <form
-      className="flex max-w-2xl flex-col gap-8"
-      onSubmit={(event) => void submit(event)}
-      noValidate
-    >
+    <form className="flex max-w-2xl flex-col gap-8" onSubmit={once.submit} noValidate>
       {isSubmitted ? (
         <ErrorSummary
           title={t("validation.summary", {
@@ -332,7 +330,7 @@ export function CustomerForm({ defaultValues, onSubmit, submitLabel }: CustomerF
       </Field>
 
       <FormFooter
-        saving={isSubmitting}
+        saving={once.busy}
         dirty={isDirty}
         {...(submitLabel === undefined ? {} : { label: submitLabel })}
       />

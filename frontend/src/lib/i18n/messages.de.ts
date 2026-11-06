@@ -188,6 +188,15 @@ export const de = {
 
   "error.demo_locked": "In der öffentlichen Demo ist das nicht möglich.",
   "error.update_running": "Das Update wird bereits installiert.",
+  "error.request_in_progress": "Diese Aktion läuft noch. Bitte warten Sie einen Moment.",
+  "error.request_unfinished":
+    "Unklar, ob die Aktion durchgegangen ist. Bitte prüfen Sie das, bevor Sie es nochmals versuchen.",
+  "error.request_done": "Diese Aktion ist bereits erledigt. Bitte laden Sie die Seite neu.",
+  "error.idempotency_key_reused":
+    "Die Anfrage passt nicht zur vorherigen. Bitte versuchen Sie es nochmals.",
+  "error.invalid_idempotency_key":
+    "Die Anfrage konnte nicht zugeordnet werden. Bitte laden Sie die Seite neu.",
+  "error.setup_running": "Das Setup wurde bereits gestartet.",
   "error.update_check_failed":
     "Die Angaben zu neuen Versionen konnten nicht abgerufen werden. Ist der Computer mit dem Internet verbunden?",
   "error.update_check_off": "Die Suche nach Updates ist in dieser Installation ausgeschaltet.",

@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from rhinvoice.application.customer.ports import CustomerRepository
     from rhinvoice.application.document.ports import DocumentRepository
     from rhinvoice.application.dunning.ports import DunningRepository
+    from rhinvoice.application.idempotency.ports import IdempotencyRepository
     from rhinvoice.application.identity.ports import SessionRepository, UserRepository
     from rhinvoice.application.importing.ports import ImportTemplateRepository
     from rhinvoice.application.mail.ports import MailRepository
@@ -71,6 +72,9 @@ class UnitOfWork(Protocol):
 
     @property
     def recurring(self) -> RecurringRepository: ...
+
+    @property
+    def idempotency(self) -> IdempotencyRepository: ...
 
     def __enter__(self) -> Self: ...
 

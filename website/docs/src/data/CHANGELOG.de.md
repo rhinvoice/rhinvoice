@@ -22,6 +22,12 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   E-Mail ging doppelt hinaus, wenn ihr Dialog während des Sendens geschlossen und wieder geöffnet
   wurde; auch Duplizieren, Drucken und das Bestätigen von Dialogen konnten doppelt laufen. Das
   Löschen einer Import-Vorlage meldet jetzt einen Fehler.
+- Eine Aktion, deren Antwort unterwegs verloren ging, etwa bei einem WLAN-Abbruch oder im
+  Ruhezustand, läuft beim erneuten Versuch nicht mehr doppelt: Anlegen, Ausstellen, Zahlen,
+  Senden, Hochladen und Importieren tragen einen `Idempotency-Key`, und der Server beantwortet
+  die Wiederholung mit der ersten Antwort (ADR 0041, #77). Lässt sich nicht sagen, ob die erste
+  durchgegangen ist, meldet er das, statt sie nochmals auszuführen. Das Setup eines Updates
+  lässt sich nicht zweimal starten.
 
 ## [0.10.0] – 2026-11-05
 

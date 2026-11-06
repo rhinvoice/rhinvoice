@@ -582,3 +582,24 @@ recurring_runs = Table(
     UniqueConstraint("plan_id", "period_start", name="uq_recurring_runs_plan_period"),
     CheckConstraint("outcome IN ('draft', 'issued', 'sent', 'failed')", name="outcome"),
 )
+
+# A request repeated with the same Idempotency-Key runs once (ADR 0041). Kept for a week;
+# backups leave the rows out.
+idempotency_keys = Table(
+    "idempotency_keys",
+    metadata,
+    Column(
+        "user_id",
+        Uuid(),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column("key", Uuid(), primary_key=True),
+    Column("fingerprint", String(64), nullable=False),
+    Column("state", String(10), nullable=False),
+    Column("started_at", DateTime(timezone=True), nullable=False, index=True),
+    Column("status_code", SmallInteger),
+    Column("body", LargeBinary),
+    CheckConstraint("state IN ('running', 'done')", name="state"),
+    CheckConstraint("state = 'running' OR status_code IS NOT NULL", name="done_status"),
+)

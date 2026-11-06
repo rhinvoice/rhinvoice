@@ -20,6 +20,11 @@ before 1.0, minor versions may contain breaking changes.
   closed recorded a payment twice, and a mail could go out twice when its dialog was closed and
   opened again while sending; duplicating, printing and confirming dialogs could run twice, too.
   Deleting an import template now reports a failure.
+- An action whose answer was lost on the way, e.g. when the Wi-Fi dropped or the computer
+  slept, no longer runs twice when it is tried again: creating, issuing, paying, sending,
+  uploading and importing carry an `Idempotency-Key`, and the server answers a repeat from the
+  first request (ADR 0041, #77). If it cannot tell whether the first went through, it says so
+  instead of running it again. The setup of an update cannot be started twice.
 
 ## [0.10.0] – 2026-11-05
 

@@ -13,6 +13,7 @@ from rhinvoice.application.catalog.ports import ArticleRepository
 from rhinvoice.application.company.ports import BankAccountRepository, CompanyRepository
 from rhinvoice.application.customer.ports import CustomerRepository
 from rhinvoice.application.dunning.ports import DunningRepository
+from rhinvoice.application.idempotency.ports import IdempotencyRepository
 from rhinvoice.application.identity.ports import (
     PasswordHasher,
     SessionRepository,
@@ -34,6 +35,7 @@ from tests.unit.application.fakes import (
     InMemoryCompanyRepository,
     InMemoryCustomerRepository,
     InMemoryDunningRepository,
+    InMemoryIdempotencyRepository,
     InMemoryImportTemplateRepository,
     InMemoryLegalNoticeRepository,
     InMemoryMailRepository,
@@ -65,6 +67,7 @@ PAIRS: list[tuple[type, object]] = [
     (DunningRepository, InMemoryDunningRepository([], {})),
     (MailRepository, InMemoryMailRepository(None, {})),
     (RecurringRepository, InMemoryRecurringRepository({}, [])),
+    (IdempotencyRepository, InMemoryIdempotencyRepository({})),
 ]
 
 
@@ -98,6 +101,7 @@ def test_fakes_are_statically_compatible() -> None:
     dunning: DunningRepository = InMemoryDunningRepository([], {})
     mail: MailRepository = InMemoryMailRepository(None, {})
     recurring: RecurringRepository = InMemoryRecurringRepository({}, [])
+    idempotency: IdempotencyRepository = InMemoryIdempotencyRepository({})
     customers: CustomerRepository = InMemoryCustomerRepository({})
     articles: ArticleRepository = InMemoryArticleRepository({})
     sequences: NumberSequenceRepository = InMemoryNumberSequenceRepository({})
@@ -106,6 +110,7 @@ def test_fakes_are_statically_compatible() -> None:
     ports = (
         mail,
         recurring,
+        idempotency,
         uow,
         users,
         sessions,

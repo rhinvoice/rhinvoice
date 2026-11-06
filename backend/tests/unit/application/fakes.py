@@ -49,6 +49,7 @@ from rhinvoice.domain.document.document import (
 )
 from rhinvoice.domain.document.export import ExportPeriod
 from rhinvoice.domain.dunning.reminder import DEFAULT_LEVELS, DunningLevel, Reminder
+from rhinvoice.domain.idempotency.request import KeyState, StoredRequest
 from rhinvoice.domain.identity.session import Session
 from rhinvoice.domain.identity.user import User
 from rhinvoice.domain.mail.template import MailKind, MailTemplate
@@ -125,6 +126,9 @@ class Store:
     runs: list[PlanRun] = field(default_factory=list[PlanRun])
     mail_templates: dict[tuple[MailKind, Language], MailTemplate] = field(
         default_factory=dict[tuple[MailKind, Language], MailTemplate],
+    )
+    idempotency: dict[tuple[UUID, UUID], StoredRequest] = field(
+        default_factory=dict[tuple[UUID, UUID], StoredRequest],
     )
 
 
@@ -965,6 +969,29 @@ class InMemoryRecurringRepository:
         return found
 
 
+class InMemoryIdempotencyRepository:
+    def __init__(self, data: dict[tuple[UUID, UUID], StoredRequest]) -> None:
+        self.data = data
+
+    def forget_before(self, at: datetime) -> None:
+        self.data = {key: stored for key, stored in self.data.items() if stored.started_at >= at}
+
+    def claim(self, user_id: UUID, key: UUID, request: str, at: datetime) -> StoredRequest | None:
+        stored = self.data.get((user_id, key))
+        if stored is None:
+            self.data[user_id, key] = StoredRequest(request, KeyState.RUNNING, at)
+        return stored
+
+    def complete(self, user_id: UUID, key: UUID, status_code: int, body: bytes | None) -> None:
+        stored = self.data[user_id, key]
+        self.data[user_id, key] = replace(
+            stored, state=KeyState.DONE, status_code=status_code, body=body
+        )
+
+    def release(self, user_id: UUID, key: UUID) -> None:
+        self.data.pop((user_id, key), None)
+
+
 class InMemoryUnitOfWork:
     """Copies the store on enter and writes it back on commit only."""
 
@@ -1005,6 +1032,7 @@ class InMemoryUnitOfWork:
         )
         self.mail = InMemoryMailRepository(self.store.mail_server, dict(self.store.mail_templates))
         self.recurring = InMemoryRecurringRepository(dict(self.store.plans), list(self.store.runs))
+        self.idempotency = InMemoryIdempotencyRepository(dict(self.store.idempotency))
         return self
 
     def __exit__(
@@ -1043,6 +1071,7 @@ class InMemoryUnitOfWork:
         self.store.mail_templates = dict(self.mail.data)
         self.store.plans = dict(self.recurring.data)
         self.store.runs = list(self.recurring.saved_runs)
+        self.store.idempotency = dict(self.idempotency.data)
         self.commits += 1
 
 

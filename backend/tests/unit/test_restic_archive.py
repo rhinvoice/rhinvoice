@@ -71,6 +71,7 @@ def test_a_backup_creates_the_repository_and_runs_pg_dump_through_restic(
         "--stdin-from-command", "--",
         "/opt/rhinvoice/pg_dump", "--no-owner", "--no-privileges",
         "--exclude-table-data=backup_runs", "--exclude-table-data=backup_requests",
+        "--exclude-table-data=idempotency_keys",
     ]  # fmt: skip
     assert backup["password"] == "K7QM-2XWP"
     assert backup["repository"] == str(tmp_path / "Rhinvoice-Sicherung")

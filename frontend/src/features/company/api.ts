@@ -3,6 +3,7 @@ import { keepPreviousData, queryOptions, useMutation, useQueryClient } from "@ta
 import { api, CLIENT_HEADER, unwrap, type components } from "@/api/client";
 import { companyKeys } from "@/features/shared/company-api";
 import { toApiError } from "@/lib/api-error";
+import { useIdempotentMutation } from "@/features/shared/use-idempotent-mutation";
 
 export type CompanyRequest = components["schemas"]["CompanyRequest"];
 export type BankAccountRequest = components["schemas"]["BankAccountRequest"];
@@ -62,10 +63,10 @@ export function useDeleteLogo() {
 
 export function useSaveBankAccount(id: string | null) {
   const client = useQueryClient();
-  return useMutation({
-    mutationFn: (body: BankAccountRequest) =>
+  return useIdempotentMutation({
+    mutationFn: (body: BankAccountRequest, { headers }) =>
       id === null
-        ? unwrap(api.POST("/api/bank-accounts", { body }))
+        ? unwrap(api.POST("/api/bank-accounts", { body, headers }))
         : unwrap(
             api.PUT("/api/bank-accounts/{account_id}", {
               params: { path: { account_id: id } },

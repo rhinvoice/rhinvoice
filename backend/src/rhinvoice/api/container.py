@@ -17,6 +17,7 @@ from rhinvoice.application.document.export import ExportHandlers
 from rhinvoice.application.document.handlers import DocumentHandlers
 from rhinvoice.application.document.printing import PrintHandlers
 from rhinvoice.application.dunning.handlers import DunningHandlers
+from rhinvoice.application.idempotency.handlers import IdempotencyHandlers
 from rhinvoice.application.identity.handlers import IdentityHandlers
 from rhinvoice.application.identity.reset import PasswordReset
 from rhinvoice.application.importing.handlers import ImportHandlers
@@ -77,6 +78,7 @@ class Container:
     recurring: RecurringHandlers
     updates: UpdateHandlers
     support: SupportHandlers
+    idempotency: IdempotencyHandlers
     demo_reset: threading.Event = field(default_factory=threading.Event)
     """Set while a public demo is being reset: the API answers 503 meanwhile."""
 
@@ -194,6 +196,7 @@ def build_container(
         customers=customers,
         articles=articles,
         numbering=NumberingHandlers(uow=uow, clock=effective_clock),
+        idempotency=IdempotencyHandlers(uow=uow, clock=effective_clock),
         documents=documents,
         dashboard=DashboardHandlers(uow=uow, clock=effective_clock),
         texts=texts,

@@ -203,3 +203,49 @@ test("a mail goes out once, also when its dialog is closed and opened again", as
     })
     .toBe(1);
 });
+
+test("a save whose answer was lost creates nothing twice when it is tried again", async ({
+  page,
+}, testInfo) => {
+  const name = `Funkloch ${unique(testInfo.project.name)} AG`;
+  await openApp(page, "/customers/new", "Neuer Kunde");
+  await page.getByLabel("Firmenname").fill(name);
+  await page.getByLabel("PLZ").fill("3011");
+  await page.getByLabel("Ort").fill("Bern");
+  // The first request reaches the server, which saves the customer; its answer is lost.
+  const keys: (string | undefined)[] = [];
+  let lost = false;
+  await page.route(/\/api\/customers$/, async (route) => {
+    if (route.request().method() !== "POST") {
+      await route.continue();
+      return;
+    }
+    keys.push(route.request().headers()["idempotency-key"]);
+    if (lost) {
+      await route.continue();
+      return;
+    }
+    lost = true;
+    await route.fetch();
+    await route.abort("connectionreset");
+  });
+  const save = page.getByRole("button", { name: /^Speichern/ });
+  await save.click();
+  await expect(
+    page.getByText("Keine Verbindung zum Server.", { exact: false }).first(),
+  ).toBeVisible();
+
+  const replayed = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/customers") && response.request().method() === "POST",
+  );
+  await save.click();
+  expect((await replayed).headers()["idempotent-replayed"]).toBe("true");
+  await expect(page.getByText(`Kunde «${name}» angelegt.`)).toBeVisible();
+  // The same intent carried the same key; the server answered from the first request.
+  expect(keys).toHaveLength(2);
+  expect(keys[0]).toMatch(/^[0-9a-f-]{36}$/);
+  expect(keys[1]).toBe(keys[0]);
+  const found = await page.request.get(`/api/customers?q=${encodeURIComponent(name)}`);
+  expect(((await found.json()) as { total: number }).total).toBe(1);
+});

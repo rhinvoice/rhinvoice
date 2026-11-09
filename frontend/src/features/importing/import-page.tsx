@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
   DownloadIcon,
@@ -55,6 +55,7 @@ import {
   useDeleteTemplate,
   useSaveTemplate,
   type DuplicateStrategy,
+  type ImportOptions,
 } from "@/features/importing/api";
 import {
   MAX_UPLOAD_FILES,
@@ -80,6 +81,7 @@ import { BackLink } from "@/features/shared/back-link";
 import { demoQuery } from "@/features/shared/demo-api";
 import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
+import { useIdempotentMutation } from "@/features/shared/use-idempotent-mutation";
 import { docsUrl } from "@/lib/about";
 import { cn } from "@/lib/cn";
 import { formatBytes, formatMoney, formatNumber } from "@/lib/format";
@@ -192,11 +194,10 @@ function ImportForm({ target }: { readonly target: ImportTarget }) {
     placeholderData: (previous, previousQuery) =>
       previousQuery?.queryKey[2] === chosen?.key ? previous : undefined,
   });
-  const importing = useMutation({
-    mutationFn: () => {
-      if (chosen === null) throw new Error("no file chosen");
-      return runImport(target, { file: chosen.file, duplicates, mapping, files }, true);
-    },
+  // Keyed by what is imported: the same import sent again after its answer was lost runs once.
+  const importing = useIdempotentMutation({
+    mutationFn: (options: ImportOptions, idempotent) =>
+      runImport(target, options, true, undefined, idempotent),
     onSuccess: (run) => {
       setDone(run);
       toast.success(t(`import.done.${target}`, { count: importableCount(run) }));
@@ -260,7 +261,9 @@ function ImportForm({ target }: { readonly target: ImportTarget }) {
                 count === 0 || preview.isFetching || importing.isPending || tooMuch !== null
               }
               onClick={() => {
-                importing.mutate();
+                if (chosen !== null) {
+                  importing.mutate({ file: chosen.file, duplicates, mapping, files });
+                }
               }}
             >
               <UploadIcon aria-hidden="true" />

@@ -184,11 +184,13 @@ backup() {
     fi
     # restic runs pg_dump itself and fails when it fails (--stdin-from-command).
     # The backup history is not part of the backup: a restored database would
-    # otherwise show this run as running forever.
+    # otherwise show this run as running forever. Nor are the answers to repeated
+    # requests (ADR 0041): copies, meaningless after a restore.
     if ! output="$(rstc backup --json --tag "$TAG" --host "$HOST" \
         --stdin-filename "$DUMP_NAME" --stdin-from-command -- \
         pg_dump --no-owner --no-privileges \
-        --exclude-table-data=backup_runs --exclude-table-data=backup_requests 2>"$errors")"; then
+        --exclude-table-data=backup_runs --exclude-table-data=backup_requests \
+        --exclude-table-data=idempotency_keys 2>"$errors")"; then
         fail_run "$id" "$(summary_of "$errors")" || true
         rm -f "$errors"
         return 1

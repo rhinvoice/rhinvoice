@@ -1,6 +1,7 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api, unwrap, type components } from "@/api/client";
+import { useIdempotentMutation } from "@/features/shared/use-idempotent-mutation";
 
 export type MailServer = components["schemas"]["MailServerResponse"];
 export type MailServerRequest = components["schemas"]["MailServerRequest"];
@@ -57,19 +58,21 @@ export function mailDraftQuery(subject: MailSubject) {
 
 export function useSendMail(subject: MailSubject) {
   const client = useQueryClient();
-  return useMutation({
-    mutationFn: (body: SendMailRequest) =>
+  return useIdempotentMutation({
+    mutationFn: (body: SendMailRequest, { headers }) =>
       subject.kind === "document"
         ? unwrap(
             api.POST("/api/documents/{document_id}/mail", {
               params: { path: { document_id: subject.id } },
               body,
+              headers,
             }),
           )
         : unwrap(
             api.POST("/api/reminders/{reminder_id}/mail", {
               params: { path: { reminder_id: subject.id } },
               body,
+              headers,
             }),
           ),
     onSuccess: (document) => {
@@ -91,8 +94,9 @@ export function useSaveMailServer() {
 }
 
 export function useSendTestMail() {
-  return useMutation({
-    mutationFn: (to: string) => unwrap(api.POST("/api/mail/test", { body: { to } })),
+  return useIdempotentMutation({
+    mutationFn: (to: string, { headers }) =>
+      unwrap(api.POST("/api/mail/test", { body: { to }, headers })),
   });
 }
 

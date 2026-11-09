@@ -28,6 +28,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   die Wiederholung mit der ersten Antwort (ADR 0041, #77). Lässt sich nicht sagen, ob die erste
   durchgegangen ist, meldet er das, statt sie nochmals auszuführen. Das Setup eines Updates
   lässt sich nicht zweimal starten.
+- Die Tastenkürzel melden keinen Fehler mehr in der Browser-Konsole, wenn Chrome ein Feld
+  automatisch ausfüllt.
 
 ## [0.10.0] – 2026-11-05
 

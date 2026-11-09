@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.11.0] – 2026-11-09
+
 ### Neu
 - *Anhänge* auch bei neuen Rechnungen und Angeboten: *PDF hinzufügen* geht schon vor dem ersten
   Speichern. Die PDFs warten im Browser und werden beim Speichern des Entwurfs angehängt; ein neues
@@ -28,6 +30,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   die Wiederholung mit der ersten Antwort (ADR 0041, #77). Lässt sich nicht sagen, ob die erste
   durchgegangen ist, meldet er das, statt sie nochmals auszuführen. Das Setup eines Updates
   lässt sich nicht zweimal starten.
+- Die Tastenkürzel melden keinen Fehler mehr in der Browser-Konsole, wenn Chrome ein Feld
+  automatisch ausfüllt.
 
 ## [0.10.0] – 2026-11-05
 

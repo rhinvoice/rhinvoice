@@ -4,7 +4,8 @@
 export const SINGLE_KEY_SHORTCUTS_STORAGE_KEY = "rhinvoice.single-key-shortcuts";
 
 export interface KeyEventLike {
-  readonly key: string;
+  /** Missing on the keydown events Chrome fires when it autofills a field. */
+  readonly key: string | undefined;
   readonly metaKey: boolean;
   readonly ctrlKey: boolean;
   readonly altKey: boolean;
@@ -62,14 +63,14 @@ export function modifierLabel(platform: string): string {
 /** True for ⌘+key on macOS and Ctrl+key elsewhere. */
 export function isModified(event: KeyEventLike, key: string, platform: string): boolean {
   const modifier = isMacPlatform(platform) ? event.metaKey : event.ctrlKey;
-  return modifier && !event.altKey && event.key.toLowerCase() === key.toLowerCase();
+  return modifier && !event.altKey && event.key?.toLowerCase() === key.toLowerCase();
 }
 
 /** A plain key press without modifiers, outside of editable fields, forms and overlays. */
 export function isPlainKey(event: KeyEventLike, key: string): boolean {
   return (
     // Case-insensitive, so that the shortcuts also work with Caps Lock.
-    event.key.toLowerCase() === key.toLowerCase() &&
+    event.key?.toLowerCase() === key.toLowerCase() &&
     !event.metaKey &&
     !event.ctrlKey &&
     !event.altKey &&

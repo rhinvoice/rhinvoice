@@ -16,6 +16,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Un **débours** est un montant que vous avez payé **au nom et pour le compte de votre client**, comme un émolument du registre du commerce, et que vous refacturez tel quel. Dans Rhinvoice, vous choisissez *Débours (sans TVA)* comme *Taux de TVA* d’une ligne: la ligne n’a pas de TVA, le rabais sur le document ne la touche pas, et le PDF l’indique dans un bloc propre avant le total, plusieurs lignes de ce type avec leur total. Cela ne vaut que si la **facture du tiers est établie au nom de votre client**.
@@ -68,7 +69,7 @@ Votre client a en général besoin de la facture du tiers avec la vôtre. Chaque
 <Steps>
 
 1. Ouvrez *Pièces jointes* et cliquez sur **Ajouter un PDF**. Vous pouvez choisir plusieurs fichiers à la fois.
-2. Dans un nouveau document, les fichiers attendent son premier enregistrement. Si vous le quittez sans enregistrer, rien n’est conservé.
+2. Dans un nouveau document, les fichiers attendent son premier enregistrement. Si vous le quittez sans enregistrer, rien n’est conservé. <Since version="0.11.0" />
 3. Ouvrez un fichier pour le vérifier, ou retirez-le, tant que le document est un brouillon.
 
 </Steps>

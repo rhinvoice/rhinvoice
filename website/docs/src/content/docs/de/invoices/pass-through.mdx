@@ -16,6 +16,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Ein **durchlaufender Posten** ist ein Betrag, den Sie **im Namen und für Rechnung Ihres Kunden** bezahlt haben, etwa eine Gebühr des Handelsregisters, und unverändert weiterverrechnen. In Rhinvoice wählen Sie als *Steuersatz* einer Position *Durchlaufender Posten (ohne MWST)* bzw. *(ohne USt.)*: Die Position hat keine Steuer, der Rabatt auf das Dokument lässt sie aus, und das PDF zeigt sie in einem eigenen Block vor dem Total, mehrere solche Positionen mit ihrer Summe. Das gilt nur, wenn die **Fremdrechnung auf den Namen Ihres Kunden lautet**.
@@ -68,7 +69,7 @@ Ihr Kunde braucht die Fremdrechnung meist zusammen mit Ihrer Rechnung. Jeder Ent
 <Steps>
 
 1. Öffnen Sie *Anhänge* und klicken Sie auf **PDF hinzufügen**. Sie können mehrere Dateien auf einmal wählen.
-2. Bei einem neuen Dokument warten die Dateien, bis Sie es zum ersten Mal speichern. Verlassen Sie es ohne Speichern, bleibt nichts zurück.
+2. Bei einem neuen Dokument warten die Dateien, bis Sie es zum ersten Mal speichern. Verlassen Sie es ohne Speichern, bleibt nichts zurück. <Since version="0.11.0" />
 3. Öffnen Sie eine Datei zur Kontrolle oder entfernen Sie sie, solange das Dokument ein Entwurf ist.
 
 </Steps>

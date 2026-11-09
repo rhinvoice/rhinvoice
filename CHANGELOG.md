@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.11.0] – 2026-11-09
+
 ### Added
 - *Attachments* on new invoices and quotes too: *Add PDF* works before the first save. The PDFs
   wait in the browser and are attached when the draft is saved; a new document that is never

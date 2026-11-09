@@ -16,6 +16,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Una **spesa anticipata** è un importo che ha pagato **in nome e per conto del Suo cliente**, come un emolumento del registro di commercio, e che rifattura invariato. In Rhinvoice sceglie *Spesa anticipata (senza IVA)* come *Aliquota* di una posizione: la posizione non ha IVA, lo sconto sul documento non la tocca e il PDF la indica in un blocco a sé prima del totale, più posizioni di questo tipo con la loro somma. Vale solo se la **fattura del terzo è intestata al Suo cliente**.
@@ -68,7 +69,7 @@ Il Suo cliente di solito ha bisogno della fattura del terzo insieme alla Sua. Og
 <Steps>
 
 1. Apra *Allegati* e clicchi su **Aggiungi PDF**. Può scegliere più file alla volta.
-2. In un nuovo documento i file attendono il primo salvataggio. Se lo lascia senza salvare, non resta nulla.
+2. In un nuovo documento i file attendono il primo salvataggio. Se lo lascia senza salvare, non resta nulla. <Since version="0.11.0" />
 3. Apra un file per controllarlo, oppure lo rimuova, finché il documento è una bozza.
 
 </Steps>

@@ -16,6 +16,7 @@ faq:
 ---
 
 import Faq from "../../../components/Faq.astro";
+import Since from "../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 A **pass-through item** is an amount you paid **in the name and for the account of your customer**, such as a commercial register fee, and charge on unchanged. In Rhinvoice you choose *Pass-through item (no VAT)* as a line's *Tax rate*: the line gets no VAT, the document discount leaves it alone, and the PDF lists it in a block of its own before the total, several such lines with their sum. It only applies when the **third-party invoice is made out in your customer's name**.
@@ -68,7 +69,7 @@ Your customer usually needs the third-party invoice with yours. Every draft, inv
 <Steps>
 
 1. Open *Attachments* and click **Add PDF**. You can choose several files at once.
-2. In a new document, the files wait until you save it for the first time. If you leave it without saving, nothing is kept.
+2. In a new document, the files wait until you save it for the first time. If you leave it without saving, nothing is kept. <Since version="0.11.0" />
 3. Open a file to check it, or remove it, as long as the document is a draft.
 
 </Steps>

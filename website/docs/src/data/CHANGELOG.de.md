@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.11.0] – 2026-11-09
+
 ### Neu
 - *Anhänge* auch bei neuen Rechnungen und Angeboten: *PDF hinzufügen* geht schon vor dem ersten
   Speichern. Die PDFs warten im Browser und werden beim Speichern des Entwurfs angehängt; ein neues

@@ -44,7 +44,16 @@ rate (S needs a rate above zero, Z and E need zero, E needs an exemption reason)
   reports it as today.
 - Presets pass KoSIT and Mustang in the e-invoice tests; each preset names its source.
 
-## Open questions (decided with the UI variants)
+## UI (chosen 2026-11-12)
+- *Settings → Tax rates* lists the rates as a table: name, source or notice, e-invoice category,
+  today's percentage (variant 1A).
+- Editing shows today's percentage; *Change from date …* adds a value, the history opens on
+  demand (2B).
+- The line shows the percentage; the list groups the rates into taxable and without tax and
+  names them (3B). Where two rates share a percentage (DE 19 % standard and § 24 beverages), the
+  line names the rate as well.
+
+## Open questions
 - Austria § 22 UStG 1994: the notice there replaces the VAT ID; a switch per rate or part of
   the preset?
 - Whether hidden rates stay selectable on articles that already use them.

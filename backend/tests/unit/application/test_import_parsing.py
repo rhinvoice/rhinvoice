@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 from datetime import date
+from decimal import Decimal
 from uuid import UUID
 
 import pytest
@@ -30,6 +31,7 @@ from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.presets import EXEMPT, REDUCED, SPECIAL, STANDARD, ZERO
 from rhinvoice.domain.tax.supply import Supply
+from rhinvoice.domain.tax.tax_rate import RateValue
 from tests.helpers import raises_exactly
 from tests.unit.domain import factories
 
@@ -253,6 +255,13 @@ def test_a_percentage_prefers_a_taxed_rate_then_the_order() -> None:
         False,
     )
     assert parse_tax_rate("7,8", rates, ON) == (average[2].id, False)
+    # The percentage of the date wins over a rate that had it before, whatever the order.
+    former = replace(german[factories.rate_id(STANDARD)], id=UUID(int=5), preset=None, name="Alt")
+    former = replace(former, values=(*former.values, RateValue(date(2026, 1, 1), Decimal(20))))
+    assert parse_tax_rate("19", [former, *german.values()], ON) == (
+        factories.rate_id(STANDARD),
+        False,
+    )
     # On the date of the document first: 7.8 % applies from 2025 on only.
     assert parse_tax_rate("7.8", rates, date(2024, 6, 1)) == (average[2].id, False)
     # Zero-rated and exempt rates are both 0 %: the order decides.
@@ -270,6 +279,13 @@ def test_names_stand_for_the_rate_of_their_preset_or_category() -> None:
     others = [rate for rate in rates.values() if rate.preset not in {EXEMPT, STANDARD}]
     assert parse_tax_rate("befreit", [*others, own_exempt], ON) == (own_exempt.id, False)
     assert parse_tax_rate("Normal", [own_standard, *others], ON) == (own_standard.id, False)
+    # The preset's rate first, before another one of its category.
+    preset = rates[factories.rate_id(STANDARD)]
+    assert parse_tax_rate("Normal", [own_standard, preset], ON) == (preset.id, False)
+    # Without any rate of the category, the name is unknown.
+    with pytest.raises(ValidationError) as none:
+        parse_tax_rate("befreit", [own_standard], ON)
+    assert none.value.code == "unknown_tax_rate"
     # A reduced or special rate means a percentage of its own: no other rate stands in.
     without_reduced = [rate for rate in rates.values() if rate.preset != REDUCED]
     with pytest.raises(ValidationError) as caught:

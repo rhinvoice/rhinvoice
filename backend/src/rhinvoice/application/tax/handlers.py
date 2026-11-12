@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
     from rhinvoice.application.uow import UnitOfWork, UnitOfWorkFactory
     from rhinvoice.domain.company.company import Company
+    from rhinvoice.domain.tax.presets import RatePreset
 
 MAX_TAX_RATES = 40
 
@@ -135,22 +136,20 @@ class TaxRateHandlers:
         with self.uow() as uow:
             company = _company(uow)
             taken = {rate.preset for rate in uow.tax_rates.list()}
-        offers: list[PresetOffer] = []
-        for preset in profile_of(company.country).presets:
-            if preset.key not in taken:
-                rate = preset.to_rate(new_id(), company.default_language)
-                offers.append(
-                    PresetOffer(
-                        key=preset.key,
-                        name=rate.name,
-                        category=rate.category,
-                        values=rate.values,
-                        notice=rate.notice,
-                        exemption_reason=rate.exemption_reason,
-                        sources=preset.sources,
-                    )
-                )
-        return offers
+        language = company.default_language
+        return [
+            PresetOffer(
+                key=preset.key,
+                name=preset.names[language],
+                category=preset.category,
+                values=preset.values,
+                notice=(preset.notices or {}).get(language, ""),
+                exemption_reason=(preset.exemption_reasons or {}).get(language, ""),
+                sources=preset.sources,
+            )
+            for preset in profile_of(company.country).presets
+            if preset.key not in taken
+        ]
 
     def take_over_preset(self, key: str) -> TaxRateView:
         """Add the rate of a preset of the company's country, in the company's language."""
@@ -182,10 +181,12 @@ class TaxRateHandlers:
             company = uow.company.get()
             if company is None:
                 return []
-            presets = {preset.key: preset for preset in profile_of(company.country).presets}
+            presets: dict[str | None, RatePreset] = {
+                preset.key: preset for preset in profile_of(company.country).presets
+            }
             updated: list[TaxRate] = []
             for rate in uow.tax_rates.list(for_update=True):
-                preset = None if rate.preset is None else presets.get(rate.preset)
+                preset = presets.get(rate.preset)
                 if preset is not None and _behind(rate.values, preset.values):
                     newer = replace(rate, values=preset.values)
                     uow.tax_rates.update(newer)
@@ -270,9 +271,7 @@ def _values(command: SaveTaxRate) -> tuple[RateValue, ...]:
         try:
             values.append(RateValue(valid_from, parse_decimal(percent, "percent")))
         except ValidationError as error:
-            raise ValidationError(
-                f"values.{index}.{error.field}", error.message, code=error.code
-            ) from None
+            raise ValidationError(f"values.{index}.{error.field}", error.message) from None
     return tuple(sorted(values, key=lambda value: value.valid_from))
 
 

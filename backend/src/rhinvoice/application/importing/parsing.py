@@ -252,14 +252,18 @@ def _named_rate(key: str, rates: Sequence[TaxRate]) -> TaxRate | None:
     return next((rate for rate in rates if rate.category is category), None)
 
 
-def _rate_with(percent: Decimal, rates: Sequence[TaxRate], on: date) -> TaxRate | None:
+def _rate_of_percent(text: str, rates: Sequence[TaxRate], on: date) -> TaxRate | None:
     """Find the rate of a percentage: on ``on``, else one it had before (7.7 % in CH).
 
-    A taxed rate comes before zero-rated and exempt ones, then the order of the rates.
+    Of several, the first in the order of the rates (a percentage above zero is taxed
+    only; zero-rated comes before exempt as the presets are ordered).
     """
-    ordered = sorted(rates, key=lambda rate: rate.category is not RateCategory.STANDARD)
-    current = [rate for rate in ordered if _percent_on(rate, on) == percent]
-    former = [rate for rate in ordered if any(v.percent == percent for v in rate.values)]
+    try:
+        percent = Decimal(parse_amount(text.rstrip("%"), "tax_category"))
+    except ValidationError:
+        return None  # neither a name nor a percentage
+    current = [rate for rate in rates if _percent_on(rate, on) == percent]
+    former = [rate for rate in rates if any(v.percent == percent for v in rate.values)]
     return next(iter(current or former), None)
 
 
@@ -283,14 +287,7 @@ def parse_tax_rate(text: str, rates: Sequence[TaxRate], on: date) -> tuple[UUID 
     key = _RATE_NAMES.get(normalize(value))
     if key == TaxCategory.PASS_THROUGH:
         return None, True
-    if key is not None:
-        rate = _named_rate(key, visible)
-    else:
-        try:
-            percent = Decimal(parse_amount(value.rstrip("%"), "tax_category"))
-        except ValidationError:
-            percent = None
-        rate = None if percent is None else _rate_with(percent, visible, on)
+    rate = _rate_of_percent(value, visible, on) if key is None else _named_rate(key, visible)
     if rate is None:
         raise ValidationError(
             "tax_category", f"'{text}' is not a known VAT rate", code="unknown_tax_rate"

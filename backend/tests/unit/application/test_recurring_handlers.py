@@ -551,6 +551,7 @@ def test_a_plan_turns_into_the_invoice_it_was_given() -> None:
                 supply=Supply.GOODS,
                 article_id=UUID(int=7),
             ),
+            LineInput(kind=LineKind.ITEM, description="Domain fee", pass_through=True),
         ),
         discount_kind=DiscountKind.AMOUNT,
         discount_value="5",
@@ -573,7 +574,7 @@ def test_a_plan_turns_into_the_invoice_it_was_given() -> None:
     )
     # Text lines keep their default numbers; every other field comes back as given.
     text_line = replace(draft.lines[0], quantity="1", unit_price="0", discount_percent="0")
-    assert plan_draft(plan) == replace(draft, lines=(text_line, draft.lines[1]))
+    assert plan_draft(plan) == replace(draft, lines=(text_line, *draft.lines[1:]))
     without_discount = replace(plan, template=replace(plan.template, discount=None))
     assert (
         plan_draft(without_discount).discount_kind,

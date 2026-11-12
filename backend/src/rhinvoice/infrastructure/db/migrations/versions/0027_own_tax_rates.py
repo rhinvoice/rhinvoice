@@ -201,10 +201,19 @@ def upgrade() -> None:
     bind = op.get_bind()
     rates = _seed(bind)
     if not rates:
-        # Documents need a company; articles could be saved before it, but have no country.
-        orphans = bind.execute(sa.text(f"SELECT count(*) FROM articles WHERE {NEEDS_RATE}"))  # noqa: S608 - constants
+        # Documents need a company; articles and plans could be saved before it, but then
+        # no country tells their rates.
+        orphans = bind.execute(
+            sa.text(
+                f"SELECT (SELECT count(*) FROM articles WHERE {NEEDS_RATE})"  # noqa: S608 - constants
+                " + (SELECT count(*) FROM recurring_plans)"
+            )
+        )
         if orphans.scalar_one():
-            msg = "articles exist without a company: set up the company with version 0.12 first"
+            msg = (
+                "articles or recurring plans exist without a company: "
+                "set up the company with version 0.12 first"
+            )
             raise RuntimeError(msg)
         return
     op.execute(f"ALTER TABLE document_lines DISABLE TRIGGER {LINES_TRIGGER}")

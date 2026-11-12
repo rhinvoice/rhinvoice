@@ -40,7 +40,6 @@ from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
-from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.presets import REDUCED
 from rhinvoice.domain.tax.supply import Supply
 from rhinvoice.domain.text.template import TextKind
@@ -630,8 +629,8 @@ def _draft(
                 quantity=quantity,
                 unit=articles[article].unit.code,
                 unit_price=str(articles[article].prices[currency]),
+                # The demo's articles all have a rate; none is passed through.
                 tax_rate_id=articles[article].tax_rate_id,
-                pass_through=articles[article].tax_category is TaxCategory.PASS_THROUGH,
                 supply=articles[article].supply,
                 article_id=articles[article].id,
             )

@@ -486,6 +486,16 @@ def test_articles_take_the_rate_of_their_percentage(handlers: ImportHandlers, st
     update = lines("Bezeichnung;Preis", "Buch;30")
     handlers.run(articles_request(content=update, duplicates=DuplicateStrategy.UPDATE, commit=True))
     assert store.articles[saved["Buch"].id].tax_rate_id == factories.rate_id(REDUCED)
+    # A pass-through item stays one.
+    handlers.run(
+        articles_request(
+            content=lines("Bezeichnung;Preis", "Gebühr;5"),
+            duplicates=DuplicateStrategy.UPDATE,
+            commit=True,
+        )
+    )
+    fee = store.articles[saved["Gebühr"].id]
+    assert (fee.tax_category, fee.tax_rate_id) == (TaxCategory.PASS_THROUGH, None)
     # A hidden rate is not chosen by its percentage.
     [refused] = handlers.run(
         articles_request(content=lines("Bezeichnung;MwSt", "Heft;2.6"))

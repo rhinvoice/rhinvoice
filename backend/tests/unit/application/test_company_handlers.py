@@ -272,7 +272,10 @@ def test_a_new_country_brings_its_rates_while_none_is_used(
     own = replace(store.tax_rates[0], id=new_id(), name="Eigener Satz", preset=None)
     store.tax_rates.append(own)
     germany = replace(ADDRESS, postal_code="10115", city="Berlin", country="DE")
+    locks = store.tax_rate_locks
     handlers.save(company_command(address=germany))
+    # Locked for the replacement and for the new presets.
+    assert store.tax_rate_locks == locks + 2
     # The presets of Switzerland give way to Germany's; the own rate stays.
     assert rates_of(store) == [
         (None, "Eigener Satz"),

@@ -3,6 +3,7 @@
 from dataclasses import replace
 from datetime import date
 from decimal import Decimal
+from uuid import UUID
 
 import pytest
 
@@ -59,6 +60,7 @@ def test_create_an_own_rate(handlers: TaxRateHandlers, store: Store) -> None:
     )
     assert created == TaxRateView(store.tax_rates[-1], in_use=False)
     rate = created.rate
+    assert isinstance(rate.id, UUID)
     assert (rate.name, rate.category, rate.notice, rate.preset, rate.hidden) == (
         "Heilbehandlung",
         RateCategory.EXEMPT,
@@ -72,6 +74,7 @@ def test_create_an_own_rate(handlers: TaxRateHandlers, store: Store) -> None:
         RateValue(date(2026, 1, 1), Decimal(0)),
     )
     assert store.tax_rate_locks == 1
+    assert rate.id != handlers.create(command(name="Zweiter")).rate.id
 
 
 def test_rates_are_checked_on_save(handlers: TaxRateHandlers, store: Store) -> None:
@@ -150,6 +153,17 @@ def test_update_a_rate(handlers: TaxRateHandlers, store: Store) -> None:
         )
 
 
+def test_the_texts_of_a_rate_change(handlers: TaxRateHandlers, store: Store) -> None:
+    exempt = factories.rate_id(EXEMPT)
+    changed = handlers.update(exempt, command(exemption_reason="§ 4 Nr. 21 UStG")).rate
+    assert (changed.exemption_reason, changed.name, changed.notice) == (
+        "§ 4 Nr. 21 UStG",
+        "Heilbehandlung",
+        "",
+    )
+    assert store.tax_rates[3] == changed
+
+
 def test_the_category_of_a_rate_stays(handlers: TaxRateHandlers, store: Store) -> None:
     exempt = factories.rate_id(EXEMPT)
     with raises_exactly(
@@ -221,6 +235,7 @@ def test_presets_not_taken_yet(handlers: TaxRateHandlers, store: Store) -> None:
 
 def test_take_over_a_preset(handlers: TaxRateHandlers, store: Store) -> None:
     taken = handlers.take_over_preset("de_24_other")
+    assert isinstance(taken.rate.id, UUID)
     assert taken.in_use is False
     assert taken.rate == store.tax_rates[-1]
     assert (taken.rate.name, taken.rate.preset, taken.rate.notice) == (

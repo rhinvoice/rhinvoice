@@ -124,48 +124,48 @@ names the scheme."""
 _SINCE_2025 = date(2025, 1, 1)
 
 
-def _average_rate(key: str, percent: str, names: tuple[str, str, str, str]) -> RatePreset:
-    return RatePreset(
+_LANGUAGES = (Language.DE, Language.EN, Language.FR, Language.IT)
+AVERAGE_RATES = tuple(
+    RatePreset(
         key,
-        dict(zip((Language.DE, Language.EN, Language.FR, Language.IT), names, strict=True)),
+        dict(zip(_LANGUAGES, names, strict=True)),
         RateCategory.STANDARD,
         (RateValue(_SINCE_2025, Decimal(percent)),),
         notices=_AVERAGE_RATE_NOTICE,
         sources=_AVERAGE_RATE_SOURCES,
     )
-
-
-AVERAGE_RATES = (
-    _average_rate(
-        "de_24_forestry",
-        "5.5",
+    for key, percent, names in (
         (
-            "Forstwirtschaft § 24 (5,5 %)",
-            "Forestry § 24 (5.5 %)",
-            "Sylviculture § 24 (5,5 %)",
-            "Silvicoltura § 24 (5,5 %)",
+            "de_24_forestry",
+            "5.5",
+            (
+                "Forstwirtschaft § 24 (5,5 %)",
+                "Forestry § 24 (5.5 %)",
+                "Sylviculture § 24 (5,5 %)",
+                "Silvicoltura § 24 (5,5 %)",
+            ),
         ),
-    ),
-    _average_rate(
-        "de_24_beverages",
-        "19",
         (
-            "Getränke, Sägewerkserzeugnisse § 24 (19 %)",
-            "Beverages, sawmill products § 24 (19 %)",
-            "Boissons, produits de scierie § 24 (19 %)",
-            "Bevande, prodotti di segheria § 24 (19 %)",
+            "de_24_beverages",
+            "19",
+            (
+                "Getränke, Sägewerkserzeugnisse § 24 (19 %)",
+                "Beverages, sawmill products § 24 (19 %)",
+                "Boissons, produits de scierie § 24 (19 %)",
+                "Bevande, prodotti di segheria § 24 (19 %)",
+            ),
         ),
-    ),
-    _average_rate(
-        "de_24_other",
-        "7.8",
         (
-            "Landwirtschaft § 24 (7,8 %)",
-            "Agriculture § 24 (7.8 %)",
-            "Agriculture § 24 (7,8 %)",
-            "Agricoltura § 24 (7,8 %)",
+            "de_24_other",
+            "7.8",
+            (
+                "Landwirtschaft § 24 (7,8 %)",
+                "Agriculture § 24 (7.8 %)",
+                "Agriculture § 24 (7,8 %)",
+                "Agricoltura § 24 (7,8 %)",
+            ),
         ),
-    ),
+    )
 )
 """§ 24 UStG average rates for farmers and foresters (#80)."""
 

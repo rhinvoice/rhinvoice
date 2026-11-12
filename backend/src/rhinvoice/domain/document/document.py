@@ -727,7 +727,8 @@ class Document:
             self.content, lines=frozen_lines, issue_date=issue_date, due_date=due_date
         )
         issuing = replace(self, content=content)
-        totals = issuing.totals(rates, cash_rounding=company.cash_rounding, today=issue_date)
+        # Every position has its percentage now: the rates are not asked again.
+        totals = issuing.totals({}, cash_rounding=company.cash_rounding, today=issue_date)
         if self.type is DocumentType.INVOICE and not totals.total.amount > 0:
             # Credits are cancellations; an invoice of zero or less could never be paid.
             raise ValidationError(

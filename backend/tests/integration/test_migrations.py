@@ -437,7 +437,8 @@ def test_installations_without_a_company_get_their_rates_with_it(
             )
         with raises_exactly(
             RuntimeError,
-            "articles exist without a company: set up the company with version 0.12 first",
+            "articles or recurring plans exist without a company: "
+            "set up the company with version 0.12 first",
         ):
             upgrade(database_url)
         with engine.begin() as connection:

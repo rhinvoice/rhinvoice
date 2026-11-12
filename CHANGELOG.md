@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.12.0] – 2026-11-12
+
 ### Added
 - The details top right of documents in your order (*Settings → Print template*, *Details top
   right*): customer number, due date, date of supply and reference can be hidden, the date of

@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.12.0] – 2026-11-12
+
 ### Neu
 - Die Angaben oben rechts auf Dokumenten in eigener Reihenfolge (*Einstellungen → Druckvorlage*,
   *Angaben oben rechts*): Kundennummer, Fälligkeit, Leistungsdatum und Referenz lassen sich

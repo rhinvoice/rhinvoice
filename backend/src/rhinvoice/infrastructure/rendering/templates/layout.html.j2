@@ -55,7 +55,7 @@
     </div>
     <dl class="meta">
       {% for label, value in meta %}
-      <dt>{{ label }}</dt><dd{% if loop.first and number_pending %} class="pending"{% endif %}>{{ value }}</dd>
+      <dt>{{ label }}</dt><dd{% if loop.index0 == pending_row %} class="pending"{% endif %}>{{ value }}</dd>
       {% endfor %}
     </dl>
   </section>

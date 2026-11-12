@@ -49,6 +49,8 @@ export function customerSchema(t: T, locale: Locale) {
       group: f.optionalText(50),
       default_currency: z.enum(["", "CHF", "EUR"]),
       default_language: z.enum(["", ...DOCUMENT_LANGUAGES]),
+      /** The customer's print layout; "" for the default. */
+      print_layout_id: z.string(),
       tax_exempt: z.boolean(),
       default_discount: f.decimal({ max: 100, decimals: 2 }),
       payment_terms_days: f.days,
@@ -90,6 +92,7 @@ export const CUSTOMER_FIELD_ORDER: readonly (keyof CustomerFormValues)[] = [
   "buyer_reference",
   "default_discount",
   "payment_terms_days",
+  "print_layout_id",
   "delivery_street",
   "delivery_postal_code",
   "delivery_city",
@@ -125,6 +128,7 @@ export function emptyCustomer(country: CountryCode): CustomerFormValues {
     group: "",
     default_currency: "",
     default_language: "",
+    print_layout_id: "",
     tax_exempt: false,
     default_discount: "",
     payment_terms_days: "",
@@ -162,6 +166,7 @@ export function customerToForm(customer: Customer, locale: Locale): CustomerForm
     group: customer.group,
     default_currency: customer.default_currency ?? "",
     default_language: customer.default_language ?? "",
+    print_layout_id: customer.print_layout_id ?? "",
     tax_exempt: customer.tax_exempt,
     default_discount:
       customer.default_discount === "0"
@@ -208,6 +213,7 @@ export function formToRequest(values: CustomerFormValues, locale: Locale): Custo
     group: values.group,
     default_currency: values.default_currency === "" ? null : values.default_currency,
     default_language: values.default_language === "" ? null : values.default_language,
+    print_layout_id: values.print_layout_id === "" ? null : values.print_layout_id,
     tax_exempt: values.tax_exempt,
     default_discount:
       values.default_discount === "" ? "0" : toApiDecimal(values.default_discount, locale),

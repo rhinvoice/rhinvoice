@@ -29,10 +29,14 @@ def test_clean_multiline() -> None:
     with pytest.raises(ValidationError) as control:
         clean_multiline("a\x00b", "note", max_length=6)
     assert control.value.details == {"note": "note must not contain control characters"}
+    with pytest.raises(ValidationError):
+        clean_multiline("a\uffffb", "note", max_length=6)
     assert clean_multiline("abc\ndef", "note", max_length=7) == "abc\ndef"
 
 
-@pytest.mark.parametrize("value", ["Muster\nAG", "a\rb", "x\ty", "nul\x00", "del\x7f"])
+@pytest.mark.parametrize(
+    "value", ["Muster\nAG", "a\rb", "x\ty", "nul\x00", "del\x7f", "xml\ufffe", "xml\uffff"]
+)
 def test_single_line_text_rejects_control_characters(value: str) -> None:
     with pytest.raises(ValidationError) as error:
         clean_text(value, "street", max_length=70)

@@ -156,6 +156,7 @@ export function NewDocumentPage({
   readonly type: EditableType;
   readonly customerId?: string | undefined;
 }) {
+  const [headerTools, setHeaderTools] = useState<HTMLElement | null>(null);
   const { t } = useI18n();
   const title = type === "quote" ? t("documents.newQuote") : t("documents.newInvoice");
   useDocumentTitle(t("app.pageTitle", { title }));
@@ -174,11 +175,12 @@ export function NewDocumentPage({
   return (
     <>
       <BackToList type={type} />
-      <PageHeader title={title} />
+      <PageHeader title={title} actions={<div ref={setHeaderTools} className="contents" />} />
       {company === null ? (
         <CompanyMissing />
       ) : (
         <DocumentEditor
+          headerTools={headerTools}
           type={type}
           company={company}
           isNew
@@ -263,6 +265,7 @@ interface PageProps {
 }
 
 function DraftPage({ document, company }: PageProps) {
+  const [headerTools, setHeaderTools] = useState<HTMLElement | null>(null);
   const { t, locale } = useI18n();
   const update = useUpdateDocument(document.id);
   const issue = useDocumentAction("issue");
@@ -275,6 +278,7 @@ function DraftPage({ document, company }: PageProps) {
         {...(document.recipient === null ? {} : { description: document.recipient.name })}
         actions={
           <>
+            <div ref={setHeaderTools} className="contents" />
             <DocumentStatusBadge status={document.display_status} />
             <MoreActions document={document} />
           </>
@@ -284,6 +288,7 @@ function DraftPage({ document, company }: PageProps) {
         <RelatedLinks document={document} />
       </div>
       <DocumentEditor
+        headerTools={headerTools}
         type={type}
         company={company}
         isNew={false}

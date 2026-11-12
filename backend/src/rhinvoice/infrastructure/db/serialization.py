@@ -15,7 +15,9 @@ from rhinvoice.domain.catalog.unit import Unit
 from rhinvoice.domain.company.bank_account import BankAccount
 from rhinvoice.domain.company.company import Company
 from rhinvoice.domain.company.print_layout import (
+    DEFAULT_INFO_BLOCK,
     FooterAccounts,
+    InfoEntry,
     LogoPosition,
     LogoSize,
     PrintFont,
@@ -24,7 +26,7 @@ from rhinvoice.domain.company.print_layout import (
 )
 from rhinvoice.domain.customer.customer import Customer, CustomerKind
 from rhinvoice.domain.document.calculation import LineAmount, TaxGroup, Totals
-from rhinvoice.domain.document.document import IssuedLogo, IssueSnapshot
+from rhinvoice.domain.document.document import FieldValue, IssuedLogo, IssueSnapshot
 from rhinvoice.domain.document.lines import (
     Discount,
     DiscountKind,
@@ -266,7 +268,27 @@ def layout_to_json(layout: PrintLayout) -> Json:
         "position_numbers": layout.position_numbers,
         "footer_accounts": layout.footer_accounts.value,
         "e_invoice": layout.e_invoice,
+        "info_block": info_block_to_json(layout.info_block),
     }
+
+
+def info_block_to_json(entries: tuple[InfoEntry, ...]) -> list[Json]:
+    return [{"key": entry.key, "shown": entry.shown, "label": entry.label} for entry in entries]
+
+
+def info_block_from_json(data: list[Json] | None) -> tuple[InfoEntry, ...]:
+    """Read the facts next to the address; layouts before they were listed show the old ones."""
+    if data is None:
+        return DEFAULT_INFO_BLOCK
+    return tuple(InfoEntry(entry["key"], entry["shown"], entry["label"]) for entry in data)
+
+
+def fields_to_json(fields: tuple[FieldValue, ...]) -> list[Json]:
+    return [{"key": field.key, "value": field.value} for field in fields]
+
+
+def fields_from_json(data: list[Json]) -> tuple[FieldValue, ...]:
+    return tuple(FieldValue(field["key"], field["value"]) for field in data)
 
 
 def layout_from_json(data: Json) -> PrintLayout:
@@ -282,6 +304,7 @@ def layout_from_json(data: Json) -> PrintLayout:
         position_numbers=data.get("position_numbers", default.position_numbers),
         footer_accounts=FooterAccounts(data.get("footer_accounts", default.footer_accounts)),
         e_invoice=data.get("e_invoice", default.e_invoice),
+        info_block=info_block_from_json(data.get("info_block")),
     )
 
 
@@ -393,6 +416,8 @@ def template_to_json(template: InvoiceTemplate) -> Json:
         "payment_text": template.payment_text,
         "closing_text": template.closing_text,
         "bank_account_id": _opt(template.bank_account_id),
+        "print_layout_id": _opt(template.print_layout_id),
+        "fields": fields_to_json(template.fields),
         "lines": [
             {
                 "id": str(line.id),
@@ -430,6 +455,10 @@ def template_from_json(data: Json) -> InvoiceTemplate:
         closing_text=data["closing_text"],
         # Plans saved before version 0.9 name no account.
         bank_account_id=_optional_uuid(data.get("bank_account_id")),
+        # Plans saved before several layouts existed name none.
+        print_layout_id=_optional_uuid(data.get("print_layout_id")),
+        # Plans saved before fields existed have none.
+        fields=fields_from_json(data.get("fields", [])),
         lines=tuple(
             DocumentLine(
                 id=_uuid(line["id"]),

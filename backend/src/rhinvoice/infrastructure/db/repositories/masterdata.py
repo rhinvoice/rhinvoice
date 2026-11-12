@@ -30,6 +30,7 @@ from rhinvoice.domain.company.print_layout import (
     FooterAccounts,
     LogoPosition,
     LogoSize,
+    NamedLayout,
     PrintFont,
     PrintLayout,
     PrintTemplate,
@@ -46,6 +47,7 @@ from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.supply import Supply
 from rhinvoice.domain.tax.vat_number import VatNumber
 from rhinvoice.infrastructure.db.search import NATURAL_COLLATION, text_match
+from rhinvoice.infrastructure.db.serialization import info_block_from_json, info_block_to_json
 from rhinvoice.infrastructure.db.tables import (
     article_prices,
     articles,
@@ -54,7 +56,7 @@ from rhinvoice.infrastructure.db.tables import (
     customers,
     issued_logos,
     number_sequences,
-    print_layout,
+    print_layouts,
 )
 from rhinvoice.infrastructure.db.tables import (
     company as company_table,
@@ -180,11 +182,44 @@ class SqlCompanyRepository:
         )
         return None if row is None else Logo(content=row["content"], media_type=row["media_type"])
 
-    def print_layout(self) -> PrintLayout:
-        row = self._connection.execute(select(print_layout)).mappings().first()
-        if row is None:
-            return PrintLayout()
-        return PrintLayout(
+
+class SqlPrintLayoutRepository:
+    def __init__(self, connection: Connection) -> None:
+        self._connection = connection
+
+    def list(self, *, for_update: bool = False) -> list[NamedLayout]:
+        statement = select(print_layouts).order_by(
+            print_layouts.c.is_default.desc(), print_layouts.c.name.collate(NATURAL_COLLATION)
+        )
+        if for_update:
+            statement = statement.with_for_update()
+        return [_named_layout(row) for row in self._connection.execute(statement).mappings()]
+
+    def add(self, named: NamedLayout) -> None:
+        self._connection.execute(insert(print_layouts).values(_layout_values(named)))
+
+    def update(self, named: NamedLayout) -> None:
+        self._connection.execute(
+            update(print_layouts)
+            .where(print_layouts.c.id == named.id)
+            .values(_layout_values(named))
+        )
+
+    def delete(self, layout_id: UUID) -> None:
+        # Never the default, also should a caller not have checked.
+        self._connection.execute(
+            delete(print_layouts).where(
+                print_layouts.c.id == layout_id, print_layouts.c.is_default.is_(False)
+            )
+        )
+
+
+def _named_layout(row: RowMapping) -> NamedLayout:
+    return NamedLayout(
+        id=row["id"],
+        name=row["name"],
+        is_default=row["is_default"],
+        layout=PrintLayout(
             template=PrintTemplate(row["template"]),
             logo_position=LogoPosition(row["logo_position"]),
             logo_size=LogoSize(row["logo_size"]),
@@ -194,24 +229,28 @@ class SqlCompanyRepository:
             position_numbers=row["position_numbers"],
             footer_accounts=FooterAccounts(row["footer_accounts"]),
             e_invoice=row["e_invoice"],
-        )
+            info_block=info_block_from_json(row["info_block"]),
+        ),
+    )
 
-    def save_print_layout(self, layout: PrintLayout) -> None:
-        values = {
-            "template": layout.template.value,
-            "logo_position": layout.logo_position.value,
-            "logo_size": layout.logo_size.value,
-            "font": layout.font.value,
-            "sender_line": layout.sender_line,
-            "contact": layout.contact,
-            "position_numbers": layout.position_numbers,
-            "footer_accounts": layout.footer_accounts.value,
-            "e_invoice": layout.e_invoice,
-        }
-        statement = pg_insert(print_layout).values(values)
-        self._connection.execute(
-            statement.on_conflict_do_update(index_elements=[print_layout.c.singleton], set_=values)
-        )
+
+def _layout_values(named: NamedLayout) -> dict[str, Any]:
+    layout = named.layout
+    return {
+        "id": named.id,
+        "name": named.name,
+        "is_default": named.is_default,
+        "template": layout.template.value,
+        "logo_position": layout.logo_position.value,
+        "logo_size": layout.logo_size.value,
+        "font": layout.font.value,
+        "sender_line": layout.sender_line,
+        "contact": layout.contact,
+        "position_numbers": layout.position_numbers,
+        "footer_accounts": layout.footer_accounts.value,
+        "e_invoice": layout.e_invoice,
+        "info_block": info_block_to_json(layout.info_block),
+    }
 
 
 # --- Bank accounts -------------------------------------------------------------------------
@@ -307,6 +346,7 @@ def _customer_from_row(row: RowMapping) -> Customer:
         tax_exempt=row["tax_exempt"],
         default_discount=Decimal(row["default_discount"]),
         payment_terms_days=row["payment_terms_days"],
+        print_layout_id=row["print_layout_id"],
         delivery_address=_address_from_row(row, "delivery_") if has_delivery else None,
         note=row["note"],
         archived=row["archived"],
@@ -339,6 +379,7 @@ def _customer_values(customer: Customer) -> dict[str, Any]:
         "tax_exempt": customer.tax_exempt,
         "default_discount": customer.default_discount,
         "payment_terms_days": customer.payment_terms_days,
+        "print_layout_id": customer.print_layout_id,
         "note": customer.note,
         "archived": customer.archived,
         "created_at": customer.created_at,

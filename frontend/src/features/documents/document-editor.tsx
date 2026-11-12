@@ -19,6 +19,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode, type SyntheticEvent } from "react";
+import { createPortal } from "react-dom";
 import { Controller, FormProvider, useForm, useFormContext, useWatch } from "react-hook-form";
 
 import { useI18n } from "@/components/i18n/use-i18n";
@@ -76,6 +77,7 @@ import {
 } from "@/features/documents/document-form-model";
 import { DraftAttachments, PendingAttachments } from "@/features/documents/document-attachments";
 import { DocumentTextFields } from "@/features/documents/document-text-fields";
+import { InfoInputs, LayoutChoice } from "@/features/documents/info-fields";
 import { switchLanguage } from "@/features/documents/document-texts";
 import { EInvoiceProblems } from "@/features/documents/e-invoice-card";
 import {
@@ -97,7 +99,7 @@ import { cn } from "@/lib/cn";
 import { addDays, todayIso } from "@/lib/dates";
 import { formatMoney, formatRelative } from "@/lib/format";
 import { modifierLabel } from "@/lib/shortcuts";
-import { referenceHint, xrechnungOnly } from "@/lib/xrechnung";
+import { xrechnungOnly } from "@/lib/xrechnung";
 import { termsFor } from "@/features/shared/country-profile-model";
 import { useUnsavedChanges } from "@/features/shared/use-unsaved-changes";
 
@@ -157,6 +159,8 @@ interface DocumentEditorProps<Saved> {
   readonly documentId?: string | undefined;
   /** The PDFs chosen for a new draft, attached once it is saved (ADR 0040). */
   readonly pending?: PendingFiles | undefined;
+  /** A place in the page header for the editor's tools, e.g. the print template (#48). */
+  readonly headerTools?: HTMLElement | null | undefined;
 }
 
 export interface PendingFiles {
@@ -179,6 +183,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
   plan,
   documentId,
   pending,
+  headerTools,
 }: DocumentEditorProps<Saved>) {
   const { t, locale } = useI18n();
   const errorMessage = useErrorMessage();
@@ -406,6 +411,10 @@ export function DocumentEditor<Saved = DocumentDetail>({
 
   return (
     <FormProvider {...form}>
+      {/* The print template sits in the page header, level with the title (#48). */}
+      {headerTools === null || headerTools === undefined
+        ? null
+        : createPortal(<LayoutChoice />, headerTools)}
       <form
         className="flex flex-col gap-6"
         onSubmit={(event) => {
@@ -629,11 +638,11 @@ export function DocumentEditor<Saved = DocumentDetail>({
               </div>
             </Card>
 
-            {plan === undefined ? (
-              <Card aria-labelledby="dates-title">
-                <CardTitle id="dates-title" className="text-base">
-                  {t("documents.sectionDates")}
-                </CardTitle>
+            <Card aria-labelledby="dates-title">
+              <CardTitle id="dates-title" className="text-base">
+                {t("documents.sectionDates")}
+              </CardTitle>
+              {plan === undefined ? (
                 <div className="grid gap-4 @md:grid-cols-2">
                   <Field
                     label={t("documents.issueDate")}
@@ -694,9 +703,10 @@ export function DocumentEditor<Saved = DocumentDetail>({
                     ) : null}
                   </div>
                 </div>
-                <BankAccountChoice />
-              </Card>
-            ) : null}
+              ) : null}
+              <InfoInputs plan={plan !== undefined} />
+              <BankAccountChoice />
+            </Card>
 
             <Card aria-labelledby="lines-title">
               <div className="flex items-baseline justify-between gap-2">
@@ -731,6 +741,22 @@ export function DocumentEditor<Saved = DocumentDetail>({
 
             <Card className="gap-0 py-2 md:py-2">
               <Fold
+                icon={<SlidersHorizontalIcon aria-hidden="true" />}
+                title={t("documents.sectionMore")}
+                hint={plan === undefined ? t("documents.sectionMoreHint") : t("recurring.moreHint")}
+                forceOpen={
+                  errors.subject !== undefined ||
+                  errors.discount_value !== undefined ||
+                  errors.override_reason !== undefined
+                }
+              >
+                <MoreFields
+                  tax={tax}
+                  autoTreatment={preview.data?.treatment}
+                  plan={plan !== undefined}
+                />
+              </Fold>
+              <Fold
                 icon={<TextIcon aria-hidden="true" />}
                 title={t("documents.sectionTexts")}
                 hint={t("documents.sectionTextsHint")}
@@ -741,25 +767,6 @@ export function DocumentEditor<Saved = DocumentDetail>({
                 }
               >
                 <DocumentTextFields type={type} notice={preview.data?.notice} />
-              </Fold>
-              <Fold
-                icon={<SlidersHorizontalIcon aria-hidden="true" />}
-                title={t("documents.sectionMore")}
-                hint={plan === undefined ? t("documents.sectionMoreHint") : t("recurring.moreHint")}
-                forceOpen={
-                  errors.subject !== undefined ||
-                  errors.reference !== undefined ||
-                  errors.service_from !== undefined ||
-                  errors.service_to !== undefined ||
-                  errors.discount_value !== undefined ||
-                  errors.override_reason !== undefined
-                }
-              >
-                <MoreFields
-                  tax={tax}
-                  autoTreatment={preview.data?.treatment}
-                  plan={plan !== undefined}
-                />
               </Fold>
               {documentId === undefined && pending === undefined ? null : (
                 <Fold
@@ -1051,7 +1058,7 @@ function BankAccountChoice({ className }: { readonly className?: string }) {
   );
 }
 
-/** Subject, reference, service period, currency, language, prices, discount, tax treatment. */
+/** Subject, currency, language, prices, discount, tax treatment. */
 function MoreFields({ tax, autoTreatment, plan }: MoreFieldsProps) {
   const { t } = useI18n();
   const { register, formState, control } = useFormContext<DocumentFormValues>();
@@ -1059,9 +1066,6 @@ function MoreFields({ tax, autoTreatment, plan }: MoreFieldsProps) {
   const treatment = useWatch({ control, name: "treatment" });
   const discountKind = useWatch({ control, name: "discount_kind" });
   const currency = useWatch({ control, name: "currency" });
-  const customerId = useWatch({ control, name: "customer_id" });
-  const customer = useQuery({ ...customerOptionQuery(customerId), enabled: customerId !== "" });
-  const hint = referenceHint(customerId === "" ? undefined : customer.data);
   return (
     <div className="grid gap-4 @md:grid-cols-2">
       <Field
@@ -1072,14 +1076,6 @@ function MoreFields({ tax, autoTreatment, plan }: MoreFieldsProps) {
         optionalLabel={t("common.optional")}
       >
         <Input id={fieldId("subject")} {...register("subject")} />
-      </Field>
-      <Field
-        label={t("documents.reference")}
-        description={t(hint.key, { value: hint.value })}
-        error={errors.reference?.message}
-        optionalLabel={t("common.optional")}
-      >
-        <Input id={fieldId("reference")} {...register("reference")} />
       </Field>
       <div className="grid grid-cols-2 gap-4">
         <Field label={t("documents.currency")} error={errors.currency?.message}>
@@ -1098,27 +1094,6 @@ function MoreFields({ tax, autoTreatment, plan }: MoreFieldsProps) {
           </NativeSelect>
         </Field>
       </div>
-      {/* Plans have no dates card: their account is chosen here, next to the currency. */}
-      {plan ? <BankAccountChoice className="@md:col-span-2" /> : null}
-      {plan ? null : (
-        <>
-          <Field
-            label={t("documents.serviceFrom")}
-            error={errors.service_from?.message}
-            optionalLabel={t("common.optional")}
-          >
-            <Input id={fieldId("service_from")} type="date" {...register("service_from")} />
-          </Field>
-          <Field
-            label={t("documents.serviceTo")}
-            description={t("documents.serviceHint")}
-            error={errors.service_to?.message}
-            optionalLabel={t("common.optional")}
-          >
-            <Input id={fieldId("service_to")} type="date" {...register("service_to")} />
-          </Field>
-        </>
-      )}
       <fieldset className="flex flex-col gap-1.5 @md:col-span-2">
         <legend className="mb-1.5 text-sm font-medium">{t("documents.priceMode")}</legend>
         <div className="grid grid-cols-2 gap-2 @md:max-w-md">

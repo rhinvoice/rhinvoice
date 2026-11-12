@@ -314,6 +314,7 @@ interface PlanEditorProps {
 }
 
 function PlanEditor({ notice, company, plan, defaults, settings: initial }: PlanEditorProps) {
+  const [headerTools, setHeaderTools] = useState<HTMLElement | null>(null);
   const { t } = useI18n();
   const navigate = useNavigate();
   const save = useSavePlan(plan?.id ?? null);
@@ -349,7 +350,12 @@ function PlanEditor({ notice, company, plan, defaults, settings: initial }: Plan
       <PageHeader
         title={plan === null ? t("recurring.new") : plan.name}
         description={plan === null ? t("recurring.newDescription") : plan.customer_name}
-        actions={plan === null ? null : <PlanActions plan={plan} />}
+        actions={
+          <>
+            <div ref={setHeaderTools} className="contents" />
+            {plan === null ? null : <PlanActions plan={plan} />}
+          </>
+        }
       />
       {notice === null || notice === undefined ? null : (
         <p className="rounded-md bg-status-overdue-bg px-3 py-2 text-sm text-status-overdue-fg">
@@ -358,6 +364,7 @@ function PlanEditor({ notice, company, plan, defaults, settings: initial }: Plan
       )}
       {plan === null ? null : <PlanStatus plan={plan} />}
       <DocumentEditor
+        headerTools={headerTools}
         type="invoice"
         company={company}
         isNew={plan === null}

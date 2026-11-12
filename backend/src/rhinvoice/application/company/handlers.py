@@ -6,10 +6,12 @@ from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
 from rhinvoice.application.common import AddressInput, optional_email, optional_vat_number
-from rhinvoice.application.errors import NotFoundError
+from rhinvoice.application.errors import ConflictError, NotFoundError
 from rhinvoice.domain.company.bank_account import BankAccount
 from rhinvoice.domain.company.company import DEFAULT_ACCENT_HUE, Company
 from rhinvoice.domain.company.logo import Logo
+from rhinvoice.domain.company.print_layout import MAX_LAYOUTS, NamedLayout, default_layout
+from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.iban import Bic, Iban
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
@@ -105,17 +107,63 @@ class CompanyHandlers:
             uow.company.delete_logo()
             uow.commit()
 
-    # --- Print layout ------------------------------------------------------------
+    # --- Print layouts -----------------------------------------------------------
 
-    def print_layout(self) -> PrintLayout:
+    def list_print_layouts(self) -> list[NamedLayout]:
+        """Every layout, the default first (#48)."""
         with self.uow() as uow:
-            return uow.company.print_layout()
+            return uow.print_layouts.list()
 
-    def save_print_layout(self, layout: PrintLayout) -> PrintLayout:
+    def create_print_layout(self, name: str, copy_of: UUID | None = None) -> NamedLayout:
+        """Add a layout as a copy of another one (the default when none is named)."""
         with self.uow() as uow:
-            uow.company.save_print_layout(layout)
+            layouts = uow.print_layouts.list(for_update=True)
+            if len(layouts) >= MAX_LAYOUTS:
+                raise ConflictError(
+                    f"at most {MAX_LAYOUTS} print layouts", code="too_many_print_layouts"
+                )
+            source = default_layout(layouts) if copy_of is None else _require(layouts, copy_of)
+            named = NamedLayout(new_id(), name, source.layout)
+            _check_name(layouts, named)
+            uow.print_layouts.add(named)
             uow.commit()
-        return layout
+        return named
+
+    def update_print_layout(self, layout_id: UUID, name: str, layout: PrintLayout) -> NamedLayout:
+        with self.uow() as uow:
+            layouts = uow.print_layouts.list(for_update=True)
+            previous = _require(layouts, layout_id)
+            named = NamedLayout(layout_id, name, layout, is_default=previous.is_default)
+            _check_name(layouts, named)
+            uow.print_layouts.update(named)
+            uow.commit()
+        return named
+
+    def make_default_print_layout(self, layout_id: UUID) -> NamedLayout:
+        """Make a layout the default; documents without their own and their customer's take it."""
+        with self.uow() as uow:
+            layouts = uow.print_layouts.list(for_update=True)
+            chosen = _require(layouts, layout_id)
+            if not chosen.is_default:
+                # The old default first: the database allows one at a time.
+                for previous in layouts:
+                    if previous.is_default:
+                        uow.print_layouts.update(replace(previous, is_default=False))
+                chosen = replace(chosen, is_default=True)
+                uow.print_layouts.update(chosen)
+                uow.commit()
+        return chosen
+
+    def delete_print_layout(self, layout_id: UUID) -> None:
+        """Delete a layout; its customers and drafts take the default, issued documents keep it."""
+        with self.uow() as uow:
+            named = _require(uow.print_layouts.list(for_update=True), layout_id)
+            if named.is_default:
+                raise ConflictError(
+                    "the default print layout cannot be deleted", code="default_print_layout"
+                )
+            uow.print_layouts.delete(layout_id)
+            uow.commit()
 
     # --- Bank accounts -----------------------------------------------------------
 
@@ -209,3 +257,24 @@ class CompanyHandlers:
         if account is None:
             raise NotFoundError("bank account not found")
         return account
+
+
+def _require(layouts: list[NamedLayout], layout_id: UUID) -> NamedLayout:
+    for named in layouts:
+        if named.id == layout_id:
+            return named
+    raise NotFoundError("print layout not found")
+
+
+def _check_name(layouts: list[NamedLayout], named: NamedLayout) -> None:
+    """Names tell layouts apart in every list: no two alike, whatever the case."""
+    taken = {other.name.casefold() for other in layouts if other.id != named.id}
+    if named.name.casefold() in taken:
+        message = "another print layout has this name"
+        raise ConflictError(message, details={"name": message}, code="print_layout_name_taken")
+
+
+def check_print_layout(uow: UnitOfWork, layout_id: UUID | None) -> None:
+    """Refuse a layout choice that names no layout (customers, documents, plans)."""
+    if layout_id is not None and all(named.id != layout_id for named in uow.print_layouts.list()):
+        raise ValidationError("print_layout_id", "unknown print layout")

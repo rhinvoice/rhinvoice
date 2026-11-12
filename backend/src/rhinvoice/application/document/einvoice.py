@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING, Protocol
 
+from rhinvoice.domain.company.print_layout import InfoField
 from rhinvoice.domain.document.document import DocumentType
 from rhinvoice.domain.shared.country import Country
 from rhinvoice.domain.shared.errors import InvalidStateError
@@ -182,8 +183,25 @@ def buyer_reference(model: PrintModel) -> str | None:
     return fixed or model.view.document.content.reference.strip() or None
 
 
+def reference_field(model: PrintModel, field: InfoField) -> str | None:
+    """Return the value of a reference field (BT-11 to BT-19) that the document prints.
+
+    The layout is the one of the document (frozen when issuing): a value whose field the
+    layout no longer lists is neither printed nor in the e-invoice, so both agree.
+    """
+    if field.value not in model.layout.field_keys:
+        return None
+    return model.view.document.content.field(field.value) or None
+
+
+def _spare_reference(model: PrintModel) -> str | None:
+    """Return the invoice's reference when BT-10 holds the customer's fixed one instead."""
+    reference = model.view.document.content.reference.strip()
+    return reference if reference and reference != buyer_reference(model) else None
+
+
 def order_reference(model: PrintModel) -> str | None:
-    """BT-13: the invoice's reference, when a German customer's fixed reference took BT-10.
+    """BT-13: the purchase order field, else the invoice's reference when BT-10 is taken.
 
     EN 16931-1 names BT-13 "Purchase order reference" (0..1, any text); EN 16931-3-3 maps it
     to ram:BuyerOrderReferencedDocument/ram:IssuerAssignedID in the header trade agreement.
@@ -191,8 +209,18 @@ def order_reference(model: PrintModel) -> str | None:
     "Bestellung 4711" stays in the e-invoice next to the Leitweg-ID; a reference that already
     is BT-10 is not repeated.
     """
-    reference = model.view.document.content.reference.strip()
-    return reference if reference and reference != buyer_reference(model) else None
+    return reference_field(model, InfoField.PURCHASE_ORDER) or _spare_reference(model)
+
+
+def reference_note(model: PrintModel) -> str | None:
+    """Return the invoice's reference that neither BT-10 nor BT-13 holds, for a note (BT-22).
+
+    That is the case for a German authority's invoice with a Leitweg-ID and a purchase
+    order field next to the reference: the reference is printed, so the e-invoice keeps it.
+    """
+    if reference_field(model, InfoField.PURCHASE_ORDER) is None:
+        return None
+    return _spare_reference(model)
 
 
 def _xrechnung_problems(model: PrintModel) -> list[EInvoiceProblem]:

@@ -1,7 +1,8 @@
 import { keepPreviousData, queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api, CLIENT_HEADER, unwrap, type components } from "@/api/client";
-import { companyKeys } from "@/features/shared/company-api";
+import { PRINT_LAYOUTS_KEY, companyKeys, type PrintLayout } from "@/features/shared/company-api";
+import type { DownloadedFile } from "@/features/shared/file-download";
 import { toApiError } from "@/lib/api-error";
 import { useIdempotentMutation } from "@/features/shared/use-idempotent-mutation";
 
@@ -88,22 +89,13 @@ export function useDeleteBankAccount() {
   });
 }
 
-export type PrintLayout = components["schemas"]["PrintLayoutSchema"];
-
-const PRINT_LAYOUT_KEY = ["print-layout"] as const;
-
-export const printLayoutQuery = queryOptions({
-  queryKey: PRINT_LAYOUT_KEY,
-  queryFn: () => unwrap(api.GET("/api/print-layout")),
-});
-
 /** The latest invoice (or a sample) laid out with a layout that is not saved yet. */
 export function printLayoutPreviewQuery(layout: PrintLayout | null) {
   return queryOptions({
-    queryKey: [...PRINT_LAYOUT_KEY, "preview", layout] as const,
+    queryKey: [...PRINT_LAYOUTS_KEY, "preview", layout] as const,
     queryFn: () => {
       if (layout === null) throw new Error("the preview is disabled without a layout");
-      return unwrap(api.POST("/api/print-layout/preview", { body: layout, parseAs: "text" }));
+      return unwrap(api.POST("/api/print-layouts/preview", { body: layout, parseAs: "text" }));
     },
     enabled: layout !== null,
     placeholderData: keepPreviousData,
@@ -112,14 +104,77 @@ export function printLayoutPreviewQuery(layout: PrintLayout | null) {
   });
 }
 
-export function useSavePrintLayout() {
+/** The latest invoice with a layout as a PDF marked as a sample, to send before switching. */
+export async function fetchSamplePdf(layout: PrintLayout, name: string): Promise<DownloadedFile> {
+  let response: Response;
+  try {
+    response = await fetch("/api/print-layouts/sample", {
+      method: "POST",
+      body: JSON.stringify(layout),
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", [CLIENT_HEADER]: "web" },
+    });
+  } catch {
+    throw toApiError(0, undefined);
+  }
+  if (!response.ok) {
+    throw toApiError(response.status, await response.json().catch(() => undefined));
+  }
+  return { blob: await response.blob(), name };
+}
+
+/** Documents look different after a change: their previews are rendered anew. */
+function useLayoutsChanged() {
   const client = useQueryClient();
+  return () => {
+    void client.invalidateQueries({ queryKey: PRINT_LAYOUTS_KEY });
+    void client.invalidateQueries({ queryKey: ["documents"] });
+    // A deleted layout leaves its customers with the default.
+    void client.invalidateQueries({ queryKey: ["customers"] });
+  };
+}
+
+export function useCreatePrintLayout() {
+  const changed = useLayoutsChanged();
+  return useIdempotentMutation({
+    mutationFn: (body: { name: string; copy_of: string | null }, { headers }) =>
+      unwrap(api.POST("/api/print-layouts", { body, headers })),
+    onSuccess: changed,
+  });
+}
+
+export function useSavePrintLayout() {
+  const changed = useLayoutsChanged();
   return useMutation({
-    mutationFn: (body: PrintLayout) => unwrap(api.PUT("/api/print-layout", { body })),
-    onSuccess: (layout) => {
-      client.setQueryData(PRINT_LAYOUT_KEY, layout);
-      // Documents look different now: previews are rendered anew.
-      void client.invalidateQueries({ queryKey: ["documents"] });
-    },
+    mutationFn: ({ id, name, layout }: { id: string; name: string; layout: PrintLayout }) =>
+      unwrap(
+        api.PUT("/api/print-layouts/{layout_id}", {
+          params: { path: { layout_id: id } },
+          body: { name, layout },
+        }),
+      ),
+    onSuccess: changed,
+  });
+}
+
+export function useMakeDefaultPrintLayout() {
+  const changed = useLayoutsChanged();
+  return useMutation({
+    mutationFn: (id: string) =>
+      unwrap(
+        api.POST("/api/print-layouts/{layout_id}/default", {
+          params: { path: { layout_id: id } },
+        }),
+      ),
+    onSuccess: changed,
+  });
+}
+
+export function useDeletePrintLayout() {
+  const changed = useLayoutsChanged();
+  return useMutation({
+    mutationFn: (id: string) =>
+      unwrap(api.DELETE("/api/print-layouts/{layout_id}", { params: { path: { layout_id: id } } })),
+    onSuccess: changed,
   });
 }

@@ -55,13 +55,36 @@ Lorsque vous envoyez la facture par e-mail, vous pouvez choisir *Joindre aussi l
 
 La XRechnung a besoin d’une référence de l’acheteur (BT-10). Rhinvoice la prend ainsi :
 
-- Si le client a une **Leitweg-ID ou référence d’acheteur fixe**, c’est toujours elle qui s’applique. La référence de la facture figure alors dans la facture électronique comme référence de commande (BT-13); un numéro de commande comme « Bestellung 4711 » n’est donc pas perdu.
-- Sinon, la **référence de la facture** s’applique (*Autres informations → Référence*), par exemple le numéro de commande.
+- Si le client a une **Leitweg-ID ou référence d’acheteur fixe**, c’est toujours elle qui s’applique. La référence de la facture figure alors dans la facture électronique comme référence de commande (BT-13), ou comme remarque si la facture a son propre [champ de bon de commande](#projet-bon-de-commande-et-centre-de-coûts); un numéro de commande comme « Bestellung 4711 » n’est donc pas perdu.
+- Sinon, la **référence de la facture** s’applique (*Dates → Référence*), par exemple le numéro de commande.
 - Si les deux sont vides, la référence de l’acheteur manque dans la XRechnung.
 
 Pour les entreprises, ne remplissez le champ du client que si elles veulent toujours la même référence. Si la référence change à chaque commande, laissez le champ du client vide et indiquez la référence sur la facture. Sous le champ *Référence*, l’éditeur indique pour les clients en Allemagne quelle Leitweg-ID s’applique ou que la référence est nécessaire pour la XRechnung.
 
 Lorsque vous émettez une facture, Rhinvoice conserve le client tel qu’il était avec la facture. Si vous modifiez plus tard la Leitweg-ID du client, la XRechnung des factures déjà émises reste la même.
+
+## Projet, bon de commande et centre de coûts
+
+Certains clients demandent davantage sur la facture: un projet, leur bon de commande, un centre de coûts. Créez ces indications comme champs de la mise en page d’impression: elles figurent alors aussi dans la facture électronique.
+
+1. Sous *Paramètres → Mise en page d’impression*, carte *Indications en haut à droite*, cliquez sur *Ajouter un champ*.
+2. Choisissez un champ. Ceux sous *Aussi dans la facture électronique* remplissent leur place dans la facture électronique; *Champ propre (PDF seulement)* imprime un nom de votre choix, par exemple « Objet ».
+3. Triez les indications avec les flèches ou en les glissant, puis enregistrez.
+
+Chaque facture et chaque offre demande alors les valeurs dans la carte *Dates*. Un champ n’apparaît qu’avec une valeur, et l’émission fige les valeurs avec la facture.
+
+| Champ | Dans la facture électronique |
+|---|---|
+| Projet | BT-11, référence du projet |
+| Numéro de contrat | BT-12, référence du contrat |
+| Bon de commande | BT-13, référence de la commande |
+| Notre commande | BT-14, votre propre numéro de commande |
+| Bulletin de livraison | BT-16, référence de l’avis d’expédition |
+| Appel d’offres ou lot | BT-17, référence de l’appel d’offres ou du lot |
+| Objet | BT-18, par exemple un compteur, un abonnement ou un véhicule |
+| Centre de coûts | BT-19, référence comptable de l’acheteur |
+
+La même carte affiche ou masque le numéro de client, l’échéance, la date de la prestation et *Votre référence*. La date de la prestation est obligatoire sur les factures (§ 14 Abs. 4 Nr. 6 UStG, § 11 Abs. 1 Z 3 lit. d UStG AT): masquez-la seulement si les positions l’indiquent, par exemple « le 3 novembre ». La facture électronique la garde toujours (BT-72).
 
 ## Ce dont une facture électronique a besoin
 
@@ -80,7 +103,7 @@ Rhinvoice ne crée que des factures électroniques complètes. S’il manque que
 
 | Donnée | Où la saisir |
 |---|---|
-| Leitweg-ID ou référence de l’acheteur | sur le client (*Leitweg-ID ou référence d’acheteur fixe*) ou sur la facture (*Autres informations → Référence*) |
+| Leitweg-ID ou référence de l’acheteur | sur le client (*Leitweg-ID ou référence d’acheteur fixe*) ou sur la facture (*Dates → Référence*) |
 | L’e-mail de votre entreprise | *Paramètres → Entreprise* |
 | Le téléphone de votre entreprise | *Paramètres → Entreprise* |
 | L’e-mail du client | sur le client |

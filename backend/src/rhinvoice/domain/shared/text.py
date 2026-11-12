@@ -4,9 +4,10 @@ import re
 
 from rhinvoice.domain.shared.errors import ValidationError
 
-# Control characters break printed addresses and the QR-bill payload (CR/LF separated).
-_CONTROL = re.compile(r"[\x00-\x1f\x7f]")
-_CONTROL_EXCEPT_NEWLINE = re.compile(r"[\x00-\x09\x0b-\x1f\x7f]")
+# Control characters break printed addresses and the QR-bill payload (CR/LF separated);
+# U+FFFE and U+FFFF are no characters in XML 1.0 and would break the e-invoice.
+_CONTROL = re.compile(r"[\x00-\x1f\x7f\ufffe\uffff]")
+_CONTROL_EXCEPT_NEWLINE = re.compile(r"[\x00-\x09\x0b-\x1f\x7f\ufffe\uffff]")
 
 
 def clean_text(value: str, field: str, *, max_length: int, required: bool = False) -> str:

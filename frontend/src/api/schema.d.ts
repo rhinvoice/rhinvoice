@@ -1457,28 +1457,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/print-layout": {
+    "/api/print-layouts": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Print Layout */
-        get: operations["print-layout_get_print_layout"];
         /**
-         * Save Print Layout
-         * @description Save the layout for documents rendered from now on; issued ones keep their PDF.
+         * List Print Layouts
+         * @description Every print layout, the default first.
          */
-        put: operations["print-layout_save_print_layout"];
-        post?: never;
+        get: operations["print-layout_list_print_layouts"];
+        put?: never;
+        /**
+         * Create Print Layout
+         * @description Add a layout as a copy of another one.
+         *
+         *     409 print_layout_name_taken, too_many_print_layouts.
+         */
+        post: operations["print-layout_create_print_layout"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/print-layout/preview": {
+    "/api/print-layouts/preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -1494,6 +1499,76 @@ export interface paths {
          *     409 company_not_set_up before the company is set up.
          */
         post: operations["print-layout_preview_print_layout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/print-layouts/sample": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sample Print Layout
+         * @description Render the latest invoice with this layout as a PDF marked as a sample.
+         *
+         *     To send to a bookkeeper or a customer before switching. 409 company_not_set_up.
+         */
+        post: operations["print-layout_sample_print_layout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/print-layouts/{layout_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save Print Layout
+         * @description Save a layout for documents rendered from now on; issued ones keep theirs.
+         *
+         *     409 print_layout_name_taken.
+         */
+        put: operations["print-layout_save_print_layout"];
+        post?: never;
+        /**
+         * Delete Print Layout
+         * @description Delete a layout; its customers and drafts take the default.
+         *
+         *     409 default_print_layout: the default one stays.
+         */
+        delete: operations["print-layout_delete_print_layout"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/print-layouts/{layout_id}/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Make Default Print Layout
+         * @description Make a layout the default for customers and documents without their own.
+         */
+        post: operations["print-layout_make_default_print_layout"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2408,6 +2483,13 @@ export interface components {
             /** Write Off Hint */
             write_off_hint: string;
         };
+        /** CreatePrintLayoutRequest */
+        CreatePrintLayoutRequest: {
+            /** Copy Of */
+            copy_of?: string | null;
+            /** Name */
+            name: string;
+        };
         /** CreateRequest */
         CreateRequest: {
             /** Bank Account Id */
@@ -2429,6 +2511,7 @@ export interface components {
             discount_value?: string | null;
             /** Due Date */
             due_date?: string | null;
+            fields?: components["schemas"]["FieldValues"];
             /**
              * Intro Text
              * @default
@@ -2451,6 +2534,8 @@ export interface components {
             payment_text: string;
             /** @default net */
             price_mode: components["schemas"]["PriceMode"];
+            /** Print Layout Id */
+            print_layout_id?: string | null;
             /**
              * Reference
              * @default
@@ -2559,6 +2644,8 @@ export interface components {
              * @default
              */
             phone: string;
+            /** Print Layout Id */
+            print_layout_id?: string | null;
             /**
              * Salutation
              * @default
@@ -2617,6 +2704,8 @@ export interface components {
             payment_terms_days: number | null;
             /** Phone */
             phone: string;
+            /** Print Layout Id */
+            print_layout_id: string | null;
             /** Salutation */
             salutation: string;
             /** Tax Exempt */
@@ -2782,6 +2871,10 @@ export interface components {
             due_date: string | null;
             /** Events */
             events: components["schemas"]["EventResponse"][];
+            /** Fields */
+            fields: {
+                [key: string]: string;
+            };
             goods_treatment: components["schemas"]["TaxTreatment"] | null;
             /** Has Pdf */
             has_pdf: boolean;
@@ -2814,6 +2907,8 @@ export interface components {
             /** Payments */
             payments: components["schemas"]["PaymentResponse"][];
             price_mode: components["schemas"]["PriceMode"];
+            /** Print Layout Id */
+            print_layout_id: string | null;
             recipient: components["schemas"]["RecipientResponse"] | null;
             /** Reference */
             reference: string;
@@ -2871,6 +2966,7 @@ export interface components {
             discount_value?: string | null;
             /** Due Date */
             due_date?: string | null;
+            fields?: components["schemas"]["FieldValues"];
             /**
              * Intro Text
              * @default
@@ -2893,6 +2989,8 @@ export interface components {
             payment_text: string;
             /** @default net */
             price_mode: components["schemas"]["PriceMode"];
+            /** Print Layout Id */
+            print_layout_id?: string | null;
             /**
              * Reference
              * @default
@@ -3025,6 +3123,9 @@ export interface components {
          * @enum {string}
          */
         ExportFormat: "xlsx" | "csv" | "pdf";
+        FieldValues: {
+            [key: string]: string;
+        };
         /** FiguresResponse */
         FiguresResponse: {
             currency: components["schemas"]["Currency"];
@@ -3132,6 +3233,24 @@ export interface components {
          */
         ImportTarget: "customers" | "articles" | "invoices";
         /**
+         * InfoEntrySchema
+         * @description One line of the facts next to the address.
+         */
+        InfoEntrySchema: {
+            /** Key */
+            key: string;
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+            /**
+             * Shown
+             * @default true
+             */
+            shown: boolean;
+        };
+        /**
          * Installation
          * @enum {string}
          */
@@ -3178,6 +3297,7 @@ export interface components {
             discount_kind: components["schemas"]["DiscountKind"];
             /** Discount Value */
             discount_value?: string | null;
+            fields?: components["schemas"]["FieldValues"];
             /**
              * Intro Text
              * @default
@@ -3193,6 +3313,8 @@ export interface components {
             payment_text: string;
             /** @default net */
             price_mode: components["schemas"]["PriceMode"];
+            /** Print Layout Id */
+            print_layout_id?: string | null;
             /**
              * Reference
              * @default
@@ -3214,6 +3336,10 @@ export interface components {
             discount_kind: components["schemas"]["DiscountKind"];
             /** Discount Value */
             discount_value: string | null;
+            /** Fields */
+            fields: {
+                [key: string]: string;
+            };
             /** Intro Text */
             intro_text: string;
             language: components["schemas"]["Language"] | null;
@@ -3222,6 +3348,8 @@ export interface components {
             /** Payment Text */
             payment_text: string;
             price_mode: components["schemas"]["PriceMode"];
+            /** Print Layout Id */
+            print_layout_id: string | null;
             /** Reference */
             reference: string;
             /** Subject */
@@ -3657,6 +3785,22 @@ export interface components {
          * @enum {string}
          */
         PrintFont: "sans" | "serif";
+        /**
+         * PrintLayoutResponse
+         * @description A named print layout (#48).
+         */
+        PrintLayoutResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Default */
+            is_default: boolean;
+            layout: components["schemas"]["PrintLayoutSchema"];
+            /** Name */
+            name: string;
+        };
         /** PrintLayoutSchema */
         PrintLayoutSchema: {
             /** Contact */
@@ -3665,6 +3809,8 @@ export interface components {
             e_invoice: boolean;
             font: components["schemas"]["PrintFont"];
             footer_accounts: components["schemas"]["FooterAccounts"];
+            /** Info Block */
+            info_block: components["schemas"]["InfoEntrySchema"][];
             logo_position: components["schemas"]["LogoPosition"];
             logo_size: components["schemas"]["LogoSize"];
             /** Position Numbers */
@@ -3838,6 +3984,12 @@ export interface components {
          * @enum {string}
          */
         RunStatus: "running" | "succeeded" | "failed" | "not_configured";
+        /** SavePrintLayoutRequest */
+        SavePrintLayoutRequest: {
+            layout: components["schemas"]["PrintLayoutSchema"];
+            /** Name */
+            name: string;
+        };
         /** SendMailRequest */
         SendMailRequest: {
             /** Body */
@@ -11817,7 +11969,7 @@ export interface operations {
             };
         };
     };
-    "print-layout_get_print_layout": {
+    "print-layout_list_print_layouts": {
         parameters: {
             query?: never;
             header?: never;
@@ -11832,7 +11984,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PrintLayoutSchema"];
+                    "application/json": components["schemas"]["PrintLayoutResponse"][];
                 };
             };
             /** @description Bad Request */
@@ -11891,7 +12043,7 @@ export interface operations {
             };
         };
     };
-    "print-layout_save_print_layout": {
+    "print-layout_create_print_layout": {
         parameters: {
             query?: never;
             header?: never;
@@ -11900,17 +12052,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PrintLayoutSchema"];
+                "application/json": components["schemas"]["CreatePrintLayoutRequest"];
             };
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PrintLayoutSchema"];
+                    "application/json": components["schemas"]["PrintLayoutResponse"];
                 };
             };
             /** @description Bad Request */
@@ -11989,6 +12141,323 @@ export interface operations {
                 };
                 content: {
                     "text/html": string;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "print-layout_sample_print_layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrintLayoutSchema"];
+            };
+        };
+        responses: {
+            /** @description The latest invoice with this layout, marked as a sample */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No PDF service configured or reachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "print-layout_save_print_layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                layout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavePrintLayoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrintLayoutResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "print-layout_delete_print_layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                layout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "print-layout_make_default_print_layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                layout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrintLayoutResponse"];
                 };
             };
             /** @description Bad Request */

@@ -15,7 +15,7 @@ from datetime import date, timedelta
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from rhinvoice.domain.document.document import MAX_LINES
+from rhinvoice.domain.document.document import MAX_LINES, FieldValue, clean_fields
 from rhinvoice.domain.document.lines import Discount, LineKind
 from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
 from rhinvoice.domain.shared.text import clean_multiline, clean_text
@@ -89,6 +89,10 @@ class InvoiceTemplate:
     closing_text: str = ""
     bank_account_id: UUID | None = None
     """The account the invoices are paid to; None or deleted: the currency's default."""
+    fields: tuple[FieldValue, ...] = ()
+    """Values of the print layout's fields, such as a contract number."""
+    print_layout_id: UUID | None = None
+    """The layout of the invoices; None or deleted: the customer's or the default."""
 
     def __post_init__(self) -> None:
         if not any(line.kind is LineKind.ITEM for line in self.lines):
@@ -107,6 +111,7 @@ class InvoiceTemplate:
         object.__setattr__(
             self, "reference", clean_text(self.reference, "reference", max_length=MAX_REFERENCE)
         )
+        object.__setattr__(self, "fields", clean_fields(self.fields))
         for name in ("intro_text", "payment_text", "closing_text"):
             object.__setattr__(
                 self, name, clean_multiline(getattr(self, name), name, max_length=MAX_TEXT)

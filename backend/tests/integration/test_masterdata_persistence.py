@@ -1,6 +1,7 @@
 """The SQL repositories, exercised through the real use cases."""
 
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 from decimal import Decimal
 
@@ -21,7 +22,9 @@ from rhinvoice.application.numbering.handlers import (
 )
 from rhinvoice.domain.company.logo import Logo
 from rhinvoice.domain.company.print_layout import (
+    DEFAULT_INFO_BLOCK,
     FooterAccounts,
+    InfoEntry,
     LogoPosition,
     LogoSize,
     PrintFont,
@@ -398,9 +401,15 @@ def test_customers_are_found_with_umlaut_spellings_and_sorted_naturally(engine: 
     assert [c.id for c in by_number.items] == [mueller.id, other.id]
 
 
-def test_print_layout(engine: Engine) -> None:
+def test_print_layouts(engine: Engine) -> None:
     handlers = CompanyHandlers(uow=factory(engine))
-    assert handlers.print_layout() == PrintLayout()
+    # The migration starts every installation with one default layout.
+    [standard] = handlers.list_print_layouts()
+    assert (standard.name, standard.is_default, standard.layout) == (
+        "Standard",
+        True,
+        PrintLayout(),
+    )
     layout = PrintLayout(
         template=PrintTemplate.CLASSIC,
         logo_position=LogoPosition.LEFT,
@@ -411,8 +420,51 @@ def test_print_layout(engine: Engine) -> None:
         position_numbers=False,
         footer_accounts=FooterAccounts.ALL,
         e_invoice=False,
+        info_block=(
+            InfoEntry("custom-0a1b2c3d", label="Objekt"),
+            *(
+                InfoEntry(entry.key, shown=entry.key != "service_date")
+                for entry in DEFAULT_INFO_BLOCK
+            ),
+            InfoEntry("project"),
+        ),
     )
-    handlers.save_print_layout(layout)
-    assert handlers.print_layout() == layout
-    handlers.save_print_layout(PrintLayout())
-    assert handlers.print_layout() == PrintLayout()
+    trust = handlers.create_print_layout("Treuhand")
+    saved = handlers.update_print_layout(trust.id, "Treuhand", layout)
+    handlers.create_print_layout("Behörden", copy_of=trust.id)
+    listed = handlers.list_print_layouts()
+    assert [named.name for named in listed] == ["Standard", "Behörden", "Treuhand"]
+    assert listed[2] == saved
+    assert listed[1].layout == layout
+    handlers.make_default_print_layout(trust.id)
+    assert [(named.name, named.is_default) for named in handlers.list_print_layouts()] == [
+        ("Treuhand", True),
+        ("Behörden", False),
+        ("Standard", False),
+    ]
+    # The default is never deleted, also should a caller not check.
+    with SqlUnitOfWork(engine) as uow:
+        locked = uow.print_layouts.list(for_update=True)
+        uow.print_layouts.delete(locked[0].id)
+        uow.commit()
+    assert handlers.list_print_layouts()[0].name == "Treuhand"
+    # One default at most, also against direct database access.
+    with (
+        SqlUnitOfWork(engine) as uow,
+        pytest.raises(IntegrityError),
+    ):
+        uow.print_layouts.update(replace(standard, is_default=True))
+    # Customers of a deleted layout take the default.
+    customer = CustomerHandlers(uow=factory(engine), clock=CLOCK).create(
+        SaveCustomer(
+            kind=CustomerKind.COMPANY,
+            company_name="Treu AG",
+            address=ZURICH,
+            print_layout_id=listed[1].id,
+        )
+    )
+    handlers.delete_print_layout(listed[1].id)
+    with SqlUnitOfWork(engine) as uow:
+        reloaded = uow.customers.get(customer.id)
+    assert reloaded is not None
+    assert reloaded.print_layout_id is None

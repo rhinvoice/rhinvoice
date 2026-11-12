@@ -10,7 +10,11 @@ if TYPE_CHECKING:
 
     from rhinvoice.application.backup.ports import BackupRepository
     from rhinvoice.application.catalog.ports import ArticleRepository
-    from rhinvoice.application.company.ports import BankAccountRepository, CompanyRepository
+    from rhinvoice.application.company.ports import (
+        BankAccountRepository,
+        CompanyRepository,
+        PrintLayoutRepository,
+    )
     from rhinvoice.application.customer.ports import CustomerRepository
     from rhinvoice.application.document.ports import DocumentRepository
     from rhinvoice.application.dunning.ports import DunningRepository
@@ -36,6 +40,9 @@ class UnitOfWork(Protocol):
 
     @property
     def bank_accounts(self) -> BankAccountRepository: ...
+
+    @property
+    def print_layouts(self) -> PrintLayoutRepository: ...
 
     @property
     def customers(self) -> CustomerRepository: ...

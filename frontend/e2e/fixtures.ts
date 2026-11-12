@@ -165,3 +165,22 @@ export async function expectDocumentAccessible(page: Page, documentId: string): 
     await checker.close();
   }
 }
+
+interface Layout {
+  readonly info_block: readonly { key: string; shown: boolean; label: string }[];
+}
+
+export interface NamedLayout {
+  readonly id: string;
+  readonly name: string;
+  readonly is_default: boolean;
+  readonly layout: Layout;
+}
+
+/** The default print layout, as the API lists it. */
+export async function defaultLayout(page: Page): Promise<NamedLayout> {
+  const layouts = (await (await page.request.get("/api/print-layouts")).json()) as NamedLayout[];
+  const found = layouts.find((named) => named.is_default);
+  if (found === undefined) throw new Error("no default print layout");
+  return found;
+}

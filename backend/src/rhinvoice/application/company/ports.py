@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from rhinvoice.domain.company.bank_account import BankAccount
     from rhinvoice.domain.company.company import Company
     from rhinvoice.domain.company.logo import Logo
-    from rhinvoice.domain.company.print_layout import PrintLayout
+    from rhinvoice.domain.company.print_layout import NamedLayout
 
 
 class CompanyRepository(Protocol):
@@ -25,11 +25,20 @@ class CompanyRepository(Protocol):
         ...
 
     def issued_logo(self, sha256: str) -> Logo | None: ...
-    def print_layout(self) -> PrintLayout:
-        """Return the saved layout, or the default one."""
+
+
+class PrintLayoutRepository(Protocol):
+    def list(self, *, for_update: bool = False) -> list[NamedLayout]:
+        """Return every layout, the default first, then by name.
+
+        ``for_update`` locks them until the commit, so that changes run one after the other
+        and the installation keeps exactly one default.
+        """
         ...
 
-    def save_print_layout(self, layout: PrintLayout) -> None: ...
+    def add(self, named: NamedLayout) -> None: ...
+    def update(self, named: NamedLayout) -> None: ...
+    def delete(self, layout_id: UUID) -> None: ...
 
 
 class BankAccountRepository(Protocol):

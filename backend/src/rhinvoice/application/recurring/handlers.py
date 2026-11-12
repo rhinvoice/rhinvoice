@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 from enum import Enum
 from typing import TYPE_CHECKING, Final
 
+from rhinvoice.application.company.handlers import check_print_layout
 from rhinvoice.application.document.handlers import DraftInput, LineInput, chosen_account
 from rhinvoice.application.errors import NotFoundError
 from rhinvoice.application.mail.handlers import SendMail
@@ -299,14 +300,16 @@ class RecurringHandlers:
         return self.get(plan_id)
 
     def _draft(self, plan: RecurringPlan) -> DraftInput:
-        """Return the plan's invoice; an account deleted since gives way to the default."""
+        """Return the plan's invoice; an account or layout deleted since gives way to defaults."""
         draft = plan_draft(plan)
-        if draft.bank_account_id is None:
-            return draft
         with self.uow() as uow:
-            account = uow.bank_accounts.get(draft.bank_account_id)
+            chosen = draft.bank_account_id
+            account = None if chosen is None else uow.bank_accounts.get(chosen)
+            layouts = {named.id for named in uow.print_layouts.list()}
         if account is None or account.currency is not draft.currency:
-            return replace(draft, bank_account_id=None)
+            draft = replace(draft, bank_account_id=None)
+        if draft.print_layout_id not in layouts:
+            draft = replace(draft, print_layout_id=None)
         return draft
 
     def _view(self, plan: RecurringPlan, runs: Sequence[PlanRun]) -> PlanView:
@@ -347,6 +350,8 @@ def to_template(draft: DraftInput) -> InvoiceTemplate:
         payment_text=draft.payment_text,
         closing_text=draft.closing_text,
         bank_account_id=draft.bank_account_id,
+        fields=draft.field_values(),
+        print_layout_id=draft.print_layout_id,
     )
 
 
@@ -368,6 +373,8 @@ def plan_draft(plan: RecurringPlan) -> DraftInput:
         payment_text=template.payment_text,
         closing_text=template.closing_text,
         bank_account_id=template.bank_account_id,
+        fields=tuple((field.key, field.value) for field in template.fields),
+        print_layout_id=template.print_layout_id,
     )
 
 
@@ -399,9 +406,10 @@ def _require(uow: UnitOfWork, plan_id: UUID, *, for_update: bool = False) -> Rec
 
 
 def _check_account(uow: UnitOfWork, template: DraftInput) -> None:
-    """Check a plan's account like a draft's: it exists and is in the plan's currency."""
+    """Check a plan's account and layout like a draft's: both exist, the account in its currency."""
     if template.currency is not None:
         chosen_account(uow, template.bank_account_id, template.currency)
+    check_print_layout(uow, template.print_layout_id)
 
 
 def _require_customer(uow: UnitOfWork, customer_id: UUID) -> None:

@@ -5,6 +5,8 @@ special rate where the country has one, zero-rated and exempt. Every line, artic
 of a recurring plan that named one of these categories now refers to the rate of that preset;
 reduced and special become the kind "standard" (any rate above zero). Pass-through items take
 no rate. Issued lines keep their frozen percentages, so issued documents look the same.
+Without a company there is no country to seed: articles and plans saved before it get their
+rates when the company is saved (CompanyHandlers.save).
 
 The presets are copied here as they were on the day of this migration: the domain's presets
 may change later, a migration must not.
@@ -107,7 +109,6 @@ VALUES: dict[str, Values] = {
 }
 """The dated percentages of the profiles (ADR 0017), one value per change."""
 
-NEEDS_RATE = "tax_category IN ('standard', 'reduced', 'special', 'zero', 'exempt')"
 # Lines may be written while their document is a draft only; this migration changes the
 # reference of issued lines too (their frozen percentage stays), as 0023 did with events.
 LINES_TRIGGER = "protect_document_lines"
@@ -201,20 +202,9 @@ def upgrade() -> None:
     bind = op.get_bind()
     rates = _seed(bind)
     if not rates:
-        # Documents need a company; articles and plans could be saved before it, but then
-        # no country tells their rates.
-        orphans = bind.execute(
-            sa.text(
-                f"SELECT (SELECT count(*) FROM articles WHERE {NEEDS_RATE})"  # noqa: S608 - constants
-                " + (SELECT count(*) FROM recurring_plans)"
-            )
-        )
-        if orphans.scalar_one():
-            msg = (
-                "articles or recurring plans exist without a company: "
-                "set up the company with version 0.12 first"
-            )
-            raise RuntimeError(msg)
+        # Documents need a company; articles and plans saved before it keep their category
+        # without a rate until the company is saved and its rates are seeded (no country
+        # tells them now). Migrations run on start: they must not stop here.
         return
     op.execute(f"ALTER TABLE document_lines DISABLE TRIGGER {LINES_TRIGGER}")
     for table, items in (("articles", "TRUE"), ("document_lines", "kind = 'item'")):

@@ -147,12 +147,14 @@ class TaxRate:
 
 
 def check_rate_choice(kind: TaxCategory, rate_id: UUID | None) -> None:
-    """Check that a position or an article has one of the rates, unless passed through."""
-    if kind is TaxCategory.PASS_THROUGH:
-        if rate_id is not None:
-            raise ValidationError("tax_rate_id", "a pass-through item has no tax rate")
-    elif rate_id is None:
-        raise ValidationError("tax_rate_id", "a tax rate is required", code="tax_rate_missing")
+    """Check that a pass-through item names no rate.
+
+    Other positions and articles without a rate take the company's default rate: articles
+    and plans saved before the company had its rates (migration 0027) have none until the
+    company is set up. Totals and issuing ask every taxed position for its rate.
+    """
+    if kind is TaxCategory.PASS_THROUGH and rate_id is not None:
+        raise ValidationError("tax_rate_id", "a pass-through item has no tax rate")
 
 
 @dataclass(frozen=True, slots=True)

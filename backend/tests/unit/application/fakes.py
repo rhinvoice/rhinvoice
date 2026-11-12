@@ -48,6 +48,7 @@ from rhinvoice.domain.document.document import (
     EventKind,
 )
 from rhinvoice.domain.document.export import ExportPeriod
+from rhinvoice.domain.document.lines import DocumentLine
 from rhinvoice.domain.dunning.reminder import DEFAULT_LEVELS, DunningLevel, Reminder
 from rhinvoice.domain.idempotency.request import KeyState, StoredRequest
 from rhinvoice.domain.identity.session import Session
@@ -57,13 +58,14 @@ from rhinvoice.domain.numbering.sequence import NumberSequence, SequenceKind
 from rhinvoice.domain.recurring.plan import PlanRun, RecurringPlan
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
+from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.tax_rate import TaxRate
 from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.text.template import TextKind, TextTemplate
 from tests.unit.domain import factories
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Collection, Sequence
+    from collections.abc import Callable, Collection, Mapping, Sequence
     from datetime import datetime
     from types import TracebackType
     from zoneinfo import ZoneInfo
@@ -134,6 +136,8 @@ class Store:
     tax_rates_seeded: bool = False
     tax_rate_locks: int = 0
     """How often the rates were read for a change (locked in the database)."""
+    legacy_categories: dict[UUID, str] = field(default_factory=dict[UUID, str])
+    """The category stored before 0.13 of articles and plan lines without a rate."""
     dunning_levels: list[DunningLevel] = field(default_factory=list[DunningLevel])
     reminders: dict[UUID, Reminder] = field(default_factory=dict[UUID, Reminder])
     mail_server: MailServer | None = None
@@ -395,9 +399,27 @@ class InMemoryCustomerRepository:
         return _page(found, query.page.offset, query.page.limit)
 
 
+def _adopted[T: (Article, DocumentLine)](
+    item: T, rates: Mapping[str, TaxRate], legacy: Mapping[UUID, str]
+) -> T:
+    """Like the database: no rate yet, the stored category (``legacy``) names it."""
+    if item.tax_rate_id is not None or item.tax_category is TaxCategory.PASS_THROUGH:
+        return item
+    if isinstance(item, DocumentLine) and not item.is_item:
+        return item
+    rate = rates[legacy.get(item.id, item.tax_category.value)]
+    return replace(item, tax_category=rate.kind, tax_rate_id=rate.id)
+
+
 class InMemoryArticleRepository:
-    def __init__(self, data: dict[UUID, Article]) -> None:
+    def __init__(self, data: dict[UUID, Article], legacy: Mapping[UUID, str] | None = None) -> None:
         self.data = data
+        self.legacy = legacy or {}
+
+    def adopt_rates(self, rates: Mapping[str, TaxRate]) -> None:
+        self.data = {
+            key: _adopted(article, rates, self.legacy) for key, article in self.data.items()
+        }
 
     def get(self, article_id: UUID) -> Article | None:
         return self.data.get(article_id)
@@ -994,13 +1016,24 @@ class InMemoryMailRepository:
 
 
 class InMemoryRecurringRepository:
-    def __init__(self, plans: dict[UUID, RecurringPlan], runs: list[PlanRun]) -> None:
+    def __init__(
+        self,
+        plans: dict[UUID, RecurringPlan],
+        runs: list[PlanRun],
+        legacy: Mapping[UUID, str] | None = None,
+    ) -> None:
+        self.legacy = legacy or {}
         self.data = plans
         self.saved_runs = runs
         self.locked: list[UUID] = []
 
     def all(self) -> list[RecurringPlan]:
         return sorted(self.data.values(), key=lambda plan: (plan.name, str(plan.id)))
+
+    def adopt_rates(self, rates: Mapping[str, TaxRate]) -> None:
+        for plan_id, plan in self.data.items():
+            lines = tuple(_adopted(line, rates, self.legacy) for line in plan.template.lines)
+            self.data[plan_id] = replace(plan, template=replace(plan.template, lines=lines))
 
     def get(self, plan_id: UUID, *, for_update: bool = False) -> RecurringPlan | None:
         if for_update:
@@ -1096,7 +1129,9 @@ class InMemoryUnitOfWork:
         self.tax_rates = InMemoryTaxRateRepository(list(self.store.tax_rates), self.store)
         self.bank_accounts = InMemoryBankAccountRepository(dict(self.store.bank_accounts))
         self.customers = InMemoryCustomerRepository(dict(self.store.customers))
-        self.articles = InMemoryArticleRepository(dict(self.store.articles))
+        self.articles = InMemoryArticleRepository(
+            dict(self.store.articles), self.store.legacy_categories
+        )
         self.sequences = InMemoryNumberSequenceRepository(dict(self.store.sequences))
         self.documents = InMemoryDocumentRepository(
             dict(self.store.documents),
@@ -1117,7 +1152,9 @@ class InMemoryUnitOfWork:
             list(self.store.dunning_levels), dict(self.store.reminders)
         )
         self.mail = InMemoryMailRepository(self.store.mail_server, dict(self.store.mail_templates))
-        self.recurring = InMemoryRecurringRepository(dict(self.store.plans), list(self.store.runs))
+        self.recurring = InMemoryRecurringRepository(
+            dict(self.store.plans), list(self.store.runs), self.store.legacy_categories
+        )
         self.idempotency = InMemoryIdempotencyRepository(dict(self.store.idempotency))
         return self
 

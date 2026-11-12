@@ -412,6 +412,15 @@ def totals_from_json(data: Json) -> Totals:
     )
 
 
+def stored_kind(category: str) -> TaxCategory:
+    """Read a stored tax category; the reduced and special ones of before 0.13 are taxed.
+
+    Only articles and plans saved before the company existed keep them (migration 0027),
+    until the company's rates are seeded.
+    """
+    return TaxCategory.STANDARD if category in {"reduced", "special"} else TaxCategory(category)
+
+
 def _uuid(value: str) -> UUID:
     return UUID(value)
 
@@ -491,10 +500,11 @@ def template_from_json(data: Json) -> InvoiceTemplate:
                 unit=None if line["unit"] is None else Unit(line["unit"]),
                 unit_price=Decimal(line["unit_price"]),
                 discount_percent=Decimal(line["discount_percent"]),
-                tax_category=TaxCategory(line["tax_category"]),
+                tax_category=stored_kind(line["tax_category"]),
                 supply=Supply(line["supply"]),
                 article_id=None if line["article_id"] is None else _uuid(line["article_id"]),
-                tax_rate_id=_optional_uuid(line["tax_rate_id"]),
+                # Lines of plans saved before the company existed have none yet.
+                tax_rate_id=_optional_uuid(line.get("tax_rate_id")),
             )
             for line in data["lines"]
         ),

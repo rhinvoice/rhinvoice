@@ -63,7 +63,8 @@ class DocumentLine:
     tax_rate: Decimal | None = field(default=None)
     """VAT rate frozen when the document is issued (None while it is a draft)."""
     tax_rate_id: UUID | None = None
-    """The company's rate of a position; None for text lines and pass-through items."""
+    """The company's rate of a position; None for text lines and pass-through items (and
+    lines of recurring plans saved before the company had its rates, see check_rate_choice)."""
 
     def __post_init__(self) -> None:
         required = self.kind is LineKind.ITEM

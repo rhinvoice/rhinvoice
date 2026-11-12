@@ -425,12 +425,10 @@ def test_document_line_validation() -> None:
 
 def test_positions_take_a_rate_unless_passed_through() -> None:
     """Name one of the company's rates on a position; text and pass-through lines have none."""
-    with raises_exactly(ValidationError, "a tax rate is required") as missing:
-        DocumentLine(id=new_id(), kind=LineKind.ITEM, description="x")
-    assert (missing.value.field, missing.value.code) == ("tax_rate_id", "tax_rate_missing")
-    for kind in (TaxCategory.ZERO, TaxCategory.EXEMPT):
-        with raises_exactly(ValidationError, "a tax rate is required"):
-            DocumentLine(id=new_id(), kind=LineKind.ITEM, description="x", tax_category=kind)
+    # Lines of plans saved before the company had rates name none yet (migration 0027).
+    for kind in (TaxCategory.STANDARD, TaxCategory.ZERO, TaxCategory.EXEMPT):
+        line = DocumentLine(id=new_id(), kind=LineKind.ITEM, description="x", tax_category=kind)
+        assert line.tax_rate_id is None
     with raises_exactly(ValidationError, "a pass-through item has no tax rate") as passed:
         DocumentLine(
             id=new_id(), kind=LineKind.ITEM, description="x", tax_category=PASS, tax_rate_id=EXEMPT

@@ -1,4 +1,6 @@
+import json
 from dataclasses import replace
+from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
@@ -7,6 +9,7 @@ from alembic.migration import MigrationContext
 from sqlalchemy import Connection, Engine, inspect, select, text
 
 from rhinvoice.application.catalog.handlers import ArticleHandlers, SaveArticle
+from rhinvoice.application.company.handlers import CompanyHandlers, SaveCompany
 from rhinvoice.application.document.handlers import DocumentHandlers, DraftInput, LineInput
 from rhinvoice.domain.company.print_layout import (
     DEFAULT_INFO_BLOCK,
@@ -19,13 +22,14 @@ from rhinvoice.domain.document.document import DocumentType, FieldValue
 from rhinvoice.domain.document.lines import LineKind
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.identifier import new_id
+from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.presets import REDUCED
 from rhinvoice.infrastructure.db.migrate import downgrade, upgrade
 from rhinvoice.infrastructure.db.tables import dunning_levels, metadata, text_templates
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork
 from tests.helpers import raises_exactly
-from tests.integration.test_document_persistence import setup
+from tests.integration.test_document_persistence import ZURICH, setup
 from tests.integration.test_recurring_persistence import RATES, TEMPLATE, plan
 from tests.unit.domain import factories
 
@@ -426,28 +430,79 @@ def test_a_special_rate_without_one_in_the_country_takes_the_standard_rate(
 def test_installations_without_a_company_get_their_rates_with_it(
     database_url: str, engine: Engine
 ) -> None:
+    """Migrations run on start: no country to seed is no reason to stop (#80)."""
     downgrade(database_url, "0026")
-    try:
-        with engine.begin() as connection:
+    customer = factories.customer()
+    with SqlUnitOfWork(engine) as uow:
+        uow.customers.add(customer)
+        uow.recurring.add(plan(customer.id, "Hosting", date(2026, 3, 9)))
+        uow.commit()
+    with engine.begin() as connection:
+        # A plan as version 0.12 wrote it: a reduced line, no rate.
+        template = connection.execute(text("SELECT template FROM recurring_plans")).scalar_one()
+        lines = [
+            {
+                **{key: value for key, value in line.items() if key != "tax_rate_id"},
+                "tax_category": "reduced" if line["kind"] == "item" else line["tax_category"],
+            }
+            for line in template["lines"]
+        ]
+        connection.execute(
+            text("UPDATE recurring_plans SET template = CAST(:template AS jsonb)"),
+            {"template": json.dumps({**template, "lines": lines})},
+        )
+        for number, category in (("1", "reduced"), ("2", "special"), ("3", "pass_through")):
             connection.execute(
                 text(
                     "INSERT INTO articles (id, number, name, unit, tax_category, created_at)"
-                    " VALUES (gen_random_uuid(), '1', 'Kabel', 'C62', 'standard', now())"
-                )
+                    " VALUES (gen_random_uuid(), :number, 'Kabel', 'C62', :category, now())"
+                ),
+                {"number": number, "category": category},
             )
-        with raises_exactly(
-            RuntimeError,
-            "articles or recurring plans exist without a company: "
-            "set up the company with version 0.12 first",
-        ):
-            upgrade(database_url)
-        with engine.begin() as connection:
-            connection.execute(text("UPDATE articles SET tax_category = 'pass_through'"))
-    finally:
-        upgrade(database_url)
+    upgrade(database_url)
     with engine.connect() as connection:
         assert rows(connection, "SELECT count(*) FROM tax_rates") == [(0,)]
-        assert rows(connection, "SELECT tax_rate_id FROM articles") == [(None,)]
+        assert rows(
+            connection, "SELECT tax_category, tax_rate_id FROM articles ORDER BY number"
+        ) == [
+            ("reduced", None),
+            ("special", None),
+            ("pass_through", None),
+        ]
+    # Until the company is saved they read as using the default rate.
+    with SqlUnitOfWork(engine) as uow:
+        assert [
+            (a.tax_category, a.tax_rate_id)
+            for a in sorted(uow.articles.all(), key=lambda a: a.number)
+        ] == [
+            (TaxCategory.STANDARD, None),
+            (TaxCategory.STANDARD, None),
+            (TaxCategory.PASS_THROUGH, None),
+        ]
+        [stored] = uow.recurring.all()
+        assert [line.tax_rate_id for line in stored.template.lines] == [None, None]
+    CompanyHandlers(uow=lambda: SqlUnitOfWork(engine)).save(
+        SaveCompany(name="Muster GmbH", address=ZURICH, default_currency=Currency.CHF)
+    )
+    with SqlUnitOfWork(engine) as uow:
+        rates = {rate.preset: rate.id for rate in uow.tax_rates.list()}
+        articles = sorted(uow.articles.all(), key=lambda article: article.number)
+        assert [(a.tax_category, a.tax_rate_id) for a in articles] == [
+            (TaxCategory.STANDARD, rates["reduced"]),
+            (TaxCategory.STANDARD, rates["special"]),
+            (TaxCategory.PASS_THROUGH, None),
+        ]
+        [stored] = uow.recurring.all()
+        assert [(line.tax_category, line.tax_rate_id) for line in stored.template.lines] == [
+            (TaxCategory.STANDARD, None),
+            (TaxCategory.STANDARD, rates["reduced"]),
+        ]
+    with engine.connect() as connection:
+        assert rows(connection, "SELECT tax_category FROM articles ORDER BY number") == [
+            ("standard",),
+            ("standard",),
+            ("pass_through",),
+        ]
 
 
 def test_own_rates_stop_the_downgrade(

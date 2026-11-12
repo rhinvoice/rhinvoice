@@ -322,6 +322,8 @@ def test_article() -> None:
     assert factories.article(prices={Currency.CHF: Decimal("99999999.9999")}).price(Currency.CHF)
     passed = factories.article(tax_category=TaxCategory.PASS_THROUGH, tax_rate_id=None)
     assert passed.tax_rate_id is None
+    # Saved before the company had its rates: the default rate (migration 0027).
+    assert factories.article(tax_rate_id=None).tax_category is TaxCategory.STANDARD
 
 
 @pytest.mark.parametrize(
@@ -351,7 +353,6 @@ def test_article() -> None:
             "prices.CHF",
             "price must have at most 4 decimal places",
         ),
-        ({"tax_rate_id": None}, "tax_rate_id", "a tax rate is required"),
         (
             {"tax_category": TaxCategory.PASS_THROUGH},
             "tax_rate_id",

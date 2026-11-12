@@ -16,7 +16,7 @@ from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.money import parse_decimal
 from rhinvoice.domain.tax.category import TaxCategory
-from rhinvoice.domain.tax.presets import STANDARD
+from rhinvoice.domain.tax.presets import BASE_KEYS, STANDARD
 from rhinvoice.domain.tax.tax_rate import RateCategory, RateValue, TaxRate
 
 if TYPE_CHECKING:
@@ -203,14 +203,29 @@ class TaxRateHandlers:
         return view
 
 
-def seed_rates(uow: UnitOfWork, company: Company) -> None:
+def seed_rates(uow: UnitOfWork, company: Company) -> list[TaxRate]:
     """Give a company the base presets of its country, worded in its language."""
     taken = {rate.name.casefold() for rate in uow.tax_rates.list(for_update=True)}
+    added: list[TaxRate] = []
     for preset in profile_of(company.country).base_presets:
         rate = preset.to_rate(new_id(), company.default_language)
         # Only after a change of country: an own rate may carry a preset's name already.
         if rate.name.casefold() not in taken:
             uow.tax_rates.add(rate)
+            added.append(rate)
+    return added
+
+
+def adopt_rates(uow: UnitOfWork, seeded: Sequence[TaxRate]) -> None:
+    """Give articles and plans saved before the company existed the rate of their category.
+
+    Migration 0027 could not tell their country; each former category takes the rate of its
+    preset, a special rate where the country has none the standard rate.
+    """
+    by_preset = {rate.preset: rate for rate in seeded}
+    former = {key: by_preset.get(key, by_preset[STANDARD]) for key in BASE_KEYS}
+    uow.articles.adopt_rates(former)
+    uow.recurring.adopt_rates(former)
 
 
 def reseed_rates(uow: UnitOfWork, company: Company) -> None:

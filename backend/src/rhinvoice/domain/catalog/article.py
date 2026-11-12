@@ -45,7 +45,8 @@ class Article:
     archived: bool = False
     supply: Supply = Supply.SERVICE
     tax_rate_id: UUID | None = None
-    """The company's rate the article is sold at; None for pass-through items."""
+    """The company's rate the article is sold at; None for pass-through items, and the default
+    rate for articles saved before the company had its rates (migration 0027)."""
 
     def __post_init__(self) -> None:
         object.__setattr__(

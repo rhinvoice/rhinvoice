@@ -9,17 +9,14 @@ No tax advice: rates are provided without warranty (see README).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from rhinvoice.domain.shared.errors import ValidationError
-from rhinvoice.domain.tax.category import TaxCategory
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import date
-
-ZERO = Decimal(0)
+    from decimal import Decimal
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,17 +31,6 @@ class TaxRateSet:
 
     def applies_on(self, on: date) -> bool:
         return self.valid_from <= on and (self.valid_to is None or on <= self.valid_to)
-
-    def rate(self, category: TaxCategory) -> Decimal:
-        if category is TaxCategory.STANDARD:
-            return self.standard
-        if category is TaxCategory.REDUCED:
-            return self.reduced
-        if category is TaxCategory.SPECIAL:
-            if self.special is None:
-                raise ValidationError("tax_category", "this tax rate does not exist in the country")
-            return self.special
-        return ZERO
 
 
 def rate_set_on(rate_sets: Sequence[TaxRateSet], on: date) -> TaxRateSet:

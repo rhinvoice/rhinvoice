@@ -1,3 +1,5 @@
+from dataclasses import replace
+from decimal import Decimal
 from uuid import UUID
 
 import pytest
@@ -11,6 +13,7 @@ from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from tests.helpers import raises_exactly
 from tests.unit.application.fakes import InMemoryUnitOfWork, Store
+from tests.unit.domain import factories
 from tests.unit.domain.factories import CH_IBAN, CH_QR_IBAN
 
 ADDRESS = AddressInput(
@@ -234,3 +237,70 @@ def test_account_without_optional_values(handlers: CompanyHandlers) -> None:
     account = handlers.create_bank_account(account_command(qr_iban="", bic=""))
     assert account.qr_iban is None
     assert account.bic is None
+
+
+# --- Tax rates (ADR 0044) -----------------------------------------------------------------
+
+
+def rates_of(store: Store) -> list[tuple[str | None, str]]:
+    return [(rate.preset, rate.name) for rate in store.tax_rates]
+
+
+def test_a_new_company_gets_the_rates_of_its_country(
+    handlers: CompanyHandlers, store: Store
+) -> None:
+    handlers.save(company_command(default_language=Language.FR))
+    assert rates_of(store) == [
+        ("standard", "Taux normal"),
+        ("reduced", "Taux réduit"),
+        ("special", "Taux spécial pour l’hébergement"),  # noqa: RUF001 - French apostrophe
+        ("zero", "0 % (imposable)"),
+        ("exempt", "Exclu du champ de l’impôt"),  # noqa: RUF001 - French apostrophe
+    ]
+    assert store.tax_rates[4].exemption_reason == "Prestation exonérée"
+    assert store.tax_rate_locks == 1
+    # Saving again changes nothing.
+    handlers.save(company_command(default_language=Language.FR, name="Muster AG"))
+    assert rates_of(store)[0] == ("standard", "Taux normal")
+    assert len(store.tax_rates) == 5
+
+
+def test_a_new_country_brings_its_rates_while_none_is_used(
+    handlers: CompanyHandlers, store: Store
+) -> None:
+    handlers.save(company_command())
+    own = replace(store.tax_rates[0], id=new_id(), name="Eigener Satz", preset=None)
+    store.tax_rates.append(own)
+    germany = replace(ADDRESS, postal_code="10115", city="Berlin", country="DE")
+    handlers.save(company_command(address=germany))
+    # The presets of Switzerland give way to Germany's; the own rate stays.
+    assert rates_of(store) == [
+        (None, "Eigener Satz"),
+        ("standard", "Normalsatz"),
+        ("reduced", "Reduzierter Satz"),
+        ("zero", "0 % (steuerbar)"),
+        ("exempt", "Von der Steuer ausgenommen"),
+    ]
+    assert store.tax_rates[1].values[-1].percent == Decimal(19)
+    # An own rate of a preset's name keeps it: the preset is left out.
+    store.tax_rates[0] = replace(own, name="normalsatz")
+    austria = replace(ADDRESS, postal_code="1010", city="Wien", country="AT")
+    handlers.save(company_command(address=austria))
+    assert [preset for preset, _ in rates_of(store)] == [
+        None,
+        "reduced",
+        "special",
+        "zero",
+        "exempt",
+    ]
+
+
+def test_rates_in_use_stay_when_the_country_changes(
+    handlers: CompanyHandlers, store: Store
+) -> None:
+    handlers.save(company_command())
+    store.articles[new_id()] = factories.article(tax_rate_id=store.tax_rates[0].id)
+    before = list(store.tax_rates)
+    germany = replace(ADDRESS, postal_code="10115", city="Berlin", country="DE")
+    handlers.save(company_command(address=germany))
+    assert store.tax_rates == before

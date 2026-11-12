@@ -2,6 +2,7 @@
 
 import csv
 import io
+from dataclasses import replace
 from datetime import UTC, datetime
 from decimal import Decimal
 
@@ -27,6 +28,7 @@ from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import EXEMPT, REDUCED, STANDARD
 from tests.helpers import raises_exactly
 from tests.unit.application.conftest import NOW
 from tests.unit.application.fakes import InMemoryUnitOfWork, Store
@@ -453,9 +455,43 @@ def test_articles_are_imported(handlers: ImportHandlers, store: Store) -> None:
     saved = {article.number: article for article in store.articles.values()}
     service = saved["0021"]
     assert (service.unit.code, service.tax_category) == ("HUR", TaxCategory.STANDARD)
+    assert service.tax_rate_id == factories.rate_id(STANDARD)
     assert (service.description, service.group) == ("Beratung IT", "Beratung")
     assert service.prices == {Currency.CHF: Decimal("120.00")}
     assert saved["1"].unit.code == "C62"
+
+
+def test_articles_take_the_rate_of_their_percentage(handlers: ImportHandlers, store: Store) -> None:
+    """ADR 0044: a percentage or a name of the former categories picks the company's rate."""
+    content = lines(
+        "Bezeichnung;MwSt",
+        "Buch;2,6 %",
+        "Kurs;steuerfrei",
+        "Gebühr;durchlaufender Posten",
+        "Beratung;",
+    )
+    run = handlers.run(articles_request(content=content, commit=True))
+    assert all(outcome.status is RowStatus.NEW for outcome in run.outcomes)
+    saved = {article.name: article for article in store.articles.values()}
+    assert {name: (a.tax_category, a.tax_rate_id) for name, a in saved.items()} == {
+        "Buch": (TaxCategory.STANDARD, factories.rate_id(REDUCED)),
+        "Kurs": (TaxCategory.EXEMPT, factories.rate_id(EXEMPT)),
+        "Gebühr": (TaxCategory.PASS_THROUGH, None),
+        "Beratung": (TaxCategory.STANDARD, factories.rate_id(STANDARD)),
+    }
+    # Updated without the column, an article keeps its rate, also a hidden one.
+    store.tax_rates = [
+        replace(rate, hidden=rate.id == factories.rate_id(REDUCED)) for rate in store.tax_rates
+    ]
+    update = lines("Bezeichnung;Preis", "Buch;30")
+    handlers.run(articles_request(content=update, duplicates=DuplicateStrategy.UPDATE, commit=True))
+    assert store.articles[saved["Buch"].id].tax_rate_id == factories.rate_id(REDUCED)
+    # A hidden rate is not chosen by its percentage.
+    [refused] = handlers.run(
+        articles_request(content=lines("Bezeichnung;MwSt", "Heft;2.6"))
+    ).outcomes
+    assert refused.problem is not None
+    assert (refused.problem.field, refused.problem.code) == ("tax_category", "unknown_tax_rate")
 
 
 def test_article_prices_per_currency(handlers: ImportHandlers, store: Store) -> None:

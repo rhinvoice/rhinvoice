@@ -41,10 +41,12 @@ from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
 from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import REDUCED
 from rhinvoice.domain.tax.supply import Supply
 from rhinvoice.domain.text.template import TextKind
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from uuid import UUID
 
     from rhinvoice.application.catalog.handlers import ArticleHandlers
@@ -228,13 +230,15 @@ ARTICLES: tuple[SaveArticle, ...] = (
     SaveArticle(
         name="Fachbuch «Gutes Design»",
         unit="C62",
-        tax_category=TaxCategory.REDUCED,
         prices={Currency.CHF: "38.50", Currency.EUR: "35"},
         supply=Supply.GOODS,
     ),
     SaveArticle(name="Fotografie", unit="HUR", prices={Currency.CHF: "140", Currency.EUR: "130"}),
     SaveArticle(name="Domain", unit="ANN", prices={Currency.CHF: "25", Currency.EUR: "23"}),
 )
+
+ARTICLE_RATES: Mapping[str, str] = {"Fachbuch «Gutes Design»": REDUCED}
+"""The preset of the rate of articles not sold at the standard rate (books are reduced)."""
 
 # Who gets the invoices, in order: a few regular customers bring most of the revenue.
 INVOICE_CUSTOMERS = (0, 1, 2, 0, 3, 4, 0, 1, 5, 6, 0, 2, 1, 7, 0, 3, 1, 8, 0, 2, 5, 1, 6, 0)
@@ -424,7 +428,16 @@ class DemoHandlers:
         commands = customers_for(company.country)
         accounts = self._add_missing_accounts(company, commands)
         customers = [self.customers.create(command) for command in commands]
-        articles = [self.articles.create(command) for command in ARTICLES]
+        with self.uow() as uow:
+            by_preset = {rate.preset: rate.id for rate in uow.tax_rates.list()}
+        articles = [
+            self.articles.create(
+                replace(command, tax_rate_id=by_preset[ARTICLE_RATES[command.name]])
+                if command.name in ARTICLE_RATES
+                else command
+            )
+            for command in ARTICLES
+        ]
         if not documents:
             return DemoResult(len(customers), len(articles), accounts, 0, 0)
         currency = company.default_currency
@@ -617,7 +630,8 @@ def _draft(
                 quantity=quantity,
                 unit=articles[article].unit.code,
                 unit_price=str(articles[article].prices[currency]),
-                tax_category=articles[article].tax_category,
+                tax_rate_id=articles[article].tax_rate_id,
+                pass_through=articles[article].tax_category is TaxCategory.PASS_THROUGH,
                 supply=articles[article].supply,
                 article_id=articles[article].id,
             )

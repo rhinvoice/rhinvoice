@@ -117,6 +117,13 @@ class InvoiceTemplate:
                 self, name, clean_multiline(getattr(self, name), name, max_length=MAX_TEXT)
             )
 
+    @property
+    def rate_ids(self) -> tuple[UUID, ...]:
+        """The tax rates of the positions; hidden ones stay with the plan (ADR 0044)."""
+        return tuple(
+            dict.fromkeys(line.tax_rate_id for line in self.lines if line.tax_rate_id is not None)
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class RecurringPlan:

@@ -11,6 +11,7 @@ from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.text import clean_multiline, clean_text
 from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.supply import Supply
+from rhinvoice.domain.tax.tax_rate import check_rate_choice
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -56,10 +57,13 @@ class DocumentLine:
     unit_price: Decimal = Decimal(0)
     discount_percent: Decimal = Decimal(0)
     tax_category: TaxCategory = TaxCategory.STANDARD
+    """The kind of the line's tax: the category of its rate, or pass-through (ADR 0044)."""
     supply: Supply = Supply.SERVICE
     article_id: UUID | None = None
     tax_rate: Decimal | None = field(default=None)
     """VAT rate frozen when the document is issued (None while it is a draft)."""
+    tax_rate_id: UUID | None = None
+    """The company's rate of a position; None for text lines and pass-through items."""
 
     def __post_init__(self) -> None:
         required = self.kind is LineKind.ITEM
@@ -76,6 +80,8 @@ class DocumentLine:
         if self.kind is LineKind.TEXT:
             if not (self.description or self.details):
                 raise ValidationError("description", "a text line needs a text")
+            if self.tax_rate_id is not None:
+                raise ValidationError("tax_rate_id", "a text line has no tax rate")
             return
         if abs(self.quantity) > MAX_QUANTITY:
             raise ValidationError("quantity", "quantity is too large")
@@ -88,6 +94,7 @@ class DocumentLine:
         if not Decimal(0) <= self.discount_percent <= HUNDRED:
             raise ValidationError("discount_percent", "discount must be between 0 and 100 percent")
         _precise(self.discount_percent, PERCENT_STEP, "discount_percent", "discount")
+        check_rate_choice(self.tax_category, self.tax_rate_id)
 
     @property
     def is_item(self) -> bool:

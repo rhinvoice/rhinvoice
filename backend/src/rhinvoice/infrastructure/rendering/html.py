@@ -274,7 +274,7 @@ def _context(model: PrintModel) -> dict[str, object]:
         "pass_through": any(line.is_pass_through for line in content.lines),
         "prices_gross": labels["prices_gross"].format(tax=setting.tax) if gross else "",
         "totals": _totals(model, setting),
-        "notices": [text for _, text in model.view.notices if text],
+        "notices": list(model.view.printed_notices),
         # Themes written before 0.4 print one notice: all of them, one per line.
         "notice": model.view.notice,
         "payment": payment,

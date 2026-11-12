@@ -32,6 +32,7 @@ from rhinvoice.api.routers import (
     recurring,
     reference,
     support,
+    tax_rates,
     texts,
     updates,
 )
@@ -55,6 +56,7 @@ API_ROUTERS: tuple[APIRouter, ...] = (
     numbering.router,
     onboarding.router,
     print_layout.router,
+    tax_rates.router,
     documents.router,
     dunning.router,
     e_invoices.router,

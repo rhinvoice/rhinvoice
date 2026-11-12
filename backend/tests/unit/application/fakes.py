@@ -57,8 +57,10 @@ from rhinvoice.domain.numbering.sequence import NumberSequence, SequenceKind
 from rhinvoice.domain.recurring.plan import PlanRun, RecurringPlan
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
+from rhinvoice.domain.tax.tax_rate import TaxRate
 from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.text.template import TextKind, TextTemplate
+from tests.unit.domain import factories
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Collection, Sequence
@@ -127,6 +129,11 @@ class Store:
     )
     print_layout_locks: int = 0
     """How often the layouts were read for a change (locked in the database)."""
+    tax_rates: list[TaxRate] = field(default_factory=list[TaxRate])
+    """In their order; seeded with the presets of the company's country on first use."""
+    tax_rates_seeded: bool = False
+    tax_rate_locks: int = 0
+    """How often the rates were read for a change (locked in the database)."""
     dunning_levels: list[DunningLevel] = field(default_factory=list[DunningLevel])
     reminders: dict[UUID, Reminder] = field(default_factory=dict[UUID, Reminder])
     mail_server: MailServer | None = None
@@ -277,6 +284,43 @@ class InMemoryPrintLayoutRepository:
 
     def delete(self, layout_id: UUID) -> None:
         del self.data[layout_id]
+
+
+class InMemoryTaxRateRepository:
+    def __init__(self, data: list[TaxRate], store: Store) -> None:
+        self.data = data
+        self.store = store
+
+    def list(self, *, for_update: bool = False) -> list[TaxRate]:
+        if for_update is True:
+            # Counted, so that tests see that changes lock the rates first.
+            self.store.tax_rate_locks += 1
+        return list(self.data)
+
+    def add(self, rate: TaxRate) -> None:
+        if any(other.name.casefold() == rate.name.casefold() for other in self.data):
+            # Like the unique index of the database.
+            msg = "a second tax rate of this name"
+            raise AssertionError(msg)
+        self.data.append(rate)
+
+    def update(self, rate: TaxRate) -> None:
+        self.data = [rate if other.id == rate.id else other for other in self.data]
+
+    def delete(self, rate_id: UUID) -> None:
+        self.data = [rate for rate in self.data if rate.id != rate_id]
+
+    def used_ids(self) -> frozenset[UUID]:
+        """Return the rates of the saved lines, articles and plans, like the database."""
+        lines = [
+            line
+            for stored in self.store.documents.values()
+            for line in stored.document.content.lines
+        ]
+        lines += [line for plan in self.store.plans.values() for line in plan.template.lines]
+        used = {line.tax_rate_id for line in lines}
+        used |= {article.tax_rate_id for article in self.store.articles.values()}
+        return frozenset(rate_id for rate_id in used if rate_id is not None)
 
 
 class InMemoryBankAccountRepository:
@@ -1041,6 +1085,15 @@ class InMemoryUnitOfWork:
         self.print_layouts = InMemoryPrintLayoutRepository(
             dict(self.store.print_layouts), self.store
         )
+        company = self.store.company
+        if company is not None and not self.store.tax_rates_seeded:
+            # Like the migration: a company has the rates of its country (ADR 0044).
+            self.store.tax_rates_seeded = True
+            if not self.store.tax_rates:
+                self.store.tax_rates = list(
+                    factories.tax_rates(company.country, company.default_language).values()
+                )
+        self.tax_rates = InMemoryTaxRateRepository(list(self.store.tax_rates), self.store)
         self.bank_accounts = InMemoryBankAccountRepository(dict(self.store.bank_accounts))
         self.customers = InMemoryCustomerRepository(dict(self.store.customers))
         self.articles = InMemoryArticleRepository(dict(self.store.articles))
@@ -1082,6 +1135,8 @@ class InMemoryUnitOfWork:
         self.store.company = self.company.company
         self.store.logo = self.company.logo
         self.store.print_layouts = dict(self.print_layouts.data)
+        self.store.tax_rates = list(self.tax_rates.data)
+        self.store.tax_rates_seeded = True
         self.store.issued_logos = dict(self.company.issued_logos)
         self.store.bank_accounts = dict(self.bank_accounts.data)
         self.store.customers = dict(self.customers.data)

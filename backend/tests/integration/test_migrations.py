@@ -1,4 +1,5 @@
 from dataclasses import replace
+from decimal import Decimal
 from uuid import UUID
 
 from alembic.autogenerate import compare_metadata
@@ -19,12 +20,14 @@ from rhinvoice.domain.document.lines import LineKind
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import REDUCED
 from rhinvoice.infrastructure.db.migrate import downgrade, upgrade
 from rhinvoice.infrastructure.db.tables import dunning_levels, metadata, text_templates
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork
 from tests.helpers import raises_exactly
 from tests.integration.test_document_persistence import setup
-from tests.integration.test_recurring_persistence import TEMPLATE, plan
+from tests.integration.test_recurring_persistence import RATES, TEMPLATE, plan
+from tests.unit.domain import factories
 
 __all__ = ["setup"]  # the fixture of the document tests
 
@@ -111,15 +114,15 @@ def test_pass_through_items_fall_back_to_exempt_on_a_downgrade(
         kind=LineKind.ITEM,
         description="Gebühr",
         unit_price="80",
-        tax_category=TaxCategory.PASS_THROUGH,
+        pass_through=True,
     )
     draft = documents.create(
         DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(fee,))
     ).document.id
     ArticleHandlers(uow=lambda: SqlUnitOfWork(engine), clock=clock).create(
-        SaveArticle(name="Gebühr", tax_category=TaxCategory.PASS_THROUGH)
+        SaveArticle(name="Gebühr", pass_through=True)
     )
-    template = replace(TEMPLATE, lines=(*TEMPLATE.lines, fee.to_domain(2)))
+    template = replace(TEMPLATE, lines=(*TEMPLATE.lines, fee.to_domain(2, RATES)))
     with SqlUnitOfWork(engine) as uow:
         uow.recurring.add(replace(plan(customer, "Wartung", clock.today()), template=template))
         uow.recurring.add(plan(customer, "Hosting", clock.today()))
@@ -280,3 +283,198 @@ def test_field_values_go_on_a_downgrade_of_drafts_only(
         "issued documents print fields or other rows: they need the version that added them",
     ):
         downgrade(database_url, "0024")
+
+
+# --- 0027: own tax rates (ADR 0044) ----------------------------------------------------
+
+
+def rows(connection: Connection, statement: str, **values: object) -> list[tuple[object, ...]]:
+    return [tuple(row) for row in connection.execute(text(statement), values)]
+
+
+def test_lines_articles_and_plans_refer_to_the_rates_of_their_category(
+    database_url: str, engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
+) -> None:
+    """Issued lines keep their frozen percentage; reduced and special become "standard"."""
+    documents, customer, clock = setup
+    hours = LineInput(kind=LineKind.ITEM, description="Beratung", unit_price="80")
+    book = replace(hours, description="Buch", tax_rate_id=factories.rate_id(REDUCED))
+    fee = replace(hours, description="Gebühr", pass_through=True)
+    heading = LineInput(kind=LineKind.TEXT, description="Phase 1")
+    issued = documents.issue(
+        documents.create(
+            DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(heading, hours, book))
+        ).document.id
+    ).document.id
+    draft = documents.create(
+        DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(hours, fee))
+    ).document.id
+    ArticleHandlers(uow=lambda: SqlUnitOfWork(engine), clock=clock).create(
+        SaveArticle(name="Buch", tax_rate_id=factories.rate_id(REDUCED))
+    )
+    with SqlUnitOfWork(engine) as uow:
+        uow.recurring.add(plan(customer, "Hosting", clock.today()))
+        uow.commit()
+    total = documents.get(issued).totals.total
+    downgrade(database_url, "0026")
+    with engine.begin() as connection:
+        assert rows(
+            connection,
+            "SELECT kind, tax_category, tax_rate FROM document_lines WHERE document_id = :id"
+            " ORDER BY position",
+            id=issued,
+        ) == [
+            ("text", "standard", None),
+            ("item", "standard", Decimal("8.10")),
+            ("item", "reduced", Decimal("2.60")),
+        ]
+        assert rows(connection, "SELECT tax_category FROM articles") == [("reduced",)]
+        assert rows(
+            connection,
+            "SELECT jsonb_path_query_array(template, '$.lines[*].tax_category'),"
+            " template -> 'lines' -> 1 ? 'tax_rate_id' FROM recurring_plans",
+        ) == [(["standard", "reduced"], False)]
+        # A special rate, as Swiss companies had it; the company moves to Austria.
+        connection.execute(
+            text(
+                "UPDATE document_lines SET tax_category = 'special' WHERE document_id = :id"
+                " AND kind = 'item' AND tax_category = 'standard'"
+            ),
+            {"id": draft},
+        )
+        connection.execute(text("UPDATE company SET country = 'AT', default_language = 'en'"))
+    upgrade(database_url)
+    with engine.connect() as connection:
+        rates = {
+            preset: (rate_id, name, category, values)
+            for rate_id, name, category, values, preset in rows(
+                connection,
+                "SELECT id, name, category, rate_values, preset FROM tax_rates ORDER BY position",
+            )
+        }
+        assert list(rates) == ["standard", "reduced", "special", "zero", "exempt"]
+        assert [(name, category) for _, name, category, _ in rates.values()] == [
+            ("Standard rate", "S"),
+            ("Reduced rate", "S"),
+            ("Second reduced rate", "S"),
+            ("0 % (taxable)", "Z"),
+            ("Exempt", "E"),
+        ]
+        assert rates["special"][3] == [{"valid_from": "2016-01-01", "percent": "13"}]
+        assert rows(
+            connection,
+            "SELECT exemption_reason FROM tax_rates WHERE preset = 'exempt'",
+        ) == [("Exempt supply",)]
+        assert rows(
+            connection,
+            "SELECT kind, tax_category, tax_rate, tax_rate_id FROM document_lines"
+            " WHERE document_id = :id ORDER BY position",
+            id=issued,
+        ) == [
+            ("text", "standard", None, None),
+            ("item", "standard", Decimal("8.10"), rates["standard"][0]),
+            ("item", "standard", Decimal("2.60"), rates["reduced"][0]),
+        ]
+        assert rows(
+            connection,
+            "SELECT tax_category, tax_rate_id FROM document_lines WHERE document_id = :id"
+            " ORDER BY position",
+            id=draft,
+        ) == [("standard", rates["special"][0]), ("pass_through", None)]
+        assert rows(connection, "SELECT tax_category, tax_rate_id FROM articles") == [
+            ("standard", rates["reduced"][0])
+        ]
+        lines = connection.execute(
+            text("SELECT template -> 'lines' FROM recurring_plans")
+        ).scalar_one()
+        assert [(line["tax_category"], line["tax_rate_id"]) for line in lines] == [
+            ("standard", None),
+            ("standard", str(rates["reduced"][0])),
+        ]
+    # The documents read as before.
+    view = documents.get(issued)
+    assert [line.tax_rate_id for line in view.document.content.lines] == [
+        None,
+        rates["standard"][0],
+        rates["reduced"][0],
+    ]
+    assert view.totals.total == total
+
+
+def test_a_special_rate_without_one_in_the_country_takes_the_standard_rate(
+    database_url: str, engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
+) -> None:
+    documents, customer, _ = setup
+    hours = LineInput(kind=LineKind.ITEM, description="Beratung", unit_price="80")
+    draft = documents.create(
+        DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(hours,))
+    ).document.id
+    downgrade(database_url, "0026")
+    with engine.begin() as connection:
+        connection.execute(text("UPDATE document_lines SET tax_category = 'special'"))
+        connection.execute(text("UPDATE company SET country = 'DE'"))
+    upgrade(database_url)
+    with engine.connect() as connection:
+        assert rows(
+            connection,
+            "SELECT tax_rates.preset FROM document_lines JOIN tax_rates"
+            " ON tax_rates.id = tax_rate_id WHERE document_id = :id",
+            id=draft,
+        ) == [("standard",)]
+
+
+def test_installations_without_a_company_get_their_rates_with_it(
+    database_url: str, engine: Engine
+) -> None:
+    downgrade(database_url, "0026")
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "INSERT INTO articles (id, number, name, unit, tax_category, created_at)"
+                    " VALUES (gen_random_uuid(), '1', 'Kabel', 'C62', 'standard', now())"
+                )
+            )
+        with raises_exactly(
+            RuntimeError,
+            "articles exist without a company: set up the company with version 0.12 first",
+        ):
+            upgrade(database_url)
+        with engine.begin() as connection:
+            connection.execute(text("UPDATE articles SET tax_category = 'pass_through'"))
+    finally:
+        upgrade(database_url)
+    with engine.connect() as connection:
+        assert rows(connection, "SELECT count(*) FROM tax_rates") == [(0,)]
+        assert rows(connection, "SELECT tax_rate_id FROM articles") == [(None,)]
+
+
+def test_own_rates_stop_the_downgrade(
+    database_url: str, engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
+) -> None:
+    documents, customer, clock = setup
+    with SqlUnitOfWork(engine) as uow:
+        own = replace(RATES[0], id=new_id(), name="Eigener Satz", preset=None)
+        uow.tax_rates.add(own)
+        uow.commit()
+    template = replace(
+        TEMPLATE,
+        lines=(replace(TEMPLATE.lines[1], tax_rate_id=own.id, tax_category=TaxCategory.STANDARD),),
+    )
+    with SqlUnitOfWork(engine) as uow:
+        uow.recurring.add(replace(plan(customer, "Wartung", clock.today()), template=template))
+        uow.commit()
+    message = (
+        "documents, articles or recurring plans use own tax rates: they need version 0.13 or later"
+    )
+    with raises_exactly(RuntimeError, message):
+        downgrade(database_url, "0026")
+    with SqlUnitOfWork(engine) as uow:
+        uow.recurring.delete(uow.recurring.all()[0].id)
+        uow.commit()
+    hours = LineInput(
+        kind=LineKind.ITEM, description="Beratung", unit_price="80", tax_rate_id=own.id
+    )
+    documents.create(DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(hours,)))
+    with raises_exactly(RuntimeError, message):
+        downgrade(database_url, "0026")

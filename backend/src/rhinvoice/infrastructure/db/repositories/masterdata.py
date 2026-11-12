@@ -525,6 +525,7 @@ class SqlArticleRepository:
             group=row["article_group"],
             archived=row["archived"],
             supply=Supply(row["supply"]),
+            tax_rate_id=row["tax_rate_id"],
         )
 
     def get(self, article_id: UUID) -> Article | None:
@@ -559,6 +560,7 @@ class SqlArticleRepository:
             "article_group": article.group,
             "unit": article.unit.code,
             "tax_category": article.tax_category.value,
+            "tax_rate_id": article.tax_rate_id,
             "supply": article.supply.value,
             "archived": article.archived,
             "created_at": article.created_at,

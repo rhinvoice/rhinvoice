@@ -22,7 +22,6 @@ from rhinvoice.domain.document.document import (
     DocumentType,
     EventKind,
 )
-from rhinvoice.domain.shared.country import Country
 from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.money import Currency, Money
@@ -80,7 +79,7 @@ def test_an_imported_invoice_keeps_the_amounts_of_the_program() -> None:
         chf("0"),
     )
     assert (totals.lines, totals.groups) == ((), ())
-    assert document.totals(Country.CH, cash_rounding=True, today=ISSUED_ON) is totals
+    assert document.totals({}, cash_rounding=True, today=ISSUED_ON) is totals
     assert [(event.kind, event.detail) for event in document.events] == [
         (EventKind.IMPORTED, "2015/Rechnung R20150001.pdf")
     ]

@@ -25,6 +25,7 @@ from rhinvoice.application.mail.ports import MailRepository
 from rhinvoice.application.numbering.ports import NumberSequenceRepository
 from rhinvoice.application.onboarding.ports import OnboardingRepository
 from rhinvoice.application.recurring.ports import RecurringRepository
+from rhinvoice.application.tax.ports import TaxRateRepository
 from rhinvoice.application.text.ports import LegalNoticeRepository, TextTemplateRepository
 from rhinvoice.application.uow import UnitOfWork
 from tests.unit.application.fakes import (
@@ -43,6 +44,7 @@ from tests.unit.application.fakes import (
     InMemoryOnboardingRepository,
     InMemoryRecurringRepository,
     InMemorySessionRepository,
+    InMemoryTaxRateRepository,
     InMemoryTextTemplateRepository,
     InMemoryUnitOfWork,
     InMemoryUserRepository,
@@ -68,6 +70,7 @@ PAIRS: list[tuple[type, object]] = [
     (MailRepository, InMemoryMailRepository(None, {})),
     (RecurringRepository, InMemoryRecurringRepository({}, [])),
     (IdempotencyRepository, InMemoryIdempotencyRepository({})),
+    (TaxRateRepository, InMemoryTaxRateRepository([], Store())),
 ]
 
 
@@ -102,12 +105,14 @@ def test_fakes_are_statically_compatible() -> None:
     mail: MailRepository = InMemoryMailRepository(None, {})
     recurring: RecurringRepository = InMemoryRecurringRepository({}, [])
     idempotency: IdempotencyRepository = InMemoryIdempotencyRepository({})
+    tax_rates: TaxRateRepository = InMemoryTaxRateRepository(store.tax_rates, store)
     customers: CustomerRepository = InMemoryCustomerRepository({})
     articles: ArticleRepository = InMemoryArticleRepository({})
     sequences: NumberSequenceRepository = InMemoryNumberSequenceRepository({})
     templates: TextTemplateRepository = InMemoryTextTemplateRepository({})
     notices: LegalNoticeRepository = InMemoryLegalNoticeRepository({})
     ports = (
+        tax_rates,
         mail,
         recurring,
         idempotency,

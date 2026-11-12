@@ -1,4 +1,5 @@
 from decimal import Decimal
+from uuid import UUID
 
 import pytest
 from hypothesis import given
@@ -22,20 +23,22 @@ from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.tax.vat_code import VatCode
 from tests.helpers import raises_exactly
 
-SWISS_RATES = {
-    TaxCategory.STANDARD: Decimal("8.1"),
-    TaxCategory.REDUCED: Decimal("2.6"),
-    TaxCategory.SPECIAL: Decimal("3.8"),
-}
+STANDARD, REDUCED, SPECIAL, ZERO_RATE, EXEMPT = (UUID(int=number) for number in range(1, 6))
+"""The company's rates (ADR 0044); zero-rated and exempt lines never ask for a percentage."""
+SWISS_RATES = {STANDARD: Decimal("8.1"), REDUCED: Decimal("2.6"), SPECIAL: Decimal("3.8")}
+KINDS = {ZERO_RATE: TaxCategory.ZERO, EXEMPT: TaxCategory.EXEMPT}
+PASS = TaxCategory.PASS_THROUGH
 
 
 def item(
     quantity: str,
     price: str,
-    category: TaxCategory = TaxCategory.STANDARD,
+    rate: UUID | TaxCategory = STANDARD,
     discount: str = "0",
     supply: Supply = Supply.SERVICE,
 ) -> DocumentLine:
+    """Build a position at one of the rates above, or passed through (``PASS``)."""
+    kind, rate_id = (PASS, None) if isinstance(rate, TaxCategory) else (KINDS.get(rate), rate)
     return DocumentLine(
         id=new_id(),
         kind=LineKind.ITEM,
@@ -44,8 +47,9 @@ def item(
         unit=Unit("C62"),
         unit_price=Decimal(price),
         discount_percent=Decimal(discount),
-        tax_category=category,
+        tax_category=kind or TaxCategory.STANDARD,
         supply=supply,
+        tax_rate_id=rate_id,
     )
 
 
@@ -66,7 +70,7 @@ def compute(
             lines=lines,
             discount=discount or Discount.none(),
             treatment=treatment,
-            rate_for=lambda line: SWISS_RATES[line.tax_category],
+            rate_for=lambda line: SWISS_RATES[line.tax_rate_id],  # type: ignore[index]  # positions
             cash_rounding=cash_rounding,
             goods_treatment=goods_treatment,
         ),
@@ -78,7 +82,7 @@ def chf(value: str) -> Money:
 
 
 def test_swiss_invoice_with_two_rates_and_cash_rounding() -> None:
-    lines = [item("10", "150"), item("3", "12.35", TaxCategory.REDUCED)]
+    lines = [item("10", "150"), item("3", "12.35", REDUCED)]
     totals = compute(lines)
     assert totals.currency is Currency.CHF
     assert [amount.line_id for amount in totals.lines] == [line.id for line in lines]
@@ -105,7 +109,7 @@ def test_line_discount_and_line_rounding() -> None:
 
 def test_percent_document_discount_per_group() -> None:
     totals = compute(
-        [item("1", "100"), item("1", "50", TaxCategory.REDUCED)],
+        [item("1", "100"), item("1", "50", REDUCED)],
         discount=Discount(DiscountKind.PERCENT, Decimal(10)),
         cash_rounding=False,
     )
@@ -118,7 +122,7 @@ def test_percent_document_discount_per_group() -> None:
 
 def test_amount_discount_is_distributed_proportionally() -> None:
     totals = compute(
-        [item("1", "200"), item("1", "100", TaxCategory.REDUCED)],
+        [item("1", "200"), item("1", "100", REDUCED)],
         discount=Discount(DiscountKind.AMOUNT, Decimal(10)),
         cash_rounding=False,
     )
@@ -133,8 +137,8 @@ def test_amount_discount_remainder_goes_to_the_largest_group() -> None:
     totals = compute(
         [
             item("1", "100"),
-            item("1", "300", TaxCategory.REDUCED),
-            item("1", "100", TaxCategory.SPECIAL),
+            item("1", "300", REDUCED),
+            item("1", "100", SPECIAL),
         ],
         discount=Discount(DiscountKind.AMOUNT, Decimal("0.02")),
         cash_rounding=False,
@@ -144,7 +148,7 @@ def test_amount_discount_remainder_goes_to_the_largest_group() -> None:
 
 def test_amount_discount_on_groups_that_cancel_out() -> None:
     totals = compute(
-        [item("1", "100"), item("-1", "100", TaxCategory.REDUCED)],
+        [item("1", "100"), item("-1", "100", REDUCED)],
         discount=Discount(DiscountKind.AMOUNT, Decimal(0)),
     )
     assert totals.subtotal == chf("0")
@@ -178,7 +182,7 @@ def test_gross_prices_extract_the_tax() -> None:
     ],
 )
 def test_treatments_without_vat(treatment: TaxTreatment, code: VatCode) -> None:
-    totals = compute([item("2", "50"), item("1", "10", TaxCategory.REDUCED)], treatment=treatment)
+    totals = compute([item("2", "50"), item("1", "10", REDUCED)], treatment=treatment)
     assert totals.tax == chf("0")
     assert [(g.vat_code, g.rate) for g in totals.groups] == [(code, Decimal(0))]
     assert totals.total == chf("110")
@@ -190,7 +194,7 @@ def test_goods_and_services_are_grouped_by_their_own_treatment() -> None:
     service = item("1", "100")
     goods = item("2", "50", supply=Supply.GOODS)
     totals = compute(
-        [service, goods, item("1", "10", TaxCategory.REDUCED, supply=Supply.GOODS)],
+        [service, goods, item("1", "10", REDUCED, supply=Supply.GOODS)],
         goods_treatment=TaxTreatment.GOODS_EXPORT,
     )
     assert [(g.vat_code, g.rate, g.net, g.tax) for g in totals.groups] == [
@@ -219,7 +223,7 @@ def test_goods_follow_the_document_without_a_treatment_of_their_own() -> None:
 
 
 def test_zero_and_exempt_categories_have_no_tax() -> None:
-    totals = compute([item("1", "10", TaxCategory.ZERO), item("1", "10", TaxCategory.EXEMPT)])
+    totals = compute([item("1", "10", ZERO_RATE), item("1", "10", EXEMPT)])
     assert [(g.vat_code, g.tax) for g in totals.groups] == [
         (VatCode.ZERO, chf("0")),
         (VatCode.EXEMPT, chf("0")),
@@ -238,12 +242,10 @@ def test_text_lines_and_empty_documents() -> None:
 
 # --- Pass-through lines (ADR 0039) ------------------------------------------------
 
-PASS = TaxCategory.PASS_THROUGH
-
 
 def test_pass_through_lines_carry_no_vat_and_belong_to_no_group() -> None:
     fee = item("1", "250.35", PASS)
-    totals = compute([item("10", "150"), fee, item("3", "12.35", TaxCategory.REDUCED)])
+    totals = compute([item("10", "150"), fee, item("3", "12.35", REDUCED)])
     assert [(g.vat_code, g.rate, g.net) for g in totals.groups] == [
         (VatCode.STANDARD, Decimal("8.1"), chf("1500")),
         (VatCode.STANDARD, Decimal("2.6"), chf("37.05")),
@@ -358,7 +360,11 @@ def test_document_line_validation() -> None:
         DocumentLine(id=new_id(), kind=LineKind.TEXT, description="x", details="x" * 4001)
     assert long_details.value.details == {"details": "details must be at most 4000 characters long"}
     highest = DocumentLine(
-        id=new_id(), kind=LineKind.ITEM, description="x", unit_price=Decimal("99999999.9999")
+        id=new_id(),
+        kind=LineKind.ITEM,
+        description="x",
+        unit_price=Decimal("99999999.9999"),
+        tax_rate_id=STANDARD,
     )
     assert highest.unit_price == Decimal("99999999.9999")
     cases = [
@@ -397,14 +403,44 @@ def test_document_line_validation() -> None:
     ]
     for overrides, field, message in cases:
         with pytest.raises(ValidationError) as error:
-            DocumentLine(id=new_id(), kind=LineKind.ITEM, description="x", **overrides)  # type: ignore[arg-type]  # dynamic test values
+            DocumentLine(
+                id=new_id(),
+                kind=LineKind.ITEM,
+                description="x",
+                tax_rate_id=STANDARD,
+                **overrides,  # type: ignore[arg-type]  # dynamic test values
+            )
         assert error.value.details == {field: message}
     assert (
         DocumentLine(
-            id=new_id(), kind=LineKind.ITEM, description="x", quantity=Decimal(-999999999)
+            id=new_id(),
+            kind=LineKind.ITEM,
+            description="x",
+            quantity=Decimal(-999999999),
+            tax_rate_id=STANDARD,
         ).quantity
         < 0
     )
+
+
+def test_positions_take_a_rate_unless_passed_through() -> None:
+    """Name one of the company's rates on a position; text and pass-through lines have none."""
+    with raises_exactly(ValidationError, "a tax rate is required") as missing:
+        DocumentLine(id=new_id(), kind=LineKind.ITEM, description="x")
+    assert (missing.value.field, missing.value.code) == ("tax_rate_id", "tax_rate_missing")
+    for kind in (TaxCategory.ZERO, TaxCategory.EXEMPT):
+        with raises_exactly(ValidationError, "a tax rate is required"):
+            DocumentLine(id=new_id(), kind=LineKind.ITEM, description="x", tax_category=kind)
+    with raises_exactly(ValidationError, "a pass-through item has no tax rate") as passed:
+        DocumentLine(
+            id=new_id(), kind=LineKind.ITEM, description="x", tax_category=PASS, tax_rate_id=EXEMPT
+        )
+    assert passed.value.details == {"tax_rate_id": "a pass-through item has no tax rate"}
+    with raises_exactly(ValidationError, "a text line has no tax rate") as text:
+        DocumentLine(id=new_id(), kind=LineKind.TEXT, description="x", tax_rate_id=STANDARD)
+    assert text.value.field == "tax_rate_id"
+    assert item("1", "1", PASS).tax_rate_id is None
+    assert item("1", "1", EXEMPT).tax_rate_id == EXEMPT
 
 
 def test_discount_validation() -> None:
@@ -428,21 +464,13 @@ def test_discount_validation() -> None:
 quantities = st.decimals(min_value=Decimal("0.0001"), max_value=Decimal(10000), places=4)
 prices = st.decimals(min_value=Decimal(0), max_value=Decimal(100000), places=4)
 percents = st.decimals(min_value=Decimal(0), max_value=Decimal(100), places=2)
-categories = st.sampled_from(
-    [
-        TaxCategory.STANDARD,
-        TaxCategory.REDUCED,
-        TaxCategory.SPECIAL,
-        TaxCategory.ZERO,
-        TaxCategory.PASS_THROUGH,
-    ]
-)
+categories = st.sampled_from([STANDARD, REDUCED, SPECIAL, ZERO_RATE, PASS])
 
 
 def _item_from(
-    quantity: Decimal, price: Decimal, discount: Decimal, category: TaxCategory
+    quantity: Decimal, price: Decimal, discount: Decimal, rate: UUID | TaxCategory
 ) -> DocumentLine:
-    return item(str(quantity), str(price), category, str(discount))
+    return item(str(quantity), str(price), rate, str(discount))
 
 
 line_strategy = st.builds(_item_from, quantities, prices, percents, categories)
@@ -547,6 +575,7 @@ def test_cancellation_negates_every_amount(
             unit_price=line.unit_price,
             discount_percent=line.discount_percent,
             tax_category=line.tax_category,
+            tax_rate_id=line.tax_rate_id,
         )
         for line in lines
     ]

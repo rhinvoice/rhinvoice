@@ -12,6 +12,7 @@ from rhinvoice.api.container import Container, build_container
 from rhinvoice.api.settings import Settings
 from rhinvoice.domain.shared.clock import FixedClock
 from tests.api.test_masterdata_api import ADDRESS
+from tests.integration.test_document_persistence import fixed_rate_ids
 from tests.unit.domain.factories import CH_IBAN
 
 NOW = datetime(2026, 1, 15, 9, 0, tzinfo=UTC)
@@ -83,7 +84,7 @@ def user_client(client: TestClient) -> TestClient:
 
 
 @pytest.fixture
-def customer_id(user_client: TestClient) -> str:
+def customer_id(user_client: TestClient, engine: Engine) -> str:
     company = {
         "name": "Muster GmbH",
         "address": ADDRESS,
@@ -92,6 +93,7 @@ def customer_id(user_client: TestClient) -> str:
         "cash_rounding": True,
     }
     assert user_client.put("/api/company", json=company).status_code == 200
+    fixed_rate_ids(engine)
     account = {"currency": "CHF", "bank_name": "Musterbank", "holder": "Muster", "iban": CH_IBAN}
     assert user_client.post("/api/bank-accounts", json=account).status_code == 201
     customer = {"kind": "company", "company_name": "Beispiel AG", "address": ADDRESS}

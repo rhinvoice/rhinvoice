@@ -5,6 +5,8 @@ from rhinvoice.domain.document.lines import DocumentLine, LineKind, PriceMode
 from rhinvoice.domain.recurring.plan import InvoiceTemplate
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.money import Currency
+from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.tax_rate import FrozenRate, RateCategory
 from rhinvoice.infrastructure.db.serialization import (
     snapshot_from_json,
     snapshot_to_json,
@@ -31,6 +33,66 @@ def test_snapshots_keep_the_notice_and_older_ones_have_none() -> None:
     del data["goods_notice"]
     assert snapshot_from_json(data).notice is None
     assert snapshot_from_json(data).goods_notice is None
+
+
+def test_snapshots_keep_the_rates_and_older_ones_have_none() -> None:
+    average = FrozenRate(
+        id=new_id(),
+        name="Landwirtschaft § 24",
+        category=RateCategory.STANDARD,
+        notice="Durchschnittssatz § 24 UStG",
+    )
+    exempt = FrozenRate(
+        id=new_id(),
+        name="Heilbehandlung",
+        category=RateCategory.EXEMPT,
+        exemption_reason="§ 4 Nr. 14 UStG",
+    )
+    snapshot = IssueSnapshot(
+        company=factories.company(),
+        customer=factories.customer(),
+        bank_account=None,
+        rates=(average, exempt),
+    )
+    data = snapshot_to_json(snapshot)
+    assert data["rates"][1] == {
+        "id": str(exempt.id),
+        "name": "Heilbehandlung",
+        "category": "E",
+        "notice": "",
+        "exemption_reason": "§ 4 Nr. 14 UStG",
+    }
+    assert snapshot_from_json(data) == snapshot
+    # Snapshots written before version 0.13 have no "rates" key.
+    del data["rates"]
+    assert snapshot_from_json(data).rates == ()
+
+
+def test_plan_lines_keep_their_rate() -> None:
+    lines = (
+        DocumentLine(id=new_id(), kind=LineKind.TEXT, description="Monatlich"),
+        DocumentLine(
+            id=new_id(),
+            kind=LineKind.ITEM,
+            description="Gebühr",
+            tax_category=TaxCategory.PASS_THROUGH,
+        ),
+        DocumentLine(
+            id=new_id(),
+            kind=LineKind.ITEM,
+            description="Kurs",
+            tax_category=TaxCategory.EXEMPT,
+            tax_rate_id=new_id(),
+        ),
+    )
+    template = InvoiceTemplate(currency=Currency.CHF, price_mode=PriceMode.NET, lines=lines)
+    data = template_to_json(template)
+    assert [line["tax_rate_id"] for line in data["lines"]] == [
+        None,
+        None,
+        str(lines[2].tax_rate_id),
+    ]
+    assert template_from_json(data) == template
 
 
 def test_snapshots_keep_the_logo_and_older_ones_have_none() -> None:
@@ -94,6 +156,7 @@ def test_plan_templates_keep_the_account_and_older_ones_name_none() -> None:
         quantity=Decimal(1),
         unit=None,
         unit_price=Decimal(29),
+        tax_rate_id=new_id(),
     )
     account_id = new_id()
     template = InvoiceTemplate(

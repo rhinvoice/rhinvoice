@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 
 from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.text import clean_text
+from rhinvoice.domain.tax.category import TaxCategory
 
 if TYPE_CHECKING:
     from datetime import date
@@ -39,6 +40,13 @@ class RateCategory(StrEnum):
     """Taxable at 0 %."""
     EXEMPT = "E"
     """Exempt from VAT; the invoice names the reason."""
+
+
+_KINDS = {
+    RateCategory.STANDARD: TaxCategory.STANDARD,
+    RateCategory.ZERO: TaxCategory.ZERO,
+    RateCategory.EXEMPT: TaxCategory.EXEMPT,
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -111,6 +119,21 @@ class TaxRate:
                 code="rate_exempt_needs_reason",
             )
 
+    @property
+    def kind(self) -> TaxCategory:
+        """The tax category of the lines with this rate."""
+        return _KINDS[self.category]
+
+    def frozen(self) -> FrozenRate:
+        """Return what a document issued with this rate keeps of it."""
+        return FrozenRate(
+            id=self.id,
+            name=self.name,
+            category=self.category,
+            notice=self.notice,
+            exemption_reason=self.exemption_reason,
+        )
+
     def percent_on(self, on: date) -> Decimal:
         """Return the percentage on the date of supply ``on``."""
         applying = [value for value in self.values if value.valid_from <= on]
@@ -121,3 +144,23 @@ class TaxRate:
                 code="rate_not_yet_valid",
             )
         return applying[-1].percent
+
+
+def check_rate_choice(kind: TaxCategory, rate_id: UUID | None) -> None:
+    """Check that a position or an article has one of the rates, unless passed through."""
+    if kind is TaxCategory.PASS_THROUGH:
+        if rate_id is not None:
+            raise ValidationError("tax_rate_id", "a pass-through item has no tax rate")
+    elif rate_id is None:
+        raise ValidationError("tax_rate_id", "a tax rate is required", code="tax_rate_missing")
+
+
+@dataclass(frozen=True, slots=True)
+class FrozenRate:
+    """A rate as a document was issued with it: its words never change afterwards."""
+
+    id: UUID
+    name: str
+    category: RateCategory
+    notice: str = ""
+    exemption_reason: str = ""

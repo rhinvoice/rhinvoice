@@ -5,10 +5,12 @@ from uuid import uuid4
 import pytest
 
 from rhinvoice.domain.shared.errors import ValidationError
+from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.tax_rate import (
     MAX_RATE_NAME,
     MAX_RATE_TEXT,
     MAX_RATE_VALUES,
+    FrozenRate,
     RateCategory,
     RateValue,
     TaxRate,
@@ -163,3 +165,45 @@ def test_exempt_rates_name_the_reason() -> None:
     assert exempt.percent_on(date(2025, 1, 1)) == Decimal(0)
     # Zero-rated supplies need no reason.
     assert rate(category=RateCategory.ZERO, values=zero).category is RateCategory.ZERO
+
+
+@pytest.mark.parametrize(
+    ("category", "kind"),
+    [
+        (RateCategory.STANDARD, TaxCategory.STANDARD),
+        (RateCategory.ZERO, TaxCategory.ZERO),
+        (RateCategory.EXEMPT, TaxCategory.EXEMPT),
+    ],
+)
+def test_the_kind_of_lines_with_a_rate(category: RateCategory, kind: TaxCategory) -> None:
+    percent = "8.1" if category is RateCategory.STANDARD else "0"
+    taxed = rate(
+        category=category, values=(value(date(2024, 1, 1), percent),), exemption_reason="x"
+    )
+    assert taxed.kind is kind
+
+
+def test_issued_documents_keep_the_words_of_a_rate() -> None:
+    average = rate(
+        name="Landwirtschaft § 24",
+        notice="Durchschnittssatz § 24 UStG",
+        exemption_reason="",
+        preset="de_24_other",
+        hidden=True,
+    )
+    assert average.frozen() == FrozenRate(
+        id=average.id,
+        name="Landwirtschaft § 24",
+        category=RateCategory.STANDARD,
+        notice="Durchschnittssatz § 24 UStG",
+        exemption_reason="",
+    )
+    exempt = rate(
+        category=RateCategory.EXEMPT,
+        values=(value(date(2024, 1, 1), "0"),),
+        exemption_reason="§ 4 Nr. 14 UStG",
+    )
+    assert exempt.frozen().exemption_reason == "§ 4 Nr. 14 UStG"
+    assert exempt.frozen().category is RateCategory.EXEMPT
+    bare = FrozenRate(id=exempt.id, name="x", category=RateCategory.ZERO)
+    assert (bare.notice, bare.exemption_reason) == ("", "")

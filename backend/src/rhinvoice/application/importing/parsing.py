@@ -20,12 +20,15 @@ from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import EXEMPT, REDUCED, SPECIAL, STANDARD, ZERO
 from rhinvoice.domain.tax.supply import Supply
+from rhinvoice.domain.tax.tax_rate import RateCategory
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from uuid import UUID
 
-    from rhinvoice.domain.tax.rates import TaxRateSet
+    from rhinvoice.domain.tax.tax_rate import TaxRate
 
 _UMLAUTS = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"})
 
@@ -214,14 +217,14 @@ def parse_unit(text: str, default: str) -> str:
     return code
 
 
-_TAX_CATEGORIES = {
-    normalize(name): category
-    for category, names in {
-        TaxCategory.STANDARD: ("normal", "standard", "normalsatz", "voll"),
-        TaxCategory.REDUCED: ("reduziert", "reduced", "ermaessigt", "ermässigt"),
-        TaxCategory.SPECIAL: ("sondersatz", "special", "beherbergung"),
-        TaxCategory.ZERO: ("null", "zero", "0"),
-        TaxCategory.EXEMPT: ("befreit", "steuerfrei", "exempt", "frei"),
+_RATE_NAMES = {
+    normalize(name): key
+    for key, names in {
+        STANDARD: ("normal", "standard", "normalsatz", "voll"),
+        REDUCED: ("reduziert", "reduced", "ermaessigt", "ermässigt"),
+        SPECIAL: ("sondersatz", "special", "beherbergung"),
+        ZERO: ("null", "zero", "0"),
+        EXEMPT: ("befreit", "steuerfrei", "exempt", "frei"),
         TaxCategory.PASS_THROUGH: (
             "durchlaufend",
             "durchlaufender posten",
@@ -231,39 +234,68 @@ _TAX_CATEGORIES = {
     }.items()
     for name in names
 }
+"""The names of the former fixed categories; each means the rate of that preset."""
+_NAMED_CATEGORIES = {
+    STANDARD: RateCategory.STANDARD,
+    ZERO: RateCategory.ZERO,
+    EXEMPT: RateCategory.EXEMPT,
+}
+"""Without the preset's rate, the first rate of the category stands in (not for reduced and
+special: those name a percentage of their own)."""
 
 
-def _rate_categories(rate_sets: Sequence[TaxRateSet]) -> dict[Decimal, TaxCategory]:
-    """Map every rate the country has had to its category (7.7 % and 8 % are former Swiss ones).
+def _named_rate(key: str, rates: Sequence[TaxRate]) -> TaxRate | None:
+    preset = next((rate for rate in rates if rate.preset == key), None)
+    category = _NAMED_CATEGORIES.get(key)
+    if preset is not None or category is None:
+        return preset
+    return next((rate for rate in rates if rate.category is category), None)
 
-    A rate written in a file only says which category the article belongs to.
+
+def _rate_with(percent: Decimal, rates: Sequence[TaxRate], on: date) -> TaxRate | None:
+    """Find the rate of a percentage: on ``on``, else one it had before (7.7 % in CH).
+
+    A taxed rate comes before zero-rated and exempt ones, then the order of the rates.
     """
-    categories = {Decimal(0): TaxCategory.ZERO}
-    for rate_set in rate_sets:
-        for category in (TaxCategory.STANDARD, TaxCategory.REDUCED, TaxCategory.SPECIAL):
-            if category is not TaxCategory.SPECIAL or rate_set.special is not None:
-                categories.setdefault(rate_set.rate(category).normalize(), category)
-    return categories
+    ordered = sorted(rates, key=lambda rate: rate.category is not RateCategory.STANDARD)
+    current = [rate for rate in ordered if _percent_on(rate, on) == percent]
+    former = [rate for rate in ordered if any(v.percent == percent for v in rate.values)]
+    return next(iter(current or former), None)
 
 
-def parse_tax_category(text: str, rate_sets: Sequence[TaxRateSet]) -> TaxCategory:
-    """Read a category by name or by one of the rates of the company's country."""
+def _percent_on(rate: TaxRate, on: date) -> Decimal | None:
+    try:
+        return rate.percent_on(on)
+    except ValidationError:
+        return None  # the rate applies from a later date
+
+
+def parse_tax_rate(text: str, rates: Sequence[TaxRate], on: date) -> tuple[UUID | None, bool]:
+    """Read a rate by a category's name or by its percentage on ``on`` (ADR 0044).
+
+    Return the rate and whether the item is passed through; no rate: the default one.
+    Hidden rates are not chosen.
+    """
     value = text.strip()
     if not value:
-        return TaxCategory.STANDARD
-    named = _TAX_CATEGORIES.get(normalize(value))
-    if named is not None:
-        return named
-    try:
-        rate = Decimal(parse_amount(value.rstrip("%"), "tax_category"))
-    except ValidationError:
-        rate = None
-    category = None if rate is None else _rate_categories(rate_sets).get(rate.normalize())
-    if category is None:
+        return None, False
+    visible = [rate for rate in rates if not rate.hidden]
+    key = _RATE_NAMES.get(normalize(value))
+    if key == TaxCategory.PASS_THROUGH:
+        return None, True
+    if key is not None:
+        rate = _named_rate(key, visible)
+    else:
+        try:
+            percent = Decimal(parse_amount(value.rstrip("%"), "tax_category"))
+        except ValidationError:
+            percent = None
+        rate = None if percent is None else _rate_with(percent, visible, on)
+    if rate is None:
         raise ValidationError(
             "tax_category", f"'{text}' is not a known VAT rate", code="unknown_tax_rate"
         )
-    return category
+    return rate.id, False
 
 
 _SUPPLIES = {

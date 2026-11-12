@@ -19,6 +19,7 @@ from rhinvoice.domain.recurring.plan import (
 from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.money import Currency
+from rhinvoice.domain.tax.category import TaxCategory
 from tests.helpers import raises_exactly
 
 NOW = datetime(2026, 1, 20, 9, 0, tzinfo=UTC)
@@ -29,6 +30,7 @@ HOSTING = DocumentLine(
     description="Hosting",
     quantity=Decimal(1),
     unit_price=Decimal(29),
+    tax_rate_id=new_id(),
 )
 TEMPLATE = InvoiceTemplate(currency=Currency.CHF, price_mode=PriceMode.NET, lines=(HOSTING,))
 
@@ -258,3 +260,16 @@ def test_template_rules() -> None:
 @pytest.mark.parametrize("action", list(PlanAction))
 def test_actions(action: PlanAction) -> None:
     assert plan(action=action).action is action
+
+
+def test_a_template_names_the_rates_of_its_positions() -> None:
+    text = DocumentLine(id=new_id(), kind=LineKind.TEXT, description="Monatlich")
+    fee = DocumentLine(
+        id=new_id(),
+        kind=LineKind.ITEM,
+        description="Gebühr",
+        tax_category=TaxCategory.PASS_THROUGH,
+    )
+    again = replace(HOSTING, id=new_id())
+    template = replace(TEMPLATE, lines=(text, HOSTING, fee, again))
+    assert template.rate_ids == (HOSTING.tax_rate_id,)

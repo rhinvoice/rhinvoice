@@ -18,6 +18,7 @@ from rhinvoice.application.backup.ports import BackupTarget, Snapshot
 from rhinvoice.application.backup.worker import BackupWorker
 from rhinvoice.application.document.handlers import LineInput
 from rhinvoice.application.identity.handlers import Login
+from rhinvoice.application.tax.handlers import seed_rates
 from rhinvoice.domain.document.lines import LineKind, PriceMode
 from rhinvoice.domain.recurring.plan import Interval, InvoiceTemplate, PlanAction, RecurringPlan
 from rhinvoice.domain.shared.country import Country
@@ -282,7 +283,9 @@ def test_demo_data(env: Engine, capsys: pytest.CaptureFixture[str]) -> None:
     assert cli.main(["demo"]) == 1
     assert capsys.readouterr().err == "error: set up the company first (the first-start wizard)\n"
     with SqlUnitOfWork(env) as uow:
-        uow.company.save(factories.company(name="Demo GmbH"))
+        company = factories.company(name="Demo GmbH")
+        uow.company.save(company)
+        seed_rates(uow, company)
         uow.commit()
     assert cli.main(["demo", "--without-documents"]) == 0
     assert capsys.readouterr().out == (
@@ -299,7 +302,10 @@ def test_recurring_invoices_now(env: Engine, capsys: pytest.CaptureFixture[str])
     assert capsys.readouterr().out == "recurring invoices: 0 written\n"
     customer = factories.customer()
     with SqlUnitOfWork(env) as uow:
-        uow.company.save(factories.company())
+        company = factories.company()
+        uow.company.save(company)
+        seed_rates(uow, company)
+        rates = uow.tax_rates.list()
         uow.customers.add(customer)
         today = datetime.now(UTC).date() - timedelta(days=1)
         uow.recurring.add(
@@ -317,7 +323,7 @@ def test_recurring_invoices_now(env: Engine, capsys: pytest.CaptureFixture[str])
                     lines=(
                         LineInput(
                             kind=LineKind.ITEM, description="Hosting", unit_price="29"
-                        ).to_domain(0),
+                        ).to_domain(0, rates),
                     ),
                 ),
                 created_at=datetime.now(UTC),

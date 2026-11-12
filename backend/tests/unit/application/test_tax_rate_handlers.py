@@ -229,7 +229,7 @@ def test_presets_not_taken_yet(handlers: TaxRateHandlers, store: Store) -> None:
         "de_24_beverages",
         "de_24_other",
     ]
-    assert english[0].exemption_reason == "Exempt supply"
+    assert (english[0].exemption_reason, english[0].notice) == ("Exempt supply", "")
     assert english[1].name == "Forestry § 24 (5.5 %)"
 
 

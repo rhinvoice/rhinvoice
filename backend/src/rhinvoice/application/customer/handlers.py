@@ -7,6 +7,7 @@ from datetime import UTC, date, datetime, time
 from typing import TYPE_CHECKING
 
 from rhinvoice.application.common import AddressInput, optional_email, optional_vat_number
+from rhinvoice.application.company.handlers import check_print_layout
 from rhinvoice.application.errors import ConflictError, NotFoundError
 from rhinvoice.application.numbering.handlers import allocate_number
 from rhinvoice.domain.customer.customer import Customer, CustomerKind
@@ -51,6 +52,8 @@ class SaveCustomer:
     tax_exempt: bool = False
     default_discount: str = "0"
     payment_terms_days: int | None = None
+    print_layout_id: UUID | None = None
+    """The customer's print layout; None: the default."""
     delivery_address: AddressInput | None = None
     note: str = ""
     customer_since: date | None = None
@@ -77,6 +80,7 @@ class CustomerHandlers:
                 new_id(), number, command, now=self.clock.now(), existing=None
             )
             self._ensure_unique(uow, customer.number, exclude_id=None)
+            check_print_layout(uow, customer.print_layout_id)
             uow.customers.add(customer)
             uow.commit()
         return customer
@@ -89,6 +93,7 @@ class CustomerHandlers:
                 customer_id, number, command, now=self.clock.now(), existing=existing
             )
             self._ensure_unique(uow, customer.number, exclude_id=customer_id)
+            check_print_layout(uow, customer.print_layout_id)
             uow.customers.update(customer)
             uow.commit()
         return customer
@@ -159,6 +164,7 @@ def build_customer(
         tax_exempt=command.tax_exempt,
         default_discount=parse_decimal(command.default_discount or "0", "default_discount"),
         payment_terms_days=command.payment_terms_days,
+        print_layout_id=command.print_layout_id,
         delivery_address=(
             None if command.delivery_address is None else command.delivery_address.to_domain()
         ),

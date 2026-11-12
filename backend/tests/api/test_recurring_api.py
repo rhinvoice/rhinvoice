@@ -1,6 +1,7 @@
 """Recurring invoice plans through the API."""
 
 from datetime import timedelta
+from typing import cast
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
@@ -28,6 +29,11 @@ def plan_body(customer_id: str, **fields: object) -> dict[str, object]:
         },
         **fields,
     }
+
+
+def with_template(body: dict[str, object], **changes: object) -> dict[str, object]:
+    template = cast("dict[str, object]", body["template"])
+    return {**body, "template": {**template, **changes}}
 
 
 def test_endpoints_require_login(client: TestClient) -> None:
@@ -78,6 +84,33 @@ def test_a_plan_from_creation_to_its_invoice(
     assert user_client.get(f"/api/recurring/{plan_id}").status_code == 404
     # The invoice stays.
     assert user_client.get(f"/api/documents/{run.document_id}").status_code == 200
+
+
+def test_plans_pass_field_values_to_their_invoices(
+    user_client: TestClient, customer_id: str, container: Container
+) -> None:
+    body = with_template(plan_body(customer_id), fields={"contract": "V-7", "project": ""})
+    created = post(user_client, "/api/recurring", body, status=201)
+    assert created["template"]["fields"] == {"contract": "V-7"}
+    [run] = container.recurring.run_due()
+    invoice = user_client.get(f"/api/documents/{run.document_id}").json()
+    assert invoice["fields"] == {"contract": "V-7"}
+
+
+def test_plans_keep_running_when_their_layout_is_deleted(
+    user_client: TestClient, customer_id: str, container: Container
+) -> None:
+    trust = post(user_client, "/api/print-layouts", {"name": "Treuhand"}, status=201)
+    body = with_template(plan_body(customer_id), print_layout_id=trust["id"])
+    created = post(user_client, "/api/recurring", body, status=201)
+    assert created["template"]["print_layout_id"] == trust["id"]
+    unknown = with_template(body, print_layout_id="00000000-0000-0000-0000-000000000009")
+    refused = user_client.put(f"/api/recurring/{created['id']}", json=unknown)
+    assert refused.status_code == 422
+    user_client.delete(f"/api/print-layouts/{trust['id']}")
+    [run] = container.recurring.run_due()
+    invoice = user_client.get(f"/api/documents/{run.document_id}").json()
+    assert (invoice["status"], invoice["print_layout_id"]) == ("issued", None)
 
 
 def test_plan_rules(user_client: TestClient, customer_id: str) -> None:

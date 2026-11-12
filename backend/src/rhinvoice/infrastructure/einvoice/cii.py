@@ -233,6 +233,42 @@ def _settlement(parent: Element, invoice: EInvoice) -> None:
         reference = _ram(settlement, "InvoiceReferencedDocument")
         _ram(reference, "IssuerAssignedID", number)
         _date(reference, "FormattedIssueDateTime", issued, QDT)
+    if invoice.buyer_accounting is not None:
+        # BT-19, the last element of the settlement.
+        account = _ram(settlement, "ReceivableSpecifiedTradeAccountingAccount")
+        _ram(account, "ID", invoice.buyer_accounting)
+
+
+TENDER = "50"
+"""UNTDID 1001 code of BT-17 (tender or lot reference) in an additional document."""
+INVOICED_OBJECT = "130"
+"""UNTDID 1001 code of BT-18 (invoiced object identifier) in an additional document."""
+PROJECT_NAME = "Project reference"
+"""ram:Name of BT-11: the CII schema asks for a name, EN 16931-3-3 for this fixed one."""
+
+
+def _references(agreement: Element, invoice: EInvoice) -> None:
+    """Write BT-14, BT-13, BT-12, BT-17, BT-18 and BT-11 in the order of the CII schema.
+
+    They follow the parties (EN 16931-3-3, CII D16B HeaderTradeAgreement).
+    """
+    documents = (
+        ("SellerOrderReferencedDocument", invoice.sales_order),
+        ("BuyerOrderReferencedDocument", invoice.order_reference),
+        ("ContractReferencedDocument", invoice.contract),
+    )
+    for name, value in documents:
+        if value is not None:
+            _ram(_ram(agreement, name), "IssuerAssignedID", value)
+    for type_code, value in ((TENDER, invoice.tender), (INVOICED_OBJECT, invoice.invoiced_object)):
+        if value is not None:
+            additional = _ram(agreement, "AdditionalReferencedDocument")
+            _ram(additional, "IssuerAssignedID", value)
+            _ram(additional, "TypeCode", type_code)
+    if invoice.project is not None:
+        project = _ram(agreement, "SpecifiedProcuringProject")
+        _ram(project, "ID", invoice.project)
+        _ram(project, "Name", PROJECT_NAME)
 
 
 def cii(invoice: EInvoice) -> bytes:
@@ -259,10 +295,7 @@ def cii(invoice: EInvoice) -> bytes:
         _ram(agreement, "BuyerReference", invoice.buyer_reference)
     _party(agreement, "SellerTradeParty", invoice.seller)
     _party(agreement, "BuyerTradeParty", invoice.buyer)
-    if invoice.order_reference is not None:
-        # BT-13 (EN 16931-3-3): after the parties, as the CII schema orders the agreement.
-        order = _ram(agreement, "BuyerOrderReferencedDocument")
-        _ram(order, "IssuerAssignedID", invoice.order_reference)
+    _references(agreement, invoice)
     delivery = _ram(transaction, "ApplicableHeaderTradeDelivery")
     if invoice.deliver_to is not None:
         name, address = invoice.deliver_to
@@ -271,6 +304,13 @@ def cii(invoice: EInvoice) -> bytes:
         _address(ship_to, address)
     event = _ram(delivery, "ActualDeliverySupplyChainEvent")
     _date(event, "OccurrenceDateTime", invoice.delivery_date)
+    if invoice.despatch_advice is not None:
+        # BT-16, after the delivery event as the CII schema orders the delivery.
+        _ram(
+            _ram(delivery, "DespatchAdviceReferencedDocument"),
+            "IssuerAssignedID",
+            invoice.despatch_advice,
+        )
     _settlement(transaction, invoice)
 
     indent(root)

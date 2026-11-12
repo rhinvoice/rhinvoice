@@ -80,6 +80,8 @@ const PLAN: Plan = {
     discount_value: "5",
     subject: "Hosting",
     reference: "K-1",
+    fields: { contract: "V-7" },
+    print_layout_id: "layout-1",
     intro_text: "Hallo",
     payment_text: "Zahlbar",
     closing_text: "Danke",
@@ -154,6 +156,8 @@ describe("recurring plans", () => {
     expect([withoutDiscount.language, withoutDiscount.discount_value]).toEqual(["en", ""]);
     const ownDefault = { ...PLAN, template: { ...PLAN.template, bank_account_id: null } };
     expect(planToForm(ownDefault, COMPANY, "de-CH").bank_account_id).toBe("");
+    const customersLayout = { ...PLAN, template: { ...PLAN.template, print_layout_id: null } };
+    expect(planToForm(customersLayout, COMPANY, "de-CH").print_layout_id).toBe("");
     const zero = { ...PLAN, template: { ...PLAN.template, discount_value: "0" } };
     expect(planToForm(zero, COMPANY, "de-CH").discount_value).toBe("");
   });
@@ -194,6 +198,8 @@ describe("recurring plans", () => {
         discount_value: "5",
         subject: "Hosting",
         reference: "K-1",
+        fields: { contract: "V-7" },
+        print_layout_id: "layout-1",
         intro_text: "Hallo",
         payment_text: "Zahlbar",
         closing_text: "Danke",

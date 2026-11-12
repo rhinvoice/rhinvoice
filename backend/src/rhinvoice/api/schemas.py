@@ -9,6 +9,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, JsonValue
 
 from rhinvoice.application.common import MAX_PAGE_SIZE, AddressInput, PageRequest, SortDirection
 from rhinvoice.domain.catalog.unit import UNITS
+from rhinvoice.domain.company.print_layout import MAX_INFO_KEY
 from rhinvoice.domain.shared.country import ISO_3166_ALPHA2
 
 if TYPE_CHECKING:
@@ -66,6 +67,16 @@ def text(max_length: int, *, required: bool = False) -> Any:  # noqa: ANN401 - p
     if required:
         return Field(max_length=max_length, pattern=NOT_BLANK_PATTERN)
     return Field(default="", max_length=max_length)
+
+
+type FieldValues = dict[
+    Annotated[str, Field(max_length=MAX_INFO_KEY)], Annotated[str, Field(max_length=100)]
+]
+"""Values of the print layout's fields by key, e.g. {"project": "Website"}."""
+
+
+def field_values(values: FieldValues) -> tuple[tuple[str, str], ...]:
+    return tuple(values.items())
 
 
 class AddressFields(ApiModel):

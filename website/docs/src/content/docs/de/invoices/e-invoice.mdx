@@ -55,13 +55,36 @@ Beim Versand per E-Mail können Sie *XRechnung (XML) zusätzlich anhängen* wäh
 
 Die XRechnung braucht eine Käuferreferenz (BT-10). Rhinvoice nimmt sie so:
 
-- Hat der Kunde eine **Leitweg-ID oder feste Käuferreferenz**, gilt immer diese. Die Referenz der Rechnung steht dann als Bestellreferenz (BT-13) in der E-Rechnung, eine Bestellnummer wie «Bestellung 4711» geht also nicht verloren.
-- Sonst gilt die **Referenz der Rechnung** (*Weitere Angaben → Referenz*), zum Beispiel die Bestellnummer.
+- Hat der Kunde eine **Leitweg-ID oder feste Käuferreferenz**, gilt immer diese. Die Referenz der Rechnung steht dann als Bestellreferenz (BT-13) in der E-Rechnung, oder als Bemerkung, wenn die Rechnung ein eigenes [Feld für die Bestellnummer](#projekt-bestellnummer-und-kostenstelle) hat. Eine Bestellnummer wie «Bestellung 4711» geht also nicht verloren.
+- Sonst gilt die **Referenz der Rechnung** (*Daten → Referenz*), zum Beispiel die Bestellnummer.
 - Fehlen beide, fehlt der XRechnung die Käuferreferenz.
 
 Firmen tragen beim Kunden nur dann etwas ein, wenn sie immer dieselbe Referenz wünschen. Wechselt die Referenz pro Auftrag, bleibt das Feld beim Kunden leer und die Referenz kommt in die Rechnung. Unter dem Feld *Referenz* zeigt der Editor bei Kunden in Deutschland, welche Leitweg-ID gilt oder dass die Referenz für die XRechnung nötig ist.
 
 Beim Ausstellen hält Rhinvoice den Kunden mit der Rechnung fest. Ändern Sie die Leitweg-ID später beim Kunden, bleibt die XRechnung bereits ausgestellter Rechnungen gleich.
+
+## Projekt, Bestellnummer und Kostenstelle
+
+Manche Kunden brauchen mehr auf der Rechnung: ein Projekt, ihre Bestellnummer, eine Kostenstelle. Legen Sie diese Angaben als Felder der Druckvorlage an, dann stehen sie auch in der E-Rechnung.
+
+1. Klicken Sie unter *Einstellungen → Druckvorlage*, Karte *Angaben oben rechts*, auf *Feld hinzufügen*.
+2. Wählen Sie ein Feld. Die Felder unter *Auch in der E-Rechnung* füllen ihren Platz in der E-Rechnung; *Eigenes Feld (nur im PDF)* druckt eine Bezeichnung Ihrer Wahl, zum Beispiel «Objekt».
+3. Sortieren Sie die Angaben mit den Pfeilen oder durch Ziehen und speichern Sie.
+
+Jede Rechnung und jedes Angebot fragt die Werte dann in der Karte *Daten* ab. Ein Feld erscheint nur mit einem Wert, und beim Ausstellen werden die Werte mit der Rechnung eingefroren.
+
+| Feld | In der E-Rechnung |
+|---|---|
+| Projekt | BT-11, Projektreferenz |
+| Vertragsnummer | BT-12, Vertragsreferenz |
+| Bestellnummer | BT-13, Bestellreferenz |
+| Auftragsnummer | BT-14, Ihre eigene Auftragsnummer |
+| Lieferschein | BT-16, Lieferavisreferenz |
+| Vergabe- oder Losnummer | BT-17, Vergabe- oder Losreferenz |
+| Objekt | BT-18, zum Beispiel ein Zähler, ein Abo oder ein Fahrzeug |
+| Kostenstelle | BT-19, Buchungsreferenz des Käufers |
+
+Dieselbe Karte blendet Kundennummer, Fälligkeit, Leistungsdatum und *Ihre Referenz* ein oder aus. Das Leistungsdatum ist auf Rechnungen Pflicht (§ 14 Abs. 4 Nr. 6 UStG, § 11 Abs. 1 Z 3 lit. d UStG AT): Blenden Sie es nur aus, wenn es in den Positionen steht, zum Beispiel «am 3. November». Die E-Rechnung enthält es immer (BT-72).
 
 ## Welche Angaben eine E-Rechnung braucht
 
@@ -80,7 +103,7 @@ Rhinvoice erstellt nur vollständige E-Rechnungen. Fehlt etwas, warnt schon der 
 
 | Angabe | Wo eintragen |
 |---|---|
-| Leitweg-ID oder Käuferreferenz | beim Kunden (*Leitweg-ID oder feste Käuferreferenz*) oder in der Rechnung (*Weitere Angaben → Referenz*) |
+| Leitweg-ID oder Käuferreferenz | beim Kunden (*Leitweg-ID oder feste Käuferreferenz*) oder in der Rechnung (*Daten → Referenz*) |
 | E-Mail Ihrer Firma | *Einstellungen → Firma* |
 | Telefon Ihrer Firma | *Einstellungen → Firma* |
 | E-Mail des Kunden | beim Kunden |

@@ -64,6 +64,8 @@ class Customer:
     """Default discount in percent applied to new documents."""
     payment_terms_days: int | None = None
     """Overrides the company's payment terms if set."""
+    print_layout_id: UUID | None = None
+    """The customer's print layout; None (or a deleted one): the default (#48)."""
     delivery_address: Address | None = None
     note: str = ""
     archived: bool = False

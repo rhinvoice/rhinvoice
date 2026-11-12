@@ -9,7 +9,14 @@ from pydantic import Field
 
 from rhinvoice.api.dependencies import ContainerDep, CurrentUser
 from rhinvoice.api.routers.documents import LineRequest, amount
-from rhinvoice.api.schemas import DECIMAL_PATTERN, ERROR_RESPONSES, ApiModel, text
+from rhinvoice.api.schemas import (
+    DECIMAL_PATTERN,
+    ERROR_RESPONSES,
+    ApiModel,
+    FieldValues,
+    field_values,
+    text,
+)
 from rhinvoice.application.document.handlers import DraftInput
 from rhinvoice.application.recurring.handlers import PlanView, SavePlan, plan_draft
 from rhinvoice.domain.document.document import MAX_LINES
@@ -47,6 +54,10 @@ class InvoiceTemplateRequest(ApiModel):
     closing_text: str = text(4000)
     bank_account_id: UUID | None = None
     """None: the default account of the currency."""
+    fields: FieldValues = Field(default_factory=dict, max_length=24)
+    """Values of the print layout's fields by key; empty ones are dropped."""
+    print_layout_id: UUID | None = None
+    """None: the customer's layout or the default."""
 
 
 class PlanRequest(ApiModel):
@@ -84,6 +95,8 @@ class PlanRequest(ApiModel):
                 payment_text=template.payment_text,
                 closing_text=template.closing_text,
                 bank_account_id=template.bank_account_id,
+                fields=field_values(template.fields),
+                print_layout_id=template.print_layout_id,
             ),
         )
 
@@ -114,6 +127,8 @@ class InvoiceTemplateResponse(ApiModel):
     payment_text: str
     closing_text: str
     bank_account_id: UUID | None
+    fields: dict[str, str]
+    print_layout_id: UUID | None
 
     @classmethod
     def of(cls, plan: RecurringPlan) -> Self:
@@ -145,6 +160,8 @@ class InvoiceTemplateResponse(ApiModel):
             payment_text=draft.payment_text,
             closing_text=draft.closing_text,
             bank_account_id=draft.bank_account_id,
+            fields=dict(draft.fields),
+            print_layout_id=draft.print_layout_id,
         )
 
 

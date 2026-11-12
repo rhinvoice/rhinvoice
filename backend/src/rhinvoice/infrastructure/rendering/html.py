@@ -24,7 +24,13 @@ from jinja2 import (
 )
 from markupsafe import Markup
 
-from rhinvoice.domain.company.print_layout import PrintFont, PrintTemplate, accounts_in_footer
+from rhinvoice.domain.company.print_layout import (
+    InfoEntry,
+    InfoRow,
+    PrintFont,
+    PrintTemplate,
+    accounts_in_footer,
+)
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.document.document import DocumentType
 from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
@@ -50,6 +56,7 @@ from rhinvoice.infrastructure.rendering.labels import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from datetime import date
     from decimal import Decimal
     from pathlib import Path
@@ -245,15 +252,14 @@ def _context(model: PrintModel) -> dict[str, object]:
         "position_numbers": layout.position_numbers,
         "title": title,
         "number": document.number or "",
-        "number_pending": document.number is None,
-        "draft": model.is_draft,
-        "draft_label": labels["draft"],
+        "draft": model.is_draft or model.sample,
+        "draft_label": labels["sample"] if model.sample else labels["draft"],
         "logo": _logo(model),
         "company": company.name,
         "sender_line": SEPARATOR.join([company.name, *_company_lines(company.address)]),
         "company_lines": _company_lines(company.address),
         "recipient": [] if recipient is None else _recipient_lines(recipient, company, language),
-        "meta": _meta(model, setting),
+        **_meta(model, setting),
         "subject": content.subject,
         "cancels": (
             ""
@@ -314,7 +320,7 @@ def _reminder_context(printed: ReminderPrint) -> dict[str, object]:
         **_context(model),
         "title": REMINDER_TITLES[setting.language][reminder.level],
         "number": "",
-        "number_pending": False,
+        "pending_row": -1,
         "draft": False,
         "meta": meta,
         "intro": intro,
@@ -331,41 +337,101 @@ def _reminder_context(printed: ReminderPrint) -> dict[str, object]:
     }
 
 
-def _meta(model: PrintModel, setting: _Setting) -> list[tuple[str, str]]:
-    """List the facts next to the address: number, customer number, dates, references."""
+PLACEHOLDER = "…"
+"""The value of an empty field in the layout preview."""
+
+
+def _meta(model: PrintModel, setting: _Setting) -> dict[str, object]:
+    """List the facts next to the address in the layout's order, then the customer's VAT ID.
+
+    ``pending_row`` is the row of a number not yet given (drafts), -1 when there is none.
+    """
     document = model.view.document
     content = document.content
-    labels = setting.labels
-    number_label = {
-        DocumentType.INVOICE: labels["number_invoice"],
-        DocumentType.QUOTE: labels["number_quote"],
-        DocumentType.CANCELLATION: labels["number_cancellation"],
-    }[document.type]
     recipient = model.recipient
-    meta = [(number_label, document.number or labels["number_pending"])]
-    if recipient is not None:
-        meta.append((labels["customer_number"], recipient.number))
-    meta.append((labels["date"], day(model.issue_date, setting.locale)))
-    if model.due_date is not None and document.type is not DocumentType.CANCELLATION:
-        due = labels["due_quote"] if document.type is DocumentType.QUOTE else labels["due_invoice"]
-        meta.append((due, day(model.due_date, setting.locale)))
-    service = _service(content.service_from, content.service_to, setting)
-    if not service and document.type is not DocumentType.QUOTE:
-        # The date of supply is mandatory in DE and AT (§ 14 Abs. 4 Nr. 6 UStG,
-        # § 11 Abs. 1 Z 3 lit. d UStG AT); without a period the supply took place on
-        # the date of the invoice, which a cancellation repeats.
-        supplied = model.cancelled_issue_date or model.issue_date
-        service = [(labels["service_date"], day(supplied, setting.locale))]
-    meta.extend(service)
-    if content.reference:
-        meta.append((labels["reference"], content.reference))
+    meta: list[tuple[str, str]] = []
+    pending_row = -1
+    for entry in model.layout.info_block:
+        if not entry.shown:
+            continue
+        if entry.key == InfoRow.NUMBER.value and document.number is None:
+            pending_row = len(meta)
+        meta.extend(_info_rows(entry, model, setting))
     if (
         {TaxTreatment.REVERSE_CHARGE, TaxTreatment.INTRA_COMMUNITY} & set(content.treatments)
         and recipient is not None
         and recipient.vat_number is not None
     ):
         meta.append((setting.terms.customer_vat_label, str(recipient.vat_number)))
-    return meta
+    return {"meta": meta, "pending_row": pending_row}
+
+
+def _info_rows(entry: InfoEntry, model: PrintModel, setting: _Setting) -> list[tuple[str, str]]:
+    """Print one entry of the layout's facts; a field without a value prints nothing."""
+    if entry.is_field:
+        value = model.view.document.content.field(entry.key)
+        label = entry.label or setting.labels[f"field_{entry.key}"]
+        if not value and model.placeholders:
+            value = PLACEHOLDER
+        return [(label, value)] if value else []
+    return _ROWS[InfoRow(entry.key)](model, setting)
+
+
+def _number_row(model: PrintModel, setting: _Setting) -> list[tuple[str, str]]:
+    document = model.view.document
+    labels = setting.labels
+    number_label = {
+        DocumentType.INVOICE: labels["number_invoice"],
+        DocumentType.QUOTE: labels["number_quote"],
+        DocumentType.CANCELLATION: labels["number_cancellation"],
+    }[document.type]
+    return [(number_label, document.number or labels["number_pending"])]
+
+
+def _customer_number_row(model: PrintModel, setting: _Setting) -> list[tuple[str, str]]:
+    recipient = model.recipient
+    return [] if recipient is None else [(setting.labels["customer_number"], recipient.number)]
+
+
+def _date_row(model: PrintModel, setting: _Setting) -> list[tuple[str, str]]:
+    return [(setting.labels["date"], day(model.issue_date, setting.locale))]
+
+
+def _due_row(model: PrintModel, setting: _Setting) -> list[tuple[str, str]]:
+    kind = model.view.document.type
+    if model.due_date is None or kind is DocumentType.CANCELLATION:
+        return []
+    labels = setting.labels
+    due = labels["due_quote"] if kind is DocumentType.QUOTE else labels["due_invoice"]
+    return [(due, day(model.due_date, setting.locale))]
+
+
+def _service_row(model: PrintModel, setting: _Setting) -> list[tuple[str, str]]:
+    document = model.view.document
+    content = document.content
+    service = _service(content.service_from, content.service_to, setting)
+    if not service and document.type is not DocumentType.QUOTE:
+        # The date of supply is mandatory in DE and AT (§ 14 Abs. 4 Nr. 6 UStG,
+        # § 11 Abs. 1 Z 3 lit. d UStG AT); without a period the supply took place on
+        # the date of the invoice, which a cancellation repeats.
+        supplied = model.cancelled_issue_date or model.issue_date
+        service = [(setting.labels["service_date"], day(supplied, setting.locale))]
+    return service
+
+
+def _reference_row(model: PrintModel, setting: _Setting) -> list[tuple[str, str]]:
+    reference = model.view.document.content.reference
+    return [(setting.labels["reference"], reference)] if reference else []
+
+
+_ROWS: dict[InfoRow, Callable[[PrintModel, _Setting], list[tuple[str, str]]]] = {
+    InfoRow.NUMBER: _number_row,
+    InfoRow.CUSTOMER_NUMBER: _customer_number_row,
+    InfoRow.DATE: _date_row,
+    InfoRow.DUE_DATE: _due_row,
+    InfoRow.SERVICE_DATE: _service_row,
+    InfoRow.REFERENCE: _reference_row,
+}
 
 
 def _service(start: date | None, end: date | None, setting: _Setting) -> list[tuple[str, str]]:

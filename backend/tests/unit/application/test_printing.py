@@ -362,9 +362,9 @@ def test_no_e_invoice_when_off_incomplete_or_not_configured(
     printing: PrintHandlers, store: Store
 ) -> None:
     handlers, pdf = e_invoicing(printing)
-    store.print_layout = PrintLayout(e_invoice=False)
+    store.use_layout(PrintLayout(e_invoice=False))
     handlers.pdf(issue(handlers))
-    store.print_layout = PrintLayout()
+    store.use_layout(PrintLayout())
     # Reverse charge to a customer whose VAT number has no country prefix (BR-AE-02).
     store.customers[CUSTOMER] = replace(
         store.customers[CUSTOMER],
@@ -394,7 +394,7 @@ def test_the_e_invoice_status(printing: PrintHandlers, store: Store) -> None:
     assert handlers.e_invoice_status(invoice).embedded is None
     handlers.pdf(invoice)
     assert handlers.e_invoice_status(invoice).embedded is True
-    store.print_layout = PrintLayout(e_invoice=False)
+    store.use_layout(PrintLayout(e_invoice=False))
     later = issue(handlers)
     handlers.pdf(later)
     status = handlers.e_invoice_status(later)
@@ -457,7 +457,7 @@ def test_drafts_tell_what_their_e_invoice_lacks(printing: PrintHandlers, store: 
     assert handlers.draft_e_invoice_problems(quote) == ()
     assert handlers.draft_e_invoice_problems(replace(lacking, customer=None)) == ()
     assert printing.draft_e_invoice_problems(lacking) == ()
-    store.print_layout = PrintLayout(e_invoice=False)
+    store.use_layout(PrintLayout(e_invoice=False))
     assert handlers.draft_e_invoice_problems(lacking) == ()
 
 
@@ -475,7 +475,7 @@ def test_drafts_to_german_customers_tell_what_their_xrechnung_lacks(
     german = handlers.documents.preview(DocumentType.INVOICE, draft()).view
     assert handlers.draft_xrechnung_problems(german) == XRECHNUNG_GAPS
     # Also when the PDF embeds no e-invoice: the XRechnung is a file of its own.
-    store.print_layout = PrintLayout(e_invoice=False)
+    store.use_layout(PrintLayout(e_invoice=False))
     assert handlers.draft_xrechnung_problems(german) == XRECHNUNG_GAPS
     # The customer's Leitweg-ID is the buyer reference.
     store.customers[CUSTOMER] = replace(

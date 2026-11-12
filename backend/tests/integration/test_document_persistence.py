@@ -29,6 +29,7 @@ from rhinvoice.domain.document.document import (
     DocumentStatus,
     DocumentType,
     EventKind,
+    FieldValue,
 )
 from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
 from rhinvoice.domain.shared.clock import FixedClock
@@ -737,3 +738,27 @@ def test_documents_issued_by_an_older_version_can_be_paid_and_cancelled(
             text("SELECT snapshot FROM documents WHERE id = :id"), {"id": invoice.id}
         ).scalar_one()
     assert "layout" not in snapshot
+
+
+def test_field_values_are_kept_and_frozen_once_issued(
+    engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
+) -> None:
+    handlers, customer, _ = setup
+    values = (("project", "Website"), ("custom-0a1b2c3d", "Haus Nord"))
+    created = handlers.create(DocumentType.INVOICE, draft(customer, fields=values)).document
+    assert created.content.fields == tuple(FieldValue(key, value) for key, value in values)
+    with SqlUnitOfWork(engine) as uow:
+        loaded = uow.documents.get(created.id)
+        assert loaded is not None
+        assert loaded.content.fields == created.content.fields
+    # Found by the search like the subject and the reference.
+    query = DocumentQuery(today=TODAY, types=frozenset({DocumentType.INVOICE}), search="Haus Nord")
+    assert [item.id for item in handlers.search(query).items] == [created.id]
+    issued = handlers.issue(created.id).document
+    with (
+        engine.begin() as connection,
+        pytest.raises(IntegrityError, match="issued documents are immutable"),
+    ):
+        connection.execute(
+            text("UPDATE documents SET fields = '[]' WHERE id = :id"), {"id": issued.id}
+        )

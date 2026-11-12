@@ -14,6 +14,7 @@ import type { Company } from "@/features/shared/company-api";
 import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import { fields, toApiDecimal } from "@/features/shared/form-schema";
 import { formatDecimalInput } from "@/lib/format";
+import { MAX_FIELD_VALUE } from "@/lib/info-block";
 import type { T } from "@/lib/i18n";
 import type { Locale } from "@/lib/locale";
 
@@ -93,6 +94,10 @@ export function documentSchema(t: T, locale: Locale) {
       service_to: isoDate,
       subject: f.optionalText(200),
       reference: f.optionalText(100),
+      /** Values of the print layout's fields by key, e.g. a project or a cost centre. */
+      fields: z.record(z.string(), f.optionalText(MAX_FIELD_VALUE)),
+      /** The print layout chosen for the document; "" for the customer's or the default. */
+      print_layout_id: z.string(),
       intro_text: f.optionalText(4000),
       payment_text: f.optionalText(4000),
       closing_text: f.optionalText(4000),
@@ -191,6 +196,8 @@ export function emptyDocument(company: Company, issueDate = ""): DocumentFormVal
     service_to: "",
     subject: "",
     reference: "",
+    fields: {},
+    print_layout_id: "",
     intro_text: "",
     payment_text: "",
     closing_text: "",
@@ -344,6 +351,8 @@ export function documentToForm(document: DocumentDetail, locale: Locale): Docume
     service_to: document.service_to ?? "",
     subject: document.subject,
     reference: document.reference,
+    fields: document.fields,
+    print_layout_id: document.print_layout_id ?? "",
     intro_text: document.intro_text,
     payment_text: document.payment_text,
     closing_text: document.closing_text,
@@ -425,6 +434,8 @@ export function formToDraft(values: DocumentFormValues, locale: Locale): DraftRe
     service_to: optionalDate(values.service_to),
     subject: values.subject,
     reference: values.reference,
+    fields: values.fields,
+    print_layout_id: values.print_layout_id === "" ? null : values.print_layout_id,
     intro_text: values.intro_text,
     payment_text: values.payment_text,
     closing_text: values.closing_text,
@@ -439,16 +450,16 @@ export function formToDraft(values: DocumentFormValues, locale: Locale): DraftRe
 
 const TOP_LEVEL_FIELDS = [
   "customer_id",
-  "subject",
-  "reference",
   "issue_date",
   "due_date",
-  "bank_account_id",
   "service_from",
   "service_to",
+  "reference",
+  "bank_account_id",
+  "lines",
+  "subject",
   "currency",
   "language",
-  "lines",
   "price_mode",
   "discount_value",
   "treatment",

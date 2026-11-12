@@ -185,6 +185,7 @@ customers = Table(
     Column("tax_exempt", Boolean, nullable=False),
     Column("default_discount", Numeric(5, 2), nullable=False),
     Column("payment_terms_days", SmallInteger),
+    Column("print_layout_id", Uuid(), ForeignKey("print_layouts.id", ondelete="SET NULL")),
     Column("note", Text, nullable=False, server_default=""),
     Column("archived", Boolean, nullable=False, server_default="false"),
     Column("created_at", DateTime(timezone=True), nullable=False),
@@ -252,11 +253,14 @@ documents = Table(
     Column("service_to", Date),
     Column("subject", String(200), nullable=False, server_default=""),
     Column("reference", String(100), nullable=False, server_default=""),
+    Column("fields", JSONB, nullable=False, server_default="[]"),
     Column("intro_text", Text, nullable=False, server_default=""),
     Column("payment_text", Text, nullable=False, server_default=""),
     Column("closing_text", Text, nullable=False, server_default=""),
     # The account chosen for a draft; issuing freezes the account in the snapshot.
     Column("bank_account_id", Uuid(), ForeignKey("bank_accounts.id", ondelete="SET NULL")),
+    # The layout chosen for a draft; issuing freezes the layout itself in the snapshot.
+    Column("print_layout_id", Uuid(), ForeignKey("print_layouts.id", ondelete="SET NULL")),
     Column("created_at", DateTime(timezone=True), nullable=False),
     Column("issued_at", DateTime(timezone=True)),
     Column("source_id", Uuid(), ForeignKey("documents.id", ondelete="RESTRICT")),
@@ -464,11 +468,13 @@ onboarding = Table(
     CheckConstraint("singleton", name="single_row"),
 )
 
-# How documents are laid out (domain/company/print_layout.py); one row at most.
-print_layout = Table(
-    "print_layout",
+# Named print layouts (domain/company/print_layout.py, #48); exactly one is the default.
+print_layouts = Table(
+    "print_layouts",
     metadata,
-    Column("singleton", Boolean, primary_key=True, server_default="true"),
+    Column("id", Uuid(), primary_key=True),
+    Column("name", String(60), nullable=False, unique=True),
+    Column("is_default", Boolean, nullable=False, server_default="false"),
     Column("template", String(20), nullable=False),
     Column("logo_position", String(10), nullable=False),
     Column("logo_size", String(10), nullable=False),
@@ -478,7 +484,14 @@ print_layout = Table(
     Column("position_numbers", Boolean, nullable=False),
     Column("footer_accounts", String(20), nullable=False),
     Column("e_invoice", Boolean, nullable=False, server_default="true"),
-    CheckConstraint("singleton", name="single_row"),
+    # The facts next to the address as a list of key, shown and label; none: the old ones.
+    Column("info_block", JSONB),
+    Index(
+        "ix_print_layouts_one_default",
+        "is_default",
+        unique=True,
+        postgresql_where=text("is_default"),
+    ),
 )
 
 # The three dunning levels (domain/dunning/reminder.py); none saved: the defaults.

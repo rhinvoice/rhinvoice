@@ -82,6 +82,7 @@ const CUSTOMER: CustomerOption = {
   tax_exempt: false,
   default_discount: "0",
   payment_terms_days: null,
+  print_layout_id: null,
   note: "",
   archived: false,
   created_at: "2026-01-01T00:00:00Z",
@@ -320,6 +321,8 @@ const DETAIL: DocumentDetail = {
   service_to: "2026-01-31",
   subject: "Website",
   reference: "PO-1",
+  fields: { project: "Website" },
+  print_layout_id: "layout-1",
   intro_text: "Hallo",
   payment_text: "Sofort",
   closing_text: "Danke",
@@ -591,10 +594,10 @@ describe("errors", () => {
     } as unknown as FieldErrors<DocumentFormValues>;
     expect(documentSummaryItems(errors, t)).toEqual([
       { fieldId: "customer_id", message: "Kunde fehlt" },
-      { fieldId: "subject", message: "Zu lang" },
       { fieldId: "lines", message: "Mindestens eine Position" },
       { fieldId: "lines-1-description", message: "Position 2: Bitte ausfüllen." },
       { fieldId: "lines-1-quantity", message: "Position 2: Zahl" },
+      { fieldId: "subject", message: "Zu lang" },
       { fieldId: "closing_text", message: "Zu lang" },
     ]);
     expect(documentSummaryItems({}, t)).toEqual([]);

@@ -45,3 +45,5 @@ Status: `accepted`, `superseded by NNNN` or `rejected`.
 - [0039 – Pass-through items](0039-pass-through-items.md)
 - [0040 – Attachments of own documents](0040-attachments-of-own-documents.md)
 - [0041 – Idempotent writes](0041-idempotent-writes.md)
+- [0042 – The details top right](0042-details-top-right.md)
+- [0043 – Several print templates](0043-several-print-templates.md)

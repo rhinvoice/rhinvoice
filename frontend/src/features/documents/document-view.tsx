@@ -20,7 +20,9 @@ import { TotalsSummary } from "@/features/documents/totals-summary";
 import { parseWriteOffEvent } from "@/features/documents/write-off-model";
 import { FileLink } from "@/features/shared/file-link";
 import { SendMailDialog } from "@/features/shared/send-mail-dialog";
+import { printLayoutsQuery } from "@/features/shared/company-api";
 import { formatDate, formatDateTime, formatMoney, formatNumber, formatPercent } from "@/lib/format";
+import { fieldValues } from "@/lib/info-block";
 
 interface DocumentViewProps {
   readonly document: DocumentDetail;
@@ -41,6 +43,10 @@ function Meta({ label, value }: { readonly label: string; readonly value: string
 /** Read-only view of an issued document: content and totals are frozen. */
 export function DocumentView({ document, taxName, onRemovePayment }: DocumentViewProps) {
   const { t, locale } = useI18n();
+  // Names of the fields from every layout: the document's own is frozen in its PDF.
+  const entries = (useQuery(printLayoutsQuery).data ?? []).flatMap(
+    (named) => named.layout.info_block,
+  );
   const money = (amount: string, digits = 2) =>
     formatMoney(amount, document.currency, locale, digits);
   const date = (value: string | null) =>
@@ -93,6 +99,9 @@ export function DocumentView({ document, taxName, onRemovePayment }: DocumentVie
               {document.reference === "" ? null : (
                 <Meta label={t("documents.reference")} value={document.reference} />
               )}
+              {fieldValues(document.fields, entries, t).map(([label, value]) => (
+                <Meta key={label} label={label} value={value} />
+              ))}
               {document.imported ? null : (
                 <Meta
                   label={t("documents.treatment")}

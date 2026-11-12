@@ -21,12 +21,16 @@ from rhinvoice.application.document.einvoice import (
     buyer_reference,
     order_reference,
     problems,
+    reference_field,
+    reference_note,
     seller_ids,
     vat_id,
     wants_xrechnung,
 )
 from rhinvoice.application.document.handlers import DraftInput, LineInput
 from rhinvoice.application.document.printing import PrintModel
+from rhinvoice.domain.company.print_layout import DEFAULT_INFO_BLOCK, InfoField, PrintLayout
+from rhinvoice.domain.document.document import FieldValue
 from rhinvoice.domain.document.lines import LineKind, PriceMode
 from rhinvoice.domain.shared.country import CountryCode
 from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
@@ -631,6 +635,91 @@ def test_the_buyer_reference_of_other_customers_is_the_invoices() -> None:
     assert EInvoiceProblem.BUYER_REFERENCE_MISSING in found(
         without_reference(kept), EInvoiceProfile.XRECHNUNG
     )
+
+
+AGREEMENT = "rsm:SupplyChainTradeTransaction/ram:ApplicableHeaderTradeAgreement"
+
+
+@pytest.mark.parametrize("profile", list(EInvoiceProfile))
+def test_reference_fields_go_into_their_business_terms(profile: EInvoiceProfile) -> None:
+    root = xml("de-authority-references", profile)
+    assert text(root, f"{AGREEMENT}/ram:BuyerReference") == "04011000-12345-34"
+    assert text(root, f"{AGREEMENT}/ram:SpecifiedProcuringProject/ram:ID") == "Neubau Schule Nord"
+    assert text(root, f"{AGREEMENT}/ram:SpecifiedProcuringProject/ram:Name") == (
+        "Project reference"
+    )
+    assert text(root, f"{AGREEMENT}/ram:ContractReferencedDocument/ram:IssuerAssignedID") == (
+        "RV-2026-07"
+    )
+    assert text(root, f"{AGREEMENT}/ram:BuyerOrderReferencedDocument/ram:IssuerAssignedID") == (
+        "PO-2026-001"
+    )
+    assert text(root, f"{AGREEMENT}/ram:SellerOrderReferencedDocument/ram:IssuerAssignedID") == (
+        "AB-4410"
+    )
+    assert text(root, f"{DELIVERY}/ram:DespatchAdviceReferencedDocument/ram:IssuerAssignedID") == (
+        "LS-88213"
+    )
+    additional = [
+        (text(element, "ram:IssuerAssignedID"), text(element, "ram:TypeCode"))
+        for element in root.findall(f"{AGREEMENT}/ram:AdditionalReferencedDocument", NAMESPACES)
+    ]
+    assert additional == [("Vergabe 2026/17 Los 2", "50"), ("Zähler 7781-22", "130")]
+    assert text(root, f"{SETTLEMENT}/ram:ReceivableSpecifiedTradeAccountingAccount/ram:ID") == (
+        "KST-100"
+    )
+    # The reference has no business term left: it stays in the notes.
+    assert texts(root, "rsm:ExchangedDocument/ram:IncludedNote/ram:Content")[-1] == (
+        "Ihre Referenz: Schreiben vom 3. November"
+    )
+    # The CII schema's order: the references after the parties, the project last.
+    agreement = root.find(AGREEMENT, NAMESPACES)
+    assert agreement is not None
+    names = [child.tag.split("}")[1] for child in agreement]
+    assert names[-6:] == [
+        "SellerOrderReferencedDocument",
+        "BuyerOrderReferencedDocument",
+        "ContractReferencedDocument",
+        "AdditionalReferencedDocument",
+        "AdditionalReferencedDocument",
+        "SpecifiedProcuringProject",
+    ]
+
+
+def with_layout(printed: PrintModel, layout: PrintLayout) -> PrintModel:
+    return replace(printed, layout=layout)
+
+
+def test_only_fields_the_layout_lists_go_into_the_e_invoice() -> None:
+    printed = model(samples()["de-authority-references"])
+    assert reference_field(printed, InfoField.CONTRACT) == "RV-2026-07"
+    plain = with_layout(printed, PrintLayout(info_block=DEFAULT_INFO_BLOCK))
+    assert all(reference_field(plain, field) is None for field in InfoField)
+    # Without the purchase order field, the reference is BT-13 again and needs no note.
+    assert order_reference(plain) == "Schreiben vom 3. November"
+    assert reference_note(plain) is None
+    root = fromstring(WRITER.xml(plain, EInvoiceProfile.XRECHNUNG))  # noqa: S314 - our own output
+    assert root.find(f"{AGREEMENT}/ram:SpecifiedProcuringProject", NAMESPACES) is None
+    assert (
+        root.find(f"{SETTLEMENT}/ram:ReceivableSpecifiedTradeAccountingAccount", NAMESPACES) is None
+    )
+
+
+def test_the_purchase_order_field_takes_bt_13() -> None:
+    printed = model(samples()["de-authority-references"])
+    assert order_reference(printed) == "PO-2026-001"
+    assert reference_note(printed) == "Schreiben vom 3. November"
+    # A reference that is the Leitweg-ID, or none, needs no note.
+    assert reference_note(with_reference(printed, "04011000-12345-34")) is None
+    assert reference_note(without_reference(printed)) is None
+    # An empty field is no value.
+    document = printed.view.document
+    content = replace(document.content, fields=(FieldValue("project", ""),))
+    emptied = replace(
+        printed, view=replace(printed.view, document=replace(document, content=content))
+    )
+    assert reference_field(emptied, InfoField.PROJECT) is None
+    assert order_reference(emptied) == "Schreiben vom 3. November"
 
 
 def test_only_german_customers_want_an_xrechnung() -> None:

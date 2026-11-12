@@ -7,9 +7,17 @@ from sqlalchemy import Connection, Engine, inspect, select, text
 
 from rhinvoice.application.catalog.handlers import ArticleHandlers, SaveArticle
 from rhinvoice.application.document.handlers import DocumentHandlers, DraftInput, LineInput
-from rhinvoice.domain.document.document import DocumentType
+from rhinvoice.domain.company.print_layout import (
+    DEFAULT_INFO_BLOCK,
+    InfoEntry,
+    NamedLayout,
+    PrintLayout,
+    PrintTemplate,
+)
+from rhinvoice.domain.document.document import DocumentType, FieldValue
 from rhinvoice.domain.document.lines import LineKind
 from rhinvoice.domain.shared.clock import FixedClock
+from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.infrastructure.db.migrate import downgrade, upgrade
 from rhinvoice.infrastructure.db.tables import dunning_levels, metadata, text_templates
@@ -179,3 +187,96 @@ def test_removed_files_are_forgotten_on_a_downgrade_of_drafts_only(
         downgrade(database_url, "0022")
     with engine.connect() as connection:
         assert removed_events(connection) == 1
+
+
+def use_layout(engine: Engine, layout: PrintLayout) -> None:
+    """Give the default print layout these settings."""
+    with SqlUnitOfWork(engine) as uow:
+        [default] = [named for named in uow.print_layouts.list() if named.is_default]
+        uow.print_layouts.update(replace(default, layout=layout))
+        uow.commit()
+
+
+def test_the_saved_layout_becomes_the_default_one_and_back(
+    database_url: str, engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
+) -> None:
+    """0026 names the layout saved so far "Standard"; a downgrade keeps the default one."""
+    documents, customer, _ = setup
+    classic = PrintLayout(template=PrintTemplate.CLASSIC, contact=True)
+    use_layout(engine, classic)
+    with SqlUnitOfWork(engine) as uow:
+        uow.print_layouts.add(NamedLayout(new_id(), "Behörden", PrintLayout()))
+        uow.commit()
+    line = LineInput(kind=LineKind.ITEM, description="Beratung", unit_price="80")
+    documents.create(DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(line,)))
+    downgrade(database_url, "0025")
+    try:
+        with engine.connect() as connection:
+            rows = connection.execute(text("SELECT template, contact FROM print_layout")).all()
+            assert [tuple(row) for row in rows] == [("classic", True)]
+            assert "print_layouts" not in inspect(connection).get_table_names()
+    finally:
+        upgrade(database_url)
+    with SqlUnitOfWork(engine) as uow:
+        assert [
+            (named.name, named.is_default, named.layout) for named in uow.print_layouts.list()
+        ] == [("Standard", True, classic)]
+    # Without a saved layout the program's defaults, as documents printed before.
+    with engine.begin() as connection:
+        connection.execute(text("UPDATE customers SET print_layout_id = NULL"))
+    downgrade(database_url, "0025")
+    try:
+        with engine.begin() as connection:
+            connection.execute(text("DELETE FROM print_layout"))
+    finally:
+        upgrade(database_url)
+    with SqlUnitOfWork(engine) as uow:
+        assert [(named.name, named.layout) for named in uow.print_layouts.list()] == [
+            ("Standard", PrintLayout())
+        ]
+
+
+def test_field_values_go_on_a_downgrade_of_drafts_only(
+    database_url: str, engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
+) -> None:
+    """Drafts and plans lose their values; an issued document that prints one stops it."""
+    documents, customer, clock = setup
+    line = LineInput(kind=LineKind.ITEM, description="Beratung", unit_price="80")
+    values = (("project", "Website"),)
+    documents.create(
+        DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(line,), fields=values)
+    )
+    template = replace(TEMPLATE, fields=(FieldValue("contract", "V-7"),))
+    with SqlUnitOfWork(engine) as uow:
+        uow.recurring.add(replace(plan(customer, "Wartung", clock.today()), template=template))
+        uow.commit()
+    use_layout(engine, PrintLayout(info_block=(*DEFAULT_INFO_BLOCK, InfoEntry("project"))))
+    downgrade(database_url, "0024")
+    try:
+        with engine.connect() as connection:
+            columns = {column["name"] for column in inspect(connection).get_columns("documents")}
+            assert "fields" not in columns
+            plans = connection.execute(
+                text("SELECT template ? 'fields' FROM recurring_plans")
+            ).scalars()
+            assert list(plans) == [False]
+    finally:
+        upgrade(database_url)
+    # An issued document with the old rows and no values does not stop it.
+    documents.issue(
+        documents.create(
+            DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(line,))
+        ).document.id
+    )
+    use_layout(engine, PrintLayout())
+    downgrade(database_url, "0024")
+    upgrade(database_url)
+    created = documents.create(
+        DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(line,), fields=values)
+    )
+    documents.issue(created.document.id)
+    with raises_exactly(
+        RuntimeError,
+        "issued documents print fields or other rows: they need the version that added them",
+    ):
+        downgrade(database_url, "0024")

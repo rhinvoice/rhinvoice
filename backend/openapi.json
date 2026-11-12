@@ -1599,6 +1599,34 @@
         "title": "CountryTermsResponse",
         "type": "object"
       },
+      "CreatePrintLayoutRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "copy_of": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy Of"
+          },
+          "name": {
+            "maxLength": 60,
+            "pattern": "[^\\s\\x1c-\\x1f\\x85]",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CreatePrintLayoutRequest",
+        "type": "object"
+      },
       "CreateRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1663,6 +1691,9 @@
             ],
             "title": "Due Date"
           },
+          "fields": {
+            "$ref": "#/components/schemas/FieldValues"
+          },
           "intro_text": {
             "default": "",
             "maxLength": 4000,
@@ -1714,6 +1745,18 @@
           "price_mode": {
             "$ref": "#/components/schemas/PriceMode",
             "default": "net"
+          },
+          "print_layout_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Print Layout Id"
           },
           "reference": {
             "default": "",
@@ -1969,6 +2012,18 @@
             "title": "Phone",
             "type": "string"
           },
+          "print_layout_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Print Layout Id"
+          },
           "salutation": {
             "default": "",
             "maxLength": 50,
@@ -2119,6 +2174,18 @@
             "title": "Phone",
             "type": "string"
           },
+          "print_layout_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Print Layout Id"
+          },
           "salutation": {
             "title": "Salutation",
             "type": "string"
@@ -2161,6 +2228,7 @@
           "tax_exempt",
           "default_discount",
           "payment_terms_days",
+          "print_layout_id",
           "note",
           "archived",
           "created_at"
@@ -2685,6 +2753,13 @@
             "title": "Events",
             "type": "array"
           },
+          "fields": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Fields",
+            "type": "object"
+          },
           "goods_treatment": {
             "anyOf": [
               {
@@ -2782,6 +2857,18 @@
           },
           "price_mode": {
             "$ref": "#/components/schemas/PriceMode"
+          },
+          "print_layout_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Print Layout Id"
           },
           "recipient": {
             "anyOf": [
@@ -2894,6 +2981,8 @@
           "payment_text",
           "closing_text",
           "bank_account_id",
+          "fields",
+          "print_layout_id",
           "notice",
           "lines",
           "totals",
@@ -3014,6 +3103,9 @@
             ],
             "title": "Due Date"
           },
+          "fields": {
+            "$ref": "#/components/schemas/FieldValues"
+          },
           "intro_text": {
             "default": "",
             "maxLength": 4000,
@@ -3065,6 +3157,18 @@
           "price_mode": {
             "$ref": "#/components/schemas/PriceMode",
             "default": "net"
+          },
+          "print_layout_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Print Layout Id"
           },
           "reference": {
             "default": "",
@@ -3472,6 +3576,17 @@
         "title": "ExportFormat",
         "type": "string"
       },
+      "FieldValues": {
+        "additionalProperties": {
+          "maxLength": 100,
+          "type": "string"
+        },
+        "maxProperties": 24,
+        "propertyNames": {
+          "maxLength": 16
+        },
+        "type": "object"
+      },
       "FiguresResponse": {
         "additionalProperties": false,
         "properties": {
@@ -3805,6 +3920,33 @@
         "title": "ImportTarget",
         "type": "string"
       },
+      "InfoEntrySchema": {
+        "additionalProperties": false,
+        "description": "One line of the facts next to the address.",
+        "properties": {
+          "key": {
+            "maxLength": 16,
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "default": "",
+            "maxLength": 40,
+            "title": "Label",
+            "type": "string"
+          },
+          "shown": {
+            "default": true,
+            "title": "Shown",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "InfoEntrySchema",
+        "type": "object"
+      },
       "Installation": {
         "enum": [
           "desktop",
@@ -3935,6 +4077,9 @@
             ],
             "title": "Discount Value"
           },
+          "fields": {
+            "$ref": "#/components/schemas/FieldValues"
+          },
           "intro_text": {
             "default": "",
             "maxLength": 4000,
@@ -3968,6 +4113,18 @@
           "price_mode": {
             "$ref": "#/components/schemas/PriceMode",
             "default": "net"
+          },
+          "print_layout_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Print Layout Id"
           },
           "reference": {
             "default": "",
@@ -4024,6 +4181,13 @@
             ],
             "title": "Discount Value"
           },
+          "fields": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Fields",
+            "type": "object"
+          },
           "intro_text": {
             "title": "Intro Text",
             "type": "string"
@@ -4052,6 +4216,18 @@
           "price_mode": {
             "$ref": "#/components/schemas/PriceMode"
           },
+          "print_layout_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Print Layout Id"
+          },
           "reference": {
             "title": "Reference",
             "type": "string"
@@ -4073,7 +4249,9 @@
           "intro_text",
           "payment_text",
           "closing_text",
-          "bank_account_id"
+          "bank_account_id",
+          "fields",
+          "print_layout_id"
         ],
         "title": "InvoiceTemplateResponse",
         "type": "object"
@@ -5117,6 +5295,36 @@
         "title": "PrintFont",
         "type": "string"
       },
+      "PrintLayoutResponse": {
+        "additionalProperties": false,
+        "description": "A named print layout (#48).",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_default": {
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "layout": {
+            "$ref": "#/components/schemas/PrintLayoutSchema"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "is_default",
+          "layout"
+        ],
+        "title": "PrintLayoutResponse",
+        "type": "object"
+      },
       "PrintLayoutSchema": {
         "additionalProperties": false,
         "properties": {
@@ -5133,6 +5341,14 @@
           },
           "footer_accounts": {
             "$ref": "#/components/schemas/FooterAccounts"
+          },
+          "info_block": {
+            "items": {
+              "$ref": "#/components/schemas/InfoEntrySchema"
+            },
+            "maxItems": 24,
+            "title": "Info Block",
+            "type": "array"
           },
           "logo_position": {
             "$ref": "#/components/schemas/LogoPosition"
@@ -5161,7 +5377,8 @@
           "contact",
           "position_numbers",
           "footer_accounts",
-          "e_invoice"
+          "e_invoice",
+          "info_block"
         ],
         "title": "PrintLayoutSchema",
         "type": "object"
@@ -5532,6 +5749,26 @@
         ],
         "title": "RunStatus",
         "type": "string"
+      },
+      "SavePrintLayoutRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "layout": {
+            "$ref": "#/components/schemas/PrintLayoutSchema"
+          },
+          "name": {
+            "maxLength": 60,
+            "pattern": "[^\\s\\x1c-\\x1f\\x85]",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "layout"
+        ],
+        "title": "SavePrintLayoutRequest",
+        "type": "object"
       },
       "SendMailRequest": {
         "additionalProperties": false,
@@ -16309,15 +16546,20 @@
         ]
       }
     },
-    "/api/print-layout": {
+    "/api/print-layouts": {
       "get": {
-        "operationId": "print-layout_get_print_layout",
+        "description": "Every print layout, the default first.",
+        "operationId": "print-layout_list_print_layouts",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PrintLayoutSchema"
+                  "items": {
+                    "$ref": "#/components/schemas/PrintLayoutResponse"
+                  },
+                  "title": "Response Print-Layout List Print Layouts",
+                  "type": "array"
                 }
               }
             },
@@ -16389,30 +16631,30 @@
             "APIKeyCookie": []
           }
         ],
-        "summary": "Get Print Layout",
+        "summary": "List Print Layouts",
         "tags": [
           "print-layout"
         ]
       },
-      "put": {
-        "description": "Save the layout for documents rendered from now on; issued ones keep their PDF.",
-        "operationId": "print-layout_save_print_layout",
+      "post": {
+        "description": "Add a layout as a copy of another one.\n\n409 print_layout_name_taken, too_many_print_layouts.",
+        "operationId": "print-layout_create_print_layout",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PrintLayoutSchema"
+                "$ref": "#/components/schemas/CreatePrintLayoutRequest"
               }
             }
           },
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PrintLayoutSchema"
+                  "$ref": "#/components/schemas/PrintLayoutResponse"
                 }
               }
             },
@@ -16484,13 +16726,13 @@
             "APIKeyCookie": []
           }
         ],
-        "summary": "Save Print Layout",
+        "summary": "Create Print Layout",
         "tags": [
           "print-layout"
         ]
       }
     },
-    "/api/print-layout/preview": {
+    "/api/print-layouts/preview": {
       "post": {
         "description": "Render the latest invoice (or a sample one) with this layout, without saving it.\n\n409 company_not_set_up before the company is set up.",
         "operationId": "print-layout_preview_print_layout",
@@ -16582,6 +16824,412 @@
           }
         ],
         "summary": "Preview Print Layout",
+        "tags": [
+          "print-layout"
+        ]
+      }
+    },
+    "/api/print-layouts/sample": {
+      "post": {
+        "description": "Render the latest invoice with this layout as a PDF marked as a sample.\n\nTo send to a bookkeeper or a customer before switching. 409 company_not_set_up.",
+        "operationId": "print-layout_sample_print_layout",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrintLayoutSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The latest invoice with this layout, marked as a sample"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "No PDF service configured or reachable"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Sample Print Layout",
+        "tags": [
+          "print-layout"
+        ]
+      }
+    },
+    "/api/print-layouts/{layout_id}": {
+      "delete": {
+        "description": "Delete a layout; its customers and drafts take the default.\n\n409 default_print_layout: the default one stays.",
+        "operationId": "print-layout_delete_print_layout",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "layout_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Layout Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Delete Print Layout",
+        "tags": [
+          "print-layout"
+        ]
+      },
+      "put": {
+        "description": "Save a layout for documents rendered from now on; issued ones keep theirs.\n\n409 print_layout_name_taken.",
+        "operationId": "print-layout_save_print_layout",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "layout_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Layout Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavePrintLayoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrintLayoutResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Save Print Layout",
+        "tags": [
+          "print-layout"
+        ]
+      }
+    },
+    "/api/print-layouts/{layout_id}/default": {
+      "post": {
+        "description": "Make a layout the default for customers and documents without their own.",
+        "operationId": "print-layout_make_default_print_layout",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "layout_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Layout Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrintLayoutResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Make Default Print Layout",
         "tags": [
           "print-layout"
         ]

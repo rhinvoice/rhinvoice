@@ -49,6 +49,8 @@ class CustomerRequest(ApiModel):
     tax_exempt: bool = False
     default_discount: str = Field(default="0", pattern=PERCENT_PATTERN)
     payment_terms_days: int | None = Field(default=None, ge=0, le=365)
+    print_layout_id: UUID | None = None
+    """The customer's print layout; none: the default."""
     note: str = text(4000)
 
     def to_command(self) -> SaveCustomer:
@@ -71,6 +73,7 @@ class CustomerRequest(ApiModel):
             tax_exempt=self.tax_exempt,
             default_discount=self.default_discount,
             payment_terms_days=self.payment_terms_days,
+            print_layout_id=self.print_layout_id,
             delivery_address=None
             if self.delivery_address is None
             else self.delivery_address.to_input(),
@@ -100,6 +103,7 @@ class CustomerResponse(ApiModel):
     tax_exempt: bool
     default_discount: str
     payment_terms_days: int | None
+    print_layout_id: UUID | None
     note: str
     archived: bool
     created_at: datetime
@@ -132,6 +136,7 @@ class CustomerResponse(ApiModel):
             tax_exempt=customer.tax_exempt,
             default_discount=plain_number(customer.default_discount),
             payment_terms_days=customer.payment_terms_days,
+            print_layout_id=customer.print_layout_id,
             note=customer.note,
             archived=customer.archived,
             created_at=customer.created_at,

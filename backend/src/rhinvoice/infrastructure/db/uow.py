@@ -21,6 +21,7 @@ from rhinvoice.infrastructure.db.repositories.masterdata import (
     SqlCompanyRepository,
     SqlCustomerRepository,
     SqlNumberSequenceRepository,
+    SqlPrintLayoutRepository,
 )
 from rhinvoice.infrastructure.db.repositories.onboarding import SqlOnboardingRepository
 from rhinvoice.infrastructure.db.repositories.recurring import SqlRecurringRepository
@@ -63,6 +64,7 @@ class SqlUnitOfWork:
         self.sessions = SqlSessionRepository(self._connection)
         self.company = SqlCompanyRepository(self._connection)
         self.bank_accounts = SqlBankAccountRepository(self._connection)
+        self.print_layouts = SqlPrintLayoutRepository(self._connection)
         self.customers = SqlCustomerRepository(self._connection)
         self.articles = SqlArticleRepository(self._connection)
         self.sequences = SqlNumberSequenceRepository(self._connection)

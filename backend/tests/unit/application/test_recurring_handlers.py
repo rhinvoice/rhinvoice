@@ -24,6 +24,7 @@ from rhinvoice.application.recurring.handlers import (
     plan_draft,
     to_template,
 )
+from rhinvoice.domain.company.print_layout import NamedLayout, PrintLayout
 from rhinvoice.domain.document.document import DocumentStatus, DocumentType, EventKind
 from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
 from rhinvoice.domain.mail.server import MailSecurity
@@ -721,3 +722,31 @@ def test_plans_check_their_bank_account(recurring: RecurringHandlers, store: Sto
         recurring.update(plan.id, save(template=replace(wrong, bank_account_id=new_id())))
     with raises_exactly(ValidationError, "a plan names its currency"):
         recurring.create(save(template=replace(wrong, currency=None)))
+
+
+def test_plans_carry_their_print_layout(
+    recurring: RecurringHandlers, store: Store, clock: FixedClock
+) -> None:
+    trust = NamedLayout(new_id(), "Treuhand", PrintLayout())
+    store.print_layouts[trust.id] = trust
+    template = replace(save().template, print_layout_id=trust.id)
+    plan = recurring.create(save(template=template, action=PlanAction.DRAFT)).plan
+    assert plan.template.print_layout_id == trust.id
+    [run] = recurring.run_due()
+    assert run.document_id is not None
+    assert store.documents[run.document_id].document.content.print_layout_id == trust.id
+    # Deleted since: the next invoice takes the customer's layout or the default.
+    del store.print_layouts[trust.id]
+    at(clock, TODAY + timedelta(days=31))
+    [later] = recurring.run_due()
+    assert later.document_id is not None
+    assert store.documents[later.document_id].document.content.print_layout_id is None
+
+
+def test_plans_check_their_print_layout(recurring: RecurringHandlers) -> None:
+    unknown = replace(save().template, print_layout_id=new_id())
+    with raises_exactly(ValidationError, "unknown print layout"):
+        recurring.create(save(template=unknown))
+    plan = recurring.create(save()).plan
+    with raises_exactly(ValidationError, "unknown print layout"):
+        recurring.update(plan.id, save(template=unknown))

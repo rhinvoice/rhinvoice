@@ -880,6 +880,7 @@ export const it: Catalog<MessageKey> = {
   "documents.reverseChargeHint":
     "Inversione contabile (reverse charge): nessuna {tax}. L’indicazione e l’IDI del cliente vengono riportate automaticamente sul documento.",
   "documents.sectionMore": "Altri dati",
+  "documents.notInPdf": "Non nel PDF (layout).",
   "documents.onlyInEInvoice": "Non nel PDF (layout), solo nella fattura elettronica.",
   "recurring.servicePeriodByPlan":
     "Il piano inserisce da sé il periodo della prestazione se sopra «Inserisci il periodo della prestazione» è attivo.",

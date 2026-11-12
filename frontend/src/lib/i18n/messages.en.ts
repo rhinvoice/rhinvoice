@@ -839,6 +839,7 @@ export const en: Catalog<MessageKey> = {
   "documents.reverseChargeHint":
     "Reverse charge: no {tax}. The notice and the customer's VAT number are added automatically.",
   "documents.sectionMore": "More details",
+  "documents.notInPdf": "Not in the PDF (print template).",
   "documents.onlyInEInvoice": "Not in the PDF (print template), only in the e-invoice.",
   "recurring.servicePeriodByPlan":
     "The plan enters the service period itself when “Fill in the service period” is switched on above.",

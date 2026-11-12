@@ -5,6 +5,11 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Fixed
+- Quotes no longer say a hidden detail goes "only in the e-invoice" or that the reference is
+  needed for the XRechnung: a quote has no e-invoice. A detail hidden in the print template now
+  reads "Not in the PDF" there.
+
 ## [0.12.0] – 2026-11-12
 
 ### Added

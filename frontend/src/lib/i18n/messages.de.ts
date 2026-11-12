@@ -878,6 +878,7 @@ export const de = {
   "documents.reverseChargeHint":
     "Reverse Charge: keine {tax}. Der Hinweis und die UID des Kunden kommen automatisch auf das Dokument.",
   "documents.sectionMore": "Weitere Angaben",
+  "documents.notInPdf": "Nicht im PDF (Druckvorlage).",
   "documents.onlyInEInvoice": "Nicht im PDF (Druckvorlage), nur in der E-Rechnung.",
   "recurring.servicePeriodByPlan":
     "Den Leistungszeitraum trägt der Plan selbst ein, wenn oben «Leistungszeitraum eintragen» eingeschaltet ist.",

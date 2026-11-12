@@ -5,6 +5,11 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Behoben
+- Angebote sagen nicht mehr, eine ausgeblendete Angabe stehe «nur in der E-Rechnung» oder die
+  Referenz sei für die XRechnung nötig: Ein Angebot hat keine E-Rechnung. Eine in der Druckvorlage
+  ausgeblendete Angabe heisst dort jetzt «Nicht im PDF».
+
 ## [0.12.0] – 2026-11-12
 
 ### Neu

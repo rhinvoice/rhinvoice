@@ -888,6 +888,7 @@ export const fr: Catalog<MessageKey> = {
   "documents.reverseChargeHint":
     "Autoliquidation (reverse charge) : pas de {tax}. La mention et l’IDE / le n° TVA du client figurent automatiquement sur le document.",
   "documents.sectionMore": "Autres informations",
+  "documents.notInPdf": "Pas dans le PDF (mise en page).",
   "documents.onlyInEInvoice":
     "Pas dans le PDF (mise en page), seulement dans la facture électronique.",
   "recurring.servicePeriodByPlan":

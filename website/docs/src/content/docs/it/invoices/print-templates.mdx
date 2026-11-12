@@ -1,0 +1,57 @@
+---
+title: Layout di stampa per fatture e offerte
+description: "Più layout di stampa in Rhinvoice: uno predefinito, un altro per cliente o per fattura, con le proprie indicazioni in alto a destra e un PDF di esempio."
+since: 0.12.0
+faq:
+  - q: Posso usare un altro aspetto per un cliente?
+    a: "Sì. Aggiunga un secondo layout in «Impostazioni → Layout di stampa → Nuovo layout» e lo scelga presso il cliente in «Layout di stampa». Le nuove fatture e offerte per quel cliente lo prendono; gli altri clienti mantengono quello predefinito."
+  - q: Le mie vecchie fatture cambiano se modifico un layout?
+    a: "No. L’emissione congela il layout con la fattura: i documenti emessi mantengono il loro aspetto e il loro PDF. Le modifiche valgono per le bozze e per i documenti emessi in seguito."
+  - q: Posso mostrare prima un nuovo layout al mio fiduciario?
+    a: "Sì. «PDF di esempio» scarica la Sua fattura più recente con il layout, contrassegnata «Esempio» su ogni pagina e senza fattura elettronica. Può inviarla prima di cambiare."
+  - q: Che cosa succede se elimino un layout?
+    a: "I clienti, le bozze e le fatture ricorrenti che lo usano prendono quello predefinito. I documenti emessi mantengono il loro. Il layout predefinito non si può eliminare; imposti prima un altro come predefinito."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Un layout di stampa definisce l’aspetto di fatture, offerte e note di storno: la grafica, la posizione e la grandezza del logo, il carattere, le indicazioni in alto a destra, il piè di pagina e se il PDF contiene la fattura elettronica. Rhinvoice gestisce **più layout**: uno è il **predefinito**, un cliente o una singola fattura può prenderne un altro.
+
+## Quale layout prende un documento
+
+1. Quello scelto per il documento, in alto nell’editor, accanto al titolo.
+2. Altrimenti quello del cliente, presso il cliente in *Layout di stampa*.
+3. Altrimenti quello predefinito.
+
+Le scelte compaiono solo con più di un layout. L’emissione congela il layout con la fattura: modificarlo o eliminarlo in seguito non cambia né la fattura né il suo PDF.
+
+## Aggiungere, rinominare e impostare come predefinito
+
+In *Impostazioni → Layout di stampa* sceglie in alto il layout da modificare.
+
+<Steps>
+
+1. Clicchi su **Nuovo layout** e gli dia un nome, per esempio «Fiduciario». Inizia come copia del layout mostrato.
+2. Modifichi grafica, logo, indicazioni e piè di pagina e clicchi su *Salva*. L’anteprima mostra la Sua fattura più recente con esso.
+3. In **⋯** lo imposta come predefinito o lo elimina. Il layout predefinito non si può eliminare.
+
+</Steps>
+
+**Rinomina** cambia solo il nome. Se un layout ha modifiche non salvate, le salvi o le ripristini prima di sceglierne un altro.
+
+## Indicazioni in alto a destra e campi
+
+Ogni layout ha la propria lista *Indicazioni in alto a destra*: l’ordine di numero, numero cliente, data, scadenza, data della prestazione e riferimento, quali compaiono, e campi come progetto, ordine d’acquisto o centro di costo. Se sceglie un altro layout per una fattura, la scheda *Date* mostra i suoi campi; i valori già inseriti restano con la fattura. Come i campi vanno nella fattura elettronica: [progetto, ordine d’acquisto e centro di costo](/docs/it/invoices/e-invoice/#progetto-ordine-dacquisto-e-centro-di-costo).
+
+## PDF di esempio
+
+**PDF di esempio** scarica la Sua fattura più recente con il layout così come è mostrato, anche con modifiche non ancora salvate. Ogni pagina porta la dicitura «Esempio», e il PDF non contiene una fattura elettronica. Lo invii al Suo fiduciario o a un cliente prima di cambiare.
+
+<Aside>
+C’è un logo per l’azienda, in *Impostazioni → Azienda*. Ogni layout definisce la sua posizione e la sua grandezza.
+</Aside>
+
+## Domande frequenti
+
+<Faq />

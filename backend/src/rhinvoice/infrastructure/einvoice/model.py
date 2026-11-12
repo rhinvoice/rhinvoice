@@ -33,10 +33,13 @@ from rhinvoice.application.document.einvoice import (
     not_subject,
     order_reference,
     payment_account,
+    reference_field,
+    reference_note,
     seller_ids,
     vat_category,
     vat_id,
 )
+from rhinvoice.domain.company.print_layout import InfoField
 from rhinvoice.domain.document.document import DocumentType
 from rhinvoice.domain.document.lines import HUNDRED, LineKind, PriceMode
 from rhinvoice.domain.shared.language import Language
@@ -195,7 +198,21 @@ class EInvoice:
     buyer_reference: str | None
     """BT-10: the Leitweg-ID of a German authority or another buyer reference."""
     order_reference: str | None
-    """BT-13: the invoice's reference when BT-10 is the customer's fixed reference."""
+    """BT-13: the purchase order, or the invoice's reference when BT-10 is the customer's."""
+    project: str | None
+    """BT-11."""
+    contract: str | None
+    """BT-12."""
+    sales_order: str | None
+    """BT-14."""
+    despatch_advice: str | None
+    """BT-16."""
+    tender: str | None
+    """BT-17."""
+    invoiced_object: str | None
+    """BT-18."""
+    buyer_accounting: str | None
+    """BT-19."""
     preceding: tuple[str, date] | None
     """BG-3, the cancelled invoice."""
     seller: Party
@@ -439,6 +456,14 @@ def _dates(model: PrintModel) -> tuple[date, tuple[date, date] | None]:
     return start or end or model.issue_date, None
 
 
+def _notes(model: PrintModel, labels: dict[str, str]) -> tuple[str, ...]:
+    """BT-22: the subject, and the reference that no other field of the e-invoice holds."""
+    note = reference_note(model)
+    reference = None if note is None else f"{labels['reference']}: {note}"
+    subject = model.view.document.content.subject.strip()
+    return tuple(text for text in (subject, reference) if text)
+
+
 def build(model: PrintModel, profile: EInvoiceProfile) -> EInvoice:
     """Translate an issued invoice or cancellation (see :func:`problems` first)."""
     view = model.view
@@ -493,9 +518,16 @@ def build(model: PrintModel, profile: EInvoiceProfile) -> EInvoice:
         number=document.issued_number,
         issue_date=model.issue_date,
         currency=totals.currency,
-        notes=tuple(note for note in (content.subject.strip(),) if note),
+        notes=_notes(model, labels),
         buyer_reference=buyer_reference(model),
         order_reference=order_reference(model),
+        project=reference_field(model, InfoField.PROJECT),
+        contract=reference_field(model, InfoField.CONTRACT),
+        sales_order=reference_field(model, InfoField.SALES_ORDER),
+        despatch_advice=reference_field(model, InfoField.DESPATCH_ADVICE),
+        tender=reference_field(model, InfoField.TENDER),
+        invoiced_object=reference_field(model, InfoField.INVOICED_OBJECT),
+        buyer_accounting=reference_field(model, InfoField.BUYER_ACCOUNTING),
         preceding=preceding,
         seller=_seller(model, profile),
         buyer=_buyer(model),

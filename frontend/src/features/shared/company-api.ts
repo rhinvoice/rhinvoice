@@ -31,3 +31,14 @@ export const bankAccountsQuery = queryOptions({
   queryKey: companyKeys.bankAccounts,
   queryFn: () => unwrap(api.GET("/api/bank-accounts")),
 });
+
+export type PrintLayout = components["schemas"]["PrintLayoutSchema"];
+export type NamedLayout = components["schemas"]["PrintLayoutResponse"];
+
+export const PRINT_LAYOUTS_KEY = ["print-layouts"] as const;
+
+/** The named print layouts, the default first (#48); the editor reads their fields. */
+export const printLayoutsQuery = queryOptions({
+  queryKey: PRINT_LAYOUTS_KEY,
+  queryFn: () => unwrap(api.GET("/api/print-layouts")),
+});

@@ -18,6 +18,12 @@ from uuid import UUID
 from rhinvoice.application.document.einvoice import EInvoiceProfile, problems
 from rhinvoice.application.document.handlers import DocumentHandlers, DraftInput, LineInput
 from rhinvoice.application.document.printing import PrintHandlers
+from rhinvoice.domain.company.print_layout import (
+    DEFAULT_INFO_BLOCK,
+    InfoEntry,
+    InfoField,
+    PrintLayout,
+)
 from rhinvoice.domain.customer.customer import CustomerKind
 from rhinvoice.domain.document.document import DocumentType
 from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
@@ -135,6 +141,7 @@ class Sample:
     accounts: tuple[BankAccount, ...]
     draft: DraftInput
     cancel: bool = False
+    layout: PrintLayout | None = None
 
 
 def _swiss() -> Company:
@@ -188,6 +195,19 @@ def _draft(lines: tuple[LineInput, ...], **overrides: Any) -> DraftInput:  # noq
         subject="Projekt Beispiel",
     )
     return replace(draft, **overrides)
+
+
+REFERENCE_VALUES = (
+    "Neubau Schule Nord",
+    "RV-2026-07",
+    "PO-2026-001",
+    "AB-4410",
+    "LS-88213",
+    "Vergabe 2026/17 Los 2",
+    "Zähler 7781-22",
+    "KST-100",
+)
+"""Values of the reference fields, in the order of InfoField (project to cost centre)."""
 
 
 def samples() -> dict[str, Sample]:
@@ -399,6 +419,33 @@ def samples() -> dict[str, Sample]:
             ),
             (berlin_account,),
             _draft((CONSULTING, DISCOUNTED), reference="Bestellung 17"),
+        ),
+        # Every reference field (BT-11 to BT-19) next to a Leitweg-ID: the reference becomes
+        # a note, the purchase order BT-13.
+        "de-authority-references": Sample(
+            german,
+            replace(
+                german_customer,
+                kind=CustomerKind.COMPANY,
+                company_name="Bezirksamt Beispiel",
+                contact_person="Frau Beispiel",
+                buyer_reference="04011000-12345-34",
+            ),
+            (berlin_account,),
+            _draft(
+                (CONSULTING, DISCOUNTED),
+                reference="Schreiben vom 3. November",
+                fields=tuple(
+                    (field.value, value)
+                    for field, value in zip(InfoField, REFERENCE_VALUES, strict=True)
+                ),
+            ),
+            layout=PrintLayout(
+                info_block=(
+                    *DEFAULT_INFO_BLOCK,
+                    *(InfoEntry(field.value) for field in InfoField),
+                )
+            ),
         ),
         # Gross prices in francs: net prices with four places, the 5-centime rounding.
         "ch-domestic-gross": Sample(
@@ -627,6 +674,8 @@ def issue(sample: Sample) -> tuple[PrintHandlers, UUID]:
     store = Store()
     store.company = sample.company
     store.customers[CUSTOMER] = sample.customer
+    if sample.layout is not None:
+        store.use_layout(sample.layout)
     for account in sample.accounts:
         store.bank_accounts[account.id] = account
     clock = FixedClock(NOW)

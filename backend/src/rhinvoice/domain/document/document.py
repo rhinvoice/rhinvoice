@@ -14,6 +14,7 @@ from datetime import date, timedelta
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
+from rhinvoice.domain.company.print_layout import MAX_INFO_ENTRIES, is_field_key
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.document.calculation import CalculationInput, Totals, calculate
 from rhinvoice.domain.document.lines import Discount, DocumentLine, LineKind, PriceMode
@@ -45,6 +46,7 @@ _NOT_FOR_GOODS = frozenset({TaxTreatment.EXPORT})
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 MAX_SUBJECT = 200
 MAX_REFERENCE = 100
+MAX_FIELD_VALUE = 100
 MAX_TEXT = 4000
 MAX_NOTE = 500
 MAX_EVENT_DETAIL = 500
@@ -184,6 +186,32 @@ class IssueSnapshot:
 
 
 @dataclass(frozen=True, slots=True)
+class FieldValue:
+    """The value of a field of the print layout, such as a project or a cost centre."""
+
+    key: str
+    """An InfoField or a custom field's key (see PrintLayout.info_block)."""
+    value: str
+
+    def __post_init__(self) -> None:
+        if not is_field_key(self.key):
+            raise ValidationError("fields", f"unknown field {self.key}")
+        object.__setattr__(
+            self, "value", clean_text(self.value, "fields", max_length=MAX_FIELD_VALUE)
+        )
+
+
+def clean_fields(fields: tuple[FieldValue, ...]) -> tuple[FieldValue, ...]:
+    """Drop empty values and check that each field appears once."""
+    kept = tuple(field for field in fields if field.value)
+    if len({field.key for field in kept}) != len(kept):
+        raise ValidationError("fields", "each field appears once")
+    if len(kept) > MAX_INFO_ENTRIES:
+        raise ValidationError("fields", f"at most {MAX_INFO_ENTRIES} fields")
+    return kept
+
+
+@dataclass(frozen=True, slots=True)
 class DraftContent:
     """Everything a user can edit on a draft."""
 
@@ -213,6 +241,13 @@ class DraftContent:
 
     Issuing freezes the account itself in the snapshot.
     """
+    fields: tuple[FieldValue, ...] = ()
+    """Values of the print layout's fields; a value prints while the layout lists its field."""
+    print_layout_id: UUID | None = None
+    """The layout chosen for this document; None: the customer's or the default (#48).
+
+    Issuing freezes the layout itself in the snapshot.
+    """
 
     def __post_init__(self) -> None:
         if self.treatment.goods_only:
@@ -231,6 +266,7 @@ class DraftContent:
         object.__setattr__(
             self, "reference", clean_text(self.reference, "reference", max_length=MAX_REFERENCE)
         )
+        object.__setattr__(self, "fields", clean_fields(self.fields))
         object.__setattr__(
             self, "intro_text", clean_multiline(self.intro_text, "intro_text", max_length=MAX_TEXT)
         )
@@ -248,6 +284,10 @@ class DraftContent:
             raise ValidationError("service_to", "the service period ends before it starts")
         if self.issue_date and self.due_date and self.due_date < self.issue_date:
             raise ValidationError("due_date", "the due date is before the document date")
+
+    def field(self, key: str) -> str:
+        """Return the value of a field, empty when it has none."""
+        return next((field.value for field in self.fields if field.key == key), "")
 
     @property
     def tax_date(self) -> date | None:

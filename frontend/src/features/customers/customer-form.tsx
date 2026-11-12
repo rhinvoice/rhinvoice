@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { useI18n } from "@/components/i18n/use-i18n";
@@ -20,6 +21,7 @@ import {
   type CustomerFormValues,
 } from "@/features/customers/customer-form-model";
 import { AddressFields } from "@/features/shared/address-fields";
+import { printLayoutsQuery } from "@/features/shared/company-api";
 import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import { FormAlert } from "@/features/shared/form-alert";
 import { summaryItems } from "@/features/shared/form-errors";
@@ -36,6 +38,8 @@ interface CustomerFormProps {
 
 export function CustomerForm({ defaultValues, onSubmit, submitLabel }: CustomerFormProps) {
   const { t, locale } = useI18n();
+  const layouts = useQuery(printLayoutsQuery).data ?? [];
+  const defaultLayout = layouts.find((named) => named.is_default);
   const errorMessage = useErrorMessage();
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema(t, locale)),
@@ -47,6 +51,7 @@ export function CustomerForm({ defaultValues, onSubmit, submitLabel }: CustomerF
   const kind = useWatch({ control: form.control, name: "kind" });
   const hasDelivery = useWatch({ control: form.control, name: "has_delivery" });
   const country = useWatch({ control: form.control, name: "country" });
+  const chosenLayout = useWatch({ control: form.control, name: "print_layout_id" });
   const vatNumber = useWatch({ control: form.control, name: "vat_number" });
   const taxExempt = useWatch({ control: form.control, name: "tax_exempt" });
   const error = (name: keyof CustomerFormValues) => errors[name]?.message;
@@ -228,6 +233,27 @@ export function CustomerForm({ defaultValues, onSubmit, submitLabel }: CustomerF
               ))}
             </NativeSelect>
           </Field>
+          {layouts.length > 1 && defaultLayout !== undefined ? (
+            <Field
+              label={t("customers.printLayout")}
+              description={t("customers.printLayoutHint")}
+              error={error("print_layout_id")}
+            >
+              <NativeSelect id="print_layout_id" {...form.register("print_layout_id")}>
+                <option value="">
+                  {t("customers.printLayoutDefault", { name: defaultLayout.name })}
+                </option>
+                {layouts
+                  // The default is the first option; listed again only when chosen by name.
+                  .filter((named) => !named.is_default || named.id === chosenLayout)
+                  .map((named) => (
+                    <option key={named.id} value={named.id}>
+                      {named.name}
+                    </option>
+                  ))}
+              </NativeSelect>
+            </Field>
+          ) : null}
           <Field
             label={t("customers.defaultDiscount")}
             error={error("default_discount")}

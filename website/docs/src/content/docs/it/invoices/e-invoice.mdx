@@ -55,13 +55,36 @@ Quando invia la fattura per e-mail, può scegliere *Allega anche la XRechnung (X
 
 La XRechnung richiede un riferimento dell’acquirente (BT-10). Rhinvoice lo prende così:
 
-- Se il cliente ha una **Leitweg-ID o un riferimento fisso dell’acquirente**, vale sempre quello. Il riferimento della fattura figura allora nella fattura elettronica come riferimento dell’ordine (BT-13), quindi un numero d’ordine come «Bestellung 4711» non va perso.
-- Altrimenti vale il **riferimento della fattura** (*Altri dati → Riferimento*), per esempio il numero d’ordine.
+- Se il cliente ha una **Leitweg-ID o un riferimento fisso dell’acquirente**, vale sempre quello. Il riferimento della fattura figura allora nella fattura elettronica come riferimento dell’ordine (BT-13), o come nota se la fattura ha un proprio [campo per l’ordine d’acquisto](#progetto-ordine-dacquisto-e-centro-di-costo), quindi un numero d’ordine come «Bestellung 4711» non va perso.
+- Altrimenti vale il **riferimento della fattura** (*Date → Riferimento*), per esempio il numero d’ordine.
 - Se entrambi sono vuoti, alla XRechnung manca il riferimento dell’acquirente.
 
 Per le aziende, compili il campo sul cliente solo se desiderano sempre lo stesso riferimento. Se il riferimento cambia a ogni ordine, lasci vuoto il campo sul cliente e inserisca il riferimento nella fattura. Sotto il campo *Riferimento*, l’editor mostra per i clienti in Germania quale Leitweg-ID vale o che il riferimento è necessario per la XRechnung.
 
 Quando emette una fattura, Rhinvoice conserva il cliente com’era insieme alla fattura. Se in seguito cambia la Leitweg-ID sul cliente, la XRechnung delle fatture già emesse resta invariata.
+
+## Progetto, ordine d’acquisto e centro di costo
+
+Alcuni clienti chiedono di più sulla fattura: un progetto, il loro ordine d’acquisto, un centro di costo. Crei queste indicazioni come campi del layout di stampa: figurano allora anche nella fattura elettronica. <Since version="0.12.0" />
+
+1. In *Impostazioni → Layout di stampa*, scheda *Indicazioni in alto a destra*, clicchi su *Aggiungi campo*.
+2. Scelga un campo. Quelli sotto *Anche nella fattura elettronica* occupano il loro posto nella fattura elettronica; *Campo proprio (solo PDF)* stampa un nome a Sua scelta, per esempio «Oggetto».
+3. Ordini le indicazioni con le frecce o trascinandole e salvi.
+
+Ogni fattura e ogni offerta chiede allora i valori nella scheda *Date*. Un campo compare solo con un valore, e l’emissione congela i valori con la fattura.
+
+| Campo | Nella fattura elettronica |
+|---|---|
+| Progetto | BT-11, riferimento del progetto |
+| Numero di contratto | BT-12, riferimento del contratto |
+| Ordine d’acquisto | BT-13, riferimento dell’ordine |
+| Nostro ordine | BT-14, il Suo numero d’ordine |
+| Bollettino di consegna | BT-16, riferimento dell’avviso di spedizione |
+| Gara o lotto | BT-17, riferimento della gara o del lotto |
+| Oggetto | BT-18, per esempio un contatore, un abbonamento o un veicolo |
+| Centro di costo | BT-19, riferimento contabile dell’acquirente |
+
+La stessa scheda mostra o nasconde il numero cliente, la scadenza, la data della prestazione e *Vostro riferimento*. La data della prestazione è obbligatoria sulle fatture (§ 14 Abs. 4 Nr. 6 UStG, § 11 Abs. 1 Z 3 lit. d UStG AT): la nasconda solo se le posizioni la indicano, per esempio «il 3 novembre». La fattura elettronica la conserva sempre (BT-72).
 
 ## Che cosa serve a una fattura elettronica
 
@@ -80,7 +103,7 @@ Rhinvoice crea solo fatture elettroniche complete. Se manca qualcosa, la finestr
 
 | Dato | Dove inserirlo |
 |---|---|
-| Leitweg-ID o riferimento dell’acquirente | sul cliente (*Leitweg-ID o riferimento fisso dell’acquirente*) o sulla fattura (*Altri dati → Riferimento*) |
+| Leitweg-ID o riferimento dell’acquirente | sul cliente (*Leitweg-ID o riferimento fisso dell’acquirente*) o sulla fattura (*Date → Riferimento*) |
 | L’e-mail della Sua azienda | *Impostazioni → Azienda* |
 | Il telefono della Sua azienda | *Impostazioni → Azienda* |
 | L’e-mail del cliente | sul cliente |

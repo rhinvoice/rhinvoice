@@ -194,6 +194,39 @@ def test_duplicate_and_delete_drafts(user_client: TestClient, customer_id: str) 
     assert user_client.get(f"/api/documents/{copy['id']}").status_code == 404
 
 
+def test_field_values_follow_the_document(user_client: TestClient, customer_id: str) -> None:
+    values = {
+        "project": " Website ",
+        "custom-0a1b2c3d": "Haus Nord",
+        "buyer_accounting": "KST-100",
+        "contract": "",
+    }
+    original = create(user_client, customer_id, fields=values)
+    assert original["fields"] == {
+        "project": "Website",
+        "custom-0a1b2c3d": "Haus Nord",
+        "buyer_accounting": "KST-100",
+    }
+    copy = post(user_client, f"/api/documents/{original['id']}/duplicate", status=201)
+    assert copy["fields"] == original["fields"]
+    changed = user_client.put(
+        f"/api/documents/{original['id']}",
+        json={"customer_id": customer_id, "lines": LINES, "fields": {"project": "Shop"}},
+    )
+    assert changed.json()["fields"] == {"project": "Shop"}
+    refused = user_client.post(
+        "/api/documents",
+        json={
+            "type": "invoice",
+            "customer_id": customer_id,
+            "lines": LINES,
+            "fields": {"iban": "x"},
+        },
+    )
+    assert refused.status_code == 422
+    assert refused.json()["error"]["details"] == {"fields": "unknown field iban"}
+
+
 PASS_THROUGH = {
     "description": "Gebühr Handelsregister",
     "quantity": "1",

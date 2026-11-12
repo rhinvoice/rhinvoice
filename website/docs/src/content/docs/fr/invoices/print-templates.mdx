@@ -1,0 +1,57 @@
+---
+title: Mises en page d’impression des factures et offres
+description: "Plusieurs mises en page d’impression dans Rhinvoice : une par défaut, une autre par client ou par facture, avec ses indications en haut à droite et un PDF d’exemple."
+since: 0.12.0
+faq:
+  - q: Puis-je utiliser une autre apparence pour un client?
+    a: "Oui. Ajoutez une deuxième mise en page sous « Paramètres → Mise en page d’impression → Nouvelle mise en page » et choisissez-la chez le client sous « Mise en page d’impression ». Les nouvelles factures et offres pour ce client la prennent; les autres clients gardent celle par défaut."
+  - q: Mes anciennes factures changent-elles si je modifie une mise en page?
+    a: "Non. L’émission fige la mise en page avec la facture : les documents émis gardent leur apparence et leur PDF. Les changements valent pour les brouillons et les documents émis ensuite."
+  - q: Puis-je d’abord montrer une nouvelle mise en page à ma fiduciaire?
+    a: "Oui. « PDF d’exemple » télécharge votre facture la plus récente avec la mise en page, marquée « Spécimen » sur chaque page et sans facture électronique. Vous pouvez l’envoyer avant de changer."
+  - q: Que se passe-t-il si je supprime une mise en page?
+    a: "Les clients, brouillons et factures récurrentes qui l’utilisent prennent celle par défaut. Les documents émis gardent la leur. La mise en page par défaut ne peut pas être supprimée; définissez d’abord une autre par défaut."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Une mise en page d’impression définit l’apparence des factures, offres et factures d’annulation : la présentation, la place et la taille du logo, la police, les indications en haut à droite, le pied de page et si le PDF contient la facture électronique. Rhinvoice garde **plusieurs mises en page** : l’une est la **mise en page par défaut**, un client ou une facture peut en prendre une autre.
+
+## Quelle mise en page un document prend
+
+1. Celle choisie pour le document, en haut de l’éditeur, à côté du titre.
+2. Sinon celle du client, chez le client sous *Mise en page d’impression*.
+3. Sinon celle par défaut.
+
+Les choix n’apparaissent qu’à partir de deux mises en page. L’émission fige la mise en page avec la facture : la modifier ou la supprimer ensuite ne change ni la facture ni son PDF.
+
+## Ajouter, renommer et définir par défaut
+
+Sous *Paramètres → Mise en page d’impression*, vous choisissez en haut la mise en page à modifier.
+
+<Steps>
+
+1. Cliquez sur **Nouvelle mise en page** et donnez-lui un nom, par exemple « Fiduciaire ». Elle commence comme copie de la mise en page affichée.
+2. Modifiez la présentation, le logo, les indications et le pied de page, puis cliquez sur *Enregistrer*. L’aperçu montre votre facture la plus récente avec elle.
+3. Sous **⋯**, vous la définissez par défaut ou la supprimez. Celle par défaut ne peut pas être supprimée.
+
+</Steps>
+
+**Renommer** ne change que le nom. Si une mise en page a des modifications non enregistrées, enregistrez-les ou réinitialisez-les avant d’en choisir une autre.
+
+## Indications en haut à droite et champs
+
+Chaque mise en page a sa propre liste *Indications en haut à droite* : l’ordre du numéro, du numéro de client, de la date, de l’échéance, de la date de la prestation et de la référence, lesquels apparaissent, et des champs comme projet, bon de commande ou centre de coûts. Si vous choisissez une autre mise en page pour une facture, la carte *Dates* montre ses champs; les valeurs déjà saisies restent avec la facture. Comment les champs vont dans la facture électronique : [projet, bon de commande et centre de coûts](/docs/fr/invoices/e-invoice/#projet-bon-de-commande-et-centre-de-coûts).
+
+## PDF d’exemple
+
+**PDF d’exemple** télécharge votre facture la plus récente avec la mise en page telle qu’elle est affichée, même avec des modifications non enregistrées. Chaque page porte la mention « Spécimen », et le PDF ne contient pas de facture électronique. Envoyez-le à votre fiduciaire ou à un client avant de changer.
+
+<Aside>
+Il y a un logo pour l’entreprise, sous *Paramètres → Entreprise*. Chaque mise en page définit sa place et sa taille.
+</Aside>
+
+## Questions fréquentes
+
+<Faq />

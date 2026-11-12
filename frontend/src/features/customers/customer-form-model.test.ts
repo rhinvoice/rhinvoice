@@ -69,6 +69,7 @@ describe("customer form", () => {
         city: "Zürich",
         default_discount: "2,5",
         payment_terms_days: "10",
+        print_layout_id: "layout-1",
         default_currency: "EUR",
         email: "",
       },
@@ -76,6 +77,7 @@ describe("customer form", () => {
     );
     expect(request.default_discount).toBe("2.5");
     expect(request.payment_terms_days).toBe(10);
+    expect(request.print_layout_id).toBe("layout-1");
     expect(request.default_currency).toBe("EUR");
     expect(request.default_language).toBeNull();
     expect(request.email).toBeNull();
@@ -132,6 +134,7 @@ describe("customer form", () => {
       tax_exempt: false,
       default_discount: "2.5",
       payment_terms_days: 20,
+      print_layout_id: null,
       note: "",
       archived: false,
       created_at: "2026-01-01T00:00:00Z",
@@ -147,6 +150,7 @@ describe("customer form", () => {
     ).toMatchObject({
       default_discount: "",
       payment_terms_days: "",
+      print_layout_id: "",
     });
   });
 
@@ -188,6 +192,7 @@ describe("customer form", () => {
         tax_exempt: true,
         default_discount: "0",
         payment_terms_days: null,
+        print_layout_id: null,
         note: "",
         archived: false,
         created_at: "2026-01-01T00:00:00Z",

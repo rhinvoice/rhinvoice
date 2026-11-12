@@ -13,8 +13,10 @@ from sqlalchemy import Engine, text
 from testcontainers.community.postgres import PostgresContainer
 
 from rhinvoice.infrastructure.db.migrate import upgrade
+from rhinvoice.infrastructure.db.repositories.masterdata import SqlPrintLayoutRepository
 from rhinvoice.infrastructure.db.tables import metadata
 from rhinvoice.infrastructure.db.uow import make_engine
+from tests.unit.application.fakes import STANDARD_LAYOUT
 
 POSTGRES_IMAGE = "postgres:17-alpine"
 
@@ -46,3 +48,5 @@ def engine(migrated_engine: Engine) -> Iterator[Engine]:
         # which skips them (the test database user is a superuser).
         connection.execute(text("SET LOCAL session_replication_role = replica"))
         connection.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
+        # Like migration 0026: every installation has its default print layout.
+        SqlPrintLayoutRepository(connection).add(STANDARD_LAYOUT)

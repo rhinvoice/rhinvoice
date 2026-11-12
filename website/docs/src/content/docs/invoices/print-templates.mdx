@@ -1,0 +1,57 @@
+---
+title: Print templates for invoices and quotes
+description: "Several print templates in Rhinvoice: one default, another per customer or per invoice, with its own details top right and a sample PDF to send before switching."
+since: 0.12.0
+faq:
+  - q: Can I use another look for one customer?
+    a: Yes. Add a second print template under "Settings → Print template → New template" and choose it on the customer under "Print template". New invoices and quotes for that customer take it; all other customers keep the default one.
+  - q: Do my old invoices change when I change a print template?
+    a: No. Issuing freezes the template with the invoice, so issued documents keep their look and their PDF. Changes apply to drafts and to documents issued from then on.
+  - q: Can I show a new template to my bookkeeper first?
+    a: Yes. "Sample PDF" downloads your latest invoice laid out with the template, marked "Sample" on every page and without an e-invoice. You can send it before you switch.
+  - q: What happens when I delete a print template?
+    a: Customers, drafts and recurring invoices that used it take the default template. Issued documents keep theirs. The default template itself cannot be deleted; make another one the default first.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+A print template sets how invoices, quotes and cancellations look: the design, the logo's place and size, the font, the details top right, the footer and whether the PDF holds the e-invoice. Rhinvoice keeps **several print templates**: one is the **default**, a customer or a single invoice can take another one.
+
+## Which template a document takes
+
+1. The template chosen for the document, at the top of the editor, next to the title.
+2. Otherwise the customer's template, set on the customer under *Print template*.
+3. Otherwise the default template.
+
+The choices appear only once there is more than one template. Issuing freezes the template with the invoice: changing or deleting it later changes neither the invoice nor its PDF.
+
+## Add, rename and set the default
+
+Under *Settings → Print template* you choose the template to edit at the top.
+
+<Steps>
+
+1. Click **New template** and give it a name, for example "Bookkeeping". It starts as a copy of the template shown.
+2. Change its design, logo, details and footer, and click *Save*. The preview shows your latest invoice with it.
+3. Under **⋯** you make it the default or delete it. The default template cannot be deleted.
+
+</Steps>
+
+**Rename** changes the name only. While a template has unsaved changes, save or reset them before you choose another one.
+
+## Details top right and fields
+
+Each template has its own list *Details top right*: the order of number, customer number, date, due date, date of supply and reference, which of them show, and fields such as project, purchase order or cost centre. When you choose another template for an invoice, the card *Dates* shows that template's fields; values already entered stay with the invoice. How the fields go into the e-invoice: [project, purchase order and cost centre](/docs/invoices/e-invoice/#project-purchase-order-and-cost-centre).
+
+## Sample PDF
+
+**Sample PDF** downloads your latest invoice laid out with the template as it is on screen, also with changes not saved yet. Every page says "Sample", and the PDF holds no e-invoice. Send it to your bookkeeper or a customer before you switch.
+
+<Aside>
+There is one logo for the company, under *Settings → Company*. Each template sets where it stands and how large it is.
+</Aside>
+
+## Frequently asked questions
+
+<Faq />

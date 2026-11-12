@@ -5,6 +5,27 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.12.0] – 2026-11-12
+
+### Neu
+- Die Angaben oben rechts auf Dokumenten in eigener Reihenfolge (*Einstellungen → Druckvorlage*,
+  *Angaben oben rechts*): Kundennummer, Fälligkeit, Leistungsdatum und Referenz lassen sich
+  ausblenden, das Leistungsdatum mit dem Hinweis, dass es Pflicht ist (#60). Felder ergänzen
+  Projekt, Vertragsnummer, Bestellnummer, Auftragsnummer, Lieferschein, Vergabe- oder Losnummer,
+  Objekt oder Kostenstelle: Jede Rechnung und jedes Angebot fragt die Werte neben den Daten ab,
+  druckt sie, wenn sie ausgefüllt sind, und schreibt sie in die E-Rechnung (BT-11 bis BT-19).
+  Eigene Felder mit frei gewählter Bezeichnung stehen im PDF (#62).
+- Mehrere Druckvorlagen (*Einstellungen → Druckvorlage*): Eine ist der Standard, ein Kunde oder
+  eine Rechnung kann eine andere nehmen, gewählt beim Kunden und oben im Editor. Jede
+  Vorlage hat ihre eigene Gestaltung, Logoposition, Angaben oben rechts und Fusszeile.
+  *Muster-PDF* lädt die neueste Rechnung mit einer Vorlage herunter, als Muster markiert, zum
+  Versand vor dem Umstellen. Ausgestellte Dokumente behalten ihre Vorlage; Kunden und Entwürfe
+  einer gelöschten nehmen den Standard (#48).
+
+### Behoben
+- Texte mit den Zeichen U+FFFE oder U+FFFF werden abgelehnt: XML erlaubt sie nicht, und sie
+  machten die E-Rechnung ungültig.
+
 ## [0.11.0] – 2026-11-09
 
 ### Neu

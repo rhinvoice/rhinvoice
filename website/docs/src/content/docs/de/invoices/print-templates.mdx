@@ -1,0 +1,57 @@
+---
+title: Druckvorlagen für Rechnungen und Angebote
+description: "Mehrere Druckvorlagen in Rhinvoice: eine als Standard, eine andere pro Kunde oder pro Rechnung, mit eigenen Angaben oben rechts und einem Muster-PDF zum Vorab-Versand."
+since: 0.12.0
+faq:
+  - q: Kann ich für einen Kunden ein anderes Aussehen verwenden?
+    a: Ja. Legen Sie unter «Einstellungen → Druckvorlage → Neue Vorlage» eine zweite Druckvorlage an und wählen Sie sie beim Kunden unter «Druckvorlage». Neue Rechnungen und Angebote für diesen Kunden nehmen sie, alle anderen Kunden behalten den Standard.
+  - q: Ändern sich meine alten Rechnungen, wenn ich eine Druckvorlage ändere?
+    a: Nein. Beim Ausstellen wird die Vorlage mit der Rechnung eingefroren, ausgestellte Dokumente behalten ihr Aussehen und ihr PDF. Änderungen gelten für Entwürfe und für Dokumente, die Sie danach ausstellen.
+  - q: Kann ich eine neue Vorlage zuerst meiner Buchhaltung zeigen?
+    a: Ja. «Muster-PDF» lädt Ihre neueste Rechnung mit der Vorlage herunter, auf jeder Seite als «Muster» markiert und ohne E-Rechnung. Sie können es vor dem Umstellen verschicken.
+  - q: Was passiert, wenn ich eine Druckvorlage lösche?
+    a: Kunden, Entwürfe und wiederkehrende Rechnungen mit dieser Vorlage nehmen den Standard. Ausgestellte Dokumente behalten ihre. Die Standardvorlage selbst lässt sich nicht löschen; legen Sie zuerst eine andere als Standard fest.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Eine Druckvorlage legt fest, wie Rechnungen, Angebote und Stornos aussehen: Gestaltung, Platz und Grösse des Logos, Schrift, die Angaben oben rechts, die Fusszeile und ob das PDF die E-Rechnung enthält. Rhinvoice führt **mehrere Druckvorlagen**: Eine ist der **Standard**, ein Kunde oder eine einzelne Rechnung kann eine andere nehmen.
+
+## Welche Vorlage ein Dokument nimmt
+
+1. Die Vorlage, die für das Dokument gewählt ist, oben im Editor, neben dem Titel.
+2. Sonst die Vorlage des Kunden, beim Kunden unter *Druckvorlage*.
+3. Sonst die Standardvorlage.
+
+Die Auswahl erscheint erst, wenn es mehr als eine Vorlage gibt. Beim Ausstellen wird die Vorlage mit der Rechnung eingefroren: Ändern oder löschen Sie sie später, ändert sich weder die Rechnung noch ihr PDF.
+
+## Anlegen, umbenennen und Standard festlegen
+
+Unter *Einstellungen → Druckvorlage* wählen Sie oben die Vorlage, die Sie bearbeiten.
+
+<Steps>
+
+1. Klicken Sie auf **Neue Vorlage** und geben Sie ihr einen Namen, zum Beispiel «Treuhand». Sie startet als Kopie der angezeigten Vorlage.
+2. Ändern Sie Gestaltung, Logo, Angaben und Fusszeile und klicken Sie auf *Speichern*. Die Vorschau zeigt Ihre neueste Rechnung damit.
+3. Unter **⋯** legen Sie sie als Standard fest oder löschen sie. Die Standardvorlage lässt sich nicht löschen.
+
+</Steps>
+
+**Umbenennen** ändert nur den Namen. Hat eine Vorlage ungespeicherte Änderungen, speichern oder setzen Sie sie zurück, bevor Sie eine andere wählen.
+
+## Angaben oben rechts und Felder
+
+Jede Vorlage hat ihre eigene Liste *Angaben oben rechts*: die Reihenfolge von Nummer, Kundennummer, Datum, Fälligkeit, Leistungsdatum und Referenz, welche davon erscheinen, und Felder wie Projekt, Bestellnummer oder Kostenstelle. Wählen Sie für eine Rechnung eine andere Vorlage, zeigt die Karte *Daten* deren Felder; bereits eingetragene Werte bleiben bei der Rechnung. Wie die Felder in die E-Rechnung gehen: [Projekt, Bestellnummer und Kostenstelle](/docs/de/invoices/e-invoice/#projekt-bestellnummer-und-kostenstelle).
+
+## Muster-PDF
+
+**Muster-PDF** lädt Ihre neueste Rechnung mit der Vorlage herunter, so wie sie gerade angezeigt wird, auch mit noch nicht gespeicherten Änderungen. Jede Seite trägt den Vermerk «Muster», und das PDF enthält keine E-Rechnung. Schicken Sie es Ihrer Buchhaltung oder einem Kunden, bevor Sie umstellen.
+
+<Aside>
+Es gibt ein Logo für die Firma, unter *Einstellungen → Firma*. Jede Vorlage legt fest, wo es steht und wie gross es ist.
+</Aside>
+
+## Häufige Fragen
+
+<Faq />

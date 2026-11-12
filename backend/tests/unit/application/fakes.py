@@ -37,7 +37,7 @@ from rhinvoice.application.onboarding.ports import OnboardingMarks
 from rhinvoice.domain.catalog.article import Article
 from rhinvoice.domain.company.bank_account import BankAccount
 from rhinvoice.domain.company.logo import Logo
-from rhinvoice.domain.company.print_layout import PrintLayout
+from rhinvoice.domain.company.print_layout import NamedLayout, PrintLayout
 from rhinvoice.domain.customer.customer import Customer
 from rhinvoice.domain.document.attachment import Attachment
 from rhinvoice.domain.document.document import (
@@ -71,6 +71,10 @@ if TYPE_CHECKING:
     from rhinvoice.domain.document.document import Document
     from rhinvoice.domain.mail.server import MailServer
     from rhinvoice.domain.shared.email import EmailAddress
+
+
+STANDARD_LAYOUT = NamedLayout(UUID(int=0x5A), "Standard", PrintLayout(), is_default=True)
+"""The default layout every installation starts with (migration 0026)."""
 
 
 @dataclass
@@ -118,7 +122,11 @@ class Store:
     import_templates: dict[UUID, ImportTemplate] = field(default_factory=dict[UUID, ImportTemplate])
     numbering_checked_at: datetime | None = None
     onboarding_dismissed_at: datetime | None = None
-    print_layout: PrintLayout | None = None
+    print_layouts: dict[UUID, NamedLayout] = field(
+        default_factory=lambda: {STANDARD_LAYOUT.id: STANDARD_LAYOUT}
+    )
+    print_layout_locks: int = 0
+    """How often the layouts were read for a change (locked in the database)."""
     dunning_levels: list[DunningLevel] = field(default_factory=list[DunningLevel])
     reminders: dict[UUID, Reminder] = field(default_factory=dict[UUID, Reminder])
     mail_server: MailServer | None = None
@@ -130,6 +138,10 @@ class Store:
     idempotency: dict[tuple[UUID, UUID], StoredRequest] = field(
         default_factory=dict[tuple[UUID, UUID], StoredRequest],
     )
+
+    def use_layout(self, layout: PrintLayout) -> None:
+        """Give the default print layout these settings."""
+        self.print_layouts[STANDARD_LAYOUT.id] = replace(STANDARD_LAYOUT, layout=layout)
 
 
 class InMemoryUserRepository:
@@ -211,12 +223,10 @@ class InMemoryCompanyRepository:
         self,
         company: Company | None,
         logo: Logo | None,
-        layout: PrintLayout | None = None,
         issued_logos: dict[str, Logo] | None = None,
     ) -> None:
         self.company = company
         self.logo = logo
-        self.layout = layout
         self.issued_logos = {} if issued_logos is None else issued_logos
 
     def get(self) -> Company | None:
@@ -241,11 +251,32 @@ class InMemoryCompanyRepository:
     def issued_logo(self, sha256: str) -> Logo | None:
         return self.issued_logos.get(sha256)
 
-    def print_layout(self) -> PrintLayout:
-        return PrintLayout() if self.layout is None else self.layout
 
-    def save_print_layout(self, layout: PrintLayout) -> None:
-        self.layout = layout
+class InMemoryPrintLayoutRepository:
+    def __init__(self, data: dict[UUID, NamedLayout], store: Store) -> None:
+        self.data = data
+        self.store = store
+
+    def list(self, *, for_update: bool = False) -> list[NamedLayout]:
+        if for_update is True:
+            # Counted, so that tests see that changes lock the layouts first.
+            self.store.print_layout_locks += 1
+        return sorted(self.data.values(), key=lambda named: (not named.is_default, named.name))
+
+    def add(self, named: NamedLayout) -> None:
+        self.data[named.id] = named
+
+    def update(self, named: NamedLayout) -> None:
+        if named.is_default and any(
+            other.is_default and other.id != named.id for other in self.data.values()
+        ):
+            # Like the unique index of the database.
+            msg = "a second default print layout"
+            raise AssertionError(msg)
+        self.data[named.id] = named
+
+    def delete(self, layout_id: UUID) -> None:
+        del self.data[layout_id]
 
 
 class InMemoryBankAccountRepository:
@@ -1005,8 +1036,10 @@ class InMemoryUnitOfWork:
         self.company = InMemoryCompanyRepository(
             self.store.company,
             self.store.logo,
-            self.store.print_layout,
             dict(self.store.issued_logos),
+        )
+        self.print_layouts = InMemoryPrintLayoutRepository(
+            dict(self.store.print_layouts), self.store
         )
         self.bank_accounts = InMemoryBankAccountRepository(dict(self.store.bank_accounts))
         self.customers = InMemoryCustomerRepository(dict(self.store.customers))
@@ -1048,7 +1081,7 @@ class InMemoryUnitOfWork:
         self.store.sessions = dict(self.sessions.data)
         self.store.company = self.company.company
         self.store.logo = self.company.logo
-        self.store.print_layout = self.company.layout
+        self.store.print_layouts = dict(self.print_layouts.data)
         self.store.issued_logos = dict(self.company.issued_logos)
         self.store.bank_accounts = dict(self.bank_accounts.data)
         self.store.customers = dict(self.customers.data)

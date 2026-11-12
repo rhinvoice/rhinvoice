@@ -64,7 +64,7 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 - EPC QR code / GiroCode (DE, AT, and for euro invoices into the EEA)
 - ZUGFeRD / Factur-X (EN 16931) embedded in every PDF, XRechnung 3.0 for German authorities;
   validated with the KoSIT validator and Mustang
-- PDF/A-3b output, three print templates with logo, font and footer, own themes possible
+- PDF/A-3b output, three designs with logo, font and footer, own themes possible; several print templates, one per customer if needed, with a sample PDF
 
 **Everyday work**
 - Customers and articles with archive and document history

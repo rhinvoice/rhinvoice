@@ -25,9 +25,14 @@ from rhinvoice.application.document.handlers import DraftInput, LineInput
 from rhinvoice.application.document.ports import DocumentQuery
 from rhinvoice.application.errors import ConflictError, NotFoundError, UnavailableError
 from rhinvoice.domain.company.bank_account import paying_account
-from rhinvoice.domain.company.print_layout import PrintLayout
+from rhinvoice.domain.company.print_layout import PrintLayout, layout_for
 from rhinvoice.domain.customer.customer import Customer, CustomerKind
-from rhinvoice.domain.document.document import DocumentOrigin, DocumentType, default_due_date
+from rhinvoice.domain.document.document import (
+    DocumentOrigin,
+    DocumentStatus,
+    DocumentType,
+    default_due_date,
+)
 from rhinvoice.domain.document.lines import LineKind
 from rhinvoice.domain.shared.address import Address
 from rhinvoice.domain.shared.country import Country, CountryCode
@@ -108,6 +113,10 @@ class PrintModel:
     cancelled_account: BankAccount | None = None
     """The account of the invoice a cancellation cancels; not printed, but XRechnung
     asks credit notes for payment instructions too (BR-DE-1)."""
+    sample: bool = False
+    """A sample of a layout, marked as such on every page (#48)."""
+    placeholders: bool = False
+    """Fields without a value print a placeholder, to show where they go (layout preview)."""
 
     @property
     def payable(self) -> Money:
@@ -199,6 +208,29 @@ class PrintHandlers:
     def layout_preview_html(self, layout: PrintLayout) -> str:
         """Render the latest invoice with a layout that is not saved yet.
 
+        Fields the invoice has no value for show a placeholder, so a field just added is seen.
+        """
+        model = replace(self._layout_model(), layout=layout, placeholders=True)
+        return self.renderer.html(model)
+
+    def layout_sample_pdf(self, layout: PrintLayout) -> bytes:
+        """Render the latest invoice with a layout as a PDF marked as a sample (#48).
+
+        To send to a bookkeeper or a customer before switching; it embeds no e-invoice.
+        """
+        if self.pdf_renderer is None:
+            raise UnavailableError("PDFs need the Gotenberg service (RHINVOICE_GOTENBERG_URL)")
+        model = self._layout_model()
+        # Shown like a draft: without the invoice's number and without payment codes, so the
+        # sample can be neither filed nor paid as a second copy of an issued invoice.
+        view = model.view
+        document = replace(view.document, number=None, status=DocumentStatus.DRAFT)
+        sample = replace(model, view=replace(view, document=document), layout=layout, sample=True)
+        return self.pdf_renderer.pdf(sample)
+
+    def _layout_model(self) -> PrintModel:
+        """Return the latest invoice, to show a layout with.
+
         Without invoices a sample invoice to the first customer is shown, or to a
         made-up one before there is any.
         """
@@ -225,7 +257,7 @@ class PrintHandlers:
             customer = customers[0] if customers else sample_customer(company.country, now)
             draft = DraftInput(customer_id=customer.id, lines=(SAMPLE_LINE,))
             view = self.documents.preview(DocumentType.INVOICE, draft, customer=customer).view
-        return self.renderer.html(replace(self.model(view), layout=layout))
+        return self.model(view)
 
     def reminder(self, reminder_id: UUID) -> ReminderPrint:
         with self.uow() as uow:
@@ -382,7 +414,12 @@ class PrintHandlers:
         content = document.content
         with self.uow() as uow:
             logo = uow.company.get_logo()
-            layout = uow.company.print_layout()
+            customer = view.customer
+            layout = layout_for(
+                uow.print_layouts.list(),
+                content.print_layout_id,
+                None if customer is None else customer.print_layout_id,
+            ).layout
             accounts = tuple(uow.bank_accounts.list())
             if not document.is_draft:
                 snapshot = document.issued_snapshot

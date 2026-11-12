@@ -8,6 +8,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from rhinvoice.application.backup.ports import BackupReason
+from rhinvoice.application.company.handlers import check_print_layout
 from rhinvoice.application.document.bad_debts import BadDebtYear, bad_debts_by_year
 from rhinvoice.application.document.ports import DocumentIndex
 from rhinvoice.application.errors import NotFoundError
@@ -15,6 +16,7 @@ from rhinvoice.application.numbering.handlers import allocate_number
 from rhinvoice.application.text.handlers import effective_notice
 from rhinvoice.domain.catalog.unit import Unit
 from rhinvoice.domain.company.bank_account import paying_account
+from rhinvoice.domain.company.print_layout import layout_for
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.document.attachment import (
     Attachment,
@@ -27,6 +29,7 @@ from rhinvoice.domain.document.document import (
     Document,
     DocumentType,
     DraftContent,
+    FieldValue,
     IssuedLogo,
     IssueSnapshot,
     Payment,
@@ -136,6 +139,13 @@ class DraftInput:
     closing_text: str = ""
     bank_account_id: UUID | None = None
     """The account to pay to; None: the default account of the currency."""
+    fields: tuple[tuple[str, str], ...] = ()
+    """Values of the print layout's fields as key and value."""
+    print_layout_id: UUID | None = None
+    """The layout for this document; None: the customer's or the default."""
+
+    def field_values(self) -> tuple[FieldValue, ...]:
+        return tuple(FieldValue(key, value) for key, value in self.fields)
 
 
 @dataclass(frozen=True, slots=True)
@@ -201,6 +211,7 @@ def build_index(document: Document, totals: Totals, customer: Customer | None) -
         name,
         content.subject,
         content.reference,
+        *(field.value for field in content.fields),
         *(line.description for line in content.lines),
         *(line.details for line in content.lines),
     ]
@@ -621,7 +632,11 @@ class DocumentHandlers:
                 notice=effective_notice(
                     uow, document.content.treatment, company.country, document.content.language
                 ),
-                layout=uow.company.print_layout(),
+                layout=layout_for(
+                    uow.print_layouts.list(),
+                    document.content.print_layout_id,
+                    customer.print_layout_id,
+                ).layout,
                 accounts=tuple(uow.bank_accounts.list()),
                 goods_notice=_goods_notice(uow, document.content, company),
                 logo=IssuedLogo(None if logo is None else logo.sha256),
@@ -647,6 +662,7 @@ class DocumentHandlers:
         previous: DraftContent | None,
     ) -> DraftContent:
         currency = draft.currency or customer.default_currency or company.default_currency
+        check_print_layout(uow, draft.print_layout_id)
         if previous is not None and draft.discount_value is None:
             discount = previous.discount
         else:
@@ -677,6 +693,8 @@ class DocumentHandlers:
             payment_text=draft.payment_text,
             closing_text=draft.closing_text,
             bank_account_id=chosen_account(uow, draft.bank_account_id, currency),
+            fields=draft.field_values(),
+            print_layout_id=draft.print_layout_id,
         )
 
     def _view(self, uow: UnitOfWork, document: Document) -> DocumentView:

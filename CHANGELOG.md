@@ -5,6 +5,25 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.12.0] – 2026-11-12
+
+### Added
+- The details top right of documents in your order (*Settings → Print template*, *Details top
+  right*): customer number, due date, date of supply and reference can be hidden, the date of
+  supply with a warning that it is mandatory (#60). Fields add a project, contract number, purchase
+  order, sales order, delivery note, tender or lot, object or cost centre: each invoice and quote
+  asks for the values next to its dates, prints them when filled in and puts them into the
+  e-invoice (BT-11 to BT-19). Own fields with a name of your choice print in the PDF (#62).
+- Several print templates (*Settings → Print template*): one is the default, a customer or an
+  invoice can take another one, chosen on the customer and at the top of the editor. Each
+  template has its own design, logo place, details top right and footer. *Sample PDF* downloads
+  the latest invoice with a template, marked as a sample, to send before switching. Issued
+  documents keep their template; customers and drafts of a deleted one take the default (#48).
+
+### Fixed
+- Texts with the characters U+FFFE or U+FFFF are refused: they are not allowed in XML and made
+  the e-invoice invalid.
+
 ## [0.11.0] – 2026-11-09
 
 ### Added

@@ -7,6 +7,7 @@ from rhinvoice.application.common import AddressInput, PageRequest, SortDirectio
 from rhinvoice.application.customer.handlers import CustomerHandlers, SaveCustomer
 from rhinvoice.application.customer.ports import CustomerQuery, CustomerSort
 from rhinvoice.application.errors import ConflictError, NotFoundError
+from rhinvoice.domain.company.print_layout import NamedLayout, PrintLayout
 from rhinvoice.domain.customer.customer import CustomerKind
 from rhinvoice.domain.numbering.sequence import NumberSequence, SequenceKind
 from rhinvoice.domain.shared.clock import FixedClock
@@ -223,3 +224,17 @@ def test_existing_sequence_configuration_is_used(handlers: CustomerHandlers, sto
         on=date(2026, 1, 1),
     )
     assert handlers.create(command()).number == "K0007"
+
+
+def test_a_customer_names_an_existing_print_layout(
+    handlers: CustomerHandlers, store: Store
+) -> None:
+    trust = NamedLayout(new_id(), "Treuhand", PrintLayout())
+    store.print_layouts[trust.id] = trust
+    created = handlers.create(command(print_layout_id=trust.id))
+    assert created.print_layout_id == trust.id
+    with raises_exactly(ValidationError, "unknown print layout"):
+        handlers.create(command(print_layout_id=new_id()))
+    with raises_exactly(ValidationError, "unknown print layout"):
+        handlers.update(created.id, command(print_layout_id=new_id()))
+    assert handlers.update(created.id, command()).print_layout_id is None

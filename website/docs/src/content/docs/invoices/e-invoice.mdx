@@ -55,13 +55,36 @@ When you send the invoice by e-mail, you can choose *Also attach the XRechnung (
 
 The XRechnung needs a buyer reference (BT-10). Rhinvoice takes it like this:
 
-- If the customer has a **Leitweg-ID or fixed buyer reference**, that one always applies. The invoice's reference then goes into the e-invoice as the order reference (BT-13), so an order number such as "Bestellung 4711" is not lost.
-- Otherwise the **invoice's reference** applies (*More details → Reference*), for example the order number.
+- If the customer has a **Leitweg-ID or fixed buyer reference**, that one always applies. The invoice's reference then goes into the e-invoice as the order reference (BT-13), or as a note when the invoice has its own [purchase order field](#project-purchase-order-and-cost-centre), so an order number such as "Bestellung 4711" is not lost.
+- Otherwise the **invoice's reference** applies (*Dates → Reference*), for example the order number.
 - If both are empty, the XRechnung lacks the buyer reference.
 
 For businesses, fill in the field on the customer only if they always want the same reference. If the reference changes with every order, leave the field on the customer empty and put the reference on the invoice. Below the field *Reference*, the editor shows for customers in Germany which Leitweg-ID applies or that the reference is needed for the XRechnung.
 
 When you issue an invoice, Rhinvoice keeps the customer as it was with the invoice. If you change the Leitweg-ID on the customer later, the XRechnung of invoices already issued stays the same.
+
+## Project, purchase order and cost centre
+
+Some customers need more on the invoice: a project, their purchase order, a cost centre. Add these details as fields of the print template, and they go into the e-invoice too. <Since version="0.12.0" />
+
+1. Under *Settings → Print template*, card *Details top right*, click *Add field*.
+2. Choose a field. Those under *Also in the e-invoice* fill their place in the e-invoice; *Own field (PDF only)* prints a name of your choice, for example "Object".
+3. Sort the details with the arrows or by dragging, and save.
+
+Every invoice and quote then asks for the values in the card *Dates*. A field prints only when it has a value, and issuing freezes the values with the invoice.
+
+| Field | In the e-invoice |
+|---|---|
+| Project | BT-11, project reference |
+| Contract number | BT-12, contract reference |
+| Purchase order | BT-13, purchase order reference |
+| Sales order | BT-14, your own order number |
+| Delivery note | BT-16, despatch advice reference |
+| Tender or lot | BT-17, tender or lot reference |
+| Object | BT-18, e.g. a meter, a subscription or a vehicle |
+| Cost centre | BT-19, the buyer's accounting reference |
+
+The same card shows or hides the customer number, the due date, the date of supply and *Your reference*. The date of supply is mandatory on invoices (§ 14 Abs. 4 Nr. 6 UStG, § 11 Abs. 1 Z 3 lit. d UStG AT): hide it only when the positions state it, for example "on 3 November". The e-invoice always keeps it (BT-72).
 
 ## What an e-invoice needs
 
@@ -80,7 +103,7 @@ Rhinvoice creates only complete e-invoices. If something is missing, the dialog 
 
 | Detail | Where to enter it |
 |---|---|
-| Leitweg-ID or buyer reference | on the customer (*Leitweg-ID or fixed buyer reference*) or on the invoice (*More details → Reference*) |
+| Leitweg-ID or buyer reference | on the customer (*Leitweg-ID or fixed buyer reference*) or on the invoice (*Dates → Reference*) |
 | Your company's e-mail | *Settings → Company* |
 | Your company's phone | *Settings → Company* |
 | The customer's e-mail | on the customer |

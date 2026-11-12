@@ -18,7 +18,9 @@ from rhinvoice.api.schemas import (
     UNIT_CODES,
     AddressSchema,
     ApiModel,
+    FieldValues,
     ListParams,
+    field_values,
     plain_number,
     price_text,
     text,
@@ -126,6 +128,10 @@ class DraftRequest(ApiModel):
     closing_text: str = text(4000)
     bank_account_id: UUID | None = None
     """The account to pay to; None: the default account of the currency."""
+    fields: FieldValues = Field(default_factory=dict, max_length=24)
+    """Values of the print layout's fields by key; empty ones are dropped."""
+    print_layout_id: UUID | None = None
+    """The layout for this document; none: the customer's or the default."""
 
     def to_input(self) -> DraftInput:
         return DraftInput(
@@ -148,6 +154,8 @@ class DraftRequest(ApiModel):
             payment_text=self.payment_text,
             closing_text=self.closing_text,
             bank_account_id=self.bank_account_id,
+            fields=field_values(self.fields),
+            print_layout_id=self.print_layout_id,
         )
 
 
@@ -335,6 +343,10 @@ class DocumentResponse(ApiModel):
     bank_account_id: UUID | None
     """Drafts: the chosen account, None for the default of the currency. Issued documents:
     the account frozen when issuing (None when it had none, e.g. cancellations)."""
+    fields: dict[str, str]
+    """Values of the print layout's fields by key; frozen once issued."""
+    print_layout_id: UUID | None
+    """The layout chosen for the draft; none: the customer's or the default."""
     notice: str
     """Legal notices of the treatments, one per line; frozen once issued."""
     lines: list[LineResponse]
@@ -403,6 +415,8 @@ class DocumentResponse(ApiModel):
             payment_text=content.payment_text,
             closing_text=content.closing_text,
             bank_account_id=_paid_to(document),
+            fields={field.key: field.value for field in content.fields},
+            print_layout_id=content.print_layout_id,
             notice=view.notice,
             lines=[
                 LineResponse(

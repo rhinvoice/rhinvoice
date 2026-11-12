@@ -24,6 +24,8 @@ interface PaperPreviewProps {
   /** Shown instead of the page while there is nothing to show yet. */
   readonly placeholder?: string | undefined;
   readonly className?: string;
+  /** Called with the page each time it has loaded, e.g. to scroll to a part of it. */
+  readonly onPageLoad?: (page: Document) => void;
 }
 
 /**
@@ -37,6 +39,7 @@ export function PaperPreview({
   busy = false,
   placeholder,
   className,
+  onPageLoad,
 }: PaperPreviewProps) {
   const { t } = useI18n();
   const box = useRef<HTMLDivElement>(null);
@@ -44,9 +47,11 @@ export function PaperPreview({
   const [width, setWidth] = useState(PAGE_WIDTH);
   const [height, setHeight] = useState(PAGE_HEIGHT);
   const clickRef = useRef(onLineClick);
+  const loadRef = useRef(onPageLoad);
   useEffect(() => {
     clickRef.current = onLineClick;
-  }, [onLineClick]);
+    loadRef.current = onPageLoad;
+  }, [onLineClick, onPageLoad]);
 
   useEffect(() => {
     const element = box.current;
@@ -64,6 +69,8 @@ export function PaperPreview({
     const page = frame.current?.contentDocument;
     if (page === null || page === undefined) return;
     setHeight(Math.max(PAGE_HEIGHT, page.documentElement.scrollHeight));
+    // After the new height is laid out.
+    requestAnimationFrame(() => loadRef.current?.(page));
     if (clickRef.current === undefined) return;
     const style = page.createElement("style");
     style.textContent = CLICKABLE_LINES;

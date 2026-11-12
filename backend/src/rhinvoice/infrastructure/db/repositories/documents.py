@@ -65,6 +65,8 @@ from rhinvoice.domain.tax.supply import Supply
 from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.infrastructure.db.search import NATURAL_COLLATION, prefix_query
 from rhinvoice.infrastructure.db.serialization import (
+    fields_from_json,
+    fields_to_json,
     snapshot_from_json,
     snapshot_to_json,
     totals_from_json,
@@ -122,6 +124,7 @@ FROZEN_COLUMNS = frozenset(
         "service_to",
         "subject",
         "reference",
+        "fields",
         "intro_text",
         "payment_text",
         "closing_text",
@@ -160,10 +163,12 @@ def _document_values(document: Document, index: DocumentIndex) -> dict[str, Any]
         "service_to": content.service_to,
         "subject": content.subject,
         "reference": content.reference,
+        "fields": fields_to_json(content.fields),
         "intro_text": content.intro_text,
         "payment_text": content.payment_text,
         "closing_text": content.closing_text,
         "bank_account_id": content.bank_account_id,
+        "print_layout_id": content.print_layout_id,
         "created_at": document.created_at,
         "issued_at": document.issued_at,
         "source_id": document.source_id,
@@ -412,10 +417,12 @@ class SqlDocumentRepository:
             service_to=row["service_to"],
             subject=row["subject"],
             reference=row["reference"],
+            fields=fields_from_json(row["fields"]),
             intro_text=row["intro_text"],
             payment_text=row["payment_text"],
             closing_text=row["closing_text"],
             bank_account_id=row["bank_account_id"],
+            print_layout_id=row["print_layout_id"],
         )
         return Document(
             id=row["id"],

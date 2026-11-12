@@ -608,7 +608,7 @@ function PlanActions({ plan }: { readonly plan: Plan }) {
       {plan.finished ? null : plan.active ? (
         <Button
           variant="outline"
-          disabled={pause.isPending}
+          busy={pause.isPending}
           onClick={() => {
             pause.mutate(plan.id, {
               onSuccess: () => toast.success(t("recurring.paused")),
@@ -622,7 +622,7 @@ function PlanActions({ plan }: { readonly plan: Plan }) {
       ) : (
         <Button
           variant="outline"
-          disabled={resume.isPending}
+          busy={resume.isPending}
           onClick={() => {
             resume.mutate(plan.id, {
               onSuccess: () => toast.success(t("recurring.resumed")),

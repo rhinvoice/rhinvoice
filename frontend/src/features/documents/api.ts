@@ -10,6 +10,10 @@ import {
 import { api, CLIENT_HEADER, unwrap, type components } from "@/api/client";
 import { fetchFile } from "@/features/shared/file-download";
 import { markItemsPaid } from "@/features/documents/paid-rows";
+import {
+  useIdempotentMutation,
+  type IdempotencyHeaders,
+} from "@/features/shared/use-idempotent-mutation";
 import { toApiError } from "@/lib/api-error";
 
 export type DocumentDetail = components["schemas"]["DocumentResponse"];
@@ -116,8 +120,9 @@ export function articleOptionsQuery(q: string) {
 /** Save a typed position as an article, so the line search finds it next time. */
 export function useCreateArticle() {
   const client = useQueryClient();
-  return useMutation({
-    mutationFn: (body: ArticleRequest) => unwrap(api.POST("/api/articles", { body })),
+  return useIdempotentMutation({
+    mutationFn: (body: ArticleRequest, { headers }) =>
+      unwrap(api.POST("/api/articles", { body, headers })),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ["articles"] });
     },
@@ -138,8 +143,9 @@ function useOnChanged() {
 
 export function useCreateDocument() {
   const onSuccess = useOnChanged();
-  return useMutation({
-    mutationFn: (body: CreateRequest) => unwrap(api.POST("/api/documents", { body })),
+  return useIdempotentMutation({
+    mutationFn: (body: CreateRequest, { headers }) =>
+      unwrap(api.POST("/api/documents", { body, headers })),
     onSuccess,
   });
 }
@@ -169,22 +175,27 @@ export function useDeleteDocument() {
 
 type Action = "issue" | "accept" | "decline" | "cancel" | "convert" | "duplicate";
 
-const byId = (id: string) => ({ params: { path: { document_id: id } } });
+const byId = (id: string, { headers }: IdempotencyHeaders) => ({
+  params: { path: { document_id: id } },
+  headers,
+});
 
-const ACTIONS: Readonly<Record<Action, (id: string) => Promise<DocumentDetail>>> = {
-  issue: (id) => unwrap(api.POST("/api/documents/{document_id}/issue", byId(id))),
-  accept: (id) => unwrap(api.POST("/api/documents/{document_id}/accept", byId(id))),
-  decline: (id) => unwrap(api.POST("/api/documents/{document_id}/decline", byId(id))),
-  cancel: (id) => unwrap(api.POST("/api/documents/{document_id}/cancel", byId(id))),
-  convert: (id) => unwrap(api.POST("/api/documents/{document_id}/convert", byId(id))),
-  duplicate: (id) => unwrap(api.POST("/api/documents/{document_id}/duplicate", byId(id))),
+const ACTIONS: Readonly<
+  Record<Action, (id: string, idempotent: IdempotencyHeaders) => Promise<DocumentDetail>>
+> = {
+  issue: (id, key) => unwrap(api.POST("/api/documents/{document_id}/issue", byId(id, key))),
+  accept: (id, key) => unwrap(api.POST("/api/documents/{document_id}/accept", byId(id, key))),
+  decline: (id, key) => unwrap(api.POST("/api/documents/{document_id}/decline", byId(id, key))),
+  cancel: (id, key) => unwrap(api.POST("/api/documents/{document_id}/cancel", byId(id, key))),
+  convert: (id, key) => unwrap(api.POST("/api/documents/{document_id}/convert", byId(id, key))),
+  duplicate: (id, key) => unwrap(api.POST("/api/documents/{document_id}/duplicate", byId(id, key))),
 };
 
 /** Lifecycle actions without a body; "convert" and "duplicate" return the new draft. */
 export function useDocumentAction(action: Action) {
   const onSuccess = useOnChanged();
   const client = useQueryClient();
-  return useMutation({
+  return useIdempotentMutation({
     mutationFn: ACTIONS[action],
     onSuccess: (document, id) => {
       onSuccess(document);
@@ -209,12 +220,13 @@ export interface PaymentInput {
 
 export function useAddPayment(id: string) {
   const onSuccess = useOnChanged();
-  return useMutation({
-    mutationFn: (payment: PaymentInput) =>
+  return useIdempotentMutation({
+    mutationFn: (payment: PaymentInput, { headers }) =>
       unwrap(
         api.POST("/api/documents/{document_id}/payments", {
           params: { path: { document_id: id } },
           body: { paid_on: payment.paidOn, amount: payment.amount, note: payment.note },
+          headers,
         }),
       ),
     onSuccess,
@@ -223,12 +235,13 @@ export function useAddPayment(id: string) {
 
 export function useMarkPaid(id: string) {
   const onSuccess = useOnChanged();
-  return useMutation({
-    mutationFn: (paidOn: string) =>
+  return useIdempotentMutation({
+    mutationFn: (paidOn: string, { headers }) =>
       unwrap(
         api.POST("/api/documents/{document_id}/mark-paid", {
           params: { path: { document_id: id } },
           body: { paid_on: paidOn },
+          headers,
         }),
       ),
     onSuccess,
@@ -249,10 +262,10 @@ function useOnManyChanged() {
 export function useMarkPaidMany() {
   const client = useQueryClient();
   const onChanged = useOnManyChanged();
-  return useMutation({
+  return useIdempotentMutation({
     // Without a date the server uses today in the installation's time zone.
-    mutationFn: (ids: readonly string[]) =>
-      unwrap(api.POST("/api/documents/mark-paid", { body: { document_ids: [...ids] } })),
+    mutationFn: (ids: readonly string[], { headers }) =>
+      unwrap(api.POST("/api/documents/mark-paid", { body: { document_ids: [...ids] }, headers })),
     // Optimistic: the rows show as paid at once and roll back on an error.
     onMutate: async (ids) => {
       await client.cancelQueries({ queryKey: documentKeys.lists });
@@ -274,9 +287,11 @@ export function useMarkPaidMany() {
 /** Remove several payments at once, e.g. to undo {@link useMarkPaidMany}. */
 export function useRemovePayments() {
   const onChanged = useOnManyChanged();
-  return useMutation({
-    mutationFn: (payments: readonly RecordedPayment[]) =>
-      unwrap(api.POST("/api/documents/remove-payments", { body: { payments: [...payments] } })),
+  return useIdempotentMutation({
+    mutationFn: (payments: readonly RecordedPayment[], { headers }) =>
+      unwrap(
+        api.POST("/api/documents/remove-payments", { body: { payments: [...payments] }, headers }),
+      ),
     onSuccess: (_result, payments) => {
       onChanged(payments.map((payment) => payment.document_id));
     },
@@ -305,8 +320,8 @@ export interface WriteOffInput {
 /** Give up collecting the open rest of an invoice; the invoice itself stays as issued. */
 export function useWriteOff(id: string) {
   const onSuccess = useOnChanged();
-  return useMutation({
-    mutationFn: (writeOff: WriteOffInput) =>
+  return useIdempotentMutation({
+    mutationFn: (writeOff: WriteOffInput, { headers }) =>
       unwrap(
         api.POST("/api/documents/{document_id}/write-off", {
           params: { path: { document_id: id } },
@@ -315,6 +330,7 @@ export function useWriteOff(id: string) {
             reason: writeOff.reason,
             note: writeOff.note,
           },
+          headers,
         }),
       ),
     onSuccess,
@@ -474,7 +490,11 @@ export function releaseDocumentPdf(client: QueryClient, documentId: string): voi
 }
 
 /** Send a PDF to a document (multipart: the generated client posts JSON only). */
-async function postFile(documentId: string, file: File): Promise<DocumentDetail> {
+async function postFile(
+  documentId: string,
+  file: File,
+  { headers }: IdempotencyHeaders,
+): Promise<DocumentDetail> {
   const body = new FormData();
   body.append("file", file);
   let response: Response;
@@ -483,7 +503,7 @@ async function postFile(documentId: string, file: File): Promise<DocumentDetail>
       method: "POST",
       body,
       credentials: "same-origin",
-      headers: { [CLIENT_HEADER]: "web" },
+      headers: { [CLIENT_HEADER]: "web", ...headers },
     });
   } catch {
     throw toApiError(0, undefined);
@@ -511,11 +531,29 @@ function useOnFilesChanged(documentId: string) {
 /** Attach PDFs to a draft, one after the other (ADR 0040). */
 export function useAddAttachments(documentId: string) {
   const onSettled = useOnFilesChanged(documentId);
-  return useMutation({
-    mutationFn: async (files: readonly File[]) => {
-      for (const file of files) await postFile(documentId, file);
+  return useIdempotentMutation({
+    mutationFn: async (files: readonly File[], { part }) => {
+      for (const [index, file] of files.entries()) await postFile(documentId, file, part(index));
     },
     onSettled,
+  });
+}
+
+/** Attach the PDFs chosen before a new draft had been saved, once it exists. */
+export function useAttachToNewDraft() {
+  const client = useQueryClient();
+  return useIdempotentMutation({
+    mutationFn: async (
+      { documentId, files }: { documentId: string; files: readonly File[] },
+      { part },
+    ) => {
+      for (const [index, file] of files.entries()) await postFile(documentId, file, part(index));
+    },
+    onSettled: (_data, _error, { documentId }) =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: attachmentsQuery(documentId).queryKey }),
+        client.invalidateQueries({ queryKey: documentKeys.detail(documentId) }),
+      ]),
   });
 }
 
@@ -537,8 +575,8 @@ export function useRemoveAttachment(documentId: string) {
 export function useAddFile(documentId: string) {
   const onChanged = useOnChanged();
   const client = useQueryClient();
-  return useMutation({
-    mutationFn: (file: File) => postFile(documentId, file),
+  return useIdempotentMutation({
+    mutationFn: (file: File, idempotent) => postFile(documentId, file, idempotent),
     onSuccess: (document) => {
       const before = client.getQueryData<DocumentDetail>(documentKeys.detail(documentId));
       onChanged(document);

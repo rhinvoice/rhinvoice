@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { useSubmitOnce } from "@/components/use-run-once";
 import { useI18n } from "@/components/i18n/use-i18n";
 import { Button } from "@/components/ui/button";
 import { ErrorSummary } from "@/components/ui/error-summary";
@@ -54,9 +55,11 @@ export function SetupPage() {
     );
   });
 
+  const once = useSubmitOnce(onSubmit);
+
   return (
     <AuthLayout title={t("auth.setupTitle")} description={t("auth.setupDescription")}>
-      <form className="flex flex-col gap-4" onSubmit={(event) => void onSubmit(event)} noValidate>
+      <form className="flex flex-col gap-4" onSubmit={once.submit} noValidate>
         {isSubmitted ? (
           <ErrorSummary
             title={t("validation.summary", { count: Object.keys(errors).length })}
@@ -89,7 +92,7 @@ export function SetupPage() {
             {...form.register("password")}
           />
         </Field>
-        <Button type="submit" disabled={setup.isPending}>
+        <Button type="submit" busy={once.busy}>
           {t("auth.setupSubmit")}
         </Button>
       </form>

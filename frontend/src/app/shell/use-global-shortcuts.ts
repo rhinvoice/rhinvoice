@@ -51,7 +51,7 @@ export function handleShortcut(
   if (!singleKeys) {
     return { handled: false, goPending: false };
   }
-  if (goPending && isPlainKey(event, event.key)) {
+  if (goPending && event.key !== undefined && isPlainKey(event, event.key)) {
     return { handled: handlers.goTo(event.key.toLowerCase()), goPending: false };
   }
   if (isPlainKey(event, "g")) {

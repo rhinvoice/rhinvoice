@@ -4,6 +4,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { useSubmitOnce } from "@/components/use-run-once";
 import { useI18n } from "@/components/i18n/use-i18n";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,7 +104,7 @@ function SequenceCard({ sequence }: { readonly sequence: Sequence }) {
       yearly_reset: sequence.yearly_reset,
     },
   });
-  const { errors, isDirty, isSubmitting } = form.formState;
+  const { errors, isDirty } = form.formState;
   useUnsavedChanges(isDirty);
   const watched = useWatch({ control: form.control });
   // Debounce a string: a fresh object on every render would restart the timer forever.
@@ -161,6 +162,8 @@ function SequenceCard({ sequence }: { readonly sequence: Sequence }) {
     }
   });
 
+  const once = useSubmitOnce(submit);
+
   return (
     <Card aria-labelledby={`${prefix}-title`}>
       <CardHeader className="flex-row items-center justify-between">
@@ -170,7 +173,7 @@ function SequenceCard({ sequence }: { readonly sequence: Sequence }) {
           <span className="font-mono font-medium tabular-nums">{nextNumber ?? "…"}</span>
         </p>
       </CardHeader>
-      <form className="flex flex-col gap-4" onSubmit={(event) => void submit(event)} noValidate>
+      <form className="flex flex-col gap-4" onSubmit={once.submit} noValidate>
         <FormAlert message={errors.root?.message ?? previewError} />
         <div className="grid gap-4 sm:grid-cols-[1fr_10rem]">
           <Field
@@ -226,7 +229,8 @@ function SequenceCard({ sequence }: { readonly sequence: Sequence }) {
           <Button
             type="submit"
             variant={isDirty ? "default" : "outline"}
-            disabled={!isDirty || isSubmitting}
+            disabled={!isDirty}
+            busy={once.busy}
           >
             {t("common.save")}
           </Button>

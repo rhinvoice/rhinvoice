@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { useRunOnce } from "@/components/use-run-once";
 import { useI18n } from "@/components/i18n/use-i18n";
 import { Button } from "@/components/ui/button";
 import { ErrorSummary } from "@/components/ui/error-summary";
@@ -92,6 +93,9 @@ export function LoginPage({
     }
   };
 
+  // Sign-in, demo sign-in and the navigation after it: one at a time, until the page changes.
+  const once = useRunOnce();
+
   const serverError =
     login.error instanceof ApiError && login.error.code === "totp_required"
       ? null
@@ -103,11 +107,22 @@ export function LoginPage({
       description={t("auth.loginDescription")}
       aside={
         demo?.enabled === true ? (
-          <DemoCallout demo={demo} pending={login.isPending} onSignIn={() => void signInToDemo()} />
+          <DemoCallout
+            demo={demo}
+            pending={once.busy}
+            onSignIn={() => void once.run(signInToDemo)}
+          />
         ) : null
       }
     >
-      <form className="flex flex-col gap-4" onSubmit={(event) => void onSubmit(event)} noValidate>
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void once.run(() => onSubmit());
+        }}
+        noValidate
+      >
         {isSubmitted ? (
           <ErrorSummary
             title={t("validation.summary", { count: Object.keys(errors).length })}
@@ -168,8 +183,8 @@ export function LoginPage({
             />
           </Field>
         ) : null}
-        <Button type="submit" disabled={login.isPending}>
-          {login.isPending ? t("auth.submitting") : t("auth.submit")}
+        <Button type="submit" busy={once.busy}>
+          {once.busy ? t("auth.submitting") : t("auth.submit")}
         </Button>
       </form>
     </AuthLayout>

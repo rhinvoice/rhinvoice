@@ -10,12 +10,13 @@ faq:
   - q: Does the document discount reduce pass-through items?
     a: No. The document discount applies to the taxed lines only. Pass-through items always count in full in the total, and so in the QR-bill or EPC QR code, payments and reminders.
   - q: How do I send the third-party invoice along with my invoice?
-    a: Save the draft, open the section "Attachments" in the editor and click "Add PDF". The PDF goes out after your invoice's PDF when you send it by e-mail, and it is frozen with the invoice when you issue it.
+    a: Open the section "Attachments" in the editor and click "Add PDF". In a new document, the PDF is attached when you first save it. The PDF goes out after your invoice's PDF when you send it by e-mail, and it is frozen with the invoice when you issue it.
   - q: How do pass-through items appear in the e-invoice?
     a: As exempt lines, VAT category E, with the exemption reason code VATEX-EU-79-C and a short reason text, in a VAT breakdown of their own. When the document has other exempt lines, they share that breakdown; for small businesses in Switzerland and Liechtenstein without a VAT or tax number they are in category O. Rhinvoice's samples pass the KoSIT validator and Mustang.
 ---
 
 import Faq from "../../../components/Faq.astro";
+import Since from "../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 A **pass-through item** is an amount you paid **in the name and for the account of your customer**, such as a commercial register fee, and charge on unchanged. In Rhinvoice you choose *Pass-through item (no VAT)* as a line's *Tax rate*: the line gets no VAT, the document discount leaves it alone, and the PDF lists it in a block of its own before the total, several such lines with their sum. It only applies when the **third-party invoice is made out in your customer's name**.
@@ -63,12 +64,12 @@ Pass-through items are not in the table of positions. They follow the VAT lines,
 
 ## Attaching the third-party invoice
 
-Your customer usually needs the third-party invoice with yours. Every saved draft, invoice or quote, has a folded section **Attachments** below *More details*:
+Your customer usually needs the third-party invoice with yours. Every draft, invoice or quote, has a folded section **Attachments** below *More details*:
 
 <Steps>
 
-1. Save the draft. A new document can take attachments after its first save.
-2. Open *Attachments* and click **Add PDF**. You can choose several files at once.
+1. Open *Attachments* and click **Add PDF**. You can choose several files at once.
+2. In a new document, the files wait until you save it for the first time. If you leave it without saving, nothing is kept. <Since version="0.11.0" />
 3. Open a file to check it, or remove it, as long as the document is a draft.
 
 </Steps>

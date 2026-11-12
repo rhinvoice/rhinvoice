@@ -77,7 +77,8 @@ function CloseForUpdateDialog({
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   readonly text: string;
-  readonly onConfirm: () => void;
+  /** Its promise keeps the button locked while the program prepares to close. */
+  readonly onConfirm: () => Promise<unknown>;
   /** A setup: confirming waits until it is downloaded and checked. */
   readonly download?: SetupDownload | null;
 }) {
@@ -155,7 +156,7 @@ function InstallButton({
       <Button
         type="button"
         size="sm"
-        disabled={install.isPending}
+        busy={install.isPending}
         onClick={() => {
           setAsking(true);
         }}
@@ -171,9 +172,7 @@ function InstallButton({
         open={asking}
         onOpenChange={setAsking}
         text={t("updates.closeRestart", { version })}
-        onConfirm={() => {
-          install.mutate();
-        }}
+        onConfirm={() => install.mutateAsync()}
       />
     </div>
   );
@@ -245,9 +244,7 @@ function SetupButton({
         onOpenChange={setAsking}
         text={t("updates.closeSetup", { version })}
         download={download}
-        onConfirm={() => {
-          run.mutate();
-        }}
+        onConfirm={() => run.mutateAsync()}
       />
     </div>
   );
@@ -376,7 +373,7 @@ function CheckButton() {
         variant="outline"
         size="sm"
         className="self-start"
-        disabled={check.isPending}
+        busy={check.isPending}
         onClick={() => {
           check.mutate();
         }}

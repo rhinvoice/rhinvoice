@@ -8,6 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from rhinvoice.infrastructure.db.repositories.backups import SqlBackupRepository
 from rhinvoice.infrastructure.db.repositories.documents import SqlDocumentRepository
 from rhinvoice.infrastructure.db.repositories.dunning import SqlDunningRepository
+from rhinvoice.infrastructure.db.repositories.idempotency import SqlIdempotencyRepository
 from rhinvoice.infrastructure.db.repositories.identity import (
     SqlSessionRepository,
     SqlUserRepository,
@@ -74,6 +75,7 @@ class SqlUnitOfWork:
         self.dunning = SqlDunningRepository(self._connection)
         self.mail = SqlMailRepository(self._connection)
         self.recurring = SqlRecurringRepository(self._connection)
+        self.idempotency = SqlIdempotencyRepository(self._connection)
         return self
 
     def _active(self) -> tuple[Connection, RootTransaction]:

@@ -10,12 +10,13 @@ faq:
   - q: Le rabais sur le document réduit-il les débours?
     a: Non. Le rabais sur le document ne s’applique qu’aux lignes imposées. Les débours comptent toujours en entier dans le total, et donc dans la facture QR ou le code QR EPC, les paiements et les rappels.
   - q: Comment envoyer la facture du tiers avec ma facture?
-    a: Enregistrez le brouillon, ouvrez la section «Pièces jointes» dans l’éditeur et cliquez sur «Ajouter un PDF». Lors de l’envoi par e-mail, le PDF part après celui de votre facture, et il est figé avec la facture lors de l’émission.
+    a: Ouvrez la section «Pièces jointes» dans l’éditeur et cliquez sur «Ajouter un PDF». Dans un nouveau document, le PDF est joint au premier enregistrement. Lors de l’envoi par e-mail, le PDF part après celui de votre facture, et il est figé avec la facture lors de l’émission.
   - q: Comment les débours apparaissent-ils dans la facture électronique?
     a: Comme lignes exonérées, catégorie E, avec le code de motif d’exonération VATEX-EU-79-C et un court texte de motif, dans une ventilation de TVA propre. Si le document a d’autres lignes exonérées, ils partagent leur ventilation; pour les petites entreprises en Suisse et au Liechtenstein sans numéro TVA ni numéro fiscal, ils sont dans la catégorie O. Les factures d’exemple de Rhinvoice passent le validateur KoSIT et Mustang.
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Un **débours** est un montant que vous avez payé **au nom et pour le compte de votre client**, comme un émolument du registre du commerce, et que vous refacturez tel quel. Dans Rhinvoice, vous choisissez *Débours (sans TVA)* comme *Taux de TVA* d’une ligne: la ligne n’a pas de TVA, le rabais sur le document ne la touche pas, et le PDF l’indique dans un bloc propre avant le total, plusieurs lignes de ce type avec leur total. Cela ne vaut que si la **facture du tiers est établie au nom de votre client**.
@@ -63,12 +64,12 @@ Les débours ne figurent pas dans le tableau des lignes. Ils suivent les lignes 
 
 ## Joindre la facture du tiers
 
-Votre client a en général besoin de la facture du tiers avec la vôtre. Chaque brouillon enregistré, facture ou offre, a sous *Autres informations* une section repliée **Pièces jointes**:
+Votre client a en général besoin de la facture du tiers avec la vôtre. Chaque brouillon, facture ou offre, a sous *Autres informations* une section repliée **Pièces jointes**:
 
 <Steps>
 
-1. Enregistrez le brouillon. Un nouveau document accepte des pièces jointes après son premier enregistrement.
-2. Ouvrez *Pièces jointes* et cliquez sur **Ajouter un PDF**. Vous pouvez choisir plusieurs fichiers à la fois.
+1. Ouvrez *Pièces jointes* et cliquez sur **Ajouter un PDF**. Vous pouvez choisir plusieurs fichiers à la fois.
+2. Dans un nouveau document, les fichiers attendent son premier enregistrement. Si vous le quittez sans enregistrer, rien n’est conservé. <Since version="0.11.0" />
 3. Ouvrez un fichier pour le vérifier, ou retirez-le, tant que le document est un brouillon.
 
 </Steps>

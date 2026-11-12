@@ -1,6 +1,7 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api, unwrap, type components } from "@/api/client";
+import { useIdempotentMutation } from "@/features/shared/use-idempotent-mutation";
 
 export type Plan = components["schemas"]["PlanResponse"];
 export type PlanRequest = components["schemas"]["PlanRequest"];
@@ -25,10 +26,10 @@ export function planQuery(planId: string) {
 
 export function useSavePlan(planId: string | null) {
   const client = useQueryClient();
-  return useMutation({
-    mutationFn: (body: PlanRequest) =>
+  return useIdempotentMutation({
+    mutationFn: (body: PlanRequest, { headers }) =>
       planId === null
-        ? unwrap(api.POST("/api/recurring", { body }))
+        ? unwrap(api.POST("/api/recurring", { body, headers }))
         : unwrap(
             api.PUT("/api/recurring/{plan_id}", { params: { path: { plan_id: planId } }, body }),
           ),

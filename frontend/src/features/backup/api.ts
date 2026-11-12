@@ -2,6 +2,7 @@ import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query
 
 import { api, unwrap, type components } from "@/api/client";
 import { backupRefreshInterval } from "@/features/backup/backup-model";
+import { useIdempotentMutation } from "@/features/shared/use-idempotent-mutation";
 
 export type Backup = components["schemas"]["BackupResponse"];
 export type BackupRun = components["schemas"]["BackupRunResponse"];
@@ -61,8 +62,8 @@ export function useConfirmRecoveryKey() {
 
 export function useRequestBackup() {
   const client = useQueryClient();
-  return useMutation({
-    mutationFn: () => unwrap(api.POST("/api/backup")),
+  return useIdempotentMutation({
+    mutationFn: (_none: undefined, { headers }) => unwrap(api.POST("/api/backup", { headers })),
     onSuccess: (backup) => {
       client.setQueryData(BACKUP_KEY, backup);
     },

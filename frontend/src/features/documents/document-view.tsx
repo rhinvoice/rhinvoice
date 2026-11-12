@@ -25,7 +25,8 @@ import { formatDate, formatDateTime, formatMoney, formatNumber, formatPercent } 
 interface DocumentViewProps {
   readonly document: DocumentDetail;
   readonly taxName: string;
-  readonly onRemovePayment?: ((paymentId: string) => void) | undefined;
+  /** Its promise locks the button until the payment is removed. */
+  readonly onRemovePayment?: ((paymentId: string) => Promise<unknown>) | undefined;
 }
 
 function Meta({ label, value }: { readonly label: string; readonly value: string }) {
@@ -275,9 +276,7 @@ export function DocumentView({ document, taxName, onRemovePayment }: DocumentVie
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      onClick={() => {
-                        onRemovePayment(payment.id);
-                      }}
+                      onClick={() => onRemovePayment(payment.id)}
                       aria-label={t("documents.removePayment", {
                         amount: money(payment.amount),
                         date: formatDate(payment.paid_on, locale),

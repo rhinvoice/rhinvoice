@@ -10,12 +10,13 @@ faq:
   - q: Lo sconto sul documento riduce le spese anticipate?
     a: No. Lo sconto sul documento vale solo per le posizioni imponibili. Le spese anticipate contano sempre per intero nel totale, quindi nella fattura QR o nel codice QR EPC, nei pagamenti e nei solleciti.
   - q: Come invio la fattura del terzo insieme alla mia fattura?
-    a: Salvi la bozza, apra nell’editor la sezione «Allegati» e clicchi su «Aggiungi PDF». Nell’invio per e-mail il PDF parte dopo quello della Sua fattura, e all’emissione viene bloccato con la fattura.
+    a: Apra nell’editor la sezione «Allegati» e clicchi su «Aggiungi PDF». In un nuovo documento il PDF viene allegato al primo salvataggio. Nell’invio per e-mail il PDF parte dopo quello della Sua fattura, e all’emissione viene bloccato con la fattura.
   - q: Come compaiono le spese anticipate nella fattura elettronica?
     a: Come posizioni esenti, categoria E, con il codice del motivo di esenzione VATEX-EU-79-C e un breve testo del motivo, in un riepilogo IVA a sé. Se il documento ha altre posizioni esenti, condividono il loro riepilogo; per le piccole imprese in Svizzera e nel Liechtenstein senza numero IVA né numero fiscale stanno nella categoria O. Le fatture di esempio di Rhinvoice superano il validatore KoSIT e Mustang.
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Una **spesa anticipata** è un importo che ha pagato **in nome e per conto del Suo cliente**, come un emolumento del registro di commercio, e che rifattura invariato. In Rhinvoice sceglie *Spesa anticipata (senza IVA)* come *Aliquota* di una posizione: la posizione non ha IVA, lo sconto sul documento non la tocca e il PDF la indica in un blocco a sé prima del totale, più posizioni di questo tipo con la loro somma. Vale solo se la **fattura del terzo è intestata al Suo cliente**.
@@ -63,12 +64,12 @@ Le spese anticipate non figurano nella tabella delle posizioni. Seguono le righe
 
 ## Allegare la fattura del terzo
 
-Il Suo cliente di solito ha bisogno della fattura del terzo insieme alla Sua. Ogni bozza salvata, fattura od offerta, ha sotto *Altri dati* una sezione chiusa **Allegati**:
+Il Suo cliente di solito ha bisogno della fattura del terzo insieme alla Sua. Ogni bozza, fattura od offerta, ha sotto *Altri dati* una sezione chiusa **Allegati**:
 
 <Steps>
 
-1. Salvi la bozza. Un nuovo documento accetta allegati dopo il primo salvataggio.
-2. Apra *Allegati* e clicchi su **Aggiungi PDF**. Può scegliere più file alla volta.
+1. Apra *Allegati* e clicchi su **Aggiungi PDF**. Può scegliere più file alla volta.
+2. In un nuovo documento i file attendono il primo salvataggio. Se lo lascia senza salvare, non resta nulla. <Since version="0.11.0" />
 3. Apra un file per controllarlo, oppure lo rimuova, finché il documento è una bozza.
 
 </Steps>

@@ -9,6 +9,8 @@ import {
   type Mapping,
 } from "@/features/importing/import-model";
 import { toApiError } from "@/lib/api-error";
+import { useIdempotentMutation } from "@/features/shared/use-idempotent-mutation";
+import type { IdempotencyHeaders } from "@/features/shared/use-idempotent-mutation";
 
 export type DuplicateStrategy = "skip" | "update" | "create";
 
@@ -27,6 +29,8 @@ export async function runImport(
   options: ImportOptions,
   commit: boolean,
   signal?: AbortSignal,
+  /** The key of an import that runs (ADR 0041); a test run changes nothing. */
+  idempotent?: IdempotencyHeaders,
 ): Promise<ImportRun> {
   const body = new FormData();
   body.append("file", options.file);
@@ -44,7 +48,7 @@ export async function runImport(
       method: "POST",
       body,
       credentials: "same-origin",
-      headers: { [CLIENT_HEADER]: "web" },
+      headers: { [CLIENT_HEADER]: "web", ...idempotent?.headers },
       // A newer test run replaces this one: its upload stops.
       ...(signal === undefined ? {} : { signal }),
     });
@@ -69,9 +73,15 @@ export function templatesQuery(target: ImportTarget) {
 
 export function useSaveTemplate(target: ImportTarget) {
   const client = useQueryClient();
-  return useMutation({
-    mutationFn: (body: { name: string; columns: Record<string, string> }) =>
-      unwrap(api.POST("/api/imports/{target}/templates", { params: { path: { target } }, body })),
+  return useIdempotentMutation({
+    mutationFn: (body: { name: string; columns: Record<string, string> }, { headers }) =>
+      unwrap(
+        api.POST("/api/imports/{target}/templates", {
+          params: { path: { target } },
+          body,
+          headers,
+        }),
+      ),
     onSuccess: () => client.invalidateQueries({ queryKey: templateKey(target) }),
   });
 }

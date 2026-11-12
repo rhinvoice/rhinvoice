@@ -20,6 +20,7 @@ import {
 } from "react-hook-form";
 import { toast } from "sonner";
 
+import { useRunOnce } from "@/components/use-run-once";
 import { useI18n } from "@/components/i18n/use-i18n";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import { Button } from "@/components/ui/button";
@@ -451,7 +452,11 @@ function LineEditor({
     errors?.[field] === undefined ? undefined : `${id(field)}-error`;
   const isItem = kind === "item";
 
-  const apply = async () => {
+  // Once per line: Enter and the button while the line is being checked would otherwise
+  // each save it as an article.
+  const applying = useRunOnce();
+  const apply = () => applying.run(check);
+  const check = async () => {
     // Only a complete line closes; otherwise its errors show right here.
     if (!(await trigger(`lines.${index}`))) return;
     const applied = getValues(`lines.${index}`);
@@ -687,7 +692,7 @@ function LineEditor({
       ) : null}
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" size="sm" onClick={() => void apply()}>
+        <Button type="button" size="sm" onClick={apply}>
           <CheckIcon aria-hidden="true" />
           {t("documents.applyLine")}
         </Button>

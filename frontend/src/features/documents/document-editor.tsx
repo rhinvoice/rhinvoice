@@ -41,6 +41,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { RadioCard } from "@/components/ui/radio-cards";
 import { useDebouncedValue } from "@/components/use-debounced-value";
 import { useSaveShortcut } from "@/components/use-key-shortcuts";
+import { useRunOnce } from "@/components/use-run-once";
 import {
   customerOptionQuery,
   customerOptionsQuery,
@@ -73,7 +74,7 @@ import {
   TREATMENTS,
   type DocumentFormValues,
 } from "@/features/documents/document-form-model";
-import { DraftAttachments } from "@/features/documents/document-attachments";
+import { DraftAttachments, PendingAttachments } from "@/features/documents/document-attachments";
 import { DocumentTextFields } from "@/features/documents/document-text-fields";
 import { switchLanguage } from "@/features/documents/document-texts";
 import { EInvoiceProblems } from "@/features/documents/e-invoice-card";
@@ -152,8 +153,15 @@ interface DocumentEditorProps<Saved> {
   readonly onSaved: (saved: Saved, issue: boolean) => Promise<unknown>;
   /** Edit the invoice of a recurring plan: no dates, no issuing, no autosave. */
   readonly plan?: PlanSlot | undefined;
-  /** The saved draft whose PDFs are attached (ADR 0040); new drafts attach after saving. */
+  /** The saved draft whose PDFs are attached (ADR 0040). */
   readonly documentId?: string | undefined;
+  /** The PDFs chosen for a new draft, attached once it is saved (ADR 0040). */
+  readonly pending?: PendingFiles | undefined;
+}
+
+export interface PendingFiles {
+  readonly files: readonly File[];
+  readonly onChange: (files: readonly File[]) => void;
 }
 
 /**
@@ -170,6 +178,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
   onSaved,
   plan,
   documentId,
+  pending,
 }: DocumentEditorProps<Saved>) {
   const { t, locale } = useI18n();
   const errorMessage = useErrorMessage();
@@ -180,7 +189,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
     shouldFocusError: false,
     defaultValues,
   });
-  const { errors, isSubmitted, submitCount, isSubmitting, isDirty } = form.formState;
+  const { errors, isSubmitted, submitCount, isDirty } = form.formState;
   const [confirmIssue, setConfirmIssue] = useState(false);
   const [editing, setEditing] = useState<number | null>(() =>
     defaultValues.lines.length === 1 && defaultValues.lines[0]?.description === "" ? 0 : null,
@@ -191,6 +200,9 @@ export function DocumentEditor<Saved = DocumentDetail>({
   const values = useWatch({ control: form.control }) as DocumentFormValues;
   const tax = termsFor(company.profile, locale).tax_name;
   const attachments = useDocumentAttachments(documentId ?? null);
+  const attachmentCount = pending?.files.length ?? attachments?.length ?? 0;
+  // Files waiting for the first save are unsaved changes like the form's.
+  const changed = isDirty || (pending?.files.length ?? 0) > 0;
 
   // Live totals and page: the last valid state of the form, from the server.
   // Debounced as a string: equal content must not count as a change.
@@ -256,19 +268,34 @@ export function DocumentEditor<Saved = DocumentDetail>({
   // formState is only refreshed on the next render, so a navigation right after
   // saving (e.g. to the new draft's page) must not see the old "dirty" state.
   const justSaved = useRef(false);
-  const unsaved = () => (form.formState.isDirty || plan?.dirty === true) && !justSaved.current;
+  const unsaved = () =>
+    (form.formState.isDirty || plan?.dirty === true || (pending?.files.length ?? 0) > 0) &&
+    !justSaved.current;
   useBlocker({
     shouldBlockFn: () => unsaved() && !window.confirm(t("documents.leaveConfirm")),
     enableBeforeUnload: unsaved,
   });
   // Closing the program for an update asks about them as well (ADR 0031).
-  useUnsavedChanges(form.formState.isDirty || plan?.dirty === true);
+  useUnsavedChanges(changed || plan?.dirty === true);
 
   // The autosave in flight, if any: a manual save waits for it, so the older
   // content can never arrive at the server after the newer one.
   const autosaving = useRef<Promise<unknown> | null>(null);
 
-  const submit = (intent: "save" | "issue") => (event?: SyntheticEvent) => {
+  // What is being saved, from the click until saving, attaching and issuing are done. Not the
+  // form's isSubmitting: resetting the form after the save clears it while the files and the
+  // issuing still follow, and a second click then would create another document.
+  const once = useRunOnce();
+  const [intent, setIntent] = useState<"save" | "issue">("save");
+  const busy = once.busy ? intent : null;
+  const submit = (next: "save" | "issue") => (event?: SyntheticEvent) => {
+    event?.preventDefault();
+    void once.run(() => {
+      setIntent(next);
+      return save(next);
+    });
+  };
+  const save = (intent: "save" | "issue") => {
     // The plan's settings are checked together with the form, so all errors show at once.
     const planValid = plan === undefined || plan.validate();
     return form.handleSubmit(async (submitted) => {
@@ -288,9 +315,15 @@ export function DocumentEditor<Saved = DocumentDetail>({
           form.setError("root", { type: "server", message: errorMessage(caught) ?? "" });
         }
       }
-    })(event);
+    })();
   };
-  useSaveShortcut(() => void submit("save")(), !sheetOpen);
+  // Like the buttons: a second save while the first runs would create another draft.
+  useSaveShortcut(
+    () => {
+      submit("save")();
+    },
+    !sheetOpen && busy === null,
+  );
 
   // Existing drafts save themselves once the form has been valid and unchanged
   // for a moment (principles.md 4.4). Edits made while saving stay unsaved.
@@ -299,7 +332,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
     readonly at: number | null;
   }>({ status: "idle", at: null });
   useEffect(() => {
-    if (!autosave || !isDirty || isSubmitting || request === null || debounced !== request) return;
+    if (!autosave || !isDirty || busy !== null || request === null || debounced !== request) return;
     const timer = window.setTimeout(() => {
       if (autosaving.current !== null) return;
       const snapshot = structuredClone(form.getValues());
@@ -323,7 +356,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
     return () => {
       window.clearTimeout(timer);
     };
-  }, [autosave, isDirty, isSubmitting, request, debounced, form, schema, onSave, locale]);
+  }, [autosave, isDirty, busy, request, debounced, form, schema, onSave, locale]);
   const now = useNow(autosaved.at === null ? null : RELATIVE_TICK_MS);
 
   const chooseCustomer = (customer: CustomerOption) => {
@@ -375,7 +408,9 @@ export function DocumentEditor<Saved = DocumentDetail>({
     <FormProvider {...form}>
       <form
         className="flex flex-col gap-6"
-        onSubmit={(event) => void submit("save")(event)}
+        onSubmit={(event) => {
+          submit("save")(event);
+        }}
         noValidate
       >
         {isSubmitted ? (
@@ -726,18 +761,28 @@ export function DocumentEditor<Saved = DocumentDetail>({
                   plan={plan !== undefined}
                 />
               </Fold>
-              {documentId === undefined ? null : (
+              {documentId === undefined && pending === undefined ? null : (
                 <Fold
                   icon={<PaperclipIcon aria-hidden="true" />}
                   title={t("documents.attachmentsTitle")}
                   hint={
-                    attachments === undefined || attachments.length === 0
+                    attachmentCount === 0
                       ? t("documents.draftAttachmentsHint")
-                      : t("documents.attachmentsCount", { count: attachments.length })
+                      : t("documents.attachmentsCount", { count: attachmentCount })
                   }
                   forceOpen={false}
                 >
-                  <DraftAttachments documentId={documentId} />
+                  {documentId === undefined ? (
+                    pending === undefined ? null : (
+                      <PendingAttachments
+                        files={pending.files}
+                        onChange={pending.onChange}
+                        locked={busy !== null}
+                      />
+                    )
+                  ) : (
+                    <DraftAttachments documentId={documentId} />
+                  )}
                 </Fold>
               )}
             </Card>
@@ -782,11 +827,11 @@ export function DocumentEditor<Saved = DocumentDetail>({
           >
             {/* Only changes of the state are announced, not the ticking time. */}
             <span aria-live="polite">
-              {isSubmitting || autosaved.status === "saving"
+              {busy !== null || autosaved.status === "saving"
                 ? t("common.saving")
                 : autosaved.status === "failed"
                   ? t("documents.autosaveFailed")
-                  : isDirty
+                  : changed
                     ? t("common.unsavedChanges")
                     : autosaved.at === null
                       ? ""
@@ -817,9 +862,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
             type="button"
             variant="ghost"
             disabled={page.data === undefined}
-            onClick={() => {
-              if (page.data !== undefined) printPage(page.data);
-            }}
+            onClick={() => (page.data === undefined ? undefined : printPage(page.data))}
           >
             <PrinterIcon aria-hidden="true" />
             {t("documents.print")}
@@ -827,7 +870,8 @@ export function DocumentEditor<Saved = DocumentDetail>({
           <Button
             type="submit"
             variant={plan === undefined ? "outline" : "default"}
-            disabled={isSubmitting}
+            disabled={busy !== null}
+            busy={busy === "save"}
           >
             {plan?.saveLabel ?? t("common.save")}
             <span className="sr-only">{` (${modifierLabel(navigator.platform)} Enter)`}</span>
@@ -835,7 +879,8 @@ export function DocumentEditor<Saved = DocumentDetail>({
           {plan === undefined ? (
             <Button
               type="button"
-              disabled={isSubmitting}
+              disabled={busy !== null}
+              busy={busy === "issue"}
               onClick={() => {
                 // Missing details first: issuing would only fail on them.
                 if (blockers.length > 0) {
@@ -879,8 +924,9 @@ export function DocumentEditor<Saved = DocumentDetail>({
           <AlertDialogFooter>
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
+              disabled={busy !== null}
               onClick={() => {
-                void submit("issue")();
+                submit("issue")();
               }}
             >
               {issueLabel}

@@ -79,20 +79,13 @@ function ArticleEditor({ article }: { readonly article: Article }) {
     toast.error(errorMessage(caught) ?? t("error.generic"), { duration: Infinity });
   };
 
-  const setArchived = (archived: boolean) => {
-    archive.mutate(
-      { id: article.id, archived },
-      {
-        onSuccess: (changed) => {
-          const message = archived ? "articles.archivedToast" : "articles.restoredToast";
-          showUndoToast(t(message, { name: changed.name }), t("common.undo"), () => {
-            archive.mutate({ id: changed.id, archived: !archived }, { onError: fail });
-          });
-        },
-        onError: fail,
-      },
-    );
-  };
+  const setArchived = (archived: boolean) =>
+    archive.mutateAsync({ id: article.id, archived }).then((changed) => {
+      const message = archived ? "articles.archivedToast" : "articles.restoredToast";
+      showUndoToast(t(message, { name: changed.name }), t("common.undo"), () => {
+        archive.mutate({ id: changed.id, archived: !archived }, { onError: fail });
+      });
+    }, fail);
 
   return (
     <>
@@ -101,12 +94,7 @@ function ArticleEditor({ article }: { readonly article: Article }) {
         title={article.name}
         description={`${t("articles.numberLabel")} ${article.number}`}
         actions={
-          <Button
-            variant="outline"
-            onClick={() => {
-              setArchived(!article.archived);
-            }}
-          >
+          <Button variant="outline" onClick={() => setArchived(!article.archived)}>
             {article.archived ? (
               <ArchiveRestoreIcon aria-hidden="true" />
             ) : (

@@ -181,6 +181,13 @@ export const en: Catalog<MessageKey> = {
 
   "error.demo_locked": "This is not possible in the public demo.",
   "error.update_running": "The update is already being installed.",
+  "error.request_in_progress": "This action is still running. Please wait a moment.",
+  "error.request_unfinished":
+    "It is unclear whether this action went through. Please check before you try again.",
+  "error.request_done": "This action is done already. Please reload the page.",
+  "error.idempotency_key_reused": "The request does not match the previous one. Please try again.",
+  "error.invalid_idempotency_key": "The request could not be matched. Please reload the page.",
+  "error.setup_running": "The setup has been started already.",
   "error.update_check_failed":
     "The information about new versions could not be fetched. Is the computer connected to the internet?",
   "error.update_check_off": "Checking for updates is switched off in this installation.",
@@ -806,6 +813,8 @@ export const en: Catalog<MessageKey> = {
   "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDFs" },
   "documents.draftAttachmentsNote":
     "For example third-party invoices of pass-through items, at most 10 PDFs and 20 MB together. They can be removed until the document is issued; then they stay with it unchanged and are sent after its PDF by e-mail.",
+  "documents.pendingAttachmentsNote":
+    "They are attached when the draft is first saved. Without saving, nothing is kept.",
   "documents.attachmentsAdding": "Uploading …",
   "documents.attachmentsAdded": { one: "PDF attached.", other: "{count} PDFs attached." },
   "documents.removeAttachment": "Remove “{name}”",

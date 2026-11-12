@@ -103,4 +103,10 @@ describe("platform helpers", () => {
     expect(isPlainKey(key("?", { shiftKey: true }), "?")).toBe(true);
     expect(isPlainKey(key("N"), "n")).toBe(true);
   });
+
+  it("ignores events without a key, as Chrome fires them when it autofills a field", () => {
+    const autofill = key("n", { key: undefined, metaKey: true });
+    expect(isModified(autofill, "k", "MacIntel")).toBe(false);
+    expect(isPlainKey({ ...autofill, metaKey: false }, "n")).toBe(false);
+  });
 });

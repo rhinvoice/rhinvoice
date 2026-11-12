@@ -193,6 +193,14 @@ export const it: Catalog<MessageKey> = {
 
   "error.demo_locked": "Nella demo pubblica questo non è possibile.",
   "error.update_running": "L’aggiornamento è già in corso di installazione.",
+  "error.request_in_progress": "Questa azione è ancora in corso. Attenda un momento.",
+  "error.request_unfinished":
+    "Non è chiaro se questa azione sia andata a buon fine. Verifichi prima di riprovare.",
+  "error.request_done": "Questa azione è già stata eseguita. Ricarichi la pagina.",
+  "error.idempotency_key_reused": "La richiesta non corrisponde a quella precedente. Riprovi.",
+  "error.invalid_idempotency_key":
+    "Non è stato possibile attribuire la richiesta. Ricarichi la pagina.",
+  "error.setup_running": "Il programma di installazione è già stato avviato.",
   "error.update_check_failed":
     "Non è stato possibile recuperare le informazioni sulle nuove versioni. Il computer è connesso a Internet?",
   "error.update_check_off": "La ricerca di aggiornamenti è disattivata in questa installazione.",
@@ -844,6 +852,8 @@ export const it: Catalog<MessageKey> = {
   "documents.attachmentsCount": { one: "{count} PDF", other: "{count} PDF" },
   "documents.draftAttachmentsNote":
     "Per esempio le fatture di terzi delle spese anticipate, al massimo 10 PDF e 20 MB in totale. Si possono rimuovere fino all’emissione del documento; poi restano invariati con esso e vengono inviati dopo il suo PDF per e-mail.",
+  "documents.pendingAttachmentsNote":
+    "Vengono allegati al primo salvataggio. Senza salvare non resta nulla.",
   "documents.attachmentsAdding": "Caricamento …",
   "documents.attachmentsAdded": { one: "PDF allegato.", other: "{count} PDF allegati." },
   "documents.removeAttachment": "Rimuovere «{name}»",

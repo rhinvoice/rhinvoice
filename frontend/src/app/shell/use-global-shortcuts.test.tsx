@@ -195,6 +195,18 @@ describe("useGlobalShortcuts", () => {
     expect(h.newInvoice).not.toHaveBeenCalled();
   });
 
+  it("ignores keydown events without a key, as Chrome fires them when it autofills", () => {
+    const h = handlers();
+    renderHook(() => {
+      useGlobalShortcuts(h);
+    });
+    fireEvent.keyDown(window, { key: "g" });
+    const autofill = new Event("keydown", { cancelable: true });
+    window.dispatchEvent(autofill);
+    expect(autofill.defaultPrevented).toBe(false);
+    expect(h.goTo).not.toHaveBeenCalled();
+  });
+
   it("always calls the latest handlers", () => {
     const first = handlers();
     const second = handlers();

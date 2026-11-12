@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { useSaveShortcut } from "@/components/use-key-shortcuts";
+import { useSubmitOnce } from "@/components/use-run-once";
 import {
   logoQuery,
   useDeleteLogo,
@@ -62,7 +63,7 @@ export function CompanySettings({ company }: { readonly company: Company | null 
     shouldFocusError: false,
     defaultValues: company === null ? emptyCompany("CH", "CHF") : companyToForm(company),
   });
-  const { errors, isSubmitted, submitCount, isSubmitting, isDirty } = form.formState;
+  const { errors, isSubmitted, submitCount, isDirty } = form.formState;
   const error = (name: keyof CompanyFormValues) => errors[name]?.message;
   const hue = useWatch({ control: form.control, name: "accent_hue" });
   const country = useWatch({ control: form.control, name: "country" });
@@ -95,7 +96,8 @@ export function CompanySettings({ company }: { readonly company: Company | null 
       }
     }
   });
-  useSaveShortcut(() => void submit());
+  const once = useSubmitOnce(submit);
+  useSaveShortcut(once.submit, !once.busy);
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -103,7 +105,7 @@ export function CompanySettings({ company }: { readonly company: Company | null 
       <NotInDemo title={t("company.logo")}>
         <LogoCard />
       </NotInDemo>
-      <form className="flex flex-col gap-8" onSubmit={(event) => void submit(event)} noValidate>
+      <form className="flex flex-col gap-8" onSubmit={once.submit} noValidate>
         {isSubmitted ? (
           <ErrorSummary
             title={t("validation.summary", {
@@ -279,7 +281,7 @@ export function CompanySettings({ company }: { readonly company: Company | null 
             )}
           />
         </Fieldset>
-        <FormFooter saving={isSubmitting} dirty={isDirty} />
+        <FormFooter saving={once.busy} dirty={isDirty} />
       </form>
     </div>
   );
@@ -340,7 +342,7 @@ function LogoCard() {
           />
           <Button
             variant="outline"
-            disabled={upload.isPending}
+            busy={upload.isPending}
             onClick={() => {
               input.current?.click();
             }}
@@ -351,7 +353,7 @@ function LogoCard() {
           {url === null ? null : (
             <Button
               variant="ghost"
-              disabled={remove.isPending}
+              busy={remove.isPending}
               onClick={() => {
                 remove.mutate(undefined, {
                   onSuccess: () => toast.success(t("company.logoRemoved")),

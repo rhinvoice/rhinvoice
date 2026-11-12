@@ -5,7 +5,35 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
-## [0.10.0] – 2026-11-03
+## [0.11.0] – 2026-11-09
+
+### Neu
+- *Anhänge* auch bei neuen Rechnungen und Angeboten: *PDF hinzufügen* geht schon vor dem ersten
+  Speichern. Die PDFs warten im Browser und werden beim Speichern des Entwurfs angehängt; ein neues
+  Dokument, das nie gespeichert wird, hinterlässt nichts (#75).
+
+### Behoben
+- Beim Speichern oder Ausstellen einer neuen Rechnung oder eines neuen Angebots bleiben *Speichern* und
+  *Ausstellen* gesperrt, bis alles erledigt ist, und der geklickte Button zeigt, dass er arbeitet.
+  Bisher wurden sie schon nach dem Anlegen des Entwurfs wieder frei, und ein weiterer Klick legte
+  ein zweites Dokument an.
+- Jeder Button, der speichert, sendet, druckt oder etwas ändert, tut das pro Klick einmal: Er
+  bleibt mit einem Ladekreis gesperrt, bis seine Arbeit erledigt ist, und wird bei einem Fehler
+  wieder frei. Bisher konnte ein gedrücktes ⌘↵ / Strg+↵ einen Kunden oder Artikel mehrfach
+  anlegen, Enter beim Schliessen des Zahlungsdialogs eine Zahlung doppelt erfassen, und eine
+  E-Mail ging doppelt hinaus, wenn ihr Dialog während des Sendens geschlossen und wieder geöffnet
+  wurde; auch Duplizieren, Drucken und das Bestätigen von Dialogen konnten doppelt laufen. Das
+  Löschen einer Import-Vorlage meldet jetzt einen Fehler.
+- Eine Aktion, deren Antwort unterwegs verloren ging, etwa bei einem WLAN-Abbruch oder im
+  Ruhezustand, läuft beim erneuten Versuch nicht mehr doppelt: Anlegen, Ausstellen, Zahlen,
+  Senden, Hochladen und Importieren tragen einen `Idempotency-Key`, und der Server beantwortet
+  die Wiederholung mit der ersten Antwort (ADR 0041, #77). Lässt sich nicht sagen, ob die erste
+  durchgegangen ist, meldet er das, statt sie nochmals auszuführen. Das Setup eines Updates
+  lässt sich nicht zweimal starten.
+- Die Tastenkürzel melden keinen Fehler mehr in der Browser-Konsole, wenn Chrome ein Feld
+  automatisch ausfüllt.
+
+## [0.10.0] – 2026-11-05
 
 ### Neu
 - Durchlaufende Posten, etwa im Namen und für Rechnung des Kunden bezahlte Gebühren: Der

@@ -5,7 +5,32 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
-## [0.10.0] – 2026-11-03
+## [0.11.0] – 2026-11-09
+
+### Added
+- *Attachments* on new invoices and quotes too: *Add PDF* works before the first save. The PDFs
+  wait in the browser and are attached when the draft is saved; a new document that is never
+  saved leaves nothing behind (#75).
+
+### Fixed
+- Saving or issuing a new invoice or quote keeps *Save* and *Issue* locked until it is done, and
+  the clicked button shows that it is working. Before, they unlocked as soon as the draft had been
+  created, and a further click created another document.
+- Every button that saves, sends, prints or changes something does so once per click: it stays
+  locked, with a spinner, until its work is done, and unlocks again on an error. Before, a held
+  ⌘↵ / Ctrl+↵ could create a customer or article several times, Enter while the payment dialog
+  closed recorded a payment twice, and a mail could go out twice when its dialog was closed and
+  opened again while sending; duplicating, printing and confirming dialogs could run twice, too.
+  Deleting an import template now reports a failure.
+- An action whose answer was lost on the way, e.g. when the Wi-Fi dropped or the computer
+  slept, no longer runs twice when it is tried again: creating, issuing, paying, sending,
+  uploading and importing carry an `Idempotency-Key`, and the server answers a repeat from the
+  first request (ADR 0041, #77). If it cannot tell whether the first went through, it says so
+  instead of running it again. The setup of an update cannot be started twice.
+- Keyboard shortcuts no longer report an error in the browser console when Chrome autofills a
+  field.
+
+## [0.10.0] – 2026-11-05
 
 ### Added
 - Pass-through items, such as fees paid in the customer's name and for their account: a line's or an

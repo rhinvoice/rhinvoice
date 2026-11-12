@@ -1,6 +1,7 @@
 import { keepPreviousData, queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api, unwrap, type components } from "@/api/client";
+import { useIdempotentMutation } from "@/features/shared/use-idempotent-mutation";
 
 export type Customer = components["schemas"]["CustomerResponse"];
 export type CustomerRequest = components["schemas"]["CustomerRequest"];
@@ -62,8 +63,9 @@ function useInvalidateOnSuccess() {
 
 export function useCreateCustomer() {
   const onSuccess = useInvalidateOnSuccess();
-  return useMutation({
-    mutationFn: (body: CustomerRequest) => unwrap(api.POST("/api/customers", { body })),
+  return useIdempotentMutation({
+    mutationFn: (body: CustomerRequest, { headers }) =>
+      unwrap(api.POST("/api/customers", { body, headers })),
     onSuccess,
   });
 }

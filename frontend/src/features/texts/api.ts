@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api, unwrap, type components } from "@/api/client";
 import { textKeys, type TextTemplate } from "@/features/shared/texts-api";
+import { useIdempotentMutation } from "@/features/shared/use-idempotent-mutation";
 
 export type TextTemplateRequest = components["schemas"]["TextTemplateRequest"];
 export type TaxTreatment = components["schemas"]["TaxTreatment"];
@@ -16,16 +17,19 @@ export {
 
 export function useSaveTextTemplate() {
   const client = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      id,
-      body,
-    }: {
-      readonly id: string | null;
-      readonly body: TextTemplateRequest;
-    }) =>
+  return useIdempotentMutation({
+    mutationFn: (
+      {
+        id,
+        body,
+      }: {
+        readonly id: string | null;
+        readonly body: TextTemplateRequest;
+      },
+      { headers },
+    ) =>
       id === null
-        ? unwrap(api.POST("/api/text-templates", { body }))
+        ? unwrap(api.POST("/api/text-templates", { body, headers }))
         : unwrap(
             api.PUT("/api/text-templates/{template_id}", {
               params: { path: { template_id: id } },
@@ -38,12 +42,13 @@ export function useSaveTextTemplate() {
 
 export function useMoveTextTemplate() {
   const client = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, up }: { readonly id: string; readonly up: boolean }) =>
+  return useIdempotentMutation({
+    mutationFn: ({ id, up }: { readonly id: string; readonly up: boolean }, { headers }) =>
       unwrap(
         api.POST("/api/text-templates/{template_id}/move", {
           params: { path: { template_id: id } },
           body: { up },
+          headers,
         }),
       ),
     onSuccess: (templates: TextTemplate[]) => {

@@ -44,3 +44,4 @@ Status: `accepted`, `superseded by NNNN` or `rejected`.
 - [0038 – Export for bookkeeping](0038-export-for-bookkeeping.md)
 - [0039 – Pass-through items](0039-pass-through-items.md)
 - [0040 – Attachments of own documents](0040-attachments-of-own-documents.md)
+- [0041 – Idempotent writes](0041-idempotent-writes.md)

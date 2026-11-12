@@ -184,7 +184,7 @@ function DunningRow({ item }: { readonly item: DunningItem }) {
             <Button
               size="sm"
               variant={next.due ? "default" : "outline"}
-              disabled={write.isPending}
+              busy={write.isPending}
               aria-describedby={numberId}
               onClick={() => {
                 setConfirming(true);

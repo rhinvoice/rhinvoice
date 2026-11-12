@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { useSubmitOnce } from "@/components/use-run-once";
 import { useI18n } from "@/components/i18n/use-i18n";
 import { Button } from "@/components/ui/button";
 import {
@@ -115,7 +116,7 @@ function PaymentForm({ document, onCancel, onSubmit }: PaymentFormProps) {
       note: "",
     },
   });
-  const { errors, isSubmitting } = form.formState;
+  const { errors } = form.formState;
 
   const submit = form.handleSubmit(async (values) => {
     try {
@@ -124,13 +125,16 @@ function PaymentForm({ document, onCancel, onSubmit }: PaymentFormProps) {
         amount: toApiDecimal(values.amount, locale),
         note: values.note,
       });
+      once.finish();
     } catch (caught) {
       form.setError("root", { type: "server", message: errorMessage(caught) ?? "" });
     }
   });
 
+  const once = useSubmitOnce(submit);
+
   return (
-    <form className="flex flex-col gap-4" onSubmit={(event) => void submit(event)} noValidate>
+    <form className="flex flex-col gap-4" onSubmit={once.submit} noValidate>
       <FormAlert message={errors.root?.message ?? null} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={t("documents.paidOn")} error={errors.paid_on?.message}>
@@ -159,7 +163,7 @@ function PaymentForm({ document, onCancel, onSubmit }: PaymentFormProps) {
         <Button type="button" variant="outline" onClick={onCancel}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" busy={once.busy}>
           {t("documents.recordPayment")}
         </Button>
       </DialogFooter>

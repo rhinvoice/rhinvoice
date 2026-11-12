@@ -404,6 +404,11 @@
             "title": "Number",
             "type": "string"
           },
+          "pass_through": {
+            "default": false,
+            "title": "Pass Through",
+            "type": "boolean"
+          },
           "prices": {
             "additionalProperties": {
               "pattern": "^\\d{1,8}(\\.\\d{1,4})?$",
@@ -419,9 +424,17 @@
             "$ref": "#/components/schemas/Supply",
             "default": "service"
           },
-          "tax_category": {
-            "$ref": "#/components/schemas/TaxCategory",
-            "default": "standard"
+          "tax_rate_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Rate Id"
           },
           "unit": {
             "default": "C62",
@@ -507,6 +520,18 @@
           "tax_category": {
             "$ref": "#/components/schemas/TaxCategory"
           },
+          "tax_rate_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Rate Id"
+          },
           "unit": {
             "enum": [
               "ANN",
@@ -562,6 +587,7 @@
           "unit_label_en",
           "unit_label_fr",
           "unit_label_it",
+          "tax_rate_id",
           "tax_category",
           "supply",
           "prices",
@@ -2633,9 +2659,6 @@
             "additionalProperties": {
               "type": "string"
             },
-            "propertyNames": {
-              "$ref": "#/components/schemas/TaxCategory"
-            },
             "title": "Rates",
             "type": "object"
           },
@@ -3995,6 +4018,10 @@
           "kind": {
             "$ref": "#/components/schemas/LineKind"
           },
+          "pass_through": {
+            "title": "Pass Through",
+            "type": "boolean"
+          },
           "quantity": {
             "title": "Quantity",
             "type": "string"
@@ -4004,6 +4031,18 @@
           },
           "tax_category": {
             "$ref": "#/components/schemas/TaxCategory"
+          },
+          "tax_rate_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Rate Id"
           },
           "unit": {
             "anyOf": [
@@ -4029,6 +4068,8 @@
           "unit",
           "unit_price",
           "discount_percent",
+          "tax_rate_id",
+          "pass_through",
           "tax_category",
           "supply",
           "article_id"
@@ -4359,6 +4400,11 @@
             "$ref": "#/components/schemas/LineKind",
             "default": "item"
           },
+          "pass_through": {
+            "default": false,
+            "title": "Pass Through",
+            "type": "boolean"
+          },
           "quantity": {
             "default": "1",
             "pattern": "^-?\\d{1,9}(\\.\\d{1,4})?$",
@@ -4369,9 +4415,17 @@
             "$ref": "#/components/schemas/Supply",
             "default": "service"
           },
-          "tax_category": {
-            "$ref": "#/components/schemas/TaxCategory",
-            "default": "standard"
+          "tax_rate_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Rate Id"
           },
           "unit": {
             "anyOf": [
@@ -4485,6 +4539,18 @@
             ],
             "title": "Tax Rate"
           },
+          "tax_rate_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Rate Id"
+          },
           "unit": {
             "anyOf": [
               {
@@ -4510,6 +4576,7 @@
           "unit",
           "unit_price",
           "discount_percent",
+          "tax_rate_id",
           "tax_category",
           "supply",
           "tax_rate",
@@ -5425,6 +5492,38 @@
         "title": "QuoteFiguresResponse",
         "type": "object"
       },
+      "RateCategory": {
+        "description": "The EN 16931 VAT category (UNCL5305) of a domestic taxable line with this rate.",
+        "enum": [
+          "S",
+          "Z",
+          "E"
+        ],
+        "title": "RateCategory",
+        "type": "string"
+      },
+      "RateValueSchema": {
+        "additionalProperties": false,
+        "description": "A percentage and the day it applies from, until the next value.",
+        "properties": {
+          "percent": {
+            "pattern": "^(100(\\.0{1,2})?|\\d{1,2}(\\.\\d{1,2})?)$",
+            "title": "Percent",
+            "type": "string"
+          },
+          "valid_from": {
+            "format": "date",
+            "title": "Valid From",
+            "type": "string"
+          }
+        },
+        "required": [
+          "valid_from",
+          "percent"
+        ],
+        "title": "RateValueSchema",
+        "type": "object"
+      },
       "RatesResponse": {
         "additionalProperties": false,
         "description": "Rates in percent.",
@@ -6145,11 +6244,9 @@
         "type": "object"
       },
       "TaxCategory": {
-        "description": "Which VAT rate of the country profile applies to a line.",
+        "description": "The kind of a line's tax: the category of its rate, or pass-through (ADR 0044).",
         "enum": [
           "standard",
-          "reduced",
-          "special",
           "zero",
           "exempt",
           "pass_through"
@@ -6193,6 +6290,162 @@
           "tax"
         ],
         "title": "TaxGroupResponse",
+        "type": "object"
+      },
+      "TaxRatePresetResponse": {
+        "additionalProperties": false,
+        "description": "A preset of the company's country that no rate comes from yet.",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/RateCategory"
+          },
+          "exemption_reason": {
+            "title": "Exemption Reason",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notice": {
+            "title": "Notice",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "values": {
+            "items": {
+              "$ref": "#/components/schemas/RateValueSchema"
+            },
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "category",
+          "values",
+          "notice",
+          "exemption_reason",
+          "sources"
+        ],
+        "title": "TaxRatePresetResponse",
+        "type": "object"
+      },
+      "TaxRateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/RateCategory"
+          },
+          "exemption_reason": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Exemption Reason",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 60,
+            "pattern": "[^\\s\\x1c-\\x1f\\x85]",
+            "title": "Name",
+            "type": "string"
+          },
+          "notice": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Notice",
+            "type": "string"
+          },
+          "values": {
+            "items": {
+              "$ref": "#/components/schemas/RateValueSchema"
+            },
+            "maxItems": 30,
+            "minItems": 1,
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "category",
+          "values"
+        ],
+        "title": "TaxRateRequest",
+        "type": "object"
+      },
+      "TaxRateResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/RateCategory"
+          },
+          "exemption_reason": {
+            "title": "Exemption Reason",
+            "type": "string"
+          },
+          "hidden": {
+            "title": "Hidden",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "in_use": {
+            "title": "In Use",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notice": {
+            "title": "Notice",
+            "type": "string"
+          },
+          "preset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset"
+          },
+          "values": {
+            "items": {
+              "$ref": "#/components/schemas/RateValueSchema"
+            },
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category",
+          "values",
+          "exemption_reason",
+          "notice",
+          "preset",
+          "hidden",
+          "in_use"
+        ],
+        "title": "TaxRateResponse",
         "type": "object"
       },
       "TaxTreatment": {
@@ -18711,6 +18964,779 @@
         "summary": "Get Support Report",
         "tags": [
           "support"
+        ]
+      }
+    },
+    "/api/tax-rates": {
+      "get": {
+        "description": "Every rate of the company, hidden ones too, in their order.",
+        "operationId": "tax-rates_list_tax_rates",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TaxRateResponse"
+                  },
+                  "title": "Response Tax-Rates List Tax Rates",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "List Tax Rates",
+        "tags": [
+          "tax-rates"
+        ]
+      },
+      "post": {
+        "description": "Add an own rate.\n\n422 rate_standard_needs_percent, rate_zero_needs_zero, rate_exempt_needs_reason;\n409 tax_rate_name_taken, too_many_tax_rates.",
+        "operationId": "tax-rates_create_tax_rate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxRateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxRateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Create Tax Rate",
+        "tags": [
+          "tax-rates"
+        ]
+      }
+    },
+    "/api/tax-rates/presets": {
+      "get": {
+        "description": "List the presets of the company's country no rate comes from yet (e.g. \u00a7 24 UStG).\n\n409 company_not_set_up.",
+        "operationId": "tax-rates_list_tax_rate_presets",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TaxRatePresetResponse"
+                  },
+                  "title": "Response Tax-Rates List Tax Rate Presets",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "List Tax Rate Presets",
+        "tags": [
+          "tax-rates"
+        ]
+      }
+    },
+    "/api/tax-rates/presets/{key}": {
+      "post": {
+        "description": "Add the rate of a preset of the company's country.\n\n404 unknown_preset; 409 preset_taken, tax_rate_name_taken, too_many_tax_rates,\ncompany_not_set_up.",
+        "operationId": "tax-rates_take_over_tax_rate_preset",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "maxLength": 40,
+              "title": "Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxRateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Take Over Tax Rate Preset",
+        "tags": [
+          "tax-rates"
+        ]
+      }
+    },
+    "/api/tax-rates/{rate_id}": {
+      "delete": {
+        "description": "Delete a rate nothing refers to.\n\n409 tax_rate_in_use: lines, articles or recurring plans use it; hide it instead.",
+        "operationId": "tax-rates_delete_tax_rate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rate Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Delete Tax Rate",
+        "tags": [
+          "tax-rates"
+        ]
+      },
+      "put": {
+        "description": "Change name, texts and percentages; issued documents keep what they were issued with.\n\n422 rate_category_fixed (the category stays) and the checks of creating;\n409 tax_rate_name_taken.",
+        "operationId": "tax-rates_save_tax_rate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rate Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxRateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxRateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Save Tax Rate",
+        "tags": [
+          "tax-rates"
+        ]
+      }
+    },
+    "/api/tax-rates/{rate_id}/hide": {
+      "post": {
+        "description": "Offer the rate no more for new lines and articles; those that use it keep it.",
+        "operationId": "tax-rates_hide_tax_rate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rate Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxRateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Hide Tax Rate",
+        "tags": [
+          "tax-rates"
+        ]
+      }
+    },
+    "/api/tax-rates/{rate_id}/show": {
+      "post": {
+        "description": "Offer a hidden rate again.",
+        "operationId": "tax-rates_show_tax_rate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rate Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxRateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Show Tax Rate",
+        "tags": [
+          "tax-rates"
         ]
       }
     },

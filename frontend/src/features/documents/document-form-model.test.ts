@@ -13,7 +13,7 @@ import {
   fieldId,
   customerVatHint,
   formToDraft,
-  lineRates,
+  linePercents,
   ownTreatment,
   goodsHintKey,
   hasSupply,
@@ -25,10 +25,13 @@ import {
   type DocumentFormValues,
 } from "@/features/documents/document-form-model";
 import type { Company } from "@/features/shared/company-api";
+import { PASS_THROUGH } from "@/features/shared/tax-rate-model";
 import { translatorFor } from "@/lib/i18n";
 import { SWISS_PROFILE } from "@/test/country-profiles";
 
 const t = translatorFor("de-CH");
+/** A rate id as the API sends it. */
+const RATE = "0b5e2c4e-7f1a-4c1e-9d55-3a6f8e2b9c10";
 const schema = documentSchema(t, "de-CH");
 
 const ADDRESS = {
@@ -133,6 +136,16 @@ describe("document form", () => {
     expect(issues(valid())).toEqual({});
   });
 
+  it("takes a rate, a pass-through item or the default rate as the tax choice", () => {
+    const line = { ...emptyLine(), key: "x", description: "Beratung" };
+    for (const tax of ["", PASS_THROUGH, RATE]) {
+      expect(issues(valid({ lines: [{ ...line, tax }] }))).toEqual({});
+    }
+    expect(Object.keys(issues(valid({ lines: [{ ...line, tax: "reduced" }] })))).toEqual([
+      "lines.0.tax",
+    ]);
+  });
+
   it("requires a customer and descriptions", () => {
     const text = { ...emptyLine("text"), key: "t" };
     const item = { ...emptyLine(), key: "i", quantity: "" };
@@ -170,7 +183,7 @@ describe("document form", () => {
       ...emptyLine(),
       key: "f",
       description: "Gebühr",
-      tax_category: "pass_through" as const,
+      tax: PASS_THROUGH,
     };
     const text = { ...emptyLine("text"), key: "t", description: "Hinweis" };
     const taxed = { ...emptyLine(), key: "b", description: "Beratung" };
@@ -241,7 +254,8 @@ describe("customer and article defaults", () => {
       unit_label_en: "h",
       unit_label_fr: "h",
       unit_label_it: "h",
-      tax_category: "reduced",
+      tax_rate_id: RATE,
+      tax_category: "standard",
       supply: "goods",
       prices: { CHF: "120.00" },
       archived: false,
@@ -255,7 +269,7 @@ describe("customer and article defaults", () => {
       details: "pro Stunde",
       unit: "HUR",
       unit_price: "120.00",
-      tax_category: "reduced",
+      tax: RATE,
       supply: "goods",
       article_id: "a1",
     });
@@ -280,7 +294,8 @@ describe("customer and article defaults", () => {
       description: "pro Stunde",
       group: "",
       unit: "HUR",
-      tax_category: "standard",
+      tax_rate_id: null,
+      pass_through: false,
       supply: "service",
       prices: { CHF: "1085.5" },
     });
@@ -338,6 +353,7 @@ const DETAIL: DocumentDetail = {
       unit: "HUR",
       unit_price: "1234.5",
       discount_percent: "10",
+      tax_rate_id: RATE,
       tax_category: "standard",
       supply: "goods",
       tax_rate: null,
@@ -353,6 +369,7 @@ const DETAIL: DocumentDetail = {
       unit: null,
       unit_price: "0",
       discount_percent: "0",
+      tax_rate_id: null,
       tax_category: "standard",
       supply: "service",
       tax_rate: null,
@@ -412,7 +429,7 @@ describe("conversion", () => {
         unit: "HUR",
         unit_price: "1234,50",
         discount_percent: "10",
-        tax_category: "standard",
+        tax: RATE,
         supply: "goods",
         article_id: "a1",
       },
@@ -425,7 +442,7 @@ describe("conversion", () => {
         unit: "",
         unit_price: "",
         discount_percent: "",
-        tax_category: "standard",
+        tax: "",
         supply: "service",
         article_id: null,
       },
@@ -467,15 +484,14 @@ describe("conversion", () => {
   });
 
   it("offers no VAT for goods with a tax free treatment of their own", () => {
-    const rates = { standard: "8.1", reduced: "2.6" };
+    const percents = { [RATE]: "8.1", other: "2.6" };
     expect(ownTreatment("goods", "goods_export")).toBe("goods_export");
     expect(ownTreatment("service", "goods_export")).toBeNull();
     expect(ownTreatment("goods", null)).toBeNull();
     expect(ownTreatment("goods", undefined)).toBeNull();
-    expect(lineRates(rates, "goods_export")).toEqual({ standard: "0", reduced: "0" });
-    expect(lineRates(rates, "domestic")).toBe(rates);
-    expect(lineRates(rates, null)).toBe(rates);
-    expect(lineRates(undefined, "intra_community")).toBeUndefined();
+    expect(linePercents(percents, "goods_export")).toEqual({ [RATE]: "0", other: "0" });
+    expect(linePercents(percents, "domestic")).toBe(percents);
+    expect(linePercents(percents, null)).toBe(percents);
   });
 
   it("says what the customer's VAT number would change", () => {
@@ -526,7 +542,8 @@ describe("conversion", () => {
         unit: "HUR",
         unit_price: "1234.50",
         discount_percent: "10",
-        tax_category: "standard",
+        tax_rate_id: RATE,
+        pass_through: false,
         supply: "goods",
         article_id: "a1",
       },
@@ -538,7 +555,8 @@ describe("conversion", () => {
         unit: null,
         unit_price: "0",
         discount_percent: "0",
-        tax_category: "standard",
+        tax_rate_id: null,
+        pass_through: false,
         supply: "service",
         article_id: null,
       },
@@ -568,6 +586,8 @@ describe("errors", () => {
     expect(documentFieldFor("lines")).toBe("lines");
     expect(documentFieldFor("lines.3.quantity")).toBe("lines.3.quantity");
     expect(documentFieldFor("lines.3.unknown")).toBeNull();
+    expect(documentFieldFor("lines.3.tax_rate_id")).toBe("lines.3.tax");
+    expect(documentFieldFor("lines.3.pass_through")).toBe("lines.3.tax");
     expect(documentFieldFor("lines.x.quantity")).toBeNull();
     expect(documentFieldFor("type")).toBeNull();
   });

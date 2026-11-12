@@ -40,19 +40,27 @@ import {
   fieldId,
   isBlankLine,
   lineFromArticle,
-  lineRates,
+  linePercents,
   MAX_LINES,
   ownTreatment,
   SUPPLIES,
-  TAX_CATEGORIES,
   type DocumentFormValues,
   type LineFormValues,
 } from "@/features/documents/document-form-model";
-import { taxCategoryLabel, type CountryProfile } from "@/features/shared/country-profile-model";
+import type { CountryProfile } from "@/features/shared/country-profile-model";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { unitsQuery } from "@/features/shared/reference-api";
+import {
+  PASS_THROUGH,
+  percentsOn,
+  shortRate,
+  type Percents,
+} from "@/features/shared/tax-rate-model";
+import { TaxRateSelect } from "@/features/shared/tax-rate-select";
+import { taxRatesQuery, type TaxRate } from "@/features/shared/tax-rates-api";
 import { cn } from "@/lib/cn";
-import { formatMoney, formatNumber, formatPercent } from "@/lib/format";
+import { todayIso } from "@/lib/dates";
+import { formatMoney, formatNumber } from "@/lib/format";
 import { parseDecimal } from "@/lib/format/parse-decimal";
 import { unitName } from "@/lib/locale";
 
@@ -66,14 +74,12 @@ function ErrorText({ id, error }: { readonly id: string; readonly error: FieldEr
   );
 }
 
-type Rates = Partial<Record<(typeof TAX_CATEGORIES)[number], string>>;
-
 interface LineItemsProps {
   /** Line amounts after the line discount, by index (null for text lines). */
   readonly amounts: readonly (string | null)[];
-  /** Rate per tax category for this document; undefined until known. */
-  readonly rates: Rates | undefined;
-  /** The company's country: names the rates (e.g. "Sondersatz Beherbergung"). */
+  /** Percentage of each rate on the document's date of supply; undefined until known. */
+  readonly percents: Percents | undefined;
+  /** The company's country: names its tax on pass-through items ("ohne MWST"). */
   readonly profile: CountryProfile;
   /** Treatment of goods lines when it differs from the document's (e.g. export). */
   readonly goodsTreatment: TaxTreatment | null | undefined;
@@ -88,7 +94,7 @@ interface LineItemsProps {
  */
 export function LineItems({
   amounts,
-  rates,
+  percents,
   profile,
   goodsTreatment,
   editing,
@@ -97,6 +103,9 @@ export function LineItems({
   const { t } = useI18n();
   const { control, formState, getValues, setValue } = useFormContext<DocumentFormValues>();
   const { fields, append, insert, remove, move } = useFieldArray({ control, name: "lines" });
+  const rates = useQuery(taxRatesQuery).data;
+  // Until the preview names them for the date of supply, today's percentages.
+  const known = percents ?? percentsOn(rates ?? [], todayIso());
   const linesError = formState.errors.lines;
   const rootMessage = linesError?.root?.message ?? linesError?.message;
   // The open line as it was when it was opened, for "Cancel"; null for a new line.
@@ -170,6 +179,7 @@ export function LineItems({
                 index={index}
                 count={fields.length}
                 rates={rates}
+                percents={known}
                 profile={profile}
                 goodsTreatment={goodsTreatment}
                 isNew={editing === index && original === null}
@@ -194,6 +204,9 @@ export function LineItems({
                 index={index}
                 count={fields.length}
                 amount={amounts[index] ?? null}
+                rates={rates}
+                percents={known}
+                goodsTreatment={goodsTreatment}
                 dragState={
                   dragging === index
                     ? "dragging"
@@ -279,6 +292,9 @@ interface LineSummaryProps {
   readonly index: number;
   readonly count: number;
   readonly amount: string | null;
+  readonly rates: readonly TaxRate[] | undefined;
+  readonly percents: Percents;
+  readonly goodsTreatment: TaxTreatment | null | undefined;
   readonly dragState: "none" | "dragging" | "above" | "below";
   readonly onOpen: () => void;
   readonly onMove: (to: number) => void;
@@ -293,6 +309,9 @@ function LineSummary({
   index,
   count,
   amount,
+  rates,
+  percents,
+  goodsTreatment,
   dragState,
   onOpen,
   onMove,
@@ -311,6 +330,16 @@ function LineSummary({
   const unit = units.data?.find((candidate) => candidate.code === line.unit);
   const unitLabel = unit === undefined ? "" : unitName(locale, unit);
   const isItem = line.kind === "item";
+  // The rate as the line shows it (variant 3B): "8.1 %", or with its name where unclear.
+  const rate =
+    line.tax === PASS_THROUGH
+      ? t("documents.passThroughShort")
+      : shortRate(
+          rates ?? [],
+          line.tax,
+          linePercents(percents, ownTreatment(line.supply, goodsTreatment)),
+          locale,
+        );
   // What the user typed, in the number format of the language; unparsable input as typed.
   const display = (input: string, format: (value: string) => string) => {
     const value = parseDecimal(input, locale);
@@ -386,7 +415,7 @@ function LineSummary({
               {line.discount_percent === "" || line.discount_percent === "0"
                 ? ""
                 : ` · −${display(line.discount_percent, (value) => formatNumber(value, locale, 2))} %`}
-              {line.tax_category === "pass_through" ? ` · ${t("documents.passThroughShort")}` : ""}
+              {rate === null ? "" : ` · ${rate}`}
               {line.supply === "goods" ? ` · ${t("supply.goods")}` : ""}
             </span>
           ) : null}
@@ -404,7 +433,8 @@ function LineSummary({
 }
 
 interface LineEditorProps {
-  readonly rates: Rates | undefined;
+  readonly rates: readonly TaxRate[] | undefined;
+  readonly percents: Percents;
   readonly profile: CountryProfile;
   readonly goodsTreatment: TaxTreatment | null | undefined;
   readonly index: number;
@@ -420,6 +450,7 @@ function LineEditor({
   index,
   count,
   rates,
+  percents,
   profile,
   goodsTreatment,
   isNew,
@@ -435,11 +466,10 @@ function LineEditor({
   const kind = useWatch({ control, name: `lines.${index}.kind` });
   const currency = useWatch({ control, name: "currency" });
   const details = useWatch({ control, name: `lines.${index}.details` });
-  const taxCategory = useWatch({ control, name: `lines.${index}.tax_category` });
+  const tax = useWatch({ control, name: `lines.${index}.tax` });
   const supply = useWatch({ control, name: `lines.${index}.supply` });
   const line = useWatch({ control, name: `lines.${index}` });
   const own = ownTreatment(supply, goodsTreatment);
-  const offered = lineRates(rates, own);
   const [showDetails, setShowDetails] = useState(false);
   const [saveAsArticle, setSaveAsArticle] = useState(false);
   const createArticle = useCreateArticle();
@@ -628,43 +658,43 @@ function LineEditor({
             <ErrorText id={`${id("discount_percent")}-error`} error={errors?.discount_percent} />
           </div>
           <div className="col-span-2 flex flex-col gap-1.5">
-            <label htmlFor={id("tax_category")} className="text-sm font-medium">
+            <label htmlFor={id("tax")} className="text-sm font-medium">
               {t("documents.lineTax")}
             </label>
-            <NativeSelect
-              id={id("tax_category")}
-              aria-describedby={
-                taxCategory === "pass_through" ? `${id("tax_category")}-pass-through` : undefined
-              }
-              onKeyDown={onKeyDown}
-              {...register(`lines.${index}.tax_category`)}
-            >
-              {TAX_CATEGORIES.filter(
-                // Categories without a rate in the country (e.g. no special rate in DE)
-                // are not offered, unless the line already uses one.
-                (category) => rates === undefined || category in rates || category === taxCategory,
-              ).map((category) => {
-                // Pass-through items carry no tax at all, not a rate of 0 %.
-                const rate = category === "pass_through" ? undefined : offered?.[category];
-                const label = taxCategoryLabel(category, profile, locale, t);
-                return (
-                  <option key={category} value={category}>
-                    {rate === undefined ? label : `${label} (${formatPercent(rate, locale)})`}
-                  </option>
-                );
-              })}
-            </NativeSelect>
-            {taxCategory === "pass_through" ? (
-              <p
-                id={`${id("tax_category")}-pass-through`}
-                className="text-xs text-muted-foreground"
-              >
+            <Controller
+              control={control}
+              name={`lines.${index}.tax`}
+              render={({ field }) => (
+                <TaxRateSelect
+                  id={id("tax")}
+                  ref={field.ref}
+                  value={field.value}
+                  rates={rates}
+                  percents={linePercents(percents, own)}
+                  profile={profile}
+                  aria-invalid={errors?.tax === undefined ? undefined : true}
+                  aria-describedby={
+                    errors?.tax === undefined
+                      ? tax === PASS_THROUGH
+                        ? `${id("tax")}-pass-through`
+                        : undefined
+                      : `${id("tax")}-error`
+                  }
+                  onKeyDown={onKeyDown}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                />
+              )}
+            />
+            <ErrorText id={`${id("tax")}-error`} error={errors?.tax} />
+            {tax === PASS_THROUGH ? (
+              <p id={`${id("tax")}-pass-through`} className="text-xs text-muted-foreground">
                 {t("documents.passThroughHint")}
               </p>
             ) : null}
           </div>
           {/* Goods or services matter for the tax only: not for pass-through items. */}
-          {taxCategory === "pass_through" ? null : (
+          {tax === PASS_THROUGH ? null : (
             <div className="col-span-2 flex flex-col gap-1.5">
               <label htmlFor={id("supply")} className="text-sm font-medium">
                 {t("documents.lineSupply")}

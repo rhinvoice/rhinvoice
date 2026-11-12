@@ -27,6 +27,10 @@ describe("article form", () => {
       "de-DE",
     );
     expect(request.prices).toEqual({ CHF: "1234.5" });
+    expect(request).toMatchObject({ tax_rate_id: null, pass_through: false });
+    expect(
+      formToRequest({ ...emptyArticle(), name: "X", tax: "pass_through" }, "de-DE"),
+    ).toMatchObject({ tax_rate_id: null, pass_through: true });
     expect(
       formToRequest({ ...emptyArticle(), name: "X", price_eur: "10" }, "de-DE").prices,
     ).toEqual({ EUR: "10" });
@@ -45,6 +49,7 @@ describe("article form", () => {
         unit_label_en: "h",
         unit_label_fr: "h",
         unit_label_it: "h",
+        tax_rate_id: "0b5e2c4e-7f1a-4c1e-9d55-3a6f8e2b9c10",
         tax_category: "standard",
         supply: "goods",
         prices: { CHF: "150.00" },
@@ -55,6 +60,7 @@ describe("article form", () => {
     );
     expect(form.price_chf).toBe("150,00");
     expect(form.supply).toBe("goods");
+    expect(form.tax).toBe("0b5e2c4e-7f1a-4c1e-9d55-3a6f8e2b9c10");
     expect(form.price_eur).toBe("");
   });
 
@@ -62,6 +68,8 @@ describe("article form", () => {
     expect(articleFieldFor("prices.CHF")).toBe("price_chf");
     expect(articleFieldFor("prices.EUR")).toBe("price_eur");
     expect(articleFieldFor("name")).toBe("name");
+    expect(articleFieldFor("tax_rate_id")).toBe("tax");
+    expect(articleFieldFor("pass_through")).toBe("tax");
     expect(articleFieldFor("x")).toBeNull();
   });
 });

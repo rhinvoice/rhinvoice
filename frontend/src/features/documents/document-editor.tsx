@@ -727,7 +727,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
               </div>
               <LineItems
                 amounts={amounts}
-                rates={preview.data?.rates}
+                percents={preview.data?.rates}
                 profile={company.profile}
                 goodsTreatment={
                   preview.data?.goods_treatment === preview.data?.treatment

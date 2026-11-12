@@ -13,6 +13,13 @@ import type {
 import type { Company } from "@/features/shared/company-api";
 import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import { fields, toApiDecimal } from "@/features/shared/form-schema";
+import {
+  PASS_THROUGH,
+  taxChoice,
+  taxChoiceOf,
+  taxChoiceToRequest,
+  type Percents,
+} from "@/features/shared/tax-rate-model";
 import { formatDecimalInput } from "@/lib/format";
 import { MAX_FIELD_VALUE } from "@/lib/info-block";
 import type { T } from "@/lib/i18n";
@@ -22,14 +29,6 @@ export type LineRequest = NonNullable<DraftRequest["lines"]>[number];
 export type UnitCode = NonNullable<LineRequest["unit"]>;
 export type Currency = "CHF" | "EUR";
 
-export const TAX_CATEGORIES = [
-  "standard",
-  "reduced",
-  "special",
-  "zero",
-  "exempt",
-  "pass_through",
-] as const;
 export const SUPPLIES = ["service", "goods"] as const;
 /** Treatments that can be chosen for a document; goods get theirs from it. */
 export const TREATMENTS = [
@@ -66,7 +65,8 @@ export function documentSchema(t: T, locale: Locale) {
       unit: unitCode,
       unit_price: f.decimal({ max: MAX_PRICE, decimals: 4 }),
       discount_percent: f.decimal({ max: 100, decimals: 2 }),
-      tax_category: z.enum(TAX_CATEGORIES),
+      /** A rate id, PASS_THROUGH, or "" for the default rate (ADR 0044). */
+      tax: taxChoice,
       supply: z.enum(SUPPLIES),
       article_id: z.string().nullable(),
     })
@@ -124,7 +124,7 @@ export function documentSchema(t: T, locale: Locale) {
         values.discount_value !== "" &&
         Number(toApiDecimal(values.discount_value, locale)) > 0 &&
         items.length > 0 &&
-        items.every((line) => line.tax_category === "pass_through")
+        items.every((line) => line.tax === PASS_THROUGH)
       ) {
         issue("discount_value", t("error.discount_on_pass_through_only"));
       }
@@ -167,7 +167,7 @@ export function emptyLine(kind: "item" | "text" = "item"): LineFormValues {
     unit: kind === "item" ? "C62" : "",
     unit_price: "",
     discount_percent: "",
-    tax_category: "standard",
+    tax: "",
     supply: "service",
     article_id: null,
   };
@@ -240,7 +240,7 @@ export function lineFromArticle(
     details: article.description,
     unit: article.unit,
     unit_price: price === undefined ? line.unit_price : formatDecimalInput(price, locale),
-    tax_category: article.tax_category,
+    tax: taxChoiceOf(article),
     supply: article.supply,
     article_id: article.id,
   };
@@ -274,7 +274,7 @@ export function articleFromLine(
     description: line.details.trim(),
     group: "",
     unit: line.unit as ArticleRequest["unit"],
-    tax_category: line.tax_category,
+    ...taxChoiceToRequest(line.tax),
     supply: line.supply,
     prices: price === "" ? {} : { [currency]: toApiDecimal(price, locale) },
   };
@@ -288,8 +288,6 @@ export function hasSupply(
   return lines.some((line) => line.kind === "item" && line.supply === supply);
 }
 
-type Rates = Partial<Record<(typeof TAX_CATEGORIES)[number], string>>;
-
 /** The treatment of a line of its own (goods exported, delivered in the EU), or null. */
 export function ownTreatment(
   supply: LineFormValues["supply"],
@@ -300,10 +298,10 @@ export function ownTreatment(
     : null;
 }
 
-/** Rates offered for a line: goods exported or delivered in the EU carry no VAT. */
-export function lineRates(rates: Rates | undefined, own: TaxTreatment | null): Rates | undefined {
-  if (own === null || own === "domestic" || rates === undefined) return rates;
-  return Object.fromEntries(Object.keys(rates).map((category) => [category, "0"]));
+/** Percentages of a line's rates: goods exported or delivered in the EU carry no VAT. */
+export function linePercents(percents: Percents, own: TaxTreatment | null): Percents {
+  if (own === null || own === "domestic") return percents;
+  return Object.fromEntries(Object.keys(percents).map((id) => [id, "0"]));
 }
 
 /**
@@ -380,7 +378,7 @@ export function lineToForm(line: StoredLine, key: string, locale: Locale): LineF
     unit: (line.unit ?? "") as UnitCode | "",
     unit_price: line.kind === "item" ? decimalInput(line.unit_price, locale, 2) : "",
     discount_percent: decimalInput(line.discount_percent, locale),
-    tax_category: line.tax_category,
+    tax: taxChoiceOf(line),
     supply: line.supply,
     article_id: line.article_id,
   };
@@ -401,7 +399,8 @@ function lineToRequest(line: LineFormValues, locale: Locale): LineRequest {
       unit: null,
       unit_price: "0",
       discount_percent: "0",
-      tax_category: "standard",
+      tax_rate_id: null,
+      pass_through: false,
       supply: "service",
       article_id: null,
     };
@@ -414,7 +413,7 @@ function lineToRequest(line: LineFormValues, locale: Locale): LineRequest {
     unit: line.unit === "" ? null : line.unit,
     unit_price: apiDecimal(line.unit_price, locale),
     discount_percent: apiDecimal(line.discount_percent, locale),
-    tax_category: line.tax_category,
+    ...taxChoiceToRequest(line.tax),
     supply: line.supply,
     article_id: line.article_id,
   };
@@ -476,9 +475,15 @@ const LINE_FIELDS = [
   "unit",
   "unit_price",
   "discount_percent",
-  "tax_category",
+  "tax",
   "supply",
 ] as const satisfies readonly (keyof LineFormValues)[];
+
+/** Line fields the API names differently: the tax choice is a rate or a pass-through item. */
+const LINE_FIELD_ALIASES: Readonly<Record<string, (typeof LINE_FIELDS)[number]>> = {
+  tax_rate_id: "tax",
+  pass_through: "tax",
+};
 
 /** Map API error fields ("lines.2.quantity", "discount") onto form fields. */
 export function documentFieldFor(apiField: string): Path<DocumentFormValues> | null {
@@ -487,9 +492,11 @@ export function documentFieldFor(apiField: string): Path<DocumentFormValues> | n
   if ((TOP_LEVEL_FIELDS as readonly string[]).includes(apiField)) {
     return apiField as Path<DocumentFormValues>;
   }
-  const lineField = /^lines\.\d+\.(\w+)$/.exec(apiField)?.[1];
-  if (lineField !== undefined && (LINE_FIELDS as readonly string[]).includes(lineField)) {
-    return apiField as Path<DocumentFormValues>;
+  const match = /^(lines\.\d+)\.(\w+)$/.exec(apiField);
+  if (match?.[1] === undefined || match[2] === undefined) return null;
+  const lineField = LINE_FIELD_ALIASES[match[2]] ?? match[2];
+  if ((LINE_FIELDS as readonly string[]).includes(lineField)) {
+    return `${match[1]}.${lineField}` as Path<DocumentFormValues>;
   }
   return null;
 }

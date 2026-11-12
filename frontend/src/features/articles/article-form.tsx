@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
 import { useI18n } from "@/components/i18n/use-i18n";
 import { ErrorSummary } from "@/components/ui/error-summary";
@@ -17,16 +17,18 @@ import {
   articleSchema,
   priceCurrencies,
   SUPPLIES,
-  TAX_CATEGORIES,
 } from "@/features/articles/article-form-model";
 import { FormAlert } from "@/features/shared/form-alert";
 import { summaryItems } from "@/features/shared/form-errors";
 import { FormFooter } from "@/features/shared/form-footer";
 import { companyQuery } from "@/features/shared/company-api";
-import { offersCategory, taxCategoryLabel } from "@/features/shared/country-profile-model";
 import { unitsQuery } from "@/features/shared/reference-api";
 import { applyServerErrors } from "@/features/shared/server-errors";
+import { percentsOn } from "@/features/shared/tax-rate-model";
+import { TaxRateSelect } from "@/features/shared/tax-rate-select";
+import { taxRatesQuery } from "@/features/shared/tax-rates-api";
 import { useErrorMessage } from "@/features/shared/use-error-message";
+import { todayIso } from "@/lib/dates";
 import { unitName } from "@/lib/locale";
 
 interface ArticleFormProps {
@@ -40,6 +42,7 @@ export function ArticleForm({ defaultValues, onSubmit }: ArticleFormProps) {
   const units = useQuery(unitsQuery);
   const company = useQuery(companyQuery).data;
   const profile = company?.profile;
+  const rates = useQuery(taxRatesQuery).data;
   const form = useForm<ArticleFormValues>({
     resolver: zodResolver(articleSchema(t, locale)),
     mode: "onTouched",
@@ -121,20 +124,25 @@ export function ArticleForm({ defaultValues, onSubmit }: ArticleFormProps) {
               ))}
             </NativeSelect>
           </Field>
-          <Field label={t("articles.taxCategory")} error={error("tax_category")}>
-            <NativeSelect id="tax_category" {...form.register("tax_category")}>
-              {TAX_CATEGORIES.filter(
-                // Without a third rate in the country (e.g. Germany) it is not offered,
-                // unless the article already uses it.
-                (category) =>
-                  offersCategory(category, profile) || category === defaultValues.tax_category,
-              ).map((category) => (
-                <option key={category} value={category}>
-                  {taxCategoryLabel(category, profile, locale, t)}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
+          <Controller
+            control={form.control}
+            name="tax"
+            render={({ field }) => (
+              <Field label={t("articles.taxCategory")} error={error("tax")}>
+                <TaxRateSelect
+                  id="tax"
+                  ref={field.ref}
+                  value={field.value}
+                  rates={rates}
+                  // An article has no date of supply: today's percentages.
+                  percents={percentsOn(rates ?? [], todayIso())}
+                  profile={profile}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                />
+              </Field>
+            )}
+          />
           <Field
             label={t("articles.supply")}
             description={t("articles.supplyHint")}

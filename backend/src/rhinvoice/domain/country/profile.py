@@ -16,6 +16,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from rhinvoice.domain.shared.language import Language
+from rhinvoice.domain.tax.presets import base_presets
 from rhinvoice.domain.tax.rates import rate_set_on
 from rhinvoice.domain.tax.treatment import TaxTreatment
 
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
     from rhinvoice.domain.customer.customer import Customer
     from rhinvoice.domain.shared.country import Country
     from rhinvoice.domain.shared.money import Currency, Money
+    from rhinvoice.domain.tax.presets import RatePreset
     from rhinvoice.domain.tax.rates import TaxRateSet
     from rhinvoice.domain.tax.treatment import VatRules
 
@@ -126,6 +128,23 @@ class CountryProfile:
     """Whether the national tax number can stand in for the VAT ID (German Steuernummer)."""
     sources: tuple[str, ...]
     """Official sources of the rules above (law texts, tax administration pages)."""
+    scheme_presets: tuple[RatePreset, ...] = ()
+    """Rates of special schemes (e.g. German § 24 UStG), taken over on demand (ADR 0044)."""
+
+    @property
+    def base_presets(self) -> tuple[RatePreset, ...]:
+        """The rates every company of the country starts with, from :attr:`rates`."""
+        special = {
+            language: terms.special_rate
+            for language, terms in self.terms.items()
+            if terms.special_rate is not None
+        }
+        return base_presets(self.rates, special or None)
+
+    @property
+    def presets(self) -> tuple[RatePreset, ...]:
+        """All presets of the country: the base rates, then the special schemes."""
+        return (*self.base_presets, *self.scheme_presets)
 
     def rates_on(self, on: date) -> TaxRateSet:
         """Return the rates that apply on the date of supply ``on``."""

@@ -623,7 +623,7 @@ export const it: Catalog<MessageKey> = {
   "numbering.kind.article": "Articoli",
   "numbering.pattern": "Schema",
   "numbering.patternHint":
-    "{YYYY} anno, {YY} anno a due cifre, {MM} mese, {NNNN} contatore (numero di N = cifre minime).",
+    "{YYYY} anno, {YY} anno a due cifre, {MM} mese, {DD} giorno, {NNNN} contatore (numero di N = cifre minime).",
   "numbering.nextValue": "Prossimo contatore",
   "numbering.nextValueHint": "Per proseguire senza interruzioni da un programma precedente.",
   "numbering.startValue": "Valore iniziale dopo il cambio d’anno",
@@ -632,7 +632,7 @@ export const it: Catalog<MessageKey> = {
   "numbering.saved": "Numerazione salvata.",
   "numbering.problem.length": "Lo schema deve contenere da 1 a 40 caratteri.",
   "numbering.problem.placeholder":
-    "Segnaposto sconosciuto. Sono ammessi {YYYY}, {YY}, {MM} e {N…}.",
+    "Segnaposto sconosciuto. Sono ammessi {YYYY}, {YY}, {MM}, {DD} e {N…}.",
   "numbering.problem.counter": "Lo schema richiede esattamente un contatore come {NNNN}.",
   "numbering.problem.characters": "Sono ammessi lettere, cifre e - _ / . oltre ai segnaposto.",
   "numbering.problem.year":

@@ -154,9 +154,9 @@ test("number sequences show a live preview", async ({ page }) => {
   await openApp(page, "/settings?tab=numbering", "Einstellungen");
   const invoices = page.getByRole("region", { name: "Rechnungen", exact: true });
   await expect(invoices.getByText(/R2026\d{4}|R\d{8}/)).toBeVisible();
-  await invoices.getByRole("textbox", { name: "Muster" }).fill("RE-{YY}-{NNNNN}");
+  await invoices.getByRole("textbox", { name: "Muster" }).fill("RE-{YY}{MM}{DD}-{NNNNN}");
   await invoices.getByLabel("Nächster Zähler").fill("345");
-  await expect(invoices.getByText(/^RE-\d\d-00345$/)).toBeVisible();
+  await expect(invoices.getByText(/^RE-\d{6}-00345$/)).toBeVisible();
   await invoices.getByRole("textbox", { name: "Muster" }).fill("{NNNN}");
   await expect(
     invoices.getByText(

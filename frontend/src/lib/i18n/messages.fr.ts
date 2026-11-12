@@ -630,7 +630,7 @@ export const fr: Catalog<MessageKey> = {
   "numbering.kind.article": "Articles",
   "numbering.pattern": "Modèle",
   "numbering.patternHint":
-    "{YYYY} année, {YY} année à deux chiffres, {MM} mois, {NNNN} compteur (nombre de N = nombre minimal de chiffres).",
+    "{YYYY} année, {YY} année à deux chiffres, {MM} mois, {DD} jour, {NNNN} compteur (nombre de N = nombre minimal de chiffres).",
   "numbering.nextValue": "Prochain compteur",
   "numbering.nextValueHint": "Pour enchaîner sans rupture avec un programme précédent.",
   "numbering.startValue": "Valeur initiale après le changement d’année",
@@ -639,7 +639,7 @@ export const fr: Catalog<MessageKey> = {
   "numbering.saved": "Numérotation enregistrée.",
   "numbering.problem.length": "Le modèle doit comporter de 1 à 40 caractères.",
   "numbering.problem.placeholder":
-    "Espace réservé inconnu. Sont autorisés {YYYY}, {YY}, {MM} et {N…}.",
+    "Espace réservé inconnu. Sont autorisés {YYYY}, {YY}, {MM}, {DD} et {N…}.",
   "numbering.problem.counter": "Le modèle doit contenir exactement un compteur comme {NNNN}.",
   "numbering.problem.characters":
     "Sont autorisés les lettres, les chiffres et - _ / . ainsi que les espaces réservés.",

@@ -7,7 +7,7 @@ export function patternProblem(pattern: string, yearlyReset: boolean): PatternPr
   if (pattern === "" || pattern.length > 40) return "length";
   const names = [...pattern.matchAll(PLACEHOLDER)].map((match) => String(match[1]));
   const isCounter = (name: string) => /^N+$/.test(name);
-  if (names.some((name) => !["YYYY", "YY", "MM"].includes(name) && !isCounter(name))) {
+  if (names.some((name) => !["YYYY", "YY", "MM", "DD"].includes(name) && !isCounter(name))) {
     return "placeholder";
   }
   if (names.filter(isCounter).length !== 1) return "counter";

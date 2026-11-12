@@ -619,7 +619,7 @@ export const de = {
   "numbering.kind.article": "Artikel",
   "numbering.pattern": "Muster",
   "numbering.patternHint":
-    "{YYYY} Jahr, {YY} Jahr zweistellig, {MM} Monat, {NNNN} Zähler (Anzahl N = Mindeststellen).",
+    "{YYYY} Jahr, {YY} Jahr zweistellig, {MM} Monat, {DD} Tag, {NNNN} Zähler (Anzahl N = Mindeststellen).",
   "numbering.nextValue": "Nächster Zähler",
   "numbering.nextValueHint": "Zum nahtlosen Anschluss an ein bisheriges Programm.",
   "numbering.startValue": "Startwert nach Jahreswechsel",
@@ -628,7 +628,7 @@ export const de = {
   "numbering.saved": "Nummernkreis gespeichert.",
   "numbering.problem.length": "Das Muster muss 1 bis 40 Zeichen lang sein.",
   "numbering.problem.placeholder":
-    "Unbekannter Platzhalter. Erlaubt sind {YYYY}, {YY}, {MM} und {N…}.",
+    "Unbekannter Platzhalter. Erlaubt sind {YYYY}, {YY}, {MM}, {DD} und {N…}.",
   "numbering.problem.counter": "Das Muster braucht genau einen Zähler wie {NNNN}.",
   "numbering.problem.characters":
     "Erlaubt sind Buchstaben, Ziffern und - _ / . sowie die Platzhalter.",

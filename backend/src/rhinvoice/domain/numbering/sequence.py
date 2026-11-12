@@ -1,6 +1,7 @@
 """Number sequences for documents and master data.
 
 A pattern such as ``R{YYYY}{NNNN}`` is expanded with the date and a counter.
+The date is the day the number is assigned: for documents the day of issuing.
 Document numbers are only assigned when a document is issued, inside the
 issuing transaction with a row lock (``SELECT ... FOR UPDATE``), so that
 numbers are gapless and unique.
@@ -22,6 +23,7 @@ MAX_PATTERN_LENGTH = 40
 MAX_COUNTER = 10**12
 _PLACEHOLDER = re.compile(r"\{([A-Z]+)\}")
 _ALLOWED_LITERAL = re.compile(r"^[A-Za-z0-9\-_/.]*$")
+_DATE_PLACEHOLDERS = frozenset({"YYYY", "YY", "MM", "DD"})
 
 
 class SequenceKind(StrEnum):
@@ -56,7 +58,7 @@ def validate_pattern(pattern: str, *, yearly_reset: bool) -> None:
     placeholders = _PLACEHOLDER.findall(pattern)
     counters = [name for name in placeholders if set(name) == {"N"}]
     unknown = [
-        name for name in placeholders if name not in {"YYYY", "YY", "MM"} and set(name) != {"N"}
+        name for name in placeholders if name not in _DATE_PLACEHOLDERS and set(name) != {"N"}
     ]
     if unknown:
         raise ValidationError("pattern", f"unknown placeholder {{{unknown[0]}}}")
@@ -84,6 +86,8 @@ def format_number(pattern: str, counter: int, on: date) -> str:
             return f"{on.year % 100:02d}"
         if name == "MM":
             return f"{on.month:02d}"
+        if name == "DD":
+            return f"{on.day:02d}"
         return f"{counter:0{len(name)}d}"
 
     return _PLACEHOLDER.sub(expand, pattern)

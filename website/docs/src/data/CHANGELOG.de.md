@@ -8,6 +8,15 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 ### Neu
 - `{DD}` in Nummernmustern: der Tag, an dem die Nummer vergeben wird, bei Dokumenten der Tag des
   Ausstellens, z. B. `R{YYYY}{MM}{DD}-{NN}` (#86).
+- Eigene Steuersätze pro Firma (*Einstellungen → Steuersätze*): Jeder Satz hat einen Namen, seine
+  Art für die E-Rechnung (S, Z oder E), einen Befreiungsgrund, einen Hinweis für die Rechnung und
+  Prozentsätze mit dem Datum, ab dem sie gelten; eine Änderung wird mit *Satz ändern ab Datum …*
+  ergänzt. Jede Firma beginnt mit den Sätzen ihres Landes, weitere Vorlagen übernehmen Sie mit
+  *Aus Vorlage …*, darunter die Durchschnittssätze nach § 24 UStG (5,5 %, 19 %, seit 2025 7,8 %).
+  Beim Speichern prüft Rhinvoice die Regeln von EN 16931 (S über 0 %, Z und E mit 0 %, E mit
+  Grund), damit die E-Rechnung gültig bleibt. Positionen und Artikel wählen einen Satz, geteilt
+  in steuerpflichtig und ohne Steuer; verwendete Sätze werden ausgeblendet statt gelöscht, und
+  ausgestellte Dokumente behalten den Satz, mit dem sie ausgestellt wurden (#80).
 
 ### Behoben
 - Angebote sagen nicht mehr, eine ausgeblendete Angabe stehe «nur in der E-Rechnung» oder die

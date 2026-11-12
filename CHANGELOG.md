@@ -8,6 +8,14 @@ before 1.0, minor versions may contain breaking changes.
 ### Added
 - `{DD}` in number patterns: the day the number is assigned, for documents the day of issuing,
   e.g. `R{YYYY}{MM}{DD}-{NN}` (#86).
+- Own tax rates per company (*Settings → Tax rates*): each rate has a name, its category for the
+  e-invoice (S, Z or E), an exemption reason, a notice for the invoice and percentages with the
+  date they apply from; a change is added with *Change from date …*. Every company starts with
+  the rates of its country, further presets are taken over with *From preset …*, among them the
+  German average rates of § 24 UStG (5.5 %, 19 %, 7.8 % since 2025). Saving checks the rules of
+  EN 16931 (S above 0 %, Z and E at 0 %, E with a reason), so the e-invoice stays valid. Line
+  items and articles choose a rate, grouped into taxable and without tax; rates in use are
+  hidden instead of deleted, and issued documents keep the rate they were issued with (#80).
 
 ### Fixed
 - Quotes no longer say a hidden detail goes "only in the e-invoice" or that the reference is

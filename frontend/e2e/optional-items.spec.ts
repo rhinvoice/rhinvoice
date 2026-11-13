@@ -106,6 +106,8 @@ test("a quote offers an alternative and an option; the invoice takes what was ch
     .getByRole("button", { name: "Als versendet markieren" })
     .click();
   await expect(page.getByRole("heading", { level: 1, name: /^Angebot \S+$/ })).toBeVisible();
+  // Only a sent quote offers the conversion: wait for its actions before opening the menu.
+  await expect(page.getByRole("button", { name: "Angenommen" })).toBeVisible();
   await page.getByRole("button", { name: "Weitere Aktionen" }).click();
   await page.getByRole("menuitem", { name: "In Rechnung umwandeln" }).click();
   const dialog = page.getByRole("dialog", { name: "Positionen für die Rechnung" });

@@ -35,11 +35,12 @@ from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
-from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import BASE_KEYS, REDUCED
 from rhinvoice.domain.tax.supply import Supply
 from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.text.template import TextKind
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork
+from tests.unit.domain import factories
 from tests.unit.domain.factories import CH_IBAN, CH_QR_IBAN
 
 NOW = datetime(2026, 3, 9, 9, 0, tzinfo=UTC)
@@ -61,12 +62,22 @@ FOOD = LineInput(
     quantity="3",
     unit="C62",
     unit_price="12.35",
-    tax_category=TaxCategory.REDUCED,
+    tax_rate_id=factories.rate_id(REDUCED),
 )
 
 
 def factory(engine: Engine) -> Callable[[], SqlUnitOfWork]:
     return lambda: SqlUnitOfWork(engine)
+
+
+def fixed_rate_ids(engine: Engine) -> None:
+    """Give the rates seeded with the company the ids of the unit tests (factories.rate_id)."""
+    with engine.begin() as connection:
+        for key in BASE_KEYS:
+            connection.execute(
+                text("UPDATE tax_rates SET id = :id WHERE preset = :preset"),
+                {"id": factories.rate_id(key), "preset": key},
+            )
 
 
 @pytest.fixture
@@ -80,6 +91,7 @@ def setup(engine: Engine) -> tuple[DocumentHandlers, UUID, FixedClock]:
             cash_rounding=True,
         ),
     )
+    fixed_rate_ids(engine)
     CompanyHandlers(uow=factory(engine)).create_bank_account(
         SaveBankAccount(
             currency=Currency.CHF,

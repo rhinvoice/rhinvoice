@@ -2,12 +2,10 @@ from enum import StrEnum
 
 
 class TaxCategory(StrEnum):
-    """Which VAT rate of the country profile applies to a line."""
+    """The kind of a line's tax: the category of its rate, or pass-through (ADR 0044)."""
 
     STANDARD = "standard"
-    REDUCED = "reduced"
-    SPECIAL = "special"
-    """CH/LI accommodation rate (Beherbergung)."""
+    """Taxed at the line's rate, above zero (standard, reduced, special and flat rates)."""
     ZERO = "zero"
     """Taxable at 0 % (e.g. exports)."""
     EXEMPT = "exempt"

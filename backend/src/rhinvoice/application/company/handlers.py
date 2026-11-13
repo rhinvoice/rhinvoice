@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from rhinvoice.application.common import AddressInput, optional_email, optional_vat_number
 from rhinvoice.application.errors import ConflictError, NotFoundError
+from rhinvoice.application.tax.handlers import adopt_rates, reseed_rates, seed_rates
 from rhinvoice.domain.company.bank_account import BankAccount
 from rhinvoice.domain.company.company import DEFAULT_ACCENT_HUE, Company
 from rhinvoice.domain.company.logo import Logo
@@ -88,6 +89,11 @@ class CompanyHandlers:
                 accent_hue=command.accent_hue,
             )
             uow.company.save(company)
+            # A company starts with the rates of its country (ADR 0044).
+            if existing is None:
+                adopt_rates(uow, seed_rates(uow, company))
+            elif existing.country is not company.country:
+                reseed_rates(uow, company)
             uow.commit()
         return company
 

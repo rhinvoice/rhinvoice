@@ -35,7 +35,10 @@ class ArticleRequest(ApiModel):
     description: str = text(4000)
     group: str = text(50)
     unit: str = Field(default=DEFAULT_UNIT_CODE, json_schema_extra={"enum": UNIT_CODES})
-    tax_category: TaxCategory = TaxCategory.STANDARD
+    tax_rate_id: UUID | None = None
+    """One of the company's rates (GET /api/tax-rates); none: the default rate."""
+    pass_through: bool = False
+    """Paid in the customer's name and for the customer's account: no rate, no VAT."""
     supply: Supply = Supply.SERVICE
     """Goods cross borders under their own VAT rules (export, intra-Community supply)."""
     prices: dict[Currency, PriceField] = Field(default_factory=dict[Currency, PriceField])
@@ -46,7 +49,8 @@ class ArticleRequest(ApiModel):
             name=self.name,
             number=self.number,
             unit=self.unit,
-            tax_category=self.tax_category,
+            tax_rate_id=self.tax_rate_id,
+            pass_through=self.pass_through,
             supply=self.supply,
             prices=dict(self.prices),
             description=self.description,
@@ -65,7 +69,10 @@ class ArticleResponse(ApiModel):
     unit_label_en: str
     unit_label_fr: str
     unit_label_it: str
+    tax_rate_id: UUID | None
+    """The company's rate; None for pass-through items."""
     tax_category: TaxCategory
+    """The kind of the article's tax: the category of its rate, or pass_through."""
     supply: Supply
     prices: dict[Currency, str]
     archived: bool
@@ -84,6 +91,7 @@ class ArticleResponse(ApiModel):
             unit_label_en=article.unit.label_en,
             unit_label_fr=article.unit.label(Language.FR),
             unit_label_it=article.unit.label(Language.IT),
+            tax_rate_id=article.tax_rate_id,
             tax_category=article.tax_category,
             supply=article.supply,
             prices={currency: price_text(price) for currency, price in article.prices.items()},

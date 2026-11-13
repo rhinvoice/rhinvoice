@@ -5,10 +5,9 @@ import {
   bicMattersForEpc,
   countrySummary,
   offersCashRounding,
-  offersCategory,
   offersQrIban,
+  passThroughLabel,
   profileFor,
-  taxCategoryLabel,
   termsFor,
 } from "@/features/shared/country-profile-model";
 import { translatorFor } from "@/lib/i18n";
@@ -43,31 +42,10 @@ describe("country profile", () => {
     expect(countrySummary(GERMAN_PROFILE, "en", en)).toBe("VAT 19% / 7% · EPC QR code");
   });
 
-  it("names the third rate as the country does", () => {
-    expect(taxCategoryLabel("special", SWISS_PROFILE, "de-CH", de)).toBe("Sondersatz Beherbergung");
-    expect(taxCategoryLabel("special", GERMAN_PROFILE, "de-DE", de)).toBe("Sondersatz");
-    expect(taxCategoryLabel("special", undefined, "de-CH", de)).toBe("Sondersatz");
-    expect(taxCategoryLabel("reduced", SWISS_PROFILE, "en", en)).toBe("Reduced rate");
-  });
-
   it("names the country's tax on pass-through items", () => {
-    expect(taxCategoryLabel("pass_through", SWISS_PROFILE, "de-CH", de)).toBe(
-      "Durchlaufender Posten (ohne MWST)",
-    );
-    expect(taxCategoryLabel("pass_through", GERMAN_PROFILE, "de-DE", de)).toBe(
-      "Durchlaufender Posten (ohne USt.)",
-    );
-    expect(taxCategoryLabel("pass_through", null, "en", en)).toBe("Pass-through item (no VAT)");
-    expect(taxCategoryLabel("exempt", SWISS_PROFILE, "de-CH", de)).toBe(
-      "Von der Steuer ausgenommen",
-    );
-  });
-
-  it("offers only the rates the country has", () => {
-    expect(offersCategory("special", SWISS_PROFILE)).toBe(true);
-    expect(offersCategory("special", GERMAN_PROFILE)).toBe(false);
-    expect(offersCategory("reduced", GERMAN_PROFILE)).toBe(true);
-    expect(offersCategory("special", null)).toBe(true);
+    expect(passThroughLabel(SWISS_PROFILE, "de-CH", de)).toBe("Durchlaufender Posten (ohne MWST)");
+    expect(passThroughLabel(GERMAN_PROFILE, "de-DE", de)).toBe("Durchlaufender Posten (ohne USt.)");
+    expect(passThroughLabel(null, "en", en)).toBe("Pass-through item (no VAT)");
   });
 });
 

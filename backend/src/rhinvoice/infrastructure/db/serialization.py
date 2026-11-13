@@ -43,6 +43,7 @@ from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
 from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.supply import Supply
+from rhinvoice.domain.tax.tax_rate import FrozenRate, RateCategory
 from rhinvoice.domain.tax.vat_code import VatCode
 from rhinvoice.domain.tax.vat_number import VatNumber
 
@@ -231,13 +232,23 @@ def snapshot_to_json(snapshot: IssueSnapshot) -> Json:
             else [bank_account_to_json(account) for account in snapshot.accounts]
         ),
         "logo": None if snapshot.logo is None else {"sha256": snapshot.logo.sha256},
+        "rates": [
+            {
+                "id": str(rate.id),
+                "name": rate.name,
+                "category": rate.category.value,
+                "notice": rate.notice,
+                "exemption_reason": rate.exemption_reason,
+            }
+            for rate in snapshot.rates
+        ],
     }
 
 
 def snapshot_from_json(data: Json) -> IssueSnapshot:
     account = data["bank_account"]
     # Documents issued before version 0.4 have no notice, before 0.5 no layout and accounts,
-    # before 0.9 no logo.
+    # before 0.9 no logo, before 0.13 no rates.
     layout = data.get("layout")
     accounts = data.get("accounts")
     logo = data.get("logo")
@@ -254,6 +265,16 @@ def snapshot_from_json(data: Json) -> IssueSnapshot:
             else tuple(bank_account_from_json(account) for account in accounts)
         ),
         logo=None if logo is None else IssuedLogo(logo["sha256"]),
+        rates=tuple(
+            FrozenRate(
+                id=_uuid(rate["id"]),
+                name=rate["name"],
+                category=RateCategory(rate["category"]),
+                notice=rate["notice"],
+                exemption_reason=rate["exemption_reason"],
+            )
+            for rate in data.get("rates", [])
+        ),
     )
 
 
@@ -391,6 +412,15 @@ def totals_from_json(data: Json) -> Totals:
     )
 
 
+def stored_kind(category: str) -> TaxCategory:
+    """Read a stored tax category; the reduced and special ones of before 0.13 are taxed.
+
+    Only articles and plans saved before the company existed keep them (migration 0027),
+    until the company's rates are seeded.
+    """
+    return TaxCategory.STANDARD if category in {"reduced", "special"} else TaxCategory(category)
+
+
 def _uuid(value: str) -> UUID:
     return UUID(value)
 
@@ -429,6 +459,7 @@ def template_to_json(template: InvoiceTemplate) -> Json:
                 "unit_price": str(line.unit_price),
                 "discount_percent": str(line.discount_percent),
                 "tax_category": line.tax_category.value,
+                "tax_rate_id": _opt(line.tax_rate_id),
                 "supply": line.supply.value,
                 "article_id": _opt(line.article_id),
             }
@@ -469,9 +500,11 @@ def template_from_json(data: Json) -> InvoiceTemplate:
                 unit=None if line["unit"] is None else Unit(line["unit"]),
                 unit_price=Decimal(line["unit_price"]),
                 discount_percent=Decimal(line["discount_percent"]),
-                tax_category=TaxCategory(line["tax_category"]),
+                tax_category=stored_kind(line["tax_category"]),
                 supply=Supply(line["supply"]),
                 article_id=None if line["article_id"] is None else _uuid(line["article_id"]),
+                # Lines of plans saved before the company existed have none yet.
+                tax_rate_id=_optional_uuid(line.get("tax_rate_id")),
             )
             for line in data["lines"]
         ),

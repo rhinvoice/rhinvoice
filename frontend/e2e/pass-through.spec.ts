@@ -54,7 +54,7 @@ test("pass-through items print apart and third-party invoices go with the invoic
 
   // The fee is marked as a pass-through item: the hint names the condition.
   await page.getByRole("button", { name: /^Position 2 bearbeiten/ }).click();
-  const tax = page.locator("#lines-1-tax_category");
+  const tax = page.locator("#lines-1-tax");
   await tax.selectOption("pass_through");
   await expect(tax.locator("option:checked")).toHaveText("Durchlaufender Posten (ohne MWST)");
   await expect(tax).toHaveAccessibleDescription(

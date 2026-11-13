@@ -8,7 +8,12 @@ from enum import Enum
 from typing import TYPE_CHECKING, Final
 
 from rhinvoice.application.company.handlers import check_print_layout
-from rhinvoice.application.document.handlers import DraftInput, LineInput, chosen_account
+from rhinvoice.application.document.handlers import (
+    DraftInput,
+    LineInput,
+    chosen_account,
+    draft_lines,
+)
 from rhinvoice.application.errors import NotFoundError
 from rhinvoice.application.mail.handlers import SendMail
 from rhinvoice.domain.document.document import DocumentType
@@ -26,7 +31,7 @@ from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.money import parse_decimal
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Collection, Sequence
     from datetime import date
     from uuid import UUID
 
@@ -38,6 +43,7 @@ if TYPE_CHECKING:
     from rhinvoice.domain.recurring.plan import Interval
     from rhinvoice.domain.shared.clock import Clock
     from rhinvoice.domain.shared.money import Money
+    from rhinvoice.domain.tax.tax_rate import TaxRate
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +118,7 @@ class RecurringHandlers:
                 interval=command.interval,
                 start_date=command.start_date,
                 action=command.action,
-                template=to_template(command.template),
+                template=to_template(command.template, uow.tax_rates.list()),
                 today=self.clock.today(),
                 now=self.clock.now(),
                 end_date=command.end_date,
@@ -126,13 +132,17 @@ class RecurringHandlers:
         with self.uow() as uow:
             _require_customer(uow, command.customer_id)
             _check_account(uow, command.template)
-            plan = _require(uow, plan_id, for_update=True).change(
+            previous = _require(uow, plan_id, for_update=True)
+            plan = previous.change(
                 name=command.name,
                 customer_id=command.customer_id,
                 interval=command.interval,
                 start_date=command.start_date,
                 action=command.action,
-                template=to_template(command.template),
+                # Hidden rates the plan had stay; new ones are not chosen.
+                template=to_template(
+                    command.template, uow.tax_rates.list(), previous.template.rate_ids
+                ),
                 today=self.clock.today(),
                 end_date=command.end_date,
                 service_period=command.service_period,
@@ -254,7 +264,9 @@ class RecurringHandlers:
             service_to=last if plan.service_period else None,
         )
         try:
-            invoice = self.documents.create(DocumentType.INVOICE, draft).document.id
+            invoice = self.documents.create(
+                DocumentType.INVOICE, draft, kept_rates=plan.template.rate_ids
+            ).document.id
         except DomainError as error:
             return _failed(run, error)
         # Kept right away: should anything fail from here on, the run still names its invoice.
@@ -319,7 +331,7 @@ class RecurringHandlers:
             draft = self._draft(plan)
             total = self.documents.preview(DocumentType.INVOICE, draft).view.totals.total
         except DomainError:
-            total = None  # e.g. a tax category the country no longer has
+            total = None  # e.g. a rate not valid yet on the date of supply
         return PlanView(
             plan=plan,
             customer_name="" if customer is None else customer.display_name,
@@ -329,8 +341,13 @@ class RecurringHandlers:
         )
 
 
-def to_template(draft: DraftInput) -> InvoiceTemplate:
-    """Turn the editor's content into a plan's template (the lines are checked here)."""
+def to_template(
+    draft: DraftInput, rates: Sequence[TaxRate], kept: Collection[UUID] = ()
+) -> InvoiceTemplate:
+    """Turn the editor's content into a plan's template (the lines are checked here).
+
+    ``kept``: hidden rates the plan had before; they stay.
+    """
     discount = (
         None
         if draft.discount_value is None
@@ -341,7 +358,7 @@ def to_template(draft: DraftInput) -> InvoiceTemplate:
     return InvoiceTemplate(
         currency=draft.currency,
         price_mode=draft.price_mode,
-        lines=tuple(line.to_domain(index) for index, line in enumerate(draft.lines)),
+        lines=draft_lines(draft, rates, kept),
         language=draft.language,
         discount=discount,
         subject=draft.subject,
@@ -387,7 +404,8 @@ def _line_input(line: DocumentLine) -> LineInput:
         unit=None if line.unit is None else line.unit.code,
         unit_price=str(line.unit_price),
         discount_percent=str(line.discount_percent),
-        tax_category=line.tax_category,
+        tax_rate_id=line.tax_rate_id,
+        pass_through=line.is_pass_through,
         supply=line.supply,
         article_id=line.article_id,
     )

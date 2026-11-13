@@ -7,10 +7,12 @@ from typing import TYPE_CHECKING, Protocol
 from rhinvoice.application.common import PageRequest, SortDirection
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from uuid import UUID
 
     from rhinvoice.application.common import Page
     from rhinvoice.domain.catalog.article import Article
+    from rhinvoice.domain.tax.tax_rate import TaxRate
 
 
 class ArticleSort(StrEnum):
@@ -40,3 +42,10 @@ class ArticleRepository(Protocol):
     def add(self, article: Article) -> None: ...
     def update(self, article: Article) -> None: ...
     def search(self, query: ArticleQuery) -> Page[Article]: ...
+    def adopt_rates(self, rates: Mapping[str, TaxRate]) -> None:
+        """Give the articles saved before the company had rates the rate of their category.
+
+        ``rates`` names the rate of each former category as stored (standard, reduced,
+        special, zero, exempt); pass-through items stay without (migration 0027).
+        """
+        ...

@@ -26,6 +26,7 @@ from rhinvoice.application.numbering.handlers import NumberingHandlers
 from rhinvoice.application.onboarding.handlers import OnboardingHandlers
 from rhinvoice.application.recurring.handlers import RecurringHandlers
 from rhinvoice.application.support.handlers import SupportHandlers
+from rhinvoice.application.tax.handlers import TaxRateHandlers
 from rhinvoice.application.text.handlers import TextHandlers
 from rhinvoice.application.updates.handlers import UpdateHandlers
 from rhinvoice.domain.shared.clock import Clock, SystemClock
@@ -63,6 +64,7 @@ class Container:
     company: CompanyHandlers
     customers: CustomerHandlers
     articles: ArticleHandlers
+    tax_rates: TaxRateHandlers
     numbering: NumberingHandlers
     documents: DocumentHandlers
     dashboard: DashboardHandlers
@@ -195,6 +197,7 @@ def build_container(
         company=company,
         customers=customers,
         articles=articles,
+        tax_rates=TaxRateHandlers(uow=uow),
         numbering=NumberingHandlers(uow=uow, clock=effective_clock),
         idempotency=IdempotencyHandlers(uow=uow, clock=effective_clock),
         documents=documents,

@@ -169,6 +169,8 @@ def serve(  # noqa: PLR0913 - the server's options; the last two only for the de
     if settings.run_migrations:
         upgrade(settings.database_url)
     container = build_container(settings, own=own)
+    # A release may bring new percentages of the country's presets (ADR 0044).
+    container.tax_rates.apply_preset_updates()
     try:
         jobs = _background_jobs(settings, container) + _backup_jobs(settings, container, own)
     except NotADemoDatabaseError as error:

@@ -43,11 +43,14 @@ from rhinvoice.domain.shared.email import EmailAddress
 from rhinvoice.domain.shared.iban import Bic, Iban
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
-from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.supply import Supply
 from rhinvoice.domain.tax.vat_number import VatNumber
 from rhinvoice.infrastructure.db.search import NATURAL_COLLATION, text_match
-from rhinvoice.infrastructure.db.serialization import info_block_from_json, info_block_to_json
+from rhinvoice.infrastructure.db.serialization import (
+    info_block_from_json,
+    info_block_to_json,
+    stored_kind,
+)
 from rhinvoice.infrastructure.db.tables import (
     article_prices,
     articles,
@@ -69,6 +72,7 @@ if TYPE_CHECKING:
     from sqlalchemy import Connection, RowMapping, Select
 
     from rhinvoice.application.common import PageRequest
+    from rhinvoice.domain.tax.tax_rate import TaxRate
 
 # --- Mapping helpers ---------------------------------------------------------------
 
@@ -518,13 +522,14 @@ class SqlArticleRepository:
             number=row["number"],
             name=row["name"],
             unit=Unit(row["unit"]),
-            tax_category=TaxCategory(row["tax_category"]),
+            tax_category=stored_kind(row["tax_category"]),
             prices=prices,
             created_at=row["created_at"],
             description=row["description"],
             group=row["article_group"],
             archived=row["archived"],
             supply=Supply(row["supply"]),
+            tax_rate_id=row["tax_rate_id"],
         )
 
     def get(self, article_id: UUID) -> Article | None:
@@ -550,6 +555,14 @@ class SqlArticleRepository:
         prices = self._prices([row["id"] for row in rows])
         return [self._from_row(row, prices[row["id"]]) for row in rows]
 
+    def adopt_rates(self, rates: Mapping[str, TaxRate]) -> None:
+        for category, rate in rates.items():
+            self._connection.execute(
+                update(articles)
+                .where(articles.c.tax_rate_id.is_(None), articles.c.tax_category == category)
+                .values(tax_rate_id=rate.id, tax_category=rate.kind.value)
+            )
+
     def _values(self, article: Article) -> dict[str, Any]:
         return {
             "id": article.id,
@@ -559,6 +572,7 @@ class SqlArticleRepository:
             "article_group": article.group,
             "unit": article.unit.code,
             "tax_category": article.tax_category.value,
+            "tax_rate_id": article.tax_rate_id,
             "supply": article.supply.value,
             "archived": article.archived,
             "created_at": article.created_at,

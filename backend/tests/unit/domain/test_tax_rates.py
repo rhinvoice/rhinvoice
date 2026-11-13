@@ -41,19 +41,9 @@ def test_rates_on_date_of_supply(
     special: str | None,
 ) -> None:
     rates = profile_of(country).rates_on(on)
-    assert rates.rate(TaxCategory.STANDARD) == Decimal(standard)
-    assert rates.rate(TaxCategory.REDUCED) == Decimal(reduced)
-    assert rates.rate(TaxCategory.ZERO) == 0
-    assert rates.rate(TaxCategory.EXEMPT) == 0
-    assert rates.rate(TaxCategory.PASS_THROUGH) == 0
-    if special is None:
-        with pytest.raises(ValidationError) as error:
-            rates.rate(TaxCategory.SPECIAL)
-        assert error.value.details == {
-            "tax_category": "this tax rate does not exist in the country"
-        }
-    else:
-        assert rates.rate(TaxCategory.SPECIAL) == Decimal(special)
+    assert rates.standard == Decimal(standard)
+    assert rates.reduced == Decimal(reduced)
+    assert rates.special == (None if special is None else Decimal(special))
 
 
 def test_unknown_dates_are_rejected() -> None:
@@ -220,16 +210,16 @@ def test_a_missing_vat_number_is_noticed_where_it_would_reverse_charge(
     ("treatment", "category", "code"),
     [
         (TaxTreatment.DOMESTIC, TaxCategory.STANDARD, VatCode.STANDARD),
-        (TaxTreatment.DOMESTIC, TaxCategory.REDUCED, VatCode.STANDARD),
-        (TaxTreatment.DOMESTIC, TaxCategory.SPECIAL, VatCode.STANDARD),
         (TaxTreatment.DOMESTIC, TaxCategory.ZERO, VatCode.ZERO),
         (TaxTreatment.DOMESTIC, TaxCategory.EXEMPT, VatCode.EXEMPT),
         (TaxTreatment.REVERSE_CHARGE, TaxCategory.STANDARD, VatCode.REVERSE_CHARGE),
         (TaxTreatment.EXPORT, TaxCategory.STANDARD, VatCode.EXPORT),
-        (TaxTreatment.GOODS_EXPORT, TaxCategory.REDUCED, VatCode.EXPORT),
+        (TaxTreatment.GOODS_EXPORT, TaxCategory.STANDARD, VatCode.EXPORT),
+        (TaxTreatment.GOODS_EXPORT, TaxCategory.EXEMPT, VatCode.EXPORT),
         (TaxTreatment.INTRA_COMMUNITY, TaxCategory.STANDARD, VatCode.INTRA_COMMUNITY),
         (TaxTreatment.SMALL_BUSINESS, TaxCategory.STANDARD, VatCode.EXEMPT),
-        (TaxTreatment.EXEMPT, TaxCategory.REDUCED, VatCode.EXEMPT),
+        (TaxTreatment.EXEMPT, TaxCategory.STANDARD, VatCode.EXEMPT),
+        (TaxTreatment.SMALL_BUSINESS, TaxCategory.ZERO, VatCode.EXEMPT),
         (TaxTreatment.DOMESTIC, TaxCategory.PASS_THROUGH, VatCode.EXEMPT),
         (TaxTreatment.REVERSE_CHARGE, TaxCategory.PASS_THROUGH, VatCode.EXEMPT),
         (TaxTreatment.EXPORT, TaxCategory.PASS_THROUGH, VatCode.EXEMPT),

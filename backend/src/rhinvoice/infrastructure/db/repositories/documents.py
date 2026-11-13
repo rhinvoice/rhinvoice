@@ -204,6 +204,7 @@ def _line_values(document_id: UUID, position: int, line: DocumentLine) -> dict[s
         "tax_category": line.tax_category.value,
         "supply": line.supply.value,
         "tax_rate": line.tax_rate,
+        "tax_rate_id": line.tax_rate_id,
         "article_id": line.article_id,
     }
 
@@ -222,6 +223,7 @@ def _line_from_row(row: RowMapping) -> DocumentLine:
         supply=Supply(row["supply"]),
         article_id=row["article_id"],
         tax_rate=None if row["tax_rate"] is None else Decimal(row["tax_rate"]),
+        tax_rate_id=row["tax_rate_id"],
     )
 
 

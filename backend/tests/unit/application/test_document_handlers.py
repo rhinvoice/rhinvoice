@@ -28,13 +28,15 @@ from rhinvoice.domain.document.document import (
 from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
 from rhinvoice.domain.numbering.sequence import SequenceKind
 from rhinvoice.domain.shared.clock import FixedClock
-from rhinvoice.domain.shared.country import CountryCode
+from rhinvoice.domain.shared.country import Country, CountryCode
 from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
 from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import EXEMPT, REDUCED, SPECIAL, STANDARD, ZERO
 from rhinvoice.domain.tax.supply import Supply
+from rhinvoice.domain.tax.tax_rate import RateCategory, RateValue, TaxRate
 from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.tax.vat_number import VatNumber
 from rhinvoice.domain.text.template import TextKind, TextTemplate
@@ -79,7 +81,7 @@ FOOD = LineInput(
     quantity="3",
     unit="C62",
     unit_price="12.35",
-    tax_category=TaxCategory.REDUCED,
+    tax_rate_id=factories.rate_id(REDUCED),
 )
 
 
@@ -858,31 +860,50 @@ def test_preview_calculates_without_saving(
     preview = handlers.preview(DocumentType.INVOICE, draft_input())
     view = preview.view
     assert view.totals.subtotal == Money(Decimal("1537.05"), Currency.CHF)
+    rate = factories.rate_id
     assert preview.rates == {
-        TaxCategory.STANDARD: Decimal("8.1"),
-        TaxCategory.REDUCED: Decimal("2.6"),
-        TaxCategory.SPECIAL: Decimal("3.8"),
-        TaxCategory.ZERO: Decimal(0),
-        TaxCategory.EXEMPT: Decimal(0),
-        TaxCategory.PASS_THROUGH: Decimal(0),
+        rate(STANDARD): Decimal("8.1"),
+        rate(REDUCED): Decimal("2.6"),
+        rate(SPECIAL): Decimal("3.8"),
+        rate(ZERO): Decimal(0),
+        rate(EXEMPT): Decimal(0),
     }
+    # The percentage of the date of supply; a rate valid from a later date is left out.
+    later = TaxRate(
+        id=new_id(),
+        name="Ab 2030",
+        category=RateCategory.STANDARD,
+        values=(RateValue(date(2030, 1, 1), Decimal(9)),),
+    )
+    store.tax_rates.append(later)
     export = handlers.preview(
         DocumentType.INVOICE,
         draft_input(treatment_override=TaxTreatment.EXPORT, issue_date=date(2023, 6, 1)),
     )
-    assert set(export.rates.values()) == {Decimal(0)}
-    # Germany has no special rate: the category is not offered.
+    assert export.rates == {
+        rate(STANDARD): Decimal(0),
+        rate(REDUCED): Decimal(0),
+        rate(SPECIAL): Decimal(0),
+        rate(ZERO): Decimal(0),
+        rate(EXEMPT): Decimal(0),
+    }
+    in_2023 = handlers.preview(DocumentType.INVOICE, draft_input(issue_date=date(2023, 6, 1)))
+    assert in_2023.rates[rate(STANDARD)] == Decimal("7.7")
+    in_2030 = handlers.preview(DocumentType.INVOICE, draft_input(service_to=date(2030, 1, 1)))
+    assert in_2030.rates[later.id] == Decimal(9)
+    # Germany has no special rate: its company has none.
     germany = factories.address(country=CountryCode("DE"))
     store.company = factories.company(address=germany)
+    store.tax_rates = list(factories.tax_rates(Country.DE).values())
     local = factories.customer(id=UUID(int=3), address=germany)
     store.customers[local.id] = local
     german = handlers.preview(DocumentType.INVOICE, draft_input(customer_id=local.id))
-    assert german.rates[TaxCategory.STANDARD] == Decimal(19)
-    assert TaxCategory.SPECIAL not in german.rates
+    assert german.rates[rate(STANDARD)] == Decimal(19)
+    assert rate(SPECIAL) not in german.rates
     assert view.document.content.treatment is TaxTreatment.DOMESTIC
     assert view.display_status is DisplayStatus.DRAFT
     assert store.documents == {}
-    assert [unit.commits for unit in units] == [0, 0, 0]
+    assert [unit.commits for unit in units] == [0, 0, 0, 0, 0]
     with raises_exactly(ValidationError, "cancellations are created by cancelling an invoice"):
         handlers.preview(DocumentType.CANCELLATION, draft_input())
 
@@ -937,3 +958,164 @@ def test_converted_invoices_get_the_invoice_texts(handlers: DocumentHandlers, st
     handlers.issue(own.id)
     kept = handlers.convert_to_invoice(own.id).document
     assert kept.content.intro_text == "Hallo Anna"
+
+
+# --- Own tax rates (ADR 0044) ---------------------------------------------------------
+
+AVERAGE = TaxRate(
+    id=UUID(int=0x24),
+    name="Landwirtschaft § 24",
+    category=RateCategory.STANDARD,
+    values=(RateValue(date(2025, 1, 1), Decimal("7.8")),),
+    notice="Durchschnittssatz § 24 UStG",
+)
+
+
+def with_rate(store: Store, rate: TaxRate) -> TaxRate:
+    """Add a rate to the company's (seeded on the first unit of work)."""
+    with InMemoryUnitOfWork(store) as uow:
+        uow.tax_rates.add(rate)
+        uow.commit()
+    return rate
+
+
+def test_lines_take_the_company_rates(handlers: DocumentHandlers, store: Store) -> None:
+    exempt = factories.rate_id(EXEMPT)
+    lines = (
+        HOURS,
+        replace(HOURS, tax_rate_id=exempt),
+        replace(HOURS, pass_through=True),
+        LineInput(kind=LineKind.TEXT, description="Phase 1", tax_rate_id=exempt),
+    )
+    created = handlers.create(DocumentType.INVOICE, draft_input(lines=lines)).document
+    assert [(line.tax_category, line.tax_rate_id) for line in created.content.lines] == [
+        (TaxCategory.STANDARD, factories.rate_id(STANDARD)),
+        (TaxCategory.EXEMPT, exempt),
+        (TaxCategory.PASS_THROUGH, None),
+        # Text lines have no tax: a rate sent along is left out.
+        (TaxCategory.STANDARD, None),
+    ]
+    with raises_exactly(ValidationError, "unknown tax rate") as unknown:
+        handlers.create(
+            DocumentType.INVOICE, draft_input(lines=(HOURS, replace(HOURS, tax_rate_id=new_id())))
+        )
+    assert (unknown.value.field, unknown.value.code) == ("lines.1.tax_rate_id", "tax_rate_unknown")
+    with raises_exactly(ValidationError, "a pass-through item has no tax rate") as passed:
+        handlers.create(
+            DocumentType.INVOICE,
+            draft_input(lines=(replace(HOURS, pass_through=True, tax_rate_id=exempt),)),
+        )
+    assert passed.value.field == "lines.0.tax_rate_id"
+    # Without a taxed rate to fall back on, a position names its rate.
+    store.tax_rates = [
+        rate for rate in store.tax_rates if rate.category is not RateCategory.STANDARD
+    ]
+    with raises_exactly(ValidationError, "a tax rate is required") as missing:
+        handlers.create(DocumentType.INVOICE, draft_input(lines=(HOURS,)))
+    assert (missing.value.field, missing.value.code) == ("lines.0.tax_rate_id", "tax_rate_missing")
+
+
+def test_hidden_rates_stay_where_they_were_chosen(handlers: DocumentHandlers, store: Store) -> None:
+    created = handlers.create(DocumentType.INVOICE, draft_input()).document
+    reduced = factories.rate_id(REDUCED)
+    store.tax_rates = [replace(rate, hidden=rate.id == reduced) for rate in store.tax_rates]
+    # The draft keeps its line at the hidden rate, also when saved again.
+    kept = handlers.update(created.id, draft_input()).document.content.lines[1]
+    assert kept.tax_rate_id == reduced
+    # The editor's preview of that draft shows it too.
+    assert handlers.preview(DocumentType.INVOICE, draft_input()).view.totals.tax.amount > 0
+    # New choices of the hidden rate are refused.
+    with raises_exactly(ValidationError, "the tax rate is hidden") as hidden:
+        handlers.create(DocumentType.INVOICE, draft_input())
+    assert (hidden.value.field, hidden.value.code) == ("lines.1.tax_rate_id", "tax_rate_hidden")
+    # Unless the caller keeps them, such as a recurring plan that had them before.
+    again = handlers.create(DocumentType.INVOICE, draft_input(), kept_rates=(reduced,))
+    assert again.document.content.lines[1].tax_rate_id == reduced
+    # Without a choice, a position takes the standard rate, never a hidden one.
+    standard = factories.rate_id(STANDARD)
+    store.tax_rates = [replace(rate, hidden=rate.id == standard) for rate in store.tax_rates]
+    fallback = handlers.create(DocumentType.INVOICE, draft_input(lines=(HOURS,)))
+    assert fallback.document.content.lines[0].tax_rate_id == factories.rate_id(REDUCED)
+
+
+def test_issuing_freezes_the_rates_and_their_notices(
+    handlers: DocumentHandlers, store: Store
+) -> None:
+    with_rate(store, AVERAGE)
+    farm = replace(HOURS, tax_rate_id=AVERAGE.id)
+    exempt = replace(HOURS, tax_rate_id=factories.rate_id(EXEMPT))
+    draft = handlers.create(
+        DocumentType.INVOICE, draft_input(lines=(farm, exempt, farm, HOURS))
+    ).document
+    view = handlers.get(draft.id)
+    assert [rate.id for rate in view.rates] == [
+        AVERAGE.id,
+        factories.rate_id(EXEMPT),
+        factories.rate_id(STANDARD),
+    ]
+    assert view.rate_notices == ("Durchschnittssatz § 24 UStG",)
+    assert view.printed_notices == ("Durchschnittssatz § 24 UStG",)
+    assert view.notice == "Durchschnittssatz § 24 UStG"
+    assert view.totals.groups[0].rate == Decimal("7.8")
+    issued = handlers.issue(draft.id)
+    assert issued.document.issued_snapshot.rates == (
+        AVERAGE.frozen(),
+        store.tax_rates[4].frozen(),
+        store.tax_rates[0].frozen(),
+    )
+    assert [line.tax_rate for line in issued.document.content.lines] == [
+        Decimal("7.8"),
+        Decimal(0),
+        Decimal("7.8"),
+        Decimal("8.1"),
+    ]
+    # Rewording the rate later changes nothing on the issued document.
+    store.tax_rates = [
+        replace(rate, notice="Neu") if rate.id == AVERAGE.id else rate for rate in store.tax_rates
+    ]
+    assert handlers.get(draft.id).rate_notices == ("Durchschnittssatz § 24 UStG",)
+    # The cancellation repeats the rates of its invoice.
+    cancelled = handlers.cancel(draft.id).document
+    cancellation = handlers.get(cancelled.cancellation_id)
+    assert cancellation.rate_notices == ("Durchschnittssatz § 24 UStG",)
+    assert cancellation.document.issued_snapshot.rates == issued.document.issued_snapshot.rates
+
+
+def test_rate_notices_print_after_the_treatments_and_only_where_taxed(
+    handlers: DocumentHandlers, store: Store
+) -> None:
+    with_rate(store, AVERAGE)
+    farm = replace(HOURS, tax_rate_id=AVERAGE.id)
+    # The service is taxed at home, the goods go abroad as an export delivery.
+    store.customers[CUSTOMER] = replace(
+        store.customers[CUSTOMER],
+        delivery_address=factories.address(country=CountryCode("AT")),
+    )
+    store.legal_notices[TaxTreatment.GOODS_EXPORT, Language.DE] = "Ausfuhr."
+    goods = replace(farm, supply=Supply.GOODS, tax_rate_id=factories.rate_id(REDUCED))
+    mixed = handlers.create(DocumentType.INVOICE, draft_input(lines=(farm, goods)))
+    assert [rate.id for rate in mixed.rates] == [AVERAGE.id]
+    assert mixed.printed_notices == ("Ausfuhr.", "Durchschnittssatz § 24 UStG")
+    assert mixed.notice == "Ausfuhr.\nDurchschnittssatz § 24 UStG"
+    # An export charges no VAT at home: the rate's notice does not apply.
+    export = handlers.create(
+        DocumentType.INVOICE,
+        draft_input(lines=(farm,), treatment_override=TaxTreatment.EXPORT),
+    )
+    assert export.rates == ()
+    assert export.rate_notices == ()
+
+
+def test_documents_issued_before_own_rates_print_no_rate_notices(
+    handlers: DocumentHandlers, store: Store
+) -> None:
+    with_rate(store, AVERAGE)
+    farm = replace(HOURS, tax_rate_id=AVERAGE.id)
+    issued = handlers.issue(
+        handlers.create(DocumentType.INVOICE, draft_input(lines=(farm,))).document.id
+    ).document
+    stored = store.documents[issued.id]
+    older = replace(issued, snapshot=replace(issued.issued_snapshot, rates=()))
+    store.documents[issued.id] = replace(stored, document=older)
+    view = handlers.get(issued.id)
+    assert (view.rates, view.rate_notices) == ((), ())

@@ -3,6 +3,7 @@
 
 from dataclasses import replace
 from datetime import date
+from decimal import Decimal
 from pathlib import Path
 from uuid import UUID
 
@@ -20,8 +21,9 @@ from rhinvoice.domain.shared.email import EmailAddress
 from rhinvoice.domain.shared.iban import Bic
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
-from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import REDUCED
 from rhinvoice.domain.tax.supply import Supply
+from rhinvoice.domain.tax.tax_rate import RateCategory, RateValue, TaxRate
 from rhinvoice.domain.tax.vat_number import VatNumber
 from rhinvoice.infrastructure.rendering.html import JinjaDocumentRenderer, css_string, paragraphs
 from tests.unit.application.conftest import NOW
@@ -43,7 +45,7 @@ FOOD = LineInput(
     description="Kaffee",
     quantity="3",
     unit_price="12.35",
-    tax_category=TaxCategory.REDUCED,
+    tax_rate_id=factories.rate_id(REDUCED),
 )
 TITLE = LineInput(kind=LineKind.TEXT, description="Phase 2", details="ab März")
 NBSP = " "
@@ -193,7 +195,7 @@ FEE = LineInput(
     description="Gebühr Handelsregister",
     quantity="1",
     unit_price="250.37",
-    tax_category=TaxCategory.PASS_THROUGH,
+    pass_through=True,
 )
 COPIES = LineInput(
     kind=LineKind.ITEM,
@@ -202,7 +204,7 @@ COPIES = LineInput(
     unit="C62",
     unit_price="20",
     discount_percent="10",
-    tax_category=TaxCategory.PASS_THROUGH,
+    pass_through=True,
 )
 
 
@@ -274,7 +276,7 @@ def test_a_document_of_pass_through_lines_only(printing: PrintHandlers) -> None:
         description="Stamps",
         quantity="3",
         unit_price="2",
-        tax_category=TaxCategory.PASS_THROUGH,
+        pass_through=True,
     )
     counted = printing.preview_html(DocumentType.INVOICE, draft(lines=(stamps,)))
     assert f"<span>Stamps (3{NBSP}× 2.00)</span>" in counted
@@ -614,3 +616,30 @@ def test_paper_footers_fill_the_three_margin_boxes(printing: PrintHandlers, stor
     store.bank_accounts.clear()
     plain = printing.preview_html(DocumentType.INVOICE, draft(lines=(FOOD,)))
     assert plain.count('content: "";') == 2
+
+
+def test_the_notices_of_rates_print_after_the_treatments(
+    printing: PrintHandlers, store: Store
+) -> None:
+    """ADR 0044: a rate may bring a notice, printed once on documents that use it."""
+    store.tax_rates = [
+        *factories.tax_rates().values(),
+        TaxRate(
+            id=UUID(int=0x24),
+            name="Pauschale",
+            category=RateCategory.STANDARD,
+            values=(RateValue(date(2025, 1, 1), Decimal("7.8")),),
+            notice="Besteuerung nach Durchschnittssätzen",
+        ),
+    ]
+    farm = replace(HOURS, tax_rate_id=UUID(int=0x24))
+    html = printing.preview_html(DocumentType.INVOICE, draft(lines=(farm, FOOD, farm)))
+    assert html.count('<p class="notice">') == 1
+    assert '<p class="notice">Besteuerung nach Durchschnittssätzen</p>' in html
+    store.customers[CUSTOMER] = replace(
+        store.customers[CUSTOMER], delivery_address=factories.address(country=CountryCode("AT"))
+    )
+    goods = replace(FOOD, supply=Supply.GOODS)
+    both = printing.preview_html(DocumentType.INVOICE, draft(lines=(farm, goods)))
+    export = both.index('<p class="notice">Steuerbefreite Ausfuhrlieferung')
+    assert export < both.index('<p class="notice">Besteuerung nach Durchschnittssätzen</p>')

@@ -11,6 +11,8 @@ from fastapi.testclient import TestClient
 from rhinvoice.api.container import Container
 from rhinvoice.application.document.printing import PrintModel, ReminderPrint
 from rhinvoice.domain.shared.clock import FixedClock
+from rhinvoice.domain.tax.presets import EXEMPT, REDUCED, SPECIAL, STANDARD, ZERO
+from tests.unit.domain import factories
 
 type Json = dict[str, Any]
 
@@ -22,7 +24,7 @@ LINES = [
         "quantity": "3",
         "unit": "C62",
         "unit_price": "12.35",
-        "tax_category": "reduced",
+        "tax_rate_id": str(factories.rate_id(REDUCED)),
     },
 ]
 
@@ -231,7 +233,7 @@ PASS_THROUGH = {
     "description": "Gebühr Handelsregister",
     "quantity": "1",
     "unit_price": "250.35",
-    "tax_category": "pass_through",
+    "pass_through": True,
 }
 
 
@@ -487,12 +489,11 @@ def test_preview_calculates_without_saving(user_client: TestClient, customer_id:
     assert preview["line_amounts"] == ["1500.00", None, "37.05"]
     assert preview["totals"]["total"] == "1493.55"
     assert preview["rates"] == {
-        "standard": "8.1",
-        "reduced": "2.6",
-        "special": "3.8",
-        "zero": "0",
-        "exempt": "0",
-        "pass_through": "0",
+        str(factories.rate_id(STANDARD)): "8.1",
+        str(factories.rate_id(REDUCED)): "2.6",
+        str(factories.rate_id(SPECIAL)): "3.8",
+        str(factories.rate_id(ZERO)): "0",
+        str(factories.rate_id(EXEMPT)): "0",
     }
     assert user_client.get("/api/documents").json()["total"] == 0
     invalid = user_client.post(

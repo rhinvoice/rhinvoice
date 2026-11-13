@@ -191,6 +191,26 @@ customers = Table(
     Column("created_at", DateTime(timezone=True), nullable=False),
 )
 
+# The company's tax rates (ADR 0044); lines and articles refer to them.
+tax_rates = Table(
+    "tax_rates",
+    metadata,
+    Column("id", Uuid(), primary_key=True),
+    Column("name", String(60), nullable=False),
+    Column("category", String(1), nullable=False),
+    # The dated percentages, oldest first: [{"valid_from": "2024-01-01", "percent": "8.1"}].
+    Column("rate_values", JSONB, nullable=False),
+    Column("exemption_reason", String(300), nullable=False, server_default=""),
+    Column("notice", String(300), nullable=False, server_default=""),
+    Column("preset", String(40)),
+    Column("hidden", Boolean, nullable=False, server_default="false"),
+    Column("position", SmallInteger, nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False, server_default=text("now()")),
+    CheckConstraint("category IN ('S', 'Z', 'E')", name="category"),
+    Index("uq_tax_rates_name", text("lower(name)"), unique=True),
+    Index("uq_tax_rates_preset", "preset", unique=True),
+)
+
 articles = Table(
     "articles",
     metadata,
@@ -201,6 +221,7 @@ articles = Table(
     Column("article_group", String(50), nullable=False, server_default=""),
     Column("unit", String(3), nullable=False),
     Column("tax_category", String(20), nullable=False),
+    Column("tax_rate_id", Uuid(), ForeignKey("tax_rates.id", ondelete="RESTRICT")),
     Column("supply", String(10), nullable=False, server_default="service"),
     Column("archived", Boolean, nullable=False, server_default="false"),
     Column("created_at", DateTime(timezone=True), nullable=False),
@@ -301,6 +322,7 @@ document_lines = Table(
     Column("tax_category", String(20), nullable=False),
     Column("supply", String(10), nullable=False, server_default="service"),
     Column("tax_rate", Numeric(5, 2)),
+    Column("tax_rate_id", Uuid(), ForeignKey("tax_rates.id", ondelete="RESTRICT"), index=True),
     Column("article_id", Uuid(), ForeignKey("articles.id", ondelete="SET NULL")),
     UniqueConstraint("document_id", "position", name="uq_document_lines_document_position"),
 )

@@ -27,7 +27,6 @@ from rhinvoice.domain.document.document import (
 )
 from rhinvoice.domain.document.lines import LineKind, PriceMode
 from rhinvoice.domain.shared.clock import FixedClock
-from rhinvoice.domain.shared.country import Country
 from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
@@ -83,7 +82,7 @@ def imported(store: Store, *, with_pdf: bool = True) -> Document:
     if with_pdf:
         document = document.archive_pdf(hashlib.sha256(PDF).hexdigest())
         store.pdfs[document.id] = PDF
-    totals = document.totals(Country.CH, cash_rounding=False, today=date(2015, 2, 14))
+    totals = document.totals({}, cash_rounding=False, today=date(2015, 2, 14))
     store.documents[document.id] = StoredDocument(document, build_index(document, totals, customer))
     return document
 

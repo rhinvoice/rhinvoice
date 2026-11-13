@@ -44,6 +44,7 @@ from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.country import Country, CountryCode
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
+from rhinvoice.domain.tax.presets import REDUCED, STANDARD
 from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.tax.vat_number import VatNumber
 from rhinvoice.domain.text.template import TextKind
@@ -145,6 +146,23 @@ def test_the_demo_takes_over_invoices_of_the_program_used_before(
     former = next(c for c in store.customers.values() if c.company_name.startswith("Pension"))
     assert former.archived
     assert former.address.city == store.company.address.city
+
+
+def test_the_book_is_sold_at_the_reduced_rate(demo: DemoHandlers, store: Store) -> None:
+    store.company = factories.company(name="Pixelwerk GmbH")
+    demo.seed()
+    rates = {article.name: article.tax_rate_id for article in store.articles.values()}
+    reduced = factories.rate_id(REDUCED)
+    assert rates.pop("Fachbuch «Gutes Design»") == reduced
+    assert set(rates.values()) == {factories.rate_id(STANDARD)}
+    books = [
+        line
+        for stored in store.documents.values()
+        for line in stored.document.content.lines
+        if line.description == "Fachbuch «Gutes Design»"
+    ]
+    assert books
+    assert {line.tax_rate_id for line in books} == {reduced}
 
 
 def test_a_swiss_installation_gets_invoices_since_january_of_last_year(

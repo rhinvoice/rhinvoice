@@ -14,15 +14,29 @@ from rhinvoice.domain.recurring.plan import (
     RecurringPlan,
     RunOutcome,
 )
-from rhinvoice.infrastructure.db.serialization import template_from_json, template_to_json
+from rhinvoice.infrastructure.db.serialization import (
+    Json,
+    template_from_json,
+    template_to_json,
+)
 from rhinvoice.infrastructure.db.tables import recurring_plans, recurring_runs
 
 if TYPE_CHECKING:
-    from collections.abc import Collection
+    from collections.abc import Collection, Mapping
     from datetime import date
     from uuid import UUID
 
     from sqlalchemy import Connection, RowMapping
+
+    from rhinvoice.domain.tax.tax_rate import TaxRate
+
+
+def _adopted(line: Json, rates: Mapping[str, TaxRate]) -> Json:
+    """Give a plan's line without a rate the rate of its former category (migration 0027)."""
+    rate = rates.get(line["tax_category"])
+    if line["kind"] != "item" or line.get("tax_rate_id") is not None or rate is None:
+        return line
+    return {**line, "tax_category": rate.kind.value, "tax_rate_id": str(rate.id)}
 
 
 def _plan_from_row(row: RowMapping) -> RecurringPlan:
@@ -98,6 +112,16 @@ class SqlRecurringRepository:
 
     def delete(self, plan_id: UUID) -> None:
         self._connection.execute(delete(recurring_plans).where(recurring_plans.c.id == plan_id))
+
+    def adopt_rates(self, rates: Mapping[str, TaxRate]) -> None:
+        plans = self._connection.execute(select(recurring_plans.c.id, recurring_plans.c.template))
+        for plan_id, template in plans.all():
+            lines = [_adopted(line, rates) for line in template["lines"]]
+            self._connection.execute(
+                update(recurring_plans)
+                .where(recurring_plans.c.id == plan_id)
+                .values(template={**template, "lines": lines})
+            )
 
     def due(self, today: date) -> list[UUID]:
         statement = (

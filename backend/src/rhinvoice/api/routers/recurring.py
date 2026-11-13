@@ -109,7 +109,11 @@ class InvoiceTemplateLineResponse(ApiModel):
     unit: str | None
     unit_price: str
     discount_percent: str
+    tax_rate_id: UUID | None
+    """The company's rate of a position; None for text lines and pass-through items."""
+    pass_through: bool
     tax_category: TaxCategory
+    """The kind of the line's tax: the category of its rate, or pass_through."""
     supply: Supply
     article_id: UUID | None
 
@@ -146,11 +150,13 @@ class InvoiceTemplateResponse(ApiModel):
                     unit=line.unit,
                     unit_price=line.unit_price,
                     discount_percent=line.discount_percent,
-                    tax_category=line.tax_category,
+                    tax_rate_id=line.tax_rate_id,
+                    pass_through=line.pass_through,
+                    tax_category=kept.tax_category,
                     supply=line.supply,
                     article_id=line.article_id,
                 )
-                for line in draft.lines
+                for line, kept in zip(draft.lines, plan.template.lines, strict=True)
             ],
             discount_kind=draft.discount_kind,
             discount_value=draft.discount_value,

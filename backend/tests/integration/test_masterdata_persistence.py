@@ -38,8 +38,10 @@ from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import REDUCED
 from rhinvoice.domain.tax.supply import Supply
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork
+from tests.unit.domain import factories
 from tests.unit.domain.factories import CH_IBAN, CH_QR_IBAN
 
 CLOCK = FixedClock(datetime(2026, 3, 9, 9, 0, tzinfo=UTC))
@@ -277,12 +279,16 @@ def test_customers(engine: Engine) -> None:
 
 
 def test_articles(engine: Engine) -> None:
+    with SqlUnitOfWork(engine) as uow:
+        for rate in factories.tax_rates().values():
+            uow.tax_rates.add(rate)
+        uow.commit()
     handlers = ArticleHandlers(uow=factory(engine), clock=CLOCK)
     beratung = handlers.create(
         SaveArticle(
             name="Beratung",
             unit="HUR",
-            tax_category=TaxCategory.STANDARD,
+            tax_rate_id=factories.rate_id(REDUCED),
             prices={Currency.CHF: "150.1234", Currency.EUR: "160"},
             description="Stundenansatz",
             group="Dienstleistung",
@@ -301,6 +307,10 @@ def test_articles(engine: Engine) -> None:
     assert stored.prices == {Currency.CHF: Decimal("150.1234"), Currency.EUR: Decimal(160)}
     assert handlers.get(kabel.id).prices == {}
     assert (handlers.get(kabel.id).supply, stored.supply) == (Supply.GOODS, Supply.SERVICE)
+    assert (stored.tax_category, stored.tax_rate_id) == (
+        TaxCategory.STANDARD,
+        factories.rate_id(REDUCED),
+    )
 
     updated = handlers.update(
         beratung.id, SaveArticle(name="Beratung", unit="HUR", prices={Currency.CHF: "170"})
@@ -321,6 +331,8 @@ def test_articles(engine: Engine) -> None:
         handlers.search(ArticleQuery(sort=ArticleSort.CREATED_AT, search="nothing-matches")).items
         == []
     )
+    fee = handlers.create(SaveArticle(name="Gebühr", pass_through=True))
+    assert handlers.get(fee.id).tax_rate_id is None
 
 
 def test_number_sequences(engine: Engine) -> None:

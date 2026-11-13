@@ -16,6 +16,7 @@ def line(category: TaxCategory) -> DocumentLine:
         description="Position",
         unit_price=Decimal("100.00"),
         tax_category=category,
+        tax_rate_id=None if category is TaxCategory.PASS_THROUGH else new_id(),
     )
 
 

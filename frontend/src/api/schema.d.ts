@@ -1793,6 +1793,147 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tax-rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Tax Rates
+         * @description Every rate of the company, hidden ones too, in their order.
+         */
+        get: operations["tax-rates_list_tax_rates"];
+        put?: never;
+        /**
+         * Create Tax Rate
+         * @description Add an own rate.
+         *
+         *     422 rate_standard_needs_percent, rate_zero_needs_zero, rate_exempt_needs_reason;
+         *     409 tax_rate_name_taken, too_many_tax_rates.
+         */
+        post: operations["tax-rates_create_tax_rate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tax-rates/presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Tax Rate Presets
+         * @description List the presets of the company's country no rate comes from yet (e.g. § 24 UStG).
+         *
+         *     409 company_not_set_up.
+         */
+        get: operations["tax-rates_list_tax_rate_presets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tax-rates/presets/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Take Over Tax Rate Preset
+         * @description Add the rate of a preset of the company's country.
+         *
+         *     404 unknown_preset; 409 preset_taken, tax_rate_name_taken, too_many_tax_rates,
+         *     company_not_set_up.
+         */
+        post: operations["tax-rates_take_over_tax_rate_preset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tax-rates/{rate_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save Tax Rate
+         * @description Change name, texts and percentages; issued documents keep what they were issued with.
+         *
+         *     422 rate_category_fixed (the category stays) and the checks of creating;
+         *     409 tax_rate_name_taken.
+         */
+        put: operations["tax-rates_save_tax_rate"];
+        post?: never;
+        /**
+         * Delete Tax Rate
+         * @description Delete a rate nothing refers to.
+         *
+         *     409 tax_rate_in_use: lines, articles or recurring plans use it; hide it instead.
+         */
+        delete: operations["tax-rates_delete_tax_rate"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tax-rates/{rate_id}/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hide Tax Rate
+         * @description Offer the rate no more for new lines and articles; those that use it keep it.
+         */
+        post: operations["tax-rates_hide_tax_rate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tax-rates/{rate_id}/show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Show Tax Rate
+         * @description Offer a hidden rate again.
+         */
+        post: operations["tax-rates_show_tax_rate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/text-templates": {
         parameters: {
             query?: never;
@@ -2038,14 +2179,19 @@ export interface components {
              * @default
              */
             number: string;
+            /**
+             * Pass Through
+             * @default false
+             */
+            pass_through: boolean;
             /** Prices */
             prices?: {
                 [key: string]: string;
             };
             /** @default service */
             supply: components["schemas"]["Supply"];
-            /** @default standard */
-            tax_category: components["schemas"]["TaxCategory"];
+            /** Tax Rate Id */
+            tax_rate_id?: string | null;
             /**
              * Unit
              * @default C62
@@ -2081,6 +2227,8 @@ export interface components {
             };
             supply: components["schemas"]["Supply"];
             tax_category: components["schemas"]["TaxCategory"];
+            /** Tax Rate Id */
+            tax_rate_id: string | null;
             /**
              * Unit
              * @enum {string}
@@ -3271,10 +3419,14 @@ export interface components {
             /** Discount Percent */
             discount_percent: string;
             kind: components["schemas"]["LineKind"];
+            /** Pass Through */
+            pass_through: boolean;
             /** Quantity */
             quantity: string;
             supply: components["schemas"]["Supply"];
             tax_category: components["schemas"]["TaxCategory"];
+            /** Tax Rate Id */
+            tax_rate_id: string | null;
             /** Unit */
             unit: string | null;
             /** Unit Price */
@@ -3406,14 +3558,19 @@ export interface components {
             /** @default item */
             kind: components["schemas"]["LineKind"];
             /**
+             * Pass Through
+             * @default false
+             */
+            pass_through: boolean;
+            /**
              * Quantity
              * @default 1
              */
             quantity: string;
             /** @default service */
             supply: components["schemas"]["Supply"];
-            /** @default standard */
-            tax_category: components["schemas"]["TaxCategory"];
+            /** Tax Rate Id */
+            tax_rate_id?: string | null;
             /**
              * Unit
              * @enum {unknown}
@@ -3449,6 +3606,8 @@ export interface components {
             tax_category: components["schemas"]["TaxCategory"];
             /** Tax Rate */
             tax_rate: string | null;
+            /** Tax Rate Id */
+            tax_rate_id: string | null;
             /** Unit */
             unit: string | null;
             /** Unit Price */
@@ -3837,6 +3996,25 @@ export interface components {
             open_count: number;
         };
         /**
+         * RateCategory
+         * @description The EN 16931 VAT category (UNCL5305) of a domestic taxable line with this rate.
+         * @enum {string}
+         */
+        RateCategory: "S" | "Z" | "E";
+        /**
+         * RateValueSchema
+         * @description A percentage and the day it applies from, until the next value.
+         */
+        RateValueSchema: {
+            /** Percent */
+            percent: string;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+        };
+        /**
          * RatesResponse
          * @description Rates in percent.
          */
@@ -4128,10 +4306,10 @@ export interface components {
         };
         /**
          * TaxCategory
-         * @description Which VAT rate of the country profile applies to a line.
+         * @description The kind of a line's tax: the category of its rate, or pass-through (ADR 0044).
          * @enum {string}
          */
-        TaxCategory: "standard" | "reduced" | "special" | "zero" | "exempt" | "pass_through";
+        TaxCategory: "standard" | "zero" | "exempt" | "pass_through";
         /** TaxGroupResponse */
         TaxGroupResponse: {
             /** Amount */
@@ -4145,6 +4323,66 @@ export interface components {
             /** Tax */
             tax: string;
             vat_code: components["schemas"]["VatCode"];
+        };
+        /**
+         * TaxRatePresetResponse
+         * @description A preset of the company's country that no rate comes from yet.
+         */
+        TaxRatePresetResponse: {
+            category: components["schemas"]["RateCategory"];
+            /** Exemption Reason */
+            exemption_reason: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Notice */
+            notice: string;
+            /** Sources */
+            sources: string[];
+            /** Values */
+            values: components["schemas"]["RateValueSchema"][];
+        };
+        /** TaxRateRequest */
+        TaxRateRequest: {
+            category: components["schemas"]["RateCategory"];
+            /**
+             * Exemption Reason
+             * @default
+             */
+            exemption_reason: string;
+            /** Name */
+            name: string;
+            /**
+             * Notice
+             * @default
+             */
+            notice: string;
+            /** Values */
+            values: components["schemas"]["RateValueSchema"][];
+        };
+        /** TaxRateResponse */
+        TaxRateResponse: {
+            category: components["schemas"]["RateCategory"];
+            /** Exemption Reason */
+            exemption_reason: string;
+            /** Hidden */
+            hidden: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** In Use */
+            in_use: boolean;
+            /** Name */
+            name: string;
+            /** Notice */
+            notice: string;
+            /** Preset */
+            preset: string | null;
+            /** Values */
+            values: components["schemas"]["RateValueSchema"][];
         };
         /**
          * TaxTreatment
@@ -13625,6 +13863,614 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SupportReportResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "tax-rates_list_tax_rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxRateResponse"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "tax-rates_create_tax_rate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxRateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxRateResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "tax-rates_list_tax_rate_presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxRatePresetResponse"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "tax-rates_take_over_tax_rate_preset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxRateResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "tax-rates_save_tax_rate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxRateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxRateResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "tax-rates_delete_tax_rate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "tax-rates_hide_tax_rate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxRateResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "tax-rates_show_tax_rate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxRateResponse"];
                 };
             };
             /** @description Bad Request */

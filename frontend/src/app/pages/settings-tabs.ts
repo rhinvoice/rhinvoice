@@ -1,6 +1,7 @@
 export const SETTINGS_TABS = [
   "company",
   "bank-accounts",
+  "tax-rates",
   "numbering",
   "texts",
   "mail",

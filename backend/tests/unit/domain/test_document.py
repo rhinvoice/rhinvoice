@@ -17,6 +17,8 @@ from rhinvoice.domain.document.document import (
     IssueSnapshot,
     Payment,
     default_due_date,
+    known_rate,
+    rate_of,
 )
 from rhinvoice.domain.document.lines import Discount, DocumentLine, LineKind, PriceMode
 from rhinvoice.domain.shared.country import Country, CountryCode
@@ -25,7 +27,9 @@ from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
 from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import EXEMPT, REDUCED, STANDARD, ZERO
 from rhinvoice.domain.tax.supply import Supply
+from rhinvoice.domain.tax.tax_rate import RateCategory, RateValue, TaxRate
 from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.tax.vat_number import VatNumber
 from tests.helpers import raises_exactly
@@ -36,12 +40,19 @@ LATER = datetime(2026, 3, 10, 14, 30, tzinfo=UTC)
 TODAY = date(2026, 3, 9)
 
 
+CH_RATES = factories.tax_rates(Country.CH)
+DE_RATES = factories.tax_rates(Country.DE)
+PASS = TaxCategory.PASS_THROUGH
+
+
 def line(
     quantity: str = "10",
     price: str = "150",
-    category: TaxCategory = TaxCategory.STANDARD,
+    rate: str = STANDARD,
     supply: Supply = Supply.SERVICE,
 ) -> DocumentLine:
+    """Build a position at the rate of a preset, or passed through (``PASS``)."""
+    rate_id = None if rate == PASS else factories.rate_id(rate)
     return DocumentLine(
         id=new_id(),
         kind=LineKind.ITEM,
@@ -49,8 +60,9 @@ def line(
         quantity=Decimal(quantity),
         unit=Unit("HUR"),
         unit_price=Decimal(price),
-        tax_category=category,
+        tax_category=PASS if rate_id is None else CH_RATES[rate_id].kind,
         supply=supply,
+        tax_rate_id=rate_id,
     )
 
 
@@ -60,7 +72,7 @@ def content(**overrides: object) -> DraftContent:
         "currency": Currency.CHF,
         "language": Language.DE,
         "price_mode": PriceMode.NET,
-        "lines": (line(), line("3", "12.35", TaxCategory.REDUCED)),
+        "lines": (line(), line("3", "12.35", REDUCED)),
         "treatment": TaxTreatment.DOMESTIC,
     }
     values.update(overrides)
@@ -85,6 +97,7 @@ def issued(document_type: DocumentType = DocumentType.INVOICE, **overrides: obje
         issue_date=TODAY,
         due_date=TODAY + timedelta(days=30),
         snapshot=snapshot(),
+        rates=CH_RATES,
         now=NOW,
     )
 
@@ -197,15 +210,15 @@ def test_new_draft_logs_a_tax_override() -> None:
 
 
 def test_draft_totals_use_the_current_rates_of_the_date_of_supply() -> None:
-    old = draft(service_to=date(2023, 12, 31)).totals(Country.CH, cash_rounding=True, today=TODAY)
-    new = draft(service_to=date(2024, 1, 1)).totals(Country.CH, cash_rounding=True, today=TODAY)
+    old = draft(service_to=date(2023, 12, 31)).totals(CH_RATES, cash_rounding=True, today=TODAY)
+    new = draft(service_to=date(2024, 1, 1)).totals(CH_RATES, cash_rounding=True, today=TODAY)
     assert [group.rate for group in old.groups] == [Decimal("7.7"), Decimal("2.5")]
     assert [group.rate for group in new.groups] == [Decimal("8.1"), Decimal("2.6")]
-    german = draft().totals(Country.DE, cash_rounding=False, today=TODAY)
+    german = draft().totals(DE_RATES, cash_rounding=False, today=TODAY)
     assert [group.rate for group in german.groups] == [Decimal(19), Decimal(7)]
     # Without dates a draft uses the rates of today, not of the day it was created.
     created_in_2023 = replace(draft(), created_at=datetime(2023, 6, 1, tzinfo=UTC))
-    swiss = created_in_2023.totals(Country.CH, cash_rounding=True, today=date(2024, 1, 2))
+    swiss = created_in_2023.totals(CH_RATES, cash_rounding=True, today=date(2024, 1, 2))
     assert [group.rate for group in swiss.groups] == [Decimal("8.1"), Decimal("2.6")]
 
 
@@ -280,7 +293,7 @@ def test_issue_freezes_rates_totals_and_parties() -> None:
     assert document.issued_totals is not None
     # 2023 rates: 1500 x 7.7 % = 115.50, 37.05 x 2.5 % = 0.93 -> 1653.48 -> 1653.50
     assert document.issued_totals.total == Money(Decimal("1653.50"), Currency.CHF)
-    assert document.totals(Country.DE, cash_rounding=False, today=TODAY) is document.issued_totals
+    assert document.totals(DE_RATES, cash_rounding=False, today=TODAY) is document.issued_totals
     assert document.events[-1].kind is EventKind.ISSUED
     assert document.events[-1].detail == "R20260001"
     assert document.open_amount() == document.issued_totals.total
@@ -300,7 +313,12 @@ def test_issue_requires_a_position_and_a_valid_due_date() -> None:
         ValidationError, "the document needs at least one position with an amount"
     ) as lines:
         draft(lines=(text,)).issue(
-            number="R1", issue_date=TODAY, due_date=TODAY, snapshot=snapshot(), now=NOW
+            number="R1",
+            issue_date=TODAY,
+            due_date=TODAY,
+            snapshot=snapshot(),
+            rates=CH_RATES,
+            now=NOW,
         )
     assert lines.value.field == "lines"
     with raises_exactly(ValidationError, "the due date is before the document date") as due:
@@ -309,11 +327,19 @@ def test_issue_requires_a_position_and_a_valid_due_date() -> None:
             issue_date=TODAY,
             due_date=TODAY - timedelta(days=1),
             snapshot=snapshot(),
+            rates=CH_RATES,
             now=NOW,
         )
     assert due.value.field == "due_date"
     with raises_exactly(InvalidStateError, "a issued invoice cannot be issued"):
-        issued().issue(number="R2", issue_date=TODAY, due_date=TODAY, snapshot=snapshot(), now=NOW)
+        issued().issue(
+            number="R2",
+            issue_date=TODAY,
+            due_date=TODAY,
+            snapshot=snapshot(),
+            rates=CH_RATES,
+            now=NOW,
+        )
 
 
 def test_issued_documents_use_the_company_country_and_rounding_of_the_snapshot() -> None:
@@ -325,6 +351,7 @@ def test_issued_documents_use_the_company_country_and_rounding_of_the_snapshot()
         issue_date=TODAY,
         due_date=TODAY,
         snapshot=IssueSnapshot(company=company, customer=factories.customer(), bank_account=None),
+        rates=DE_RATES,
         now=NOW,
     )
     assert [line.tax_rate for line in document.content.lines] == [Decimal(19), Decimal(7)]
@@ -343,7 +370,7 @@ def test_goods_lines_use_the_goods_treatment() -> None:
     assert document.content.treatment_of(line()) is TaxTreatment.DOMESTIC
     assert document.content.treatments == (TaxTreatment.DOMESTIC, TaxTreatment.GOODS_EXPORT)
     assert document.content.charges_vat
-    totals = document.totals(Country.CH, cash_rounding=False, today=TODAY)
+    totals = document.totals(CH_RATES, cash_rounding=False, today=TODAY)
     assert [group.tax.amount for group in totals.groups] == [Decimal("121.50"), Decimal(0)]
     # Without goods lines only the document's treatment counts.
     services = draft(goods_treatment=TaxTreatment.GOODS_EXPORT).content
@@ -367,7 +394,7 @@ def test_goods_lines_use_the_goods_treatment() -> None:
 
 
 def test_pass_through_lines_have_no_treatment_of_their_own() -> None:
-    fee = line("1", "80", TaxCategory.PASS_THROUGH, supply=Supply.GOODS)
+    fee = line("1", "80", PASS, supply=Supply.GOODS)
     assert fee.is_pass_through
     assert not line().is_pass_through
     text = DocumentLine(
@@ -392,6 +419,7 @@ def test_pass_through_lines_have_no_treatment_of_their_own() -> None:
         issue_date=TODAY,
         due_date=TODAY + timedelta(days=30),
         snapshot=snapshot(),
+        rates=CH_RATES,
         now=NOW,
     )
     assert [item.tax_rate for item in issued_one.content.lines] == [Decimal("8.1"), Decimal(0)]
@@ -459,6 +487,7 @@ def test_an_intra_community_supply_names_the_vat_id_of_the_company() -> None:
             issue_date=TODAY,
             due_date=TODAY,
             snapshot=IssueSnapshot(company=german, customer=customer, bank_account=None),
+            rates=DE_RATES,
             now=NOW,
         )
     assert (error.value.field, error.value.code) == ("company", "company_vat_id_missing")
@@ -476,6 +505,7 @@ def test_an_intra_community_supply_names_the_vat_id_of_the_company() -> None:
                 customer=replace(customer, vat_number=None),
                 bank_account=None,
             ),
+            rates=DE_RATES,
             now=NOW,
         )
     assert (customer_error.value.field, customer_error.value.code) == (
@@ -488,6 +518,7 @@ def test_an_intra_community_supply_names_the_vat_id_of_the_company() -> None:
         issue_date=TODAY,
         due_date=TODAY,
         snapshot=IssueSnapshot(company=german, customer=customer, bank_account=None),
+        rates=DE_RATES,
         now=NOW,
     )
     assert quote.status is DocumentStatus.SENT
@@ -498,6 +529,7 @@ def test_an_intra_community_supply_names_the_vat_id_of_the_company() -> None:
         issue_date=TODAY,
         due_date=TODAY,
         snapshot=IssueSnapshot(company=german, customer=customer, bank_account=None),
+        rates=DE_RATES,
         now=NOW,
     )
     assert issued_services.status is DocumentStatus.ISSUED
@@ -710,6 +742,7 @@ def test_cancellation_negates_the_invoice() -> None:
         issue_date=TODAY,
         due_date=TODAY,
         snapshot=snapshot(),
+        rates=CH_RATES,
         now=NOW,
     )
     assert cancellation.status is DocumentStatus.ISSUED
@@ -749,7 +782,7 @@ def test_cancellation_rules() -> None:
     partially = pay(invoice, "1")
     partially.cancel_check()
     cancellation = invoice.cancellation_draft(new_id(), NOW).issue(
-        number="S1", issue_date=TODAY, due_date=TODAY, snapshot=snapshot(), now=NOW
+        number="S1", issue_date=TODAY, due_date=TODAY, snapshot=snapshot(), rates=CH_RATES, now=NOW
     )
     with raises_exactly(InvalidStateError, "a cancelled invoice cannot be cancelled"):
         invoice.cancel(cancellation, NOW).cancel_check()
@@ -781,8 +814,14 @@ def test_a_cancellation_keeps_the_rates_of_its_invoice(
 ) -> None:
     company = factories.company(address=factories.address(country=CountryCode(country)))
     parties = replace(snapshot(), company=company)
+    company_rates = factories.tax_rates(Country(country))
     invoice = draft().issue(
-        number="R1", issue_date=invoice_date, due_date=invoice_date, snapshot=parties, now=NOW
+        number="R1",
+        issue_date=invoice_date,
+        due_date=invoice_date,
+        snapshot=parties,
+        rates=company_rates,
+        now=NOW,
     )
     assert [line.tax_rate for line in invoice.content.lines] == rates
     cancellation = invoice.cancellation_draft(new_id(), NOW).issue(
@@ -790,6 +829,7 @@ def test_a_cancellation_keeps_the_rates_of_its_invoice(
         issue_date=cancellation_date,
         due_date=cancellation_date,
         snapshot=parties,
+        rates=company_rates,
         now=NOW,
     )
     assert [line.tax_rate for line in cancellation.content.lines] == rates
@@ -819,17 +859,34 @@ def test_issuing_checks_the_mandatory_information_of_invoices() -> None:
     with raises_exactly(
         ValidationError, "VAT registered companies state their VAT number (UID) on invoices"
     ) as error:
-        draft().issue(number="R1", issue_date=TODAY, due_date=TODAY, snapshot=unregistered, now=NOW)
+        draft().issue(
+            number="R1",
+            issue_date=TODAY,
+            due_date=TODAY,
+            snapshot=unregistered,
+            rates=CH_RATES,
+            now=NOW,
+        )
     assert error.value.code == "company_vat_number_missing"
     # Quotes are no invoices.
     quote = draft(DocumentType.QUOTE).issue(
-        number="A1", issue_date=TODAY, due_date=TODAY, snapshot=unregistered, now=NOW
+        number="A1",
+        issue_date=TODAY,
+        due_date=TODAY,
+        snapshot=unregistered,
+        rates=CH_RATES,
+        now=NOW,
     )
     assert quote.status is DocumentStatus.SENT
     # Cancellations repeat the parties of their invoice, even when those lack something.
     invoice = issued()
     cancellation = invoice.cancellation_draft(new_id(), NOW).issue(
-        number="S1", issue_date=TODAY, due_date=TODAY, snapshot=unregistered, now=NOW
+        number="S1",
+        issue_date=TODAY,
+        due_date=TODAY,
+        snapshot=unregistered,
+        rates=CH_RATES,
+        now=NOW,
     )
     assert cancellation.status is DocumentStatus.ISSUED
 
@@ -870,7 +927,7 @@ def test_pass_through_lines_alone_need_no_reverse_charge_details() -> None:
     company = factories.company(address=factories.address(country=CountryCode("DE")))
     customer = factories.customer(address=factories.address(country=CountryCode("AT")))
     total = Money(Decimal(80), Currency.EUR)
-    fee = line("1", "80", TaxCategory.PASS_THROUGH)
+    fee = line("1", "80", PASS)
     reverse = TaxTreatment.REVERSE_CHARGE
     only = draft(lines=(fee,), currency=Currency.EUR, treatment=reverse)
     assert only.issue_blockers(company, customer, total) == ()
@@ -890,3 +947,69 @@ def test_issue_blockers_are_empty_when_the_details_are_complete() -> None:
     )
     # Quotes are sent, not issued: they state no tax IDs.
     assert draft(DocumentType.QUOTE).issue_blockers(swiss, factories.customer(), total) == ()
+
+
+# --- Own tax rates (ADR 0044) ---------------------------------------------------------
+
+
+def test_the_rates_of_the_positions() -> None:
+    text = DocumentLine(id=new_id(), kind=LineKind.TEXT, description="Phase 1")
+    goods = line(rate=ZERO, supply=Supply.GOODS)
+    content_ = draft(
+        lines=(text, line(), line(rate=REDUCED), line(), goods, line("1", "5", PASS)),
+        goods_treatment=TaxTreatment.GOODS_EXPORT,
+    ).content
+    standard, reduced, zero = (factories.rate_id(key) for key in (STANDARD, REDUCED, ZERO))
+    assert content_.rate_ids == (standard, reduced, zero)
+    # The exported goods are not taxed at home: their rate prints no notice.
+    assert content_.taxed_rate_ids == (standard, reduced)
+    assert draft(treatment=TaxTreatment.EXPORT).content.taxed_rate_ids == ()
+
+
+def test_lines_refer_to_known_rates_of_their_kind() -> None:
+    standard = factories.rate_id()
+    with raises_exactly(ValidationError, "unknown tax rate") as unknown:
+        draft().totals({}, cash_rounding=False, today=TODAY)
+    assert (unknown.value.field, unknown.value.code) == ("tax_rate_id", "tax_rate_unknown")
+    with raises_exactly(ValidationError, "unknown tax rate"):
+        known_rate(None, CH_RATES)
+    assert known_rate(standard, CH_RATES) is CH_RATES[standard]
+    exempt_line = replace(line(), tax_category=TaxCategory.EXEMPT)
+    with raises_exactly(ValidationError, "the line is exempt, its rate standard") as kind:
+        rate_of(exempt_line, CH_RATES)
+    assert kind.value.field == "tax_rate_id"
+    assert rate_of(line(), CH_RATES) is CH_RATES[standard]
+    with raises_exactly(ValidationError, "unknown tax rate"):
+        draft(lines=(line(rate=ZERO),)).issue(
+            number="R1",
+            issue_date=TODAY,
+            due_date=TODAY,
+            snapshot=snapshot(),
+            rates={},
+            now=NOW,
+        )
+
+
+def test_issuing_freezes_the_percentage_of_each_rate() -> None:
+    average = TaxRate(
+        id=new_id(),
+        name="Landwirtschaft § 24",
+        category=RateCategory.STANDARD,
+        values=(RateValue(date(2025, 1, 1), Decimal("7.8")),),
+    )
+    farm = replace(line("1", "100"), tax_rate_id=average.id)
+    document = draft(lines=(farm, line("1", "10", rate=EXEMPT), line("1", "5", PASS))).issue(
+        number="R1",
+        issue_date=TODAY,
+        due_date=TODAY,
+        snapshot=snapshot(),
+        rates={**CH_RATES, average.id: average},
+        now=NOW,
+    )
+    assert [item.tax_rate for item in document.content.lines] == [
+        Decimal("7.8"),
+        Decimal(0),
+        Decimal(0),
+    ]
+    assert document.frozen_totals.tax.amount == Decimal("7.80")
+    assert snapshot().rates == ()

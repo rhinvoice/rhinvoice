@@ -88,7 +88,11 @@ class LineRequest(ApiModel):
     unit: str | None = Field(default=None, json_schema_extra={"enum": [*UNIT_CODES, None]})
     unit_price: str = Field(default="0", pattern=DECIMAL_PATTERN)
     discount_percent: str = Field(default="0", pattern=PERCENT_PATTERN)
-    tax_category: TaxCategory = TaxCategory.STANDARD
+    tax_rate_id: UUID | None = None
+    """One of the company's rates (GET /api/tax-rates); none: the default rate. Text lines
+    and pass-through items take none."""
+    pass_through: bool = False
+    """Paid in the customer's name and for the customer's account: no rate, no VAT."""
     supply: Supply = Supply.SERVICE
     article_id: UUID | None = None
 
@@ -101,7 +105,8 @@ class LineRequest(ApiModel):
             unit=self.unit,
             unit_price=self.unit_price,
             discount_percent=self.discount_percent,
-            tax_category=self.tax_category,
+            tax_rate_id=self.tax_rate_id,
+            pass_through=self.pass_through,
             supply=self.supply,
             article_id=self.article_id,
         )
@@ -210,10 +215,13 @@ class LineResponse(ApiModel):
     unit: str | None
     unit_price: str
     discount_percent: str
+    tax_rate_id: UUID | None
+    """The company's rate of a position; None for text lines and pass-through items."""
     tax_category: TaxCategory
+    """The kind of the line's tax: the category of its rate, or pass_through."""
     supply: Supply
     tax_rate: str | None
-    """Frozen rate of issued documents; None for drafts."""
+    """Frozen percentage of issued documents; None for drafts."""
     amount: str | None
     """Line amount after the line discount (None for text lines)."""
     article_id: UUID | None
@@ -428,6 +436,7 @@ class DocumentResponse(ApiModel):
                     unit=None if line.unit is None else line.unit.code,
                     unit_price=price_text(line.unit_price),
                     discount_percent=plain_number(line.discount_percent),
+                    tax_rate_id=line.tax_rate_id,
                     tax_category=line.tax_category,
                     supply=line.supply,
                     tax_rate=None if line.tax_rate is None else plain_number(line.tax_rate),
@@ -506,8 +515,9 @@ class DocumentPreviewResponse(ApiModel):
     line_amounts: list[str | None]
     """Amount of each line after its discount, in input order (None for text lines)."""
     totals: TotalsResponse
-    rates: dict[TaxCategory, str]
-    """Rate per tax category for this draft (0 when the treatment charges no VAT)."""
+    rates: dict[str, str]
+    """The percentage of each rate (by id) on the draft's date of supply; 0 when the
+    treatment charges no VAT. Rates not valid yet on that date are left out."""
     notice: str
     """Legal notice the treatment puts on the document."""
     customer_vat_missing: bool
@@ -536,7 +546,7 @@ class DocumentPreviewResponse(ApiModel):
             issue_blockers=list(preview.issue_blockers),
             e_invoice_problems=list(e_invoice_problems),
             xrechnung_problems=list(xrechnung_problems),
-            rates={category: plain_number(rate) for category, rate in preview.rates.items()},
+            rates={str(rate_id): plain_number(rate) for rate_id, rate in preview.rates.items()},
             treatment=view.document.content.treatment,
             goods_treatment=view.document.content.goods_treatment,
             line_amounts=[

@@ -1,0 +1,108 @@
+---
+title: Aliquote IVA proprie, § 24 UStG e categorie S, Z ed E
+description: "Aliquote IVA in Rhinvoice: modelli per Paese, aliquote proprie datate, aliquote medie tedesche del § 24 UStG e categorie S, Z ed E, verificate per la fattura elettronica."
+faq:
+  - q: Posso creare un’aliquota IVA mia in Rhinvoice?
+    a: "Sì. In «Impostazioni → Aliquote IVA → Nuova aliquota» indichi il nome, la categoria per la fattura elettronica, la percentuale e la data da cui vale. Posizioni e articoli la propongono da quel momento."
+  - q: Come fatturo secondo le aliquote medie tedesche per l’agricoltura (§ 24 UStG)?
+    a: "In «Impostazioni → Aliquote IVA → Da modello …» riprenda «Agricoltura § 24 (7,8 %)», «Silvicoltura § 24 (5,5 %)» o «Bevande, prodotti di segheria § 24 (19 %)». La posizione indica l’aliquota media, la fattura la nota «Besteuerung nach Durchschnittssätzen (§ 24 UStG)»."
+  - q: Che cosa succede alle fatture vecchie quando un’aliquota cambia?
+    a: "Niente. L’emissione blocca percentuale, categoria, nome e nota di ogni posizione. Una nuova percentuale si aggiunge con «Cambia da una data …» e vale per le prestazioni da quella data."
+  - q: Che cosa significano S, Z ed E?
+    a: "La categoria dell’aliquota per la fattura elettronica secondo EN 16931. S è imponibile con una percentuale superiore a 0 %, Z imponibile allo 0 %, E esente o escluso dall’imposta, con un motivo. Rhinvoice non salva alcuna aliquota che violi queste regole."
+  - q: Posso eliminare un’aliquota IVA?
+    a: "Solo finché nessuna posizione, nessun articolo e nessuna fattura ricorrente la usa. Altrimenti la nasconda. Le nuove posizioni e i nuovi articoli non la propongono più, quelli che la usano la mantengono."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Ogni azienda in Rhinvoice ha **le proprie aliquote IVA**: un nome, una categoria per la fattura elettronica (S, Z o E), percentuali con la data da cui vale ciascuna e, se lo desidera, una nota per la fattura. Alla configurazione l’azienda riceve le aliquote del suo Paese; altre, come le **aliquote medie tedesche del § 24 UStG**, si riprendono da un modello, e può crearne di proprie.
+
+<Aside type="note" title="Nessuna consulenza fiscale">
+Rhinvoice verifica la forma di un’aliquota, non se è quella giusta per la Sua prestazione. In caso di dubbio chieda alla Sua fiduciaria.
+</Aside>
+
+## Quali aliquote ha un’azienda
+
+*Impostazioni → Aliquote IVA* elenca tutte le aliquote in una tabella: il nome, sotto da quando vale la percentuale di oggi e quale valeva prima (o quale verrà), il motivo dell’esenzione o la nota, poi la categoria per la fattura elettronica e la percentuale di oggi. Un clic su una riga apre l’aliquota.
+
+Alla configurazione dell’azienda Rhinvoice crea le aliquote del suo Paese con i valori ufficiali e la loro cronologia:
+
+| Aliquota | Svizzera e Liechtenstein | Germania | Austria |
+|---|---|---|---|
+| *Aliquota normale* | 8.1 % | 19 % | 20 % |
+| *Aliquota ridotta* | 2.6 % | 7 % | 10 % |
+| terza aliquota | 3.8 % *Aliquota speciale per il settore alberghiero* | – | 13 % *Seconda aliquota ridotta* |
+| *0 % (imponibile)* | 0 % | 0 % | 0 % |
+| *Escluso dall’imposta* | 0 %, con motivo | 0 %, con motivo | 0 %, con motivo |
+
+Le posizioni senza aliquota scelta prendono l’aliquota normale. Le pagine dei Paesi indicano le fonti e i valori precedenti: [Svizzera](/docs/it/countries/switzerland/), [Liechtenstein](/docs/it/countries/liechtenstein/), [Germania](/docs/it/countries/germany/), [Austria](/docs/it/countries/austria/).
+
+## S, Z ed E: la categoria per la fattura elettronica
+
+Una fattura elettronica secondo EN 16931 (ZUGFeRD, XRechnung) indica una categoria IVA per ogni posizione. Ogni aliquota in Rhinvoice ne ha quindi una:
+
+| Categoria | Significato | Percentuale | Esempio |
+|---|---|---|---|
+| **S** *Imponibile* | La prestazione è imponibile | superiore a 0 % | aliquota normale 8.1 % o 19 % |
+| **Z** *Aliquota zero* | Imponibile, ma allo 0 % | esattamente 0 % | alcune forniture all’estero |
+| **E** *Esente / escluso* | Esente o escluso dall’imposta | esattamente 0 %, con *motivo dell’esenzione* | cure mediche, locazione |
+
+Rhinvoice lo verifica durante la digitazione e di nuovo al salvataggio. Una combinazione errata non si può salvare, e il messaggio dice perché, per esempio «Imponibile (S) richiede una percentuale superiore a 0 %.». Così nessuna fattura elettronica contiene un’aliquota errata. Il *motivo dell’esenzione* figura sulla posizione e va nella fattura elettronica.
+
+La categoria di un’aliquota resta fissa dopo la creazione, perché posizioni e articoli ne dipendono. Per un’altra categoria crei una nuova aliquota.
+
+Reverse charge, esportazione, forniture intracomunitarie e piccole imprese restano determinati per documento, in base all’azienda e al cliente. La fattura allora non ha IVA, qualunque sia l’aliquota della posizione. Le [spese anticipate](/docs/it/invoices/pass-through/) non sono un’aliquota, ma una scelta a sé nella posizione.
+
+## Creare un’aliquota propria
+
+<Steps>
+
+1. Apra *Impostazioni → Aliquote IVA* e clicchi su **Nuova aliquota**.
+2. Inserisca un *Nome* e scelga la *Categoria per la fattura elettronica*. Per *Esente / escluso (E)* indichi il *Motivo dell’esenzione*.
+3. Inserisca la *Percentuale* e, in *Valida dal*, la data da cui vale. È proposto il 1° gennaio dell’anno in corso.
+4. Se lo desidera, scriva una *Nota sulla fattura*. Figura su ogni documento che usa l’aliquota.
+5. Clicchi su **Salva**.
+
+</Steps>
+
+## Cambiare una percentuale da una data
+
+Quando un’aliquota cambia, non la sovrascrive: aggiunge il nuovo valore con la sua data. Apra l’aliquota, clicchi su **Cambia da una data …**, indichi la data e la nuova percentuale e salvi. **Mostra cronologia** elenca tutti i valori; lì rimuove un valore inserito per errore.
+
+Vale il valore alla **data della prestazione**: la fine del periodo della prestazione, altrimenti il suo inizio, altrimenti la data della fattura. Se un’aliquota non vale ancora a quella data, l’editor lo segnala.
+
+Le aliquote da un modello ricevono il nuovo valore con un aggiornamento di Rhinvoice quando la legge cambia, purché Lei non abbia modificato le loro percentuali. Le aliquote proprie le aggiorna Lei.
+
+## Aliquote medie secondo il § 24 UStG
+
+In Germania le aziende agricole e forestali possono essere tassate secondo aliquote medie (§ 24 UStG). Per un’azienda tedesca *Da modello …* propone tre aliquote, ciascuna di categoria S, valide dal 1° gennaio 2025:
+
+| Modello | Aliquota | Base legale |
+|---|---|---|
+| *Silvicoltura § 24 (5,5 %)* | 5,5 % | § 24 Abs. 1 Satz 1 Nr. 1 UStG |
+| *Bevande, prodotti di segheria § 24 (19 %)* | 19 % | § 24 Abs. 1 Satz 1 Nr. 2 UStG |
+| *Agricoltura § 24 (7,8 %)* | 7,8 % | § 24 Abs. 1 Satz 1 Nr. 3 UStG, dal 2025 (BGBl. 2024 I Nr. 387) |
+
+Secondo il § 24 Abs. 1 Satz 4 UStG la fattura indica l’aliquota media. Rhinvoice la stampa su ogni posizione, e i modelli portano la nota «Imposizione secondo le aliquote medie (§ 24 UStG)» (documenti in tedesco: «Besteuerung nach Durchschnittssätzen (§ 24 UStG)»). Se servono, aggiunga valori anteriori al 2025 con *Cambia da una data …*.
+
+Poiché l’aliquota normale e le bevande del § 24 hanno entrambe il 19 %, la posizione indica allora il nome dell’aliquota accanto alla percentuale.
+
+## Scegliere l’aliquota in una posizione o in un articolo
+
+Nella posizione e nell’articolo sceglie in *Aliquota*. L’elenco divide le aliquote in **Imponibile** e **Senza IVA**, ciascuna nella forma «Nome – percentuale» alla data della prestazione. Le spese anticipate vengono per ultime. Una posizione chiusa mostra solo la percentuale, a meno che un’altra aliquota abbia la stessa; allora si vede anche il nome.
+
+## Nascondere invece di eliminare
+
+- **Nascondi** toglie un’aliquota dalla scelta delle nuove posizioni e dei nuovi articoli. Posizioni, articoli e fatture ricorrenti che la usano già la mantengono; la scelta la mostra lì con «(nascosta)». **Mostra** la propone di nuovo.
+- **Elimina** è possibile solo finché nulla usa l’aliquota. Altrimenti il dialogo indica «In uso: la nasconda invece di eliminarla.»
+- Un modello eliminato è di nuovo proposto in *Da modello …*.
+
+## Fatture emesse
+
+L’emissione blocca su ogni posizione percentuale, categoria, nome e nota dell’aliquota. Modifiche successive e aliquote nascoste o eliminate non cambiano né le fatture emesse, né gli storni, né i loro PDF. Le bozze calcolano con le aliquote attuali. Maggiori informazioni: [Emettere e stornare una fattura](/docs/it/invoices/issue-and-cancel/), [Fatture elettroniche](/docs/it/invoices/e-invoice/).
+
+## Domande frequenti
+
+<Faq />

@@ -34,8 +34,10 @@ from rhinvoice.domain.document.document import FieldValue
 from rhinvoice.domain.document.lines import LineKind, PriceMode
 from rhinvoice.domain.shared.country import CountryCode
 from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
+from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.money import Currency, Money, round_half_up
-from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import REDUCED, SPECIAL, STANDARD
+from rhinvoice.domain.tax.tax_rate import FrozenRate, RateCategory
 from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.tax.vat_number import VatNumber
 from rhinvoice.infrastructure.einvoice.cii import CiiWriter
@@ -516,6 +518,49 @@ def test_exempt_lines_of_a_taxed_invoice_name_a_reason() -> None:
     assert texts(root, f"{taxes}/ram:ExemptionReason") == ["Steuerbefreite Leistung"]
 
 
+def test_exempt_rates_name_their_reasons() -> None:
+    """ADR 0044: BT-120 of exempt lines is the reason of their rate, each once."""
+    printed = model(samples()["de-mixed"])
+    view = printed.view
+    assert [rate.category for rate in view.rates] == [
+        RateCategory.STANDARD,
+        RateCategory.ZERO,
+        RateCategory.EXEMPT,
+    ]
+    taxes = f"{SETTLEMENT}/ram:ApplicableTradeTax"
+    root = fromstring(WRITER.xml(printed, EInvoiceProfile.EN16931))  # noqa: S314 - our own
+    assert texts(root, f"{taxes}/ram:CategoryCode") == ["S", "Z", "E"]
+    assert texts(root, f"{taxes}/ram:ExemptionReason") == ["Steuerbefreite Leistung"]
+    teaching = FrozenRate(
+        id=new_id(),
+        name="Unterricht",
+        category=RateCategory.EXEMPT,
+        exemption_reason="Steuerfrei nach § 4 Nr. 21 UStG",
+    )
+    own = replace(view.rates[2], exemption_reason="Steuerfrei nach § 4 Nr. 14 UStG")
+    rates = (view.rates[0], own, teaching, own)
+    reasons = replace(printed, view=replace(view, rates=rates))
+    root = fromstring(WRITER.xml(reasons, EInvoiceProfile.EN16931))  # noqa: S314 - our own
+    assert texts(root, f"{taxes}/ram:ExemptionReason") == [
+        "Steuerfrei nach § 4 Nr. 14 UStG Steuerfrei nach § 4 Nr. 21 UStG"
+    ]
+    # Documents issued before kept no rates: the reason of before.
+    older = replace(printed, view=replace(view, rates=()))
+    root = fromstring(WRITER.xml(older, EInvoiceProfile.EN16931))  # noqa: S314 - our own
+    assert texts(root, f"{taxes}/ram:ExemptionReason") == ["Steuerbefreite Leistung"]
+
+
+def test_average_rates_of_farmers() -> None:
+    """§ 24 UStG: the average rates are taxed rates (S); 19 % of two rates is one breakdown."""
+    root = xml("de-average-rates")
+    check_sums(root)
+    taxes = f"{SETTLEMENT}/ram:ApplicableTradeTax"
+    assert texts(root, f"{taxes}/ram:CategoryCode") == ["S", "S", "S"]
+    assert texts(root, f"{taxes}/ram:RateApplicablePercent") == ["7.8", "5.5", "19"]
+    printed = model(samples()["de-average-rates"])
+    assert printed.view.rate_notices == ("Besteuerung nach Durchschnittssätzen (§ 24 UStG)",)
+
+
 def found(
     printed: PrintModel, profile: EInvoiceProfile = EInvoiceProfile.EN16931
 ) -> set[EInvoiceProblem]:
@@ -810,9 +855,8 @@ def test_a_buyer_with_a_contact_and_a_post_office_box() -> None:
 QUANTITIES = st.decimals(min_value=Decimal(-20), max_value=Decimal(50), places=2).filter(bool)
 PRICES = st.decimals(min_value=Decimal("0.05"), max_value=Decimal(5000), places=2)
 DISCOUNTS = st.sampled_from([Decimal(0), Decimal(5), Decimal("12.5"), Decimal(50)])
-CATEGORIES = st.sampled_from(
-    [TaxCategory.STANDARD, TaxCategory.REDUCED, TaxCategory.SPECIAL, TaxCategory.PASS_THROUGH]
-)
+RATES = st.sampled_from([STANDARD, REDUCED, SPECIAL, None])
+"""A rate's preset, or None for a pass-through item."""
 
 
 @st.composite
@@ -824,12 +868,13 @@ def drafts(draw: st.DrawFn) -> DraftInput:
             quantity=str(draw(QUANTITIES)),
             unit_price=str(draw(PRICES)),
             discount_percent=str(draw(DISCOUNTS)),
-            tax_category=draw(CATEGORIES),
+            tax_rate_id=None if preset is None else factories.rate_id(preset),
+            pass_through=preset is None,
         )
-        for index in range(draw(st.integers(min_value=1, max_value=6)))
+        for index, preset in enumerate(draw(st.lists(RATES, min_size=1, max_size=6)))
     )
     sample = samples()["ch-domestic"].draft
-    taxed = any(line.tax_category is not TaxCategory.PASS_THROUGH for line in lines)
+    taxed = any(not line.pass_through for line in lines)
     return replace(
         sample,
         lines=lines,
@@ -946,7 +991,7 @@ def test_gross_rounding_can_be_a_line_charge() -> None:
             description="Buch",
             quantity=quantity,
             unit_price=price,
-            tax_category=TaxCategory.REDUCED,
+            tax_rate_id=factories.rate_id(REDUCED),
         )
 
     sample = samples()["ch-domestic"]

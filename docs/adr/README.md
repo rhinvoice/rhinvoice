@@ -47,3 +47,4 @@ Status: `accepted`, `superseded by NNNN` or `rejected`.
 - [0041 – Idempotent writes](0041-idempotent-writes.md)
 - [0042 – The details top right](0042-details-top-right.md)
 - [0043 – Several print templates](0043-several-print-templates.md)
+- [0044 – Own tax rates](0044-own-tax-rates.md)

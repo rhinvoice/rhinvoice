@@ -1,0 +1,108 @@
+---
+title: Eigene Steuersätze, § 24 UStG und Art für die E-Rechnung
+description: "Steuersätze in Rhinvoice: Vorlagen pro Land, eigene Sätze mit Datum, Durchschnittssätze nach § 24 UStG und die Art S, Z oder E, geprüft für die E-Rechnung."
+faq:
+  - q: Kann ich in Rhinvoice einen eigenen Steuersatz anlegen?
+    a: Ja. Unter «Einstellungen → Steuersätze → Neuer Satz» geben Sie Name, Art für die E-Rechnung, Prozentsatz und das Datum an, ab dem er gilt. Positionen und Artikel bieten ihn danach zur Auswahl an.
+  - q: Wie rechne ich als Landwirt nach Durchschnittssätzen (§ 24 UStG)?
+    a: Übernehmen Sie unter «Einstellungen → Steuersätze → Aus Vorlage …» die Vorlage «Landwirtschaft § 24 (7,8 %)», «Forstwirtschaft § 24 (5,5 %)» oder «Getränke, Sägewerkserzeugnisse § 24 (19 %)». Die Position zeigt den Durchschnittssatz, die Rechnung den Hinweis «Besteuerung nach Durchschnittssätzen (§ 24 UStG)».
+  - q: Was passiert mit alten Rechnungen, wenn sich ein Satz ändert?
+    a: Nichts. Beim Ausstellen friert Rhinvoice Prozentsatz, Art, Name und Hinweis jeder Position ein. Einen neuen Prozentsatz ergänzen Sie mit «Satz ändern ab Datum …»; er gilt für Leistungen ab diesem Datum.
+  - q: Was bedeuten S, Z und E?
+    a: Die Art des Satzes für die E-Rechnung nach EN 16931. S ist steuerpflichtig mit einem Prozentsatz über 0 %, Z steuerpflichtig zu 0 %, E von der Steuer befreit oder ausgenommen, mit Grund. Rhinvoice speichert keinen Satz, der diese Regeln verletzt.
+  - q: Kann ich einen Steuersatz löschen?
+    a: Nur solange keine Position, kein Artikel und keine wiederkehrende Rechnung ihn verwendet. Sonst blenden Sie ihn aus. Neue Positionen und Artikel bieten ihn dann nicht mehr an, bestehende behalten ihn.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Jede Firma in Rhinvoice hat **eigene Steuersätze**: Name, Art für die E-Rechnung (S, Z oder E), Prozentsätze mit dem Datum, ab dem sie gelten, und auf Wunsch einen Hinweis für die Rechnung. Beim Einrichten bekommt die Firma die Sätze ihres Landes; weitere wie die **Durchschnittssätze nach § 24 UStG** übernehmen Sie aus einer Vorlage, eigene legen Sie selbst an.
+
+<Aside type="note" title="Keine Steuerberatung">
+Rhinvoice prüft die Form eines Satzes, nicht ob er für Ihre Leistung der richtige ist. Fragen Sie im Zweifel Ihre Steuerberatung.
+</Aside>
+
+## Welche Sätze eine Firma hat
+
+Unter *Einstellungen → Steuersätze* stehen alle Sätze als Tabelle: der Name, darunter seit wann der heutige Prozentsatz gilt und welcher vorher galt (oder welcher kommt), der Befreiungsgrund oder Hinweis, dann die Art für die E-Rechnung und der Prozentsatz von heute. Ein Klick auf eine Zeile öffnet den Satz.
+
+Beim Einrichten der Firma legt Rhinvoice die Sätze ihres Landes mit den amtlichen Werten und ihrem Verlauf an:
+
+| Satz | Schweiz und Liechtenstein | Deutschland | Österreich |
+|---|---|---|---|
+| *Normalsatz* | 8.1 % | 19 % | 20 % |
+| *Reduzierter Satz* | 2.6 % | 7 % | 10 % |
+| dritter Satz | 3.8 % *Sondersatz Beherbergung* | – | 13 % *Zweiter ermässigter Satz* |
+| *0 % (steuerbar)* | 0 % | 0 % | 0 % |
+| *Von der Steuer ausgenommen* | 0 %, mit Grund | 0 %, mit Grund | 0 %, mit Grund |
+
+Positionen ohne gewählten Satz nehmen den Normalsatz. Die Länderseiten nennen die Quellen und die früheren Werte: [Schweiz](/docs/de/countries/switzerland/), [Liechtenstein](/docs/de/countries/liechtenstein/), [Deutschland](/docs/de/countries/germany/), [Österreich](/docs/de/countries/austria/).
+
+## S, Z und E: die Art für die E-Rechnung
+
+Die E-Rechnung nach EN 16931 (ZUGFeRD, XRechnung) nennt bei jeder Position eine Steuerkategorie. Jeder Satz in Rhinvoice hat deshalb eine Art:
+
+| Art | Bedeutung | Prozentsatz | Beispiel |
+|---|---|---|---|
+| **S** *Steuerpflichtig* | Die Leistung ist steuerpflichtig | über 0 % | Normalsatz 8.1 % oder 19 % |
+| **Z** *Nullsatz* | Steuerpflichtig, aber zu 0 % | genau 0 % | bestimmte Lieferungen ins Ausland |
+| **E** *Steuerfrei / ausgenommen* | Von der Steuer befreit oder ausgenommen | genau 0 %, mit *Befreiungsgrund* | Heilbehandlung, Vermietung |
+
+Rhinvoice prüft das schon beim Tippen und noch einmal beim Speichern. Eine falsche Kombination lässt sich nicht speichern, die Meldung sagt warum, zum Beispiel «Steuerpflichtig (S) braucht einen Prozentsatz über 0 %.». So weist keine E-Rechnung einen Fehler im Satz auf. Der *Befreiungsgrund* steht bei der Position und geht als Befreiungsgrund in die E-Rechnung.
+
+Die Art eines Satzes bleibt nach dem Anlegen fest, weil Positionen und Artikel davon abhängen. Für eine andere Art legen Sie einen neuen Satz an.
+
+Reverse Charge, Ausfuhr, innergemeinschaftliche Lieferungen und Kleinunternehmer bestimmt Rhinvoice weiterhin pro Dokument aus Firma und Kunde. Dann trägt die Rechnung keine Steuer, gleich welcher Satz in der Position steht. [Durchlaufende Posten](/docs/de/invoices/pass-through/) sind kein Satz, sondern eine eigene Wahl in der Position.
+
+## Eigenen Satz anlegen
+
+<Steps>
+
+1. Öffnen Sie *Einstellungen → Steuersätze* und klicken Sie auf **Neuer Satz**.
+2. Geben Sie einen *Namen* ein und wählen Sie die *Art für die E-Rechnung*. Bei *Steuerfrei / ausgenommen (E)* nennen Sie den *Befreiungsgrund*.
+3. Tragen Sie den *Prozentsatz* ein und unter *Gültig ab* das Datum, ab dem er gilt. Vorgeschlagen ist der 1. Januar des laufenden Jahres.
+4. Auf Wunsch schreiben Sie einen *Hinweis auf der Rechnung*. Er steht auf jedem Dokument, das den Satz verwendet.
+5. Klicken Sie auf **Speichern**.
+
+</Steps>
+
+## Prozentsatz ab einem Datum ändern
+
+Ändert sich ein Satz, überschreiben Sie ihn nicht, sondern ergänzen den neuen Wert mit seinem Datum. Öffnen Sie den Satz, klicken Sie auf **Satz ändern ab Datum …**, geben Sie das Datum und den neuen Prozentsatz an und speichern Sie. **Verlauf anzeigen** listet alle Werte; einen falsch erfassten entfernen Sie dort.
+
+Massgebend ist der Wert am **Leistungsdatum**: das Ende des Leistungszeitraums, sonst sein Beginn, sonst das Rechnungsdatum. Gilt ein Satz an diesem Datum noch nicht, meldet der Editor das.
+
+Sätze aus einer Vorlage bekommen bei einer Gesetzesänderung den neuen Wert mit einem Update von Rhinvoice, solange Sie ihre Prozentsätze nicht selbst geändert haben. Eigene Sätze pflegen Sie selbst.
+
+## Durchschnittssätze nach § 24 UStG
+
+Land- und forstwirtschaftliche Betriebe in Deutschland können nach Durchschnittssätzen versteuern (§ 24 UStG). Für eine deutsche Firma bietet *Aus Vorlage …* drei Sätze, jeweils der Art S, gültig seit 1. Januar 2025:
+
+| Vorlage | Satz | Grundlage |
+|---|---|---|
+| *Forstwirtschaft § 24 (5,5 %)* | 5,5 % | § 24 Abs. 1 Satz 1 Nr. 1 UStG |
+| *Getränke, Sägewerkserzeugnisse § 24 (19 %)* | 19 % | § 24 Abs. 1 Satz 1 Nr. 2 UStG |
+| *Landwirtschaft § 24 (7,8 %)* | 7,8 % | § 24 Abs. 1 Satz 1 Nr. 3 UStG, seit 2025 (BGBl. 2024 I Nr. 387) |
+
+Nach § 24 Abs. 1 Satz 4 UStG nennt die Rechnung den Durchschnittssatz. Rhinvoice druckt ihn bei jeder Position, und die Vorlagen bringen den Hinweis «Besteuerung nach Durchschnittssätzen (§ 24 UStG)» mit. Ältere Werte als 2025 ergänzen Sie bei Bedarf mit *Satz ändern ab Datum …*.
+
+Weil der Normalsatz und die Getränke nach § 24 beide 19 % haben, nennt die Position in diesem Fall neben dem Prozentsatz auch den Namen des Satzes.
+
+## Satz in Position und Artikel wählen
+
+In der Position und im Artikel wählen Sie unter *Steuersatz*. Die Liste teilt die Sätze in **Steuerpflichtig** und **Ohne Steuer**, jeder mit seinem Prozentsatz am Leistungsdatum, zum Beispiel «Normalsatz – 8.1%». Am Ende steht der durchlaufende Posten. Die geschlossene Position zeigt nur den Prozentsatz, ausser ein anderer Satz hat denselben; dann steht der Name dabei.
+
+## Ausblenden statt löschen
+
+- **Ausblenden** nimmt einen Satz aus der Auswahl neuer Positionen und Artikel. Positionen, Artikel und wiederkehrende Rechnungen, die ihn schon verwenden, behalten ihn; die Auswahl zeigt ihn dort mit «(ausgeblendet)». **Einblenden** bietet ihn wieder an.
+- **Löschen** geht nur, solange nichts den Satz verwendet. Sonst steht im Dialog «Wird verwendet: ausblenden statt löschen.»
+- Eine gelöschte Vorlage bietet *Aus Vorlage …* wieder an.
+
+## Ausgestellte Rechnungen
+
+Beim Ausstellen friert Rhinvoice bei jeder Position Prozentsatz, Art, Name und Hinweis des Satzes ein. Spätere Änderungen, ausgeblendete oder gelöschte Sätze ändern ausgestellte Rechnungen, Stornos und ihre PDFs nicht. Entwürfe rechnen mit dem aktuellen Stand. Mehr dazu: [Rechnung ausstellen und stornieren](/docs/de/invoices/issue-and-cancel/), [E-Rechnung](/docs/de/invoices/e-invoice/).
+
+## Häufige Fragen
+
+<Faq />

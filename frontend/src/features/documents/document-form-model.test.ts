@@ -1,7 +1,7 @@
 import type { FieldErrors } from "react-hook-form";
 import { describe, expect, it } from "vitest";
 
-import type { ArticleOption, CustomerOption, DocumentDetail } from "@/features/documents/api";
+import type { ArticleOption, CustomerOption } from "@/features/documents/api";
 import {
   customerDefaults,
   documentFieldFor,
@@ -19,19 +19,21 @@ import {
   hasSupply,
   isBlankLine,
   lineFromArticle,
+  lineToForm,
   articleFromLine,
   canSaveAsArticle,
   MAX_LINES,
   type DocumentFormValues,
+  type LineFormValues,
+  type StoredLine,
 } from "@/features/documents/document-form-model";
 import type { Company } from "@/features/shared/company-api";
 import { PASS_THROUGH } from "@/features/shared/tax-rate-model";
 import { translatorFor } from "@/lib/i18n";
 import { SWISS_PROFILE } from "@/test/country-profiles";
+import { DOCUMENT as DETAIL, RATE_ID as RATE } from "@/test/documents";
 
 const t = translatorFor("de-CH");
-/** A rate id as the API sends it. */
-const RATE = "0b5e2c4e-7f1a-4c1e-9d55-3a6f8e2b9c10";
 const schema = documentSchema(t, "de-CH");
 
 const ADDRESS = {
@@ -314,96 +316,6 @@ describe("customer and article defaults", () => {
   });
 });
 
-const DETAIL: DocumentDetail = {
-  id: "d",
-  type: "invoice",
-  status: "draft",
-  display_status: "draft",
-  number: null,
-  customer_id: "k",
-  recipient: null,
-  currency: "EUR",
-  language: "de",
-  price_mode: "gross",
-  treatment: "export",
-  treatment_overridden: true,
-  goods_treatment: "goods_export",
-  discount_kind: "amount",
-  discount_value: "50",
-  issue_date: "2026-01-05",
-  due_date: null,
-  service_from: null,
-  service_to: "2026-01-31",
-  subject: "Website",
-  reference: "PO-1",
-  fields: { project: "Website" },
-  print_layout_id: "layout-1",
-  intro_text: "Hallo",
-  payment_text: "Sofort",
-  closing_text: "Danke",
-  bank_account_id: "b1",
-  notice: "",
-  lines: [
-    {
-      id: "l1",
-      kind: "item",
-      description: "Beratung",
-      details: "",
-      quantity: "1.5",
-      unit: "HUR",
-      unit_price: "1234.5",
-      discount_percent: "10",
-      tax_rate_id: RATE,
-      tax_category: "standard",
-      supply: "goods",
-      tax_rate: null,
-      amount: "1666.58",
-      article_id: "a1",
-    },
-    {
-      id: "l2",
-      kind: "text",
-      description: "Phase 2",
-      details: "Details",
-      quantity: "1",
-      unit: null,
-      unit_price: "0",
-      discount_percent: "0",
-      tax_rate_id: null,
-      tax_category: "standard",
-      supply: "service",
-      tax_rate: null,
-      amount: null,
-      article_id: null,
-    },
-  ],
-  totals: {
-    currency: "EUR",
-    subtotal: "0.00",
-    discount: "0.00",
-    net: "0.00",
-    tax: "0.00",
-    pass_through: "0.00",
-    gross: "0.00",
-    rounding: "0.00",
-    total: "0.00",
-    groups: [],
-  },
-  payments: [],
-  paid_amount: "0.00",
-  open_amount: "0.00",
-  write_off: null,
-  written_off_amount: "0.00",
-  events: [],
-  source_id: null,
-  cancelled_by_id: null,
-  converted_to_id: null,
-  created_at: "2026-01-05T08:00:00Z",
-  issued_at: null,
-  imported: false,
-  has_pdf: false,
-};
-
 describe("conversion", () => {
   it("formats a stored draft for editing", () => {
     const form = documentToForm(DETAIL, "de-DE");
@@ -432,6 +344,8 @@ describe("conversion", () => {
         tax: RATE,
         supply: "goods",
         article_id: "a1",
+        in_total: "yes",
+        alternative_to: null,
       },
       {
         key: "l2",
@@ -445,6 +359,8 @@ describe("conversion", () => {
         tax: "",
         supply: "service",
         article_id: null,
+        in_total: "yes",
+        alternative_to: null,
       },
     ]);
     const automatic = documentToForm(
@@ -546,6 +462,8 @@ describe("conversion", () => {
         pass_through: false,
         supply: "goods",
         article_id: "a1",
+        in_total: "yes",
+        alternative_to: null,
       },
       {
         kind: "text",
@@ -559,6 +477,8 @@ describe("conversion", () => {
         pass_through: false,
         supply: "service",
         article_id: null,
+        in_total: "yes",
+        alternative_to: null,
       },
     ]);
     const plain = formToDraft(
@@ -576,6 +496,50 @@ describe("conversion", () => {
     });
     expect(plain.lines?.[0]).toMatchObject({ unit: null, unit_price: "0", discount_percent: "0" });
   });
+
+  it("names the line an alternative replaces by its index; without one it is optional", () => {
+    const line = (key: string, marks: Partial<LineFormValues> = {}): LineFormValues => ({
+      ...emptyLine(),
+      key,
+      description: key,
+      ...marks,
+    });
+    const lines = [
+      line("heading", { kind: "text" }),
+      line("small"),
+      line("large", { in_total: "alternative", alternative_to: "small" }),
+      line("extra", { in_total: "optional" }),
+      line("gone", { in_total: "alternative", alternative_to: "removed" }),
+      line("chained", { in_total: "alternative", alternative_to: "extra" }),
+      // Only alternatives name a line.
+      line("stale", { in_total: "optional", alternative_to: "removed" }),
+    ];
+    const draft = formToDraft(valid({ lines }), "de-CH");
+    expect(draft.lines?.map((each) => [each.in_total, each.alternative_to])).toEqual([
+      ["yes", null],
+      ["yes", null],
+      ["alternative", 1],
+      ["optional", null],
+      ["optional", null],
+      ["optional", null],
+      ["optional", null],
+    ]);
+    // A stored alternative names the line by its id, which is its key in the form.
+    const [first] = DETAIL.lines as [(typeof DETAIL.lines)[number]];
+    const stored = documentToForm(
+      {
+        ...DETAIL,
+        lines: [first, { ...first, id: "l3", in_total: "alternative", alternative_to: "l1" }],
+      },
+      "de-CH",
+    );
+    expect(stored.lines[1]).toMatchObject({ in_total: "alternative", alternative_to: "l1" });
+    // Lines of recurring plans have no marks.
+    const plan: StoredLine = { ...first };
+    delete plan.in_total;
+    delete plan.alternative_to;
+    expect(lineToForm(plan, "p", "de-CH")).toMatchObject({ in_total: "yes", alternative_to: null });
+  });
 });
 
 describe("errors", () => {
@@ -588,6 +552,8 @@ describe("errors", () => {
     expect(documentFieldFor("lines.3.unknown")).toBeNull();
     expect(documentFieldFor("lines.3.tax_rate_id")).toBe("lines.3.tax");
     expect(documentFieldFor("lines.3.pass_through")).toBe("lines.3.tax");
+    expect(documentFieldFor("lines.3.in_total")).toBe("lines.3.in_total");
+    expect(documentFieldFor("lines.3.alternative_to")).toBe("lines.3.in_total");
     expect(documentFieldFor("lines.x.quantity")).toBeNull();
     expect(documentFieldFor("type")).toBeNull();
   });

@@ -768,7 +768,7 @@ export interface paths {
         put?: never;
         /**
          * Convert Quote
-         * @description Create an invoice draft from a quote.
+         * @description Create an invoice draft from a quote, with the positions the customer took.
          */
         post: operations["documents_convert_quote"];
         delete?: never;
@@ -2590,6 +2590,11 @@ export interface components {
             /** New Password */
             new_password: string;
         };
+        /** ConvertRequest */
+        ConvertRequest: {
+            /** Line Ids */
+            line_ids?: string[] | null;
+        };
         /**
          * Country
          * @enum {string}
@@ -3381,6 +3386,12 @@ export interface components {
          */
         ImportTarget: "customers" | "articles" | "invoices";
         /**
+         * InTotal
+         * @description Whether a position of a quote counts into its total (ADR 0045).
+         * @enum {string}
+         */
+        InTotal: "yes" | "optional" | "alternative";
+        /**
          * InfoEntrySchema
          * @description One line of the facts next to the address.
          */
@@ -3538,6 +3549,8 @@ export interface components {
         LineKind: "item" | "text";
         /** LineRequest */
         LineRequest: {
+            /** Alternative To */
+            alternative_to?: number | null;
             /** Article Id */
             article_id?: string | null;
             /**
@@ -3555,6 +3568,8 @@ export interface components {
              * @default 0
              */
             discount_percent: string;
+            /** @default yes */
+            in_total: components["schemas"]["InTotal"];
             /** @default item */
             kind: components["schemas"]["LineKind"];
             /**
@@ -3584,6 +3599,8 @@ export interface components {
         };
         /** LineResponse */
         LineResponse: {
+            /** Alternative To */
+            alternative_to: string | null;
             /** Amount */
             amount: string | null;
             /** Article Id */
@@ -3599,6 +3616,7 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            in_total: components["schemas"]["InTotal"];
             kind: components["schemas"]["LineKind"];
             /** Quantity */
             quantity: string;
@@ -8971,7 +8989,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ConvertRequest"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             201: {

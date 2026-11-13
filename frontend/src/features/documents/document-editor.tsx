@@ -736,6 +736,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
                 }
                 editing={editing}
                 onEditingChange={setEditing}
+                offersOptions={type === "quote"}
               />
             </Card>
 

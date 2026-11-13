@@ -10,6 +10,7 @@ import type {
   DraftRequest,
   TaxTreatment,
 } from "@/features/documents/api";
+import { IN_TOTAL, orphanedAlternatives } from "@/features/documents/in-total-model";
 import type { Company } from "@/features/shared/company-api";
 import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import { fields, toApiDecimal } from "@/features/shared/form-schema";
@@ -69,6 +70,10 @@ export function documentSchema(t: T, locale: Locale) {
       tax: taxChoice,
       supply: z.enum(SUPPLIES),
       article_id: z.string().nullable(),
+      /** Quotes only: optional and alternative items stay out of the total (ADR 0045). */
+      in_total: z.enum(IN_TOTAL),
+      /** The key of the line an alternative replaces. */
+      alternative_to: z.string().nullable(),
     })
     .superRefine((value, context) => {
       if (value.description === "") {
@@ -170,6 +175,8 @@ export function emptyLine(kind: "item" | "text" = "item"): LineFormValues {
     tax: "",
     supply: "service",
     article_id: null,
+    in_total: "yes",
+    alternative_to: null,
   };
 }
 
@@ -364,8 +371,14 @@ export function documentToForm(document: DocumentDetail, locale: Locale): Docume
   };
 }
 
-/** What a stored line (of a document or a plan) says, as the form edits it. */
-export type StoredLine = Omit<DocumentDetail["lines"][number], "id" | "tax_rate" | "amount">;
+type DocumentLine = DocumentDetail["lines"][number];
+
+/** What a stored line (of a document or a plan) says, as the form edits it; plans have no marks. */
+export type StoredLine = Omit<
+  DocumentLine,
+  "id" | "tax_rate" | "amount" | "in_total" | "alternative_to"
+> &
+  Partial<Pick<DocumentLine, "in_total" | "alternative_to">>;
 
 export function lineToForm(line: StoredLine, key: string, locale: Locale): LineFormValues {
   return {
@@ -381,6 +394,9 @@ export function lineToForm(line: StoredLine, key: string, locale: Locale): LineF
     tax: taxChoiceOf(line),
     supply: line.supply,
     article_id: line.article_id,
+    in_total: line.in_total ?? "yes",
+    // The id of the replaced line, which is its key in a document's form.
+    alternative_to: line.alternative_to ?? null,
   };
 }
 
@@ -388,7 +404,11 @@ function apiDecimal(value: string, locale: Locale): string {
   return value === "" ? "0" : toApiDecimal(value, locale);
 }
 
-function lineToRequest(line: LineFormValues, locale: Locale): LineRequest {
+/**
+ * The line as the API takes it; ``target`` is the index of the line an alternative replaces,
+ * null when it has none (any more): then it is optional.
+ */
+function lineToRequest(line: LineFormValues, locale: Locale, target: number | null): LineRequest {
   if (line.kind === "text") {
     // Text lines have no amount; the server ignores the numeric defaults.
     return {
@@ -403,6 +423,8 @@ function lineToRequest(line: LineFormValues, locale: Locale): LineRequest {
       pass_through: false,
       supply: "service",
       article_id: null,
+      in_total: "yes",
+      alternative_to: null,
     };
   }
   return {
@@ -416,6 +438,9 @@ function lineToRequest(line: LineFormValues, locale: Locale): LineRequest {
     ...taxChoiceToRequest(line.tax),
     supply: line.supply,
     article_id: line.article_id,
+    ...(line.in_total === "alternative" && target !== null
+      ? { in_total: "alternative", alternative_to: target }
+      : { in_total: line.in_total === "yes" ? "yes" : "optional", alternative_to: null }),
   };
 }
 
@@ -443,8 +468,23 @@ export function formToDraft(values: DocumentFormValues, locale: Locale): DraftRe
     discount_value: apiDecimal(values.discount_value, locale),
     treatment_override: values.treatment === "" ? null : values.treatment,
     override_reason: values.treatment === "" ? "" : values.override_reason,
-    lines: values.lines.map((line) => lineToRequest(line, locale)),
+    lines: linesToRequest(values.lines, locale),
   };
+}
+
+/** The lines with each alternative naming its line by index; orphaned ones become optional. */
+function linesToRequest(lines: readonly LineFormValues[], locale: Locale): LineRequest[] {
+  const orphans = new Set(orphanedAlternatives(lines));
+  const index = new Map(lines.map((line, at) => [line.key, at]));
+  return lines.map((line, at) =>
+    lineToRequest(
+      line,
+      locale,
+      orphans.has(at) || line.alternative_to === null
+        ? null
+        : (index.get(line.alternative_to) ?? null),
+    ),
+  );
 }
 
 const TOP_LEVEL_FIELDS = [
@@ -477,12 +517,17 @@ const LINE_FIELDS = [
   "discount_percent",
   "tax",
   "supply",
+  "in_total",
 ] as const satisfies readonly (keyof LineFormValues)[];
 
-/** Line fields the API names differently: the tax choice is a rate or a pass-through item. */
+/**
+ * Line fields the API names differently: the tax choice is a rate or a pass-through item, and
+ * the "In total" choice names the line an alternative replaces.
+ */
 const LINE_FIELD_ALIASES: Readonly<Record<string, (typeof LINE_FIELDS)[number]>> = {
   tax_rate_id: "tax",
   pass_through: "tax",
+  alternative_to: "in_total",
 };
 
 /** Map API error fields ("lines.2.quantity", "discount") onto form fields. */

@@ -21,6 +21,7 @@ import { parseWriteOffEvent } from "@/features/documents/write-off-model";
 import { FileLink } from "@/features/shared/file-link";
 import { SendMailDialog } from "@/features/shared/send-mail-dialog";
 import { printLayoutsQuery } from "@/features/shared/company-api";
+import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, formatMoney, formatNumber, formatPercent } from "@/lib/format";
 import { fieldValues } from "@/lib/info-block";
 
@@ -162,6 +163,17 @@ export function DocumentView({ document, taxName, onRemovePayment }: DocumentVie
                             })}
                           </span>
                         )}
+                        {line.in_total === "yes" ? null : (
+                          <span className="block text-xs font-medium text-muted-foreground">
+                            {line.in_total === "optional"
+                              ? t("documents.inTotalOptional")
+                              : t("documents.alternativeToLine", {
+                                  description:
+                                    document.lines.find((other) => other.id === line.alternative_to)
+                                      ?.description ?? "",
+                                })}
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatNumber(line.quantity, locale, 4)} {line.unit ?? ""}
@@ -176,8 +188,18 @@ export function DocumentView({ document, taxName, onRemovePayment }: DocumentVie
                             ? t("common.none")
                             : formatPercent(line.tax_rate, locale)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {line.amount === null ? t("common.none") : money(line.amount)}
+                      <TableCell
+                        className={cn(
+                          "text-right tabular-nums",
+                          // Not in the total, as in the PDF (ADR 0045).
+                          line.in_total !== "yes" && "text-muted-foreground",
+                        )}
+                      >
+                        {line.amount === null
+                          ? t("common.none")
+                          : line.in_total === "yes"
+                            ? money(line.amount)
+                            : `(${money(line.amount)})`}
                       </TableCell>
                     </TableRow>
                   ),

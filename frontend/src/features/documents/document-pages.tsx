@@ -59,6 +59,7 @@ import {
   documentQuery,
   useAddPayment,
   useAttachToNewDraft,
+  useConvertQuote,
   useCreateDocument,
   useDeleteDocument,
   useDocumentAction,
@@ -69,6 +70,8 @@ import {
   useWriteOff,
   type DocumentDetail,
 } from "@/features/documents/api";
+import { ConvertDialog } from "@/features/documents/convert-dialog";
+import { hasOptions } from "@/features/documents/convert-model";
 import { defaultTexts } from "@/features/documents/document-texts";
 import { DocumentEditor, type EditableType } from "@/features/documents/document-editor";
 import { documentToForm, emptyDocument } from "@/features/documents/document-form-model";
@@ -642,9 +645,11 @@ function MoreActions({ document, onWriteOff, onRemoveWriteOff }: MoreActionsProp
   // The dialog keeps saying what it asks while it closes: "confirm" only opens it.
   const [confirm, setConfirm] = useState<Confirmation>(null);
   const [asked, setAsked] = useState<"cancel" | "delete">("delete");
+  // A quote with optional or alternative items asks which ones the customer took.
+  const [choosing, setChoosing] = useState(false);
   const action = useRunOnce();
   const duplicate = useDocumentAction("duplicate");
-  const convert = useDocumentAction("convert");
+  const convert = useConvertQuote();
   const cancel = useDocumentAction("cancel");
   const remove = useDeleteDocument();
   const fail = (caught: unknown) => {
@@ -689,8 +694,12 @@ function MoreActions({ document, onWriteOff, onRemoveWriteOff }: MoreActionsProp
             <DropdownMenuItem
               disabled={action.busy}
               onSelect={() => {
+                if (hasOptions(document.lines)) {
+                  setChoosing(true);
+                  return;
+                }
                 void action.run(() =>
-                  convert.mutateAsync(document.id).then(async (invoice) => {
+                  convert.mutateAsync({ id: document.id }).then(async (invoice) => {
                     toast.success(t("documents.convertedToast"));
                     await open(invoice);
                   }, fail),
@@ -812,6 +821,19 @@ function MoreActions({ document, onWriteOff, onRemoveWriteOff }: MoreActionsProp
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {canConvert ? (
+        <ConvertDialog
+          quote={document}
+          open={choosing}
+          onOpenChange={setChoosing}
+          onConvert={async (lineIds) => {
+            const invoice = await convert.mutateAsync({ id: document.id, lineIds });
+            toast.success(t("documents.convertedToast"));
+            await open(invoice);
+          }}
+        />
+      ) : null}
     </>
   );
 }

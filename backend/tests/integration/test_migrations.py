@@ -19,7 +19,7 @@ from rhinvoice.domain.company.print_layout import (
     PrintTemplate,
 )
 from rhinvoice.domain.document.document import DocumentType, FieldValue
-from rhinvoice.domain.document.lines import LineKind
+from rhinvoice.domain.document.lines import InTotal, LineKind
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.money import Currency
@@ -534,3 +534,34 @@ def test_own_rates_stop_the_downgrade(
     documents.create(DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(hours,)))
     with raises_exactly(RuntimeError, message):
         downgrade(database_url, "0026")
+
+
+# --- 0028: optional and alternative positions (ADR 0045) -----------------------------
+
+
+def test_options_stop_the_downgrade(
+    database_url: str, engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
+) -> None:
+    documents, customer, _ = setup
+    hours = LineInput(kind=LineKind.ITEM, description="Beratung", unit_price="80")
+    documents.create(DocumentType.QUOTE, DraftInput(customer_id=customer, lines=(hours,)))
+    downgrade(database_url, "0027")
+    try:
+        with engine.connect() as connection:
+            columns = {
+                column["name"] for column in inspect(connection).get_columns("document_lines")
+            }
+        assert {"in_total", "alternative_to"}.isdisjoint(columns)
+    finally:
+        upgrade(database_url)
+    with engine.connect() as connection:
+        assert rows(connection, "SELECT in_total, alternative_to FROM document_lines") == [
+            ("yes", None)
+        ]
+    option = replace(hours, in_total=InTotal.OPTIONAL)
+    documents.create(DocumentType.QUOTE, DraftInput(customer_id=customer, lines=(hours, option)))
+    with raises_exactly(
+        RuntimeError,
+        "quotes hold optional or alternative positions: they need version 0.13 or later",
+    ):
+        downgrade(database_url, "0027")

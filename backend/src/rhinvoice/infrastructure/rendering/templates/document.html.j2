@@ -28,9 +28,9 @@
         <td></td>
       </tr>
       {% else %}
-      <tr data-line="{{ line.line_id }}" data-index="{{ line.index }}">
+      <tr data-line="{{ line.line_id }}" data-index="{{ line.index }}"{% if not line.in_total %} class="not-in-total"{% endif %}>
         {% if position_numbers %}<td class="pos">{{ line.position }}</td>{% endif %}
-        <td>{{ line.description }}{% if line.details %}<span class="details">{{ line.details }}</span>{% endif %}</td>
+        <td>{{ line.description }}{% if line.tag %}<span class="tag">{{ line.tag }}</span>{% endif %}{% if line.details %}<span class="details">{{ line.details }}</span>{% endif %}</td>
         <td class="num">{{ line.quantity }}</td>
         <td class="num">{{ line.price }}</td>
         {% if show_rate %}<td class="num">{{ line.rate }}</td>{% endif %}
@@ -55,6 +55,7 @@
     {% endfor %}
   </div>
   {% if prices_gross %}<p class="prices-gross">{{ prices_gross }}</p>{% endif %}
+  {% if not_in_total %}<p class="not-in-total-note">{{ not_in_total }}</p>{% endif %}
   {% endif %}
 
   {% for notice in notices %}<p class="notice">{{ notice }}</p>{% endfor %}

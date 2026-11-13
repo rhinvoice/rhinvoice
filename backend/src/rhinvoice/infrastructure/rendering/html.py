@@ -56,16 +56,18 @@ from rhinvoice.infrastructure.rendering.labels import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Mapping
     from datetime import date
     from decimal import Decimal
     from pathlib import Path
+    from uuid import UUID
 
     from rhinvoice.application.document.printing import PrintModel, ReminderPrint
     from rhinvoice.domain.company.bank_account import BankAccount
     from rhinvoice.domain.company.company import Company
     from rhinvoice.domain.country.profile import CountryTerms
     from rhinvoice.domain.customer.customer import Customer
+    from rhinvoice.domain.document.document import DraftContent
     from rhinvoice.domain.document.lines import DocumentLine
     from rhinvoice.domain.shared.address import Address
 
@@ -148,6 +150,10 @@ class PrintLine:
     line_id: str
     index: int
     """Of the line in the document; the editor's preview selects the line by it."""
+    in_total: bool = True
+    """False for optional and alternative positions of quotes; their amount is in brackets."""
+    tag: str = ""
+    """What such a position is: "Optional" or "Alternative zu Pos. 2" (ADR 0045)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -272,6 +278,9 @@ def _context(model: PrintModel) -> dict[str, object]:
         "show_rate": content.charges_vat,
         "lines": _lines(model, setting),
         "pass_through": any(line.is_pass_through for line in content.lines),
+        "not_in_total": (
+            "" if all(line.counts for line in content.lines) else labels["not_in_total"]
+        ),
         "prices_gross": labels["prices_gross"].format(tax=setting.tax) if gross else "",
         "totals": _totals(model, setting),
         "notices": list(model.view.printed_notices),
@@ -443,12 +452,38 @@ def _service(start: date | None, end: date | None, setting: _Setting) -> list[tu
     return [] if single is None else [(labels["service_date"], day(single, setting.locale))]
 
 
+def _positions(content: DraftContent) -> dict[UUID, int]:
+    """Give each printed position its number; pass-through lines have their own block."""
+    printed = [line for line in content.lines if line.is_item and not line.is_pass_through]
+    return {line.id: number for number, line in enumerate(printed, start=1)}
+
+
+def _tag(
+    line: DocumentLine, positions: Mapping[UUID, int], model: PrintModel, setting: _Setting
+) -> str:
+    """Name what an optional or alternative position is; the others have no tag."""
+    labels = setting.labels
+    if line.alternative_to is None:
+        return "" if line.counts else labels["optional"]
+    replaced = positions.get(line.alternative_to)
+    if replaced is None or not model.layout.position_numbers:
+        # Without its printed number the reader could not find the position.
+        return labels["alternative"]
+    return labels["alternative_to"].format(position=replaced)
+
+
+def _line_amount(line: DocumentLine, amount: Decimal, setting: _Setting) -> str:
+    """Format the amount, in brackets when the position stays out of the total (ADR 0045)."""
+    printed = setting.amount(amount)
+    return printed if line.counts else f"({printed})"
+
+
 def _lines(model: PrintModel, setting: _Setting) -> list[PrintLine]:
     """List the positions; pass-through lines are printed in their own block (ADR 0039)."""
     content = model.view.document.content
     amounts = {line.line_id: line for line in model.view.totals.lines}
+    positions = _positions(content)
     lines: list[PrintLine] = []
-    position = 0
     for index, line in enumerate(content.lines):
         if line.kind is LineKind.TEXT:
             lines.append(
@@ -459,7 +494,6 @@ def _lines(model: PrintModel, setting: _Setting) -> list[PrintLine]:
             continue
         if line.is_pass_through:
             continue
-        position += 1
         calculated = amounts[line.id]
         details = [line.details] if line.details else []
         if line.discount_percent:
@@ -468,15 +502,17 @@ def _lines(model: PrintModel, setting: _Setting) -> list[PrintLine]:
         lines.append(
             PrintLine(
                 kind="item",
-                position=str(position),
+                position=str(positions[line.id]),
                 description=line.description,
                 details="\n".join(details),
                 quantity=_quantity(line, setting),
                 price=unit_price(line.unit_price, setting.locale),
                 rate=(percent(calculated.tax_rate, setting.locale) if content.charges_vat else ""),
-                amount=setting.amount(calculated.amount.amount),
+                amount=_line_amount(line, calculated.amount.amount, setting),
                 line_id=str(line.id),
                 index=index,
+                in_total=line.counts,
+                tag=_tag(line, positions, model, setting),
             ),
         )
     return lines
@@ -498,6 +534,7 @@ def _pass_through(model: PrintModel, setting: _Setting) -> list[TotalRow]:
     """
     content = model.view.document.content
     amounts = {line.line_id: line.amount for line in model.view.totals.lines}
+    positions = _positions(content)
     rows: list[TotalRow] = []
     for index, line in enumerate(content.lines):
         if not line.is_pass_through:
@@ -510,12 +547,18 @@ def _pass_through(model: PrintModel, setting: _Setting) -> list[TotalRow]:
                 discount = percent(line.discount_percent, setting.locale)
                 label += ", " + setting.labels["discount_line"].format(percent=discount)
             label += ")"
+        tag = _tag(line, positions, model, setting)
+        if tag:
+            label += f"{EN_DASH}{tag}"
         rows.append(
             TotalRow(
-                label, setting.amount(amounts[line.id].amount), kind="pass_through", index=index
+                label,
+                _line_amount(line, amounts[line.id].amount, setting),
+                kind="pass_through",
+                index=index,
             )
         )
-    if len(rows) > 1:
+    if sum(line.is_pass_through and line.counts for line in content.lines) > 1:
         total = model.view.totals.pass_through.amount
         rows.append(TotalRow(setting.labels["pass_through_total"], setting.amount(total)))
     if rows:

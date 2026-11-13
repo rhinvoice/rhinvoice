@@ -1500,6 +1500,29 @@
         "title": "ConfirmResetRequest",
         "type": "object"
       },
+      "ConvertRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "line_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 500,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line Ids"
+          }
+        },
+        "title": "ConvertRequest",
+        "type": "object"
+      },
       "Country": {
         "enum": [
           "CH",
@@ -3943,6 +3966,16 @@
         "title": "ImportTarget",
         "type": "string"
       },
+      "InTotal": {
+        "description": "Whether a position of a quote counts into its total (ADR 0045).",
+        "enum": [
+          "yes",
+          "optional",
+          "alternative"
+        ],
+        "title": "InTotal",
+        "type": "string"
+      },
       "InfoEntrySchema": {
         "additionalProperties": false,
         "description": "One line of the facts next to the address.",
@@ -4366,6 +4399,19 @@
       "LineRequest": {
         "additionalProperties": false,
         "properties": {
+          "alternative_to": {
+            "anyOf": [
+              {
+                "exclusiveMaximum": 500.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alternative To"
+          },
           "article_id": {
             "anyOf": [
               {
@@ -4395,6 +4441,10 @@
             "pattern": "^(100(\\.0{1,2})?|\\d{1,2}(\\.\\d{1,2})?)$",
             "title": "Discount Percent",
             "type": "string"
+          },
+          "in_total": {
+            "$ref": "#/components/schemas/InTotal",
+            "default": "yes"
           },
           "kind": {
             "$ref": "#/components/schemas/LineKind",
@@ -4475,6 +4525,18 @@
       "LineResponse": {
         "additionalProperties": false,
         "properties": {
+          "alternative_to": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alternative To"
+          },
           "amount": {
             "anyOf": [
               {
@@ -4514,6 +4576,9 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "in_total": {
+            "$ref": "#/components/schemas/InTotal"
           },
           "kind": {
             "$ref": "#/components/schemas/LineKind"
@@ -4581,7 +4646,9 @@
           "supply",
           "tax_rate",
           "amount",
-          "article_id"
+          "article_id",
+          "in_total",
+          "alternative_to"
         ],
         "title": "LineResponse",
         "type": "object"
@@ -12565,7 +12632,7 @@
     },
     "/api/documents/{document_id}/convert": {
       "post": {
-        "description": "Create an invoice draft from a quote.",
+        "description": "Create an invoice draft from a quote, with the positions the customer took.",
         "operationId": "documents_convert_quote",
         "parameters": [
           {
@@ -12579,6 +12646,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ConvertRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "content": {

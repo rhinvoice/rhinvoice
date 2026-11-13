@@ -1,3 +1,4 @@
+from dataclasses import replace
 from decimal import Decimal
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from rhinvoice.domain.document.lines import (
     Discount,
     DiscountKind,
     DocumentLine,
+    InTotal,
     LineKind,
     PriceMode,
 )
@@ -339,10 +341,101 @@ def test_pass_through_lines_are_the_same_in_every_treatment(
     assert totals.total == Money(Decimal("100.10"), Currency.EUR)
 
 
+# --- Optional and alternative positions (ADR 0045) ---------------------------------
+
+
+def test_optional_and_alternative_positions_stay_out_of_every_total() -> None:
+    design, hosting = item("1", "4000"), item("1", "300.03", REDUCED)
+    larger = replace(
+        item("1", "600", REDUCED), in_total=InTotal.ALTERNATIVE, alternative_to=hosting.id
+    )
+    extra = replace(item("1", "1200", SPECIAL), in_total=InTotal.OPTIONAL)
+    fee = replace(item("1", "50", PASS), in_total=InTotal.OPTIONAL)
+    discount = Discount(DiscountKind.PERCENT, Decimal(10))
+    totals = compute([design, hosting, larger, extra, fee], discount=discount)
+    plain = compute([design, hosting], discount=discount)
+    # Each keeps its own amount, for the quote to show.
+    assert [(line.line_id, line.amount) for line in totals.lines] == [
+        (design.id, chf("4000")),
+        (hosting.id, chf("300.03")),
+        (larger.id, chf("600")),
+        (extra.id, chf("1200")),
+        (fee.id, chf("50")),
+    ]
+    assert totals.groups == plain.groups
+    assert (
+        totals.subtotal,
+        totals.discount,
+        totals.net,
+        totals.tax,
+        totals.pass_through,
+        totals.gross,
+        totals.rounding,
+        totals.total,
+    ) == (
+        plain.subtotal,
+        plain.discount,
+        plain.net,
+        plain.tax,
+        chf("0"),
+        plain.gross,
+        plain.rounding,
+        plain.total,
+    )
+    # An amount discount is measured against the positions in the total.
+    with raises_exactly(ValidationError, "the discount is larger than the document amount"):
+        compute([hosting, extra], discount=Discount(DiscountKind.AMOUNT, Decimal("300.04")))
+
+
+def test_a_discount_with_only_options_beside_pass_through_items() -> None:
+    extra = replace(item("1", "1200"), in_total=InTotal.OPTIONAL)
+    discount = Discount(DiscountKind.PERCENT, Decimal(5))
+    # Options alone: nothing in the total to reduce, nothing to refuse.
+    only_options = compute([extra], discount=discount)
+    assert (only_options.lines[0].amount, only_options.discount, only_options.total) == (
+        chf("1200"),
+        chf("0"),
+        chf("0"),
+    )
+    # Options do not take a discount meant for the pass-through items beside them.
+    with raises_exactly(ValidationError, "pass-through items take no discount") as caught:
+        compute([item("1", "40", PASS), extra], discount=discount)
+    assert caught.value.code == "discount_on_pass_through_only"
+
+
 def test_euro_has_no_cash_rounding() -> None:
     totals = compute([item("1", "10.01")], currency=Currency.EUR)
     assert totals.total.amount == Decimal("10.82")
     assert totals.rounding.amount == 0
+
+
+def test_only_positions_stay_out_of_the_total() -> None:
+    with raises_exactly(ValidationError, "a text line has no amount to leave out") as text:
+        DocumentLine(
+            id=new_id(), kind=LineKind.TEXT, description="Optionen", in_total=InTotal.OPTIONAL
+        )
+    assert (text.value.field, text.value.code) == ("in_total", "text_line_in_total")
+    target = new_id()
+    for kind, in_total, alternative_to in (
+        (LineKind.ITEM, InTotal.ALTERNATIVE, None),
+        (LineKind.ITEM, InTotal.OPTIONAL, target),
+        (LineKind.ITEM, InTotal.YES, target),
+        (LineKind.TEXT, InTotal.YES, target),
+    ):
+        with raises_exactly(
+            ValidationError, "an alternative names the position it replaces, no other line does"
+        ) as caught:
+            replace(item("1", "10"), kind=kind, in_total=in_total, alternative_to=alternative_to)
+        assert (caught.value.field, caught.value.code) == (
+            "alternative_to",
+            "alternative_target_missing",
+        )
+    alternative = replace(item("1", "10"), in_total=InTotal.ALTERNATIVE, alternative_to=target)
+    assert alternative.alternative_to == target
+    assert item("1", "10").counts
+    assert DocumentLine(id=new_id(), kind=LineKind.TEXT, description="Phase 1").counts
+    assert not alternative.counts
+    assert not replace(item("1", "10"), in_total=InTotal.OPTIONAL).counts
 
 
 def test_document_line_validation() -> None:
@@ -538,6 +631,21 @@ def test_the_discount_never_touches_pass_through_lines(
     passed_sum = sum((line.amount for line in mixed.lines if line.pass_through), chf("0"))
     assert mixed.pass_through == passed_sum
     assert mixed.gross == without.gross + passed_sum
+
+
+@given(line_lists, line_lists, percents, modes)
+def test_options_change_nothing_but_the_lines(
+    lines: list[DocumentLine], more: list[DocumentLine], value: Decimal, mode: PriceMode
+) -> None:
+    """Adding optional positions to a document leaves every total as it was."""
+    options = [replace(line, id=new_id(), in_total=InTotal.OPTIONAL) for line in more]
+    if all(line.is_pass_through for line in lines):
+        value = Decimal(0)  # refused on pass-through items alone
+    discount = Discount(DiscountKind.PERCENT, value)
+    without = compute(lines, discount=discount, mode=mode)
+    mixed = compute([*options, *lines], discount=discount, mode=mode)
+    assert replace(mixed, lines=without.lines) == without
+    assert len(mixed.lines) == len(lines) + len(options)
 
 
 @given(line_lists, percents)

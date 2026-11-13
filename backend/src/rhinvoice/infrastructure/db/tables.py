@@ -324,7 +324,15 @@ document_lines = Table(
     Column("tax_rate", Numeric(5, 2)),
     Column("tax_rate_id", Uuid(), ForeignKey("tax_rates.id", ondelete="RESTRICT"), index=True),
     Column("article_id", Uuid(), ForeignKey("articles.id", ondelete="SET NULL")),
+    # Optional and alternative positions of quotes (ADR 0045); the alternative names the
+    # line it replaces, a line of the same document.
+    Column("in_total", String(12), nullable=False, server_default="yes"),
+    Column("alternative_to", Uuid()),
     UniqueConstraint("document_id", "position", name="uq_document_lines_document_position"),
+    CheckConstraint(
+        "(in_total = 'alternative') = (alternative_to IS NOT NULL)",
+        name="alternative_names_its_position",
+    ),
 )
 
 document_payments = Table(

@@ -183,6 +183,59 @@ def test_quote_flow(user_client: TestClient, customer_id: str) -> None:
     assert declined["status"] == "declined"
 
 
+OFFER: list[Json] = [
+    {"kind": "text", "description": "Hosting"},
+    {"description": "Paket S", "unit_price": "300"},
+    {"description": "Paket L", "unit_price": "600", "in_total": "alternative", "alternative_to": 1},
+    {"description": "Mehrsprachigkeit", "unit_price": "1200", "in_total": "optional"},
+]
+
+
+def test_quotes_offer_optional_and_alternative_positions(
+    user_client: TestClient, customer_id: str
+) -> None:
+    quote = create(user_client, customer_id, type="quote", lines=OFFER)
+    heading, small, large, extra = quote["lines"]
+    assert [line["in_total"] for line in quote["lines"]] == [
+        "yes",
+        "yes",
+        "alternative",
+        "optional",
+    ]
+    assert [line["alternative_to"] for line in quote["lines"]] == [None, None, small["id"], None]
+    assert [line["amount"] for line in quote["lines"]] == [None, "300.00", "600.00", "1200.00"]
+    assert quote["totals"]["total"] == "324.30"
+    wrong = [*OFFER[:2], {**OFFER[2], "alternative_to": 3}, OFFER[3]]
+    refused = user_client.post(
+        "/api/documents",
+        json={"type": "quote", "customer_id": customer_id, "lines": wrong},
+    )
+    assert refused.status_code == 422
+    assert refused.json()["error"]["code"] == "alternative_target_invalid"
+    invoice = user_client.post(
+        "/api/documents",
+        json={"type": "invoice", "customer_id": customer_id, "lines": OFFER},
+    )
+    assert invoice.status_code == 422
+    assert invoice.json()["error"]["code"] == "in_total_quotes_only"
+    path = f"/api/documents/{quote['id']}"
+    post(user_client, f"{path}/issue")
+    for line_ids, code in (([], "no_positions_chosen"), ([heading["id"]], "line_not_in_document")):
+        chosen = user_client.post(f"{path}/convert", json={"line_ids": line_ids})
+        assert chosen.status_code == 422
+        assert chosen.json()["error"]["code"] == code
+    converted = post(
+        user_client, f"{path}/convert", {"line_ids": [large["id"], extra["id"]]}, status=201
+    )
+    assert [line["description"] for line in converted["lines"]] == [
+        "Hosting",
+        "Paket L",
+        "Mehrsprachigkeit",
+    ]
+    assert {line["in_total"] for line in converted["lines"]} == {"yes"}
+    assert converted["totals"]["total"] == "1945.80"
+
+
 def test_duplicate_and_delete_drafts(user_client: TestClient, customer_id: str) -> None:
     original = create(user_client, customer_id, subject="Original")
     copy = post(user_client, f"/api/documents/{original['id']}/duplicate", status=201)

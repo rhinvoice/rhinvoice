@@ -12,9 +12,10 @@ import pytest
 from rhinvoice.application.document.handlers import DocumentHandlers, DraftInput, LineInput
 from rhinvoice.application.document.printing import PrintHandlers
 from rhinvoice.domain.company.logo import Logo
+from rhinvoice.domain.company.print_layout import PrintLayout
 from rhinvoice.domain.customer.customer import CustomerKind
 from rhinvoice.domain.document.document import DocumentType
-from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
+from rhinvoice.domain.document.lines import DiscountKind, InTotal, LineKind, PriceMode
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.country import CountryCode
 from rhinvoice.domain.shared.email import EmailAddress
@@ -310,6 +311,84 @@ def test_the_pass_through_block_in_french_and_italian(
     html = printing.preview_html(DocumentType.INVOICE, draft(lines=lines, language=language))
     assert f'<span class="pass-through-title">{title}</span>' in html
     assert f">{total}</span>" in html
+
+
+# --- Optional and alternative positions (ADR 0045) ---------------------------------
+
+LARGER = replace(FOOD, description="Kaffee gross", in_total=InTotal.ALTERNATIVE, alternative_to=2)
+EXTRA = replace(HOURS, description="Workshop", details="", in_total=InTotal.OPTIONAL)
+OPTIONAL_FEE = replace(FEE, in_total=InTotal.OPTIONAL)
+
+
+def test_options_print_in_place_with_their_amount_in_brackets(printing: PrintHandlers) -> None:
+    lines = (HOURS, TITLE, FOOD, LARGER, EXTRA, FEE, OPTIONAL_FEE)
+    html = printing.preview_html(DocumentType.QUOTE, draft(lines=lines))
+    assert html.count('class="not-in-total"') == 2
+    assert '<td>Kaffee gross<span class="tag">Alternative zu Pos. 2</span></td>' in html
+    assert '<td>Workshop<span class="tag">Optional</span><span class="details">' in html
+    assert ">(37.05)</td>" in html
+    assert ">(13’500.00)</td>" in html
+    assert (
+        '<div class="pass-through" data-index="6"><span>Gebühr Handelsregister – Optional</span>'
+        '<span class="value">(250.37)</span></div>'
+    ) in html
+    # Positions keep their numbers; only the total leaves the options out.
+    assert '<td class="pos">4</td>' in html
+    # The one counted fee needs no sum of its own.
+    assert "Summe durchlaufende Posten" not in html
+    note = "Beträge in Klammern sind nicht im Total enthalten."
+    assert f'<p class="not-in-total-note">{note}</p>' in html
+    # 13537.05 + 1094.46 VAT + the counted fee 250.37, rounded to 5 centimes.
+    assert ">14’881.90<" in html
+    plain = printing.preview_html(DocumentType.QUOTE, draft())
+    assert 'class="not-in-total' not in plain
+
+
+@pytest.mark.parametrize(
+    ("language", "optional", "alternative", "note"),
+    [
+        (
+            Language.EN,
+            "Optional",
+            "Alternative to no. 2",
+            "Amounts in brackets are not included in the total.",
+        ),
+        (
+            Language.FR,
+            "En option",
+            "Variante de la pos. 2",
+            "Les montants entre parenthèses ne sont pas compris dans le total.",
+        ),
+        (
+            Language.IT,
+            "Opzionale",
+            "Alternativa alla pos. 2",
+            "Gli importi tra parentesi non sono compresi nel totale.",
+        ),
+    ],
+)
+def test_options_in_english_french_and_italian(
+    printing: PrintHandlers, language: Language, optional: str, alternative: str, note: str
+) -> None:
+    lines = (HOURS, TITLE, FOOD, LARGER, EXTRA)
+    html = printing.preview_html(DocumentType.QUOTE, draft(lines=lines, language=language))
+    assert f'<span class="tag">{optional}</span>' in html
+    assert f'<span class="tag">{alternative}</span>' in html
+    assert f'<p class="not-in-total-note">{note}</p>' in html
+
+
+def test_without_position_numbers_an_alternative_names_none(
+    printing: PrintHandlers, store: Store
+) -> None:
+    store.use_layout(PrintLayout(position_numbers=False))
+    lines = (HOURS, FOOD, replace(LARGER, alternative_to=1))
+    html = printing.preview_html(DocumentType.QUOTE, draft(lines=lines))
+    assert '<td>Kaffee gross<span class="tag">Alternative</span></td>' in html
+    # An alternative to a pass-through item has no position number to name either.
+    store.use_layout(PrintLayout())
+    fee_first = (HOURS, FEE, replace(OPTIONAL_FEE, in_total=InTotal.ALTERNATIVE, alternative_to=1))
+    passed = printing.preview_html(DocumentType.QUOTE, draft(lines=fee_first))
+    assert "<span>Gebühr Handelsregister – Alternative</span>" in passed
 
 
 @pytest.mark.parametrize(

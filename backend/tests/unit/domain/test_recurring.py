@@ -8,7 +8,13 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from rhinvoice.domain.document.lines import Discount, DocumentLine, LineKind, PriceMode
+from rhinvoice.domain.document.lines import (
+    Discount,
+    DocumentLine,
+    InTotal,
+    LineKind,
+    PriceMode,
+)
 from rhinvoice.domain.recurring.plan import (
     Interval,
     InvoiceTemplate,
@@ -230,6 +236,18 @@ def test_template_rules() -> None:
             lines=(replace(HOSTING, tax_rate=Decimal("8.1")),),
         )
     assert frozen.value.field == "lines"
+    with raises_exactly(
+        ValidationError, "only quotes have optional and alternative positions"
+    ) as optional:
+        InvoiceTemplate(
+            currency=Currency.CHF,
+            price_mode=PriceMode.NET,
+            lines=(text, HOSTING, replace(HOSTING, id=new_id(), in_total=InTotal.OPTIONAL)),
+        )
+    assert (optional.value.field, optional.value.code) == (
+        "lines.2.in_total",
+        "in_total_quotes_only",
+    )
     cleaned = InvoiceTemplate(
         currency=Currency.EUR,
         price_mode=PriceMode.GROSS,

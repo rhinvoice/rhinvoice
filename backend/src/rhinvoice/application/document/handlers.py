@@ -41,6 +41,7 @@ from rhinvoice.domain.document.lines import (
     Discount,
     DiscountKind,
     DocumentLine,
+    InTotal,
     LineKind,
     PriceMode,
 )
@@ -100,11 +101,23 @@ class LineInput:
     """Paid in the customer's name: no rate, no VAT (ADR 0039)."""
     supply: Supply = Supply.SERVICE
     article_id: UUID | None = None
+    in_total: InTotal = InTotal.YES
+    """Optional and alternative positions are for quotes (ADR 0045)."""
+    alternative_to: int | None = None
+    """The index of the position an alternative replaces, among the draft's lines."""
 
     def to_domain(
-        self, index: int, rates: Sequence[TaxRate], kept: Collection[UUID] = ()
+        self,
+        index: int,
+        rates: Sequence[TaxRate],
+        kept: Collection[UUID] = (),
+        line_ids: Sequence[UUID] = (),
     ) -> DocumentLine:
-        """Build the line; ``kept`` are hidden rates the stored line had (they stay)."""
+        """Build the line; ``kept`` are hidden rates the stored line had (they stay).
+
+        ``line_ids`` are the new ids of the draft's lines in their order; an alternative
+        refers to its position by one of them.
+        """
         prefix = f"lines.{index}"
         try:
             if self.kind is LineKind.TEXT:
@@ -114,7 +127,7 @@ class LineInput:
                     rates, self.tax_rate_id, pass_through=self.pass_through, kept=kept
                 )
             return DocumentLine(
-                id=new_id(),
+                id=line_ids[index] if line_ids else new_id(),
                 kind=self.kind,
                 description=self.description,
                 details=self.details,
@@ -126,11 +139,25 @@ class LineInput:
                 supply=self.supply,
                 article_id=self.article_id,
                 tax_rate_id=rate_id,
+                in_total=self.in_total,
+                alternative_to=self._target(line_ids),
             )
         except ValidationError as error:
             raise ValidationError(
                 f"{prefix}.{error.field}", error.message, code=error.code
             ) from None
+
+    def _target(self, line_ids: Sequence[UUID]) -> UUID | None:
+        """Return the id of the position an alternative replaces."""
+        if self.alternative_to is None:
+            return None
+        if not 0 <= self.alternative_to < len(line_ids):
+            raise ValidationError(
+                "alternative_to",
+                "an alternative replaces a position in the total of the same document",
+                code="alternative_target_invalid",
+            )
+        return line_ids[self.alternative_to]
 
 
 @dataclass(frozen=True, slots=True)
@@ -391,12 +418,22 @@ class DocumentHandlers:
             uow.commit()
         return view
 
-    def convert_to_invoice(self, quote_id: UUID) -> DocumentView:
+    def convert_to_invoice(
+        self, quote_id: UUID, line_ids: Collection[UUID] | None = None
+    ) -> DocumentView:
+        """Write the invoice of a quote with the ``line_ids`` positions the customer took.
+
+        None: the positions in the quote's total. Text lines always come along (ADR 0045).
+        """
         with self.uow() as uow:
             quote = self._require(uow, quote_id, for_update=True)
             quote.convert_check()
             invoice = quote.copy_as_draft(
-                new_id(), DocumentType.INVOICE, self.clock.now(), today=self.clock.today()
+                new_id(),
+                DocumentType.INVOICE,
+                self.clock.now(),
+                today=self.clock.today(),
+                chosen=line_ids,
             )
             invoice = replace(
                 invoice,
@@ -858,7 +895,10 @@ def draft_lines(
     draft: DraftInput, rates: Sequence[TaxRate], kept: Collection[UUID]
 ) -> tuple[DocumentLine, ...]:
     """Build the lines of the editor's content with the company's rates (ADR 0044)."""
-    return tuple(line.to_domain(index, rates, kept) for index, line in enumerate(draft.lines))
+    line_ids = tuple(new_id() for _ in draft.lines)
+    return tuple(
+        line.to_domain(index, rates, kept, line_ids) for index, line in enumerate(draft.lines)
+    )
 
 
 def _tax_context(company: Company, customer: Customer) -> TaxContext:

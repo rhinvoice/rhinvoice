@@ -31,7 +31,7 @@ from rhinvoice.domain.document.document import (
     EventKind,
     FieldValue,
 )
-from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
+from rhinvoice.domain.document.lines import DiscountKind, InTotal, LineKind, PriceMode
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
@@ -277,6 +277,39 @@ def test_issued_documents_are_protected_by_triggers(
         connection.execute(
             text("UPDATE documents SET status = 'paid' WHERE id = :id"), {"id": document.id}
         )
+
+
+def test_options_of_quotes_are_persisted_and_frozen(
+    engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
+) -> None:
+    handlers, customer, _ = setup
+    larger = replace(HOURS, quantity="20", in_total=InTotal.ALTERNATIVE, alternative_to=0)
+    extra = replace(FOOD, in_total=InTotal.OPTIONAL)
+    created = handlers.create(
+        DocumentType.QUOTE, draft(customer, lines=(HOURS, larger, extra))
+    ).document
+    assert handlers.get(created.id).document == created
+    hours, alternative, option = created.content.lines
+    assert (alternative.in_total, alternative.alternative_to) == (InTotal.ALTERNATIVE, hours.id)
+    assert (option.in_total, option.alternative_to) == (InTotal.OPTIONAL, None)
+    # Even a draft cannot hold an alternative without its position.
+    with engine.begin() as connection, pytest.raises(IntegrityError, match="alternative_names"):
+        connection.execute(
+            text("UPDATE document_lines SET alternative_to = NULL WHERE id = :id"),
+            {"id": alternative.id},
+        )
+    quote = handlers.issue(created.id).document
+    assert handlers.get(quote.id).document == quote
+    statements = [
+        "UPDATE document_lines SET in_total = 'yes', alternative_to = NULL WHERE document_id = :id",
+        "UPDATE document_lines SET in_total = 'optional' WHERE document_id = :id",
+    ]
+    for statement in statements:
+        with engine.begin() as connection, pytest.raises(IntegrityError, match="immutable"):
+            connection.execute(text(statement), {"id": quote.id})
+    invoice = handlers.convert_to_invoice(quote.id, [alternative.id, option.id]).document
+    assert handlers.get(invoice.id).document == invoice
+    assert [line.in_total for line in invoice.content.lines] == [InTotal.YES, InTotal.YES]
 
 
 def test_deleting_a_converted_draft_frees_the_quote(

@@ -18,7 +18,15 @@ from typing import TYPE_CHECKING
 from rhinvoice.domain.company.print_layout import MAX_INFO_ENTRIES, is_field_key
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.document.calculation import CalculationInput, Totals, calculate
-from rhinvoice.domain.document.lines import Discount, DocumentLine, LineKind, PriceMode
+from rhinvoice.domain.document.lines import (
+    Discount,
+    DocumentLine,
+    InTotal,
+    LineKind,
+    PriceMode,
+    check_alternatives,
+    require_counted,
+)
 from rhinvoice.domain.document.write_off import WriteOff, WriteOffReason
 from rhinvoice.domain.numbering.sequence import SequenceKind
 from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
@@ -29,7 +37,7 @@ from rhinvoice.domain.tax.supply import line_treatment
 from rhinvoice.domain.tax.treatment import TaxTreatment
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping
+    from collections.abc import Collection, Iterator, Mapping
     from datetime import datetime
     from uuid import UUID
 
@@ -263,6 +271,7 @@ class DraftContent:
             raise ValidationError("treatment_override", "this treatment does not apply to goods")
         if len(self.lines) > MAX_LINES:
             raise ValidationError("lines", f"a document has at most {MAX_LINES} lines")
+        check_alternatives(self.lines)
         object.__setattr__(
             self, "subject", clean_text(self.subject, "subject", max_length=MAX_SUBJECT)
         )
@@ -376,6 +385,7 @@ class Document:
     ) -> Document:
         if document_type is DocumentType.CANCELLATION:
             raise ValidationError("type", "cancellations are created by cancelling an invoice")
+        _check_offer(document_type, content)
         events = [DocumentEvent(now, EventKind.CREATED)]
         if content.treatment_overridden:
             events.append(_override_event(now, content, override_reason))
@@ -490,24 +500,63 @@ class Document:
         now: datetime,
         *,
         today: date,
+        chosen: Collection[UUID] | None = None,
     ) -> Document:
         """Duplicate or convert (quote → invoice): same content, a new draft dated ``today``.
 
         Like a new document it opens with today's date; the due date follows the terms
-        when issuing.
+        when issuing. A copy as a quote keeps its optional and alternative positions; any
+        other copy takes the ``chosen`` positions (None: those in the total) as ordinary
+        ones, and every text line (ADR 0045).
         """
         self._require_own("copied")
-        content = replace(
-            self.content,
-            lines=tuple(replace(line, id=new_id(), tax_rate=None) for line in self.content.lines),
-            issue_date=today,
-            due_date=None,
-        )
+        ids = {line.id: new_id() for line in self.content.lines}
+        if document_type is DocumentType.QUOTE:
+            lines = tuple(
+                replace(
+                    line,
+                    id=ids[line.id],
+                    tax_rate=None,
+                    alternative_to=None
+                    if line.alternative_to is None
+                    else ids[line.alternative_to],
+                )
+                for line in self.content.lines
+            )
+        else:
+            picked = self._chosen_positions(chosen)
+            lines = tuple(
+                replace(
+                    line, id=ids[line.id], tax_rate=None, in_total=InTotal.YES, alternative_to=None
+                )
+                for line in self.content.lines
+                if not line.is_item or line.id in picked
+            )
+        content = replace(self.content, lines=lines, issue_date=today, due_date=None)
         return replace(
             Document.new_draft(document_id, document_type, content, now),
             source_id=self.id if document_type is not self.type else None,
             events=(DocumentEvent(now, EventKind.CREATED_FROM, self.number or str(self.id)),),
         )
+
+    def _chosen_positions(self, chosen: Collection[UUID] | None) -> frozenset[UUID]:
+        """Check the positions chosen for an invoice; None: the ones in the total."""
+        items = frozenset(line.id for line in self.content.lines if line.is_item)
+        if chosen is None:
+            picked = frozenset(
+                line.id for line in self.content.lines if line.is_item and line.counts
+            )
+        else:
+            picked = frozenset(chosen)
+            if not picked <= items:
+                raise ValidationError(
+                    "line_ids", "the document has no such position", code="line_not_in_document"
+                )
+        if items and not picked:
+            raise ValidationError(
+                "line_ids", "choose at least one position", code="no_positions_chosen"
+            )
+        return picked
 
     # --- Queries -----------------------------------------------------------------
 
@@ -677,6 +726,7 @@ class Document:
 
     def edit(self, content: DraftContent, now: datetime, *, override_reason: str = "") -> Document:
         self._require(DocumentStatus.DRAFT, action="changed")
+        _check_offer(self.type, content)
         events = self.events
         newly_overridden = content.treatment_overridden and (
             not self.content.treatment_overridden or content.treatment is not self.content.treatment
@@ -1040,6 +1090,12 @@ def _frozen_percent(line: DocumentLine, rates: Mapping[UUID, TaxRate], on: date)
     if line.is_pass_through:
         return ZERO
     return rate_of(line, rates).percent_on(on)
+
+
+def _check_offer(document_type: DocumentType, content: DraftContent) -> None:
+    """Only quotes offer optional and alternative positions (ADR 0045)."""
+    if document_type is not DocumentType.QUOTE:
+        require_counted(content.lines)
 
 
 def _reverse_charge_problems(

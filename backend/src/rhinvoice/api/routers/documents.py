@@ -55,7 +55,7 @@ from rhinvoice.domain.document.document import (
     DocumentType,
     EventKind,
 )
-from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
+from rhinvoice.domain.document.lines import DiscountKind, InTotal, LineKind, PriceMode
 from rhinvoice.domain.document.write_off import WriteOffReason, tax_share
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
@@ -95,6 +95,10 @@ class LineRequest(ApiModel):
     """Paid in the customer's name and for the customer's account: no rate, no VAT."""
     supply: Supply = Supply.SERVICE
     article_id: UUID | None = None
+    in_total: InTotal = InTotal.YES
+    """Quotes only: "optional" and "alternative" positions stay out of the total."""
+    alternative_to: int | None = Field(default=None, ge=0, lt=MAX_LINES)
+    """For an alternative: the index in ``lines`` of the position in the total it replaces."""
 
     def to_input(self) -> LineInput:
         return LineInput(
@@ -109,6 +113,8 @@ class LineRequest(ApiModel):
             pass_through=self.pass_through,
             supply=self.supply,
             article_id=self.article_id,
+            in_total=self.in_total,
+            alternative_to=self.alternative_to,
         )
 
 
@@ -168,6 +174,12 @@ class CreateRequest(DraftRequest):
     type: DocumentType = Field(json_schema_extra={"enum": ["quote", "invoice"]})
 
 
+class ConvertRequest(ApiModel):
+    line_ids: list[UUID] | None = Field(default=None, max_length=MAX_LINES)
+    """The positions of the quote the invoice takes over, as ordinary ones; text lines
+    always come along. None: the positions in the quote's total."""
+
+
 class PaymentRequest(ApiModel):
     paid_on: date
     amount: str = Field(pattern=AMOUNT_PATTERN)
@@ -225,6 +237,10 @@ class LineResponse(ApiModel):
     amount: str | None
     """Line amount after the line discount (None for text lines)."""
     article_id: UUID | None
+    in_total: InTotal
+    """Optional and alternative positions of quotes stay out of the totals."""
+    alternative_to: UUID | None
+    """The id of the line an alternative replaces."""
 
 
 class TaxGroupResponse(ApiModel):
@@ -442,6 +458,8 @@ class DocumentResponse(ApiModel):
                     tax_rate=None if line.tax_rate is None else plain_number(line.tax_rate),
                     amount=amount(amounts[line.id]) if line.id in amounts else None,
                     article_id=line.article_id,
+                    in_total=line.in_total,
+                    alternative_to=line.alternative_to,
                 )
                 for line in content.lines
             ],
@@ -1120,10 +1138,14 @@ def decline_quote(
 
 @router.post("/documents/{document_id}/convert", status_code=status.HTTP_201_CREATED)
 def convert_quote(
-    document_id: UUID, _user: CurrentUser, container: ContainerDep
+    document_id: UUID,
+    _user: CurrentUser,
+    container: ContainerDep,
+    body: ConvertRequest | None = None,
 ) -> DocumentResponse:
-    """Create an invoice draft from a quote."""
-    return DocumentResponse.of(container.documents.convert_to_invoice(document_id))
+    """Create an invoice draft from a quote, with the positions the customer took."""
+    line_ids = None if body is None else body.line_ids
+    return DocumentResponse.of(container.documents.convert_to_invoice(document_id, line_ids))
 
 
 @router.post("/documents/{document_id}/duplicate", status_code=status.HTTP_201_CREATED)

@@ -10,6 +10,8 @@ faq:
     a: "Non. « Marquer comme envoyée » donne son numéro à l’offre et la verrouille. Pour la modifier, dupliquez-la et marquez la copie comme envoyée."
   - q: Une offre peut-elle être transformée en facture plusieurs fois?
     a: "Non, une seule fois. Si vous supprimez le brouillon de facture qu’elle a créé, l’offre peut de nouveau être transformée en facture."
+  - q: Une offre peut-elle contenir des positions en option ou des variantes?
+    a: "Oui. Ouvrez la position et choisissez sous « Dans le total » soit « En option », soit « Variante de la pos. » et la position qu’elle remplace. Ces positions montrent leur montant entre parenthèses, mais ne comptent pas dans le total."
 ---
 
 import Faq from "../../../../components/Faq.astro";
@@ -46,6 +48,20 @@ Un brouillon n’a pas encore de numéro. Vous pouvez le modifier à tout moment
 
 Vous définissez vous-même *Acceptée* et *Refusée* avec les boutons du même nom sur l’offre envoyée. Personne ne définit *Expirée* : Rhinvoice le déduit de la date de validité. Dans la liste sous *Offres*, *Vue* filtre selon chacun de ces statuts.
 
+## Positions en option et variantes
+
+Une offre peut proposer plus que ce que le client doit commander : une extension en plus, ou un second forfait à la place du premier. Ces positions montrent leur montant, mais le total de l’offre ne les comprend pas.
+
+<Steps>
+
+1. Cliquez sur la position dans les lignes de l’offre.
+2. Sous *Dans le total*, choisissez *En option* pour une extension, ou *Variante de la pos. …* et la position qu’elle remplace. Seules les positions comprises elles-mêmes dans le total peuvent être remplacées. Les numéros sont ceux que le PDF imprime : les lignes de texte et les débours n’en ont pas.
+3. Cliquez sur *Appliquer*. La position montre l’étiquette *En option* ou *Variante de …*, et son montant est grisé.
+
+</Steps>
+
+Dans le PDF, les positions restent à leur place, grisées, avec une petite mention (« En option », « Variante de la pos. 2 ») et le montant entre parenthèses. Sous les totaux, une note indique que les montants entre parenthèses ne sont pas compris dans le total. La TVA, le rabais et l’arrondi ne comptent que les positions du total, tout comme le montant ouvert dans l’aperçu. Si la position remplacée est supprimée ou devient elle-même en option, la variante passe en option. Seules les offres ont de telles positions; dans les factures et les factures récurrentes, chaque ligne compte.
+
 ## Transformer une offre en facture
 
 Sur une offre envoyée ou acceptée, choisissez *Autres actions → Convertir en facture*. Rhinvoice crée un **brouillon de facture** :
@@ -56,6 +72,8 @@ Sur une offre envoyée ou acceptée, choisissez *Autres actions → Convertir en
 - avec un lien vers l’offre. Une offre envoyée compte dès lors comme *Acceptée*.
 
 Vérifiez le brouillon, complétez-le si nécessaire et émettez-le comme toute autre facture ([émettre et annuler](/docs/fr/invoices/issue-and-cancel/)). Le taux de TVA suit alors la date de la prestation de la facture, pas celle de l’offre.
+
+Si l’offre contient des positions en option ou des variantes, *Convertir en facture* demande d’abord ce que le client a pris : *Positions pour la facture* liste chaque position avec une case à cocher, les positions du total étant cochées, et montre le total de la facture pour votre choix. **Créer la facture** reprend les positions cochées comme des positions ordinaires, sans mention; les lignes de texte suivent toujours. Au moins une position doit être cochée. Une offre sans de telles positions devient directement une facture, comme avant.
 
 Une offre ne devient une facture qu’**une seule fois**. Si vous supprimez le brouillon de facture, l’offre est de nouveau libre. *Ouvrir la facture* ou *Ouvrir le brouillon de facture* vous mène de l’offre à la facture, *Ouvrir le document d’origine* en sens inverse.
 

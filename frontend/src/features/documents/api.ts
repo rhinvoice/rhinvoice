@@ -173,7 +173,7 @@ export function useDeleteDocument() {
   });
 }
 
-type Action = "issue" | "accept" | "decline" | "cancel" | "convert" | "duplicate";
+type Action = "issue" | "accept" | "decline" | "cancel" | "duplicate";
 
 const byId = (id: string, { headers }: IdempotencyHeaders) => ({
   params: { path: { document_id: id } },
@@ -187,26 +187,53 @@ const ACTIONS: Readonly<
   accept: (id, key) => unwrap(api.POST("/api/documents/{document_id}/accept", byId(id, key))),
   decline: (id, key) => unwrap(api.POST("/api/documents/{document_id}/decline", byId(id, key))),
   cancel: (id, key) => unwrap(api.POST("/api/documents/{document_id}/cancel", byId(id, key))),
-  convert: (id, key) => unwrap(api.POST("/api/documents/{document_id}/convert", byId(id, key))),
   duplicate: (id, key) => unwrap(api.POST("/api/documents/{document_id}/duplicate", byId(id, key))),
 };
 
-/** Lifecycle actions without a body; "convert" and "duplicate" return the new draft. */
+/** Lifecycle actions without a body; "duplicate" returns the new draft. */
 export function useDocumentAction(action: Action) {
+  return useSourceAction(ACTIONS[action]);
+}
+
+export interface ConvertInput {
+  readonly id: string;
+  /** The items the customer took; undefined: those in the quote's total (ADR 0045). */
+  readonly lineIds?: readonly string[];
+}
+
+/** Turn a quote into an invoice draft, which it returns. */
+export function useConvertQuote() {
+  return useSourceAction(({ id, lineIds }: ConvertInput, key: IdempotencyHeaders) =>
+    unwrap(
+      api.POST("/api/documents/{document_id}/convert", {
+        ...byId(id, key),
+        ...(lineIds === undefined ? {} : { body: { line_ids: [...lineIds] } }),
+      }),
+    ),
+  );
+}
+
+/** An action on a document that may change another one too (the draft it creates). */
+function useSourceAction<TVariables extends string | { readonly id: string }>(
+  mutationFn: (variables: TVariables, idempotent: IdempotencyHeaders) => Promise<DocumentDetail>,
+) {
   const onSuccess = useOnChanged();
   const client = useQueryClient();
+  const idOf = (variables: TVariables) =>
+    typeof variables === "string" ? variables : variables.id;
   return useIdempotentMutation({
-    mutationFn: ACTIONS[action],
-    onSuccess: (document, id) => {
+    mutationFn,
+    onSuccess: (document, variables) => {
       onSuccess(document);
       // The source changed too: a converted quote gets an event, a cancelled
       // invoice points to its cancellation.
+      const id = idOf(variables);
       if (document.id !== id) void client.invalidateQueries({ queryKey: documentKeys.detail(id) });
     },
     // A failed response does not prove a failed action (e.g. the connection broke
     // after the server committed): show the document as the server has it.
-    onError: (_error, id) => {
-      void client.invalidateQueries({ queryKey: documentKeys.detail(id) });
+    onError: (_error, variables) => {
+      void client.invalidateQueries({ queryKey: documentKeys.detail(idOf(variables)) });
       void client.invalidateQueries({ queryKey: documentKeys.lists });
     },
   });

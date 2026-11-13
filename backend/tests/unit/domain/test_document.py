@@ -20,7 +20,13 @@ from rhinvoice.domain.document.document import (
     known_rate,
     rate_of,
 )
-from rhinvoice.domain.document.lines import Discount, DocumentLine, LineKind, PriceMode
+from rhinvoice.domain.document.lines import (
+    Discount,
+    DocumentLine,
+    InTotal,
+    LineKind,
+    PriceMode,
+)
 from rhinvoice.domain.shared.country import Country, CountryCode
 from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
 from rhinvoice.domain.shared.identifier import new_id
@@ -602,6 +608,122 @@ def test_copy_as_draft_is_dated_today_without_rates() -> None:
     duplicate = source.copy_as_draft(new_id(), DocumentType.INVOICE, NOW, today=TODAY)
     assert duplicate.source_id is None
     assert duplicate.events[0].detail == str(source.id)
+
+
+# --- Optional and alternative positions (ADR 0045) ---------------------------------
+
+
+def offer() -> tuple[DocumentLine, ...]:
+    """Build a heading, a position, its alternative and an option."""
+    heading = DocumentLine(id=new_id(), kind=LineKind.TEXT, description="Website")
+    hosting = line("1", "300")
+    larger = replace(line("1", "600"), in_total=InTotal.ALTERNATIVE, alternative_to=hosting.id)
+    extra = replace(line("1", "1200"), in_total=InTotal.OPTIONAL)
+    return heading, hosting, larger, extra
+
+
+def test_an_alternative_replaces_a_position_in_the_total() -> None:
+    heading, hosting, larger, extra = offer()
+    assert content(lines=(heading, hosting, larger, extra)).lines[2].alternative_to == hosting.id
+    for target in (extra.id, heading.id, larger.id, new_id()):
+        with raises_exactly(
+            ValidationError, "an alternative replaces a position in the total of the same document"
+        ) as caught:
+            content(lines=(heading, hosting, extra, replace(larger, alternative_to=target)))
+        assert (caught.value.field, caught.value.code) == (
+            "lines.3.alternative_to",
+            "alternative_target_invalid",
+        )
+
+
+def test_only_quotes_offer_options() -> None:
+    lines = offer()
+    quote = draft(DocumentType.QUOTE, lines=lines)
+    assert quote.content.lines == lines
+    assert quote.edit(content(lines=lines[1:]), LATER).content.lines == lines[1:]
+    for document_type in (DocumentType.INVOICE, DocumentType.CANCELLATION):
+        refused = replace(draft(), type=document_type)
+        with raises_exactly(
+            ValidationError, "only quotes have optional and alternative positions"
+        ) as edited:
+            refused.edit(content(lines=lines), LATER)
+        assert (edited.value.field, edited.value.code) == (
+            "lines.2.in_total",
+            "in_total_quotes_only",
+        )
+    with raises_exactly(
+        ValidationError, "only quotes have optional and alternative positions"
+    ) as created:
+        draft(lines=(lines[3], lines[1]))
+    assert created.value.field == "lines.0.in_total"
+
+
+def test_a_copy_as_quote_keeps_the_options() -> None:
+    quote = issued(DocumentType.QUOTE, lines=offer())
+    copy = quote.copy_as_draft(new_id(), DocumentType.QUOTE, NOW, today=TODAY)
+    heading, hosting, larger, extra = copy.content.lines
+    assert [line.in_total for line in copy.content.lines] == [
+        InTotal.YES,
+        InTotal.YES,
+        InTotal.ALTERNATIVE,
+        InTotal.OPTIONAL,
+    ]
+    # The alternative refers to the copy of its position.
+    assert larger.alternative_to == hosting.id
+    assert hosting.id not in {line.id for line in quote.content.lines}
+    assert (heading.alternative_to, hosting.alternative_to, extra.alternative_to) == (
+        None,
+        None,
+        None,
+    )
+    assert all(line.tax_rate is None for line in copy.content.lines)
+
+
+def test_an_invoice_takes_the_chosen_positions_as_ordinary_ones() -> None:
+    quote = issued(DocumentType.QUOTE, lines=(*offer(), line("2", "50")))
+    heading, _, larger, extra, support = quote.content.lines
+    default = quote.copy_as_draft(new_id(), DocumentType.INVOICE, NOW, today=TODAY)
+    assert [(item.description, item.quantity) for item in default.content.lines] == [
+        ("Website", Decimal(1)),
+        ("Beratung", Decimal(1)),
+        ("Beratung", Decimal(2)),
+    ]
+    assert default.content.lines[1].unit_price == Decimal(300)
+    chosen = quote.copy_as_draft(
+        new_id(), DocumentType.INVOICE, NOW, today=TODAY, chosen=[larger.id, extra.id, larger.id]
+    )
+    assert [item.unit_price for item in chosen.content.lines] == [
+        Decimal(0),
+        Decimal(600),
+        Decimal(1200),
+    ]
+    assert chosen.content.lines[0].kind is LineKind.TEXT
+    assert all(item.counts and item.alternative_to is None for item in chosen.content.lines)
+    assert all(item.tax_rate is None for item in chosen.content.lines)
+    with raises_exactly(ValidationError, "choose at least one position") as empty:
+        quote.copy_as_draft(new_id(), DocumentType.INVOICE, NOW, today=TODAY, chosen=[])
+    assert (empty.value.field, empty.value.code) == ("line_ids", "no_positions_chosen")
+    # Text lines come along anyway; only positions are chosen, and only of this quote.
+    for picked in ([heading.id], [support.id, new_id()]):
+        with raises_exactly(ValidationError, "the document has no such position") as unknown:
+            quote.copy_as_draft(new_id(), DocumentType.INVOICE, NOW, today=TODAY, chosen=picked)
+        assert (unknown.value.field, unknown.value.code) == ("line_ids", "line_not_in_document")
+
+
+def test_an_invoice_of_options_alone_needs_a_choice() -> None:
+    heading, _, _, extra = offer()
+    quote = issued(DocumentType.QUOTE, lines=(heading, extra))
+    with raises_exactly(ValidationError, "choose at least one position") as caught:
+        quote.copy_as_draft(new_id(), DocumentType.INVOICE, NOW, today=TODAY)
+    assert caught.value.code == "no_positions_chosen"
+    invoice = quote.copy_as_draft(
+        new_id(), DocumentType.INVOICE, NOW, today=TODAY, chosen=[quote.content.lines[1].id]
+    )
+    assert [item.counts for item in invoice.content.lines] == [True, True]
+    # A draft of text alone is copied as it is, as before.
+    texts = draft(lines=(heading,))
+    copied = texts.copy_as_draft(new_id(), DocumentType.INVOICE, NOW, today=TODAY)
+    assert [item.description for item in copied.content.lines] == ["Website"]
 
 
 def test_display_status() -> None:

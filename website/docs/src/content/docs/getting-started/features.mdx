@@ -34,7 +34,8 @@ Rhinvoice writes **quotes, invoices, cancellation invoices and payment reminders
 - Issued documents are locked, also in the database, and the PDF is kept with its SHA-256 checksum (GoBD, Art. 958f CO, BAO)
 - Corrections only by a cancellation invoice with its own number
 - Mark quotes as sent, accepted or declined; after their validity (30 days by default) they count as expired
-- *Turn into invoice* makes an invoice draft from a quote
+- Optional and alternative items in quotes: shown with their amount in brackets, outside the total
+- *Turn into invoice* makes an invoice draft from a quote, with the items the customer chose
 - *Duplicate* creates a copy as a draft
 - History per document, for example issuing, payments, reminders, e-mails and a manual choice of tax treatment
 - Lists with views (*Drafts*, *Open*, *Overdue*, *Paid*, *Cancelled*, *Written off*), filters by year and customer, totals

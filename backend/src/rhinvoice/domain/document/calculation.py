@@ -13,6 +13,8 @@ per rate → rounding of the payable amount.
   supply), so one document can hold taxed and exempt groups (ADR 0014).
 * Pass-through lines (paid in the customer's name) belong to no VAT group and
   take no document discount; they count fully into the payable total (ADR 0039).
+* Optional and alternative positions of quotes keep their own amount but stay
+  out of every total: VAT groups, discount, pass-through sum and rounding (ADR 0045).
 See ADR 0005.
 """
 
@@ -61,6 +63,7 @@ class CalculationInput:
 class LineAmount:
     line_id: UUID
     amount: Money
+    """Also of optional and alternative positions, which the totals leave out (ADR 0045)."""
     """Net amount in NET mode, gross amount in GROSS mode, after the line discount."""
     vat_code: VatCode
     tax_rate: Decimal
@@ -154,10 +157,12 @@ def calculate(calculation: CalculationInput) -> Totals:
         for line in calculation.lines
         if line.is_item
     )
+    counted_ids = {line.id for line in calculation.lines if line.counts}
+    counted = [line for line in line_amounts if line.line_id in counted_ids]
     keys: list[tuple[VatCode, Decimal]] = []
     sums: dict[tuple[VatCode, Decimal], Decimal] = {}
     pass_through = Decimal(0)
-    for line in line_amounts:
+    for line in counted:
         if line.pass_through:
             pass_through += line.amount.amount
             continue
@@ -167,7 +172,7 @@ def calculate(calculation: CalculationInput) -> Totals:
             sums[key] = Decimal(0)
         sums[key] += line.amount.amount
     subtotal = sum(sums.values(), Decimal(0))
-    if not keys and line_amounts and calculation.discount.value > 0:
+    if not keys and counted and calculation.discount.value > 0:
         # Pass-through items take no discount (ADR 0039): it would be lost without a word.
         raise ValidationError(
             "discount",

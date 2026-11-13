@@ -25,7 +25,7 @@ from rhinvoice.domain.document.document import (
     DocumentType,
     EventKind,
 )
-from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
+from rhinvoice.domain.document.lines import DiscountKind, InTotal, LineKind, PriceMode
 from rhinvoice.domain.numbering.sequence import SequenceKind
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.country import Country, CountryCode
@@ -351,6 +351,88 @@ def test_quote_accept_decline_and_convert(handlers: DocumentHandlers, store: Sto
     ) as twice:
         handlers.convert_to_invoice(quote.id)
     assert twice.value.code == "already_converted"
+
+
+HEADING = LineInput(kind=LineKind.TEXT, description="Hosting")
+LARGER = replace(HOURS, quantity="20", in_total=InTotal.ALTERNATIVE, alternative_to=1)
+EXTRA = replace(FOOD, in_total=InTotal.OPTIONAL)
+
+
+def test_options_refer_to_their_position_by_its_index(handlers: DocumentHandlers) -> None:
+    view = handlers.create(DocumentType.QUOTE, draft_input(lines=(HEADING, HOURS, LARGER, EXTRA)))
+    heading, hours, larger, extra = view.document.content.lines
+    assert (larger.in_total, larger.alternative_to) == (InTotal.ALTERNATIVE, hours.id)
+    assert (extra.in_total, extra.alternative_to) == (InTotal.OPTIONAL, None)
+    assert (heading.in_total, hours.in_total) == (InTotal.YES, InTotal.YES)
+    # The options keep their amounts, the total counts the hours alone: 1500 + 8.1 %.
+    assert [line.amount for line in view.totals.lines][1:] == [
+        Money(Decimal("3000.00"), Currency.CHF),
+        Money(Decimal("37.05"), Currency.CHF),
+    ]
+    assert view.totals.total == Money(Decimal("1621.50"), Currency.CHF)
+    updated = handlers.update(
+        view.document.id, draft_input(lines=(HOURS, replace(LARGER, alternative_to=0)))
+    ).document.content.lines
+    assert updated[1].alternative_to == updated[0].id
+    for target in (4, -1, 0, 2):
+        with raises_exactly(
+            ValidationError, "an alternative replaces a position in the total of the same document"
+        ) as caught:
+            handlers.create(
+                DocumentType.QUOTE,
+                draft_input(lines=(HEADING, HOURS, replace(LARGER, alternative_to=target), EXTRA)),
+            )
+        assert (caught.value.field, caught.value.code) == (
+            "lines.2.alternative_to",
+            "alternative_target_invalid",
+        )
+    with raises_exactly(
+        ValidationError, "only quotes have optional and alternative positions"
+    ) as invoice:
+        handlers.create(DocumentType.INVOICE, draft_input(lines=(HOURS, EXTRA)))
+    assert (invoice.value.field, invoice.value.code) == ("lines.1.in_total", "in_total_quotes_only")
+
+
+def test_converting_takes_the_positions_the_customer_chose(
+    handlers: DocumentHandlers, store: Store
+) -> None:
+    lines = (HEADING, HOURS, LARGER, EXTRA)
+    quote = handlers.issue(
+        handlers.create(DocumentType.QUOTE, draft_input(lines=lines)).document.id
+    ).document
+    heading, hours, larger, extra = quote.content.lines
+    with raises_exactly(ValidationError, "the document has no such position") as unknown:
+        handlers.convert_to_invoice(quote.id, [larger.id, new_id()])
+    assert unknown.value.code == "line_not_in_document"
+    with raises_exactly(ValidationError, "choose at least one position") as empty:
+        handlers.convert_to_invoice(quote.id, [])
+    assert empty.value.code == "no_positions_chosen"
+    # Nothing was written by the refused attempts.
+    assert store.documents[quote.id].document.converted_to_id is None
+    view = handlers.convert_to_invoice(quote.id, [larger.id, extra.id])
+    invoice = view.document
+    assert [line.description for line in invoice.content.lines] == [
+        heading.description,
+        larger.description,
+        extra.description,
+    ]
+    assert all(line.in_total is InTotal.YES for line in invoice.content.lines)
+    assert all(line.alternative_to is None for line in invoice.content.lines)
+    assert invoice.created_at == NOW
+    assert invoice.events == (DocumentEvent(NOW, EventKind.CREATED_FROM, quote.issued_number),)
+    # 3000 + 8.1 % and 37.05 + 2.6 %, rounded to 0.05.
+    assert view.totals.total == Money(Decimal("3281.00"), Currency.CHF)
+    assert store.documents[quote.id].document.converted_to_id == invoice.id
+    assert hours.id not in {line.id for line in invoice.content.lines}
+
+
+def test_a_duplicated_quote_keeps_its_options(handlers: DocumentHandlers) -> None:
+    lines = (HOURS, replace(LARGER, alternative_to=0), EXTRA)
+    quote = handlers.create(DocumentType.QUOTE, draft_input(lines=lines))
+    copy = handlers.duplicate(quote.document.id).document
+    hours, larger, extra = copy.content.lines
+    assert (larger.in_total, larger.alternative_to) == (InTotal.ALTERNATIVE, hours.id)
+    assert extra.in_total is InTotal.OPTIONAL
 
 
 def test_duplicate(handlers: DocumentHandlers) -> None:

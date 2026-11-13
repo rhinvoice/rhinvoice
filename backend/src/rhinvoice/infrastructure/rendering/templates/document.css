@@ -221,6 +221,20 @@ table.lines {
   white-space: pre-line;
 }
 
+/* Optional and alternative positions of quotes: muted, amount in brackets (ADR 0045). */
+.lines tr.not-in-total td {
+  color: var(--muted);
+}
+
+.lines .tag {
+  display: block;
+  margin-top: 0.4mm;
+  font-size: 7pt;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .lines tr.text td {
   padding-top: 3.5mm;
   font-weight: 600;
@@ -270,6 +284,13 @@ table.lines {
 }
 
 .prices-gross {
+  margin: -4mm 0 5mm;
+  color: var(--muted);
+  font-size: 8pt;
+  text-align: right;
+}
+
+.not-in-total-note {
   margin: -4mm 0 5mm;
   color: var(--muted);
   font-size: 8pt;

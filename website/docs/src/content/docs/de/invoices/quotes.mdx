@@ -10,6 +10,8 @@ faq:
     a: Nein. Mit «Als versendet markieren» erhält das Angebot seine Nummer und ist danach gesperrt. Für Änderungen duplizieren Sie es und markieren die Kopie neu als versendet.
   - q: Kann ein Angebot mehrmals in eine Rechnung umgewandelt werden?
     a: Nein, nur einmal. Löschen Sie den daraus entstandenen Rechnungsentwurf, lässt sich das Angebot wieder umwandeln.
+  - q: Kann ein Angebot optionale oder alternative Positionen enthalten?
+    a: Ja. Öffnen Sie die Position und wählen Sie unter «Im Total» entweder «Optional» oder «Alternative zu Pos.» und die Position, die sie ersetzt. Solche Positionen zeigen ihren Betrag in Klammern, zählen aber nicht ins Total.
 ---
 
 import Faq from "../../../../components/Faq.astro";
@@ -46,6 +48,20 @@ Ab *Versendet* ändert sich ein Angebot nicht mehr. Brauchen Sie eine geänderte
 
 *Angenommen* und *Abgelehnt* setzen Sie selbst mit den gleichnamigen Knöpfen auf dem versendeten Angebot. *Abgelaufen* setzt niemand: Rhinvoice leitet es aus dem Gültigkeitsdatum ab. In der Liste unter *Angebote* filtern Sie mit *Ansicht* nach jedem dieser Status.
 
+## Optionale und alternative Positionen
+
+Ein Angebot kann mehr anbieten, als der Kunde bestellen muss: eine Erweiterung zusätzlich oder ein zweites Paket statt des ersten. Solche Positionen zeigen ihren Betrag, das Total des Angebots enthält sie aber nicht.
+
+<Steps>
+
+1. Klicken Sie in den Positionen des Angebots auf die Position.
+2. Wählen Sie unter *Im Total* entweder *Optional* für eine Erweiterung oder *Alternative zu Pos. …* und die Position, die sie ersetzt. Ersetzen lassen sich nur Positionen, die selbst im Total sind. Die Nummern sind die, die das PDF druckt: Textzeilen und durchlaufende Posten haben keine.
+3. Klicken Sie auf *Übernehmen*. Die Position zeigt das Schild *Optional* oder *Alternative zu …*, ihr Betrag ist grau.
+
+</Steps>
+
+Im PDF bleiben die Positionen an ihrem Platz, grau, mit einem kleinen Vermerk («Optional», «Alternative zu Pos. 2») und dem Betrag in Klammern. Unter den Summen steht: «Beträge in Klammern sind nicht im Total enthalten.» MWST, Rabatt und Rundung rechnen nur mit den Positionen im Total, ebenso der offene Betrag in der Übersicht. Wird die ersetzte Position entfernt oder selbst optional, wird die Alternative optional. Solche Positionen gibt es nur in Angeboten; in Rechnungen und wiederkehrenden Rechnungen zählt jede Zeile.
+
 ## In eine Rechnung umwandeln
 
 Auf einem versendeten oder angenommenen Angebot wählen Sie *Weitere Aktionen → In Rechnung umwandeln*. Rhinvoice legt einen **Rechnungsentwurf** an:
@@ -56,6 +72,8 @@ Auf einem versendeten oder angenommenen Angebot wählen Sie *Weitere Aktionen �
 - mit einem Verweis auf das Angebot. Ein versendetes Angebot gilt danach als *Angenommen*.
 
 Den Entwurf prüfen Sie, ergänzen ihn bei Bedarf und stellen ihn aus wie jede andere Rechnung ([Rechnung ausstellen und stornieren](/docs/de/invoices/issue-and-cancel/)). Der Steuersatz richtet sich dann nach dem Leistungsdatum der Rechnung, nicht nach dem des Angebots.
+
+Enthält das Angebot optionale oder alternative Positionen, fragt *In Rechnung umwandeln* zuerst, was der Kunde genommen hat: *Positionen für die Rechnung* listet jede Position mit einem Häkchen, die Positionen im Total sind angehakt, und zeigt das Total der Rechnung für Ihre Auswahl. **Rechnung erstellen** übernimmt die angehakten Positionen als normale Positionen ohne Vermerk, Textzeilen kommen immer mit. Mindestens eine Position muss angehakt sein. Ein Angebot ohne solche Positionen wird wie bisher direkt zur Rechnung.
 
 Ein Angebot wird nur **einmal** zur Rechnung. Löschen Sie den Rechnungsentwurf, ist das Angebot wieder frei. Über *Rechnung öffnen* bzw. *Rechnungsentwurf öffnen* springen Sie vom Angebot zur Rechnung, über *Ursprungsdokument öffnen* zurück.
 

@@ -65,10 +65,10 @@ test("pass-through items print apart and third-party invoices go with the invoic
   await expectAccessible(page);
   await page.getByRole("button", { name: "Übernehmen" }).click();
 
-  // The list of positions says which line it is.
-  await expect(page.getByRole("button", { name: /^Position 2 bearbeiten/ })).toContainText(
-    "Durchlaufend",
-  );
+  // The list of positions says which line it is; like the PDF, it gives the item no number.
+  await expect(
+    page.getByRole("button", { name: /^Zeile bearbeiten: Gründungsgebühr/ }),
+  ).toContainText("Durchlaufend");
   // 480 + 8.1 % VAT = 518.90, plus 250.35 outside the VAT: 769.25.
   await expect(page.getByText("CHF 769.25")).toBeVisible();
   if (isMobile) await page.getByRole("button", { name: "Vorschau" }).click();

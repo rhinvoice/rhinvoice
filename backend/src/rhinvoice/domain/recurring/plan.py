@@ -16,7 +16,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from rhinvoice.domain.document.document import MAX_LINES, FieldValue, clean_fields
-from rhinvoice.domain.document.lines import Discount, LineKind
+from rhinvoice.domain.document.lines import Discount, LineKind, require_counted
 from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
 from rhinvoice.domain.shared.text import clean_multiline, clean_text
 
@@ -105,6 +105,7 @@ class InvoiceTemplate:
             raise ValidationError("lines", f"an invoice has at most {MAX_LINES} lines")
         if any(line.tax_rate is not None for line in self.lines):
             raise ValidationError("lines", "a template has no frozen tax rates")
+        require_counted(self.lines)
         object.__setattr__(
             self, "subject", clean_text(self.subject, "subject", max_length=MAX_SUBJECT)
         )

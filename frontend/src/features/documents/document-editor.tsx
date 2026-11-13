@@ -405,7 +405,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
     );
   };
 
-  const summary = [...(plan?.problems ?? []), ...documentSummaryItems(errors, t)];
+  const summary = [...(plan?.problems ?? []), ...documentSummaryItems(errors, values.lines, t)];
   const issueLabel = type === "quote" ? t("documents.send") : t("documents.issue");
   const title = type === "quote" ? t("documentType.quote") : t("documentType.invoice");
 
@@ -736,6 +736,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
                 }
                 editing={editing}
                 onEditingChange={setEditing}
+                offersOptions={type === "quote"}
               />
             </Card>
 

@@ -16,6 +16,15 @@ before 1.0, minor versions may contain breaking changes.
   EN 16931 (S above 0 %, Z and E at 0 %, E with a reason), so the e-invoice stays valid. Line
   items and articles choose a rate, grouped into taxable and without tax; rates in use are
   hidden instead of deleted, and issued documents keep the rate they were issued with (#80).
+- Optional and alternative items in quotes: an item's *In total* is *Yes*, *Optional* or
+  *Alternative to line …*. Such items show their amount in brackets, muted, with a tag in the PDF
+  and a note below the totals; VAT, discount and the total leave them out. *Turn into invoice*
+  then asks which items the customer took, with the total of the choice, and the invoice gets
+  them as ordinary lines (#87).
+
+### Changed
+- The editor numbers line items as the PDF does: text lines and pass-through items have no
+  number, so *Line 3* in the editor is position 3 on paper.
 
 ### Fixed
 - Quotes no longer say a hidden detail goes "only in the e-invoice" or that the reference is

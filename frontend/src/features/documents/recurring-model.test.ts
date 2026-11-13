@@ -195,6 +195,8 @@ describe("recurring plans", () => {
             pass_through: false,
             supply: "service",
             article_id: null,
+            in_total: "yes",
+            alternative_to: null,
           },
         ],
         discount_kind: "amount",

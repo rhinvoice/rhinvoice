@@ -17,6 +17,15 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   Grund), damit die E-Rechnung gültig bleibt. Positionen und Artikel wählen einen Satz, geteilt
   in steuerpflichtig und ohne Steuer; verwendete Sätze werden ausgeblendet statt gelöscht, und
   ausgestellte Dokumente behalten den Satz, mit dem sie ausgestellt wurden (#80).
+- Optionale und alternative Positionen in Angeboten: *Im Total* einer Position ist *Ja*,
+  *Optional* oder *Alternative zu Pos. …*. Solche Positionen zeigen ihren Betrag in Klammern, grau,
+  mit einem Vermerk im PDF und einem Hinweis unter den Summen; MWST, Rabatt und Total lassen sie
+  aus. *In Rechnung umwandeln* fragt dann, welche Positionen der Kunde genommen hat, mit dem
+  Total der Auswahl, und die Rechnung erhält sie als normale Positionen (#87).
+
+### Geändert
+- Der Editor nummeriert Positionen wie das PDF: Textzeilen und durchlaufende Posten haben keine
+  Nummer, *Position 3* im Editor ist also auch auf dem Papier Position 3.
 
 ### Behoben
 - Angebote sagen nicht mehr, eine ausgeblendete Angabe stehe «nur in der E-Rechnung» oder die

@@ -145,3 +145,53 @@ test("a quote offers an alternative and an option; the invoice takes what was ch
   await page.getByRole("button", { name: /^Position 1 bearbeiten/ }).click();
   await expect(page.locator("#lines-0-in_total")).toHaveCount(0);
 });
+
+test("the editor numbers positions as the PDF does", async ({ page, isMobile }, testInfo) => {
+  const suffix = unique(testInfo.project.name);
+  const customerId = await createCustomer(page, `Nummern ${suffix} AG`);
+  const quote = await post<{ id: string }>(page, "/api/documents", {
+    type: "quote",
+    customer_id: customerId,
+    subject: "Website",
+    lines: [
+      { kind: "text", description: "Phase 1" },
+      { description: "Design und Umsetzung", quantity: "1", unit: "LS", unit_price: "4000" },
+      {
+        description: "Domaingebühr",
+        quantity: "1",
+        unit: "ANN",
+        unit_price: "20",
+        pass_through: true,
+      },
+      { description: "Hosting 1 Jahr, Paket S", quantity: "1", unit: "ANN", unit_price: "300" },
+      { description: "Hosting 1 Jahr, Paket L", quantity: "1", unit: "ANN", unit_price: "600" },
+    ],
+  });
+  await openApp(page, `/documents/${quote.id}`, "Angebot (Entwurf)");
+
+  // Neither the heading nor the pass-through fee has a number, in the editor as in the PDF.
+  await expect(page.getByRole("button", { name: "Zeile bearbeiten: Phase 1" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Zeile bearbeiten: Domaingebühr" })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Position 3 bearbeiten: Hosting 1 Jahr, Paket L" })
+    .click();
+  const inTotal = page.locator("#lines-4-in_total");
+  await expect(inTotal.locator("option")).toHaveText([
+    "Ja",
+    "Optional",
+    "Alternative zu Pos. 1",
+    "Alternative zu «Domaingebühr»",
+    "Alternative zu Pos. 2",
+  ]);
+  await inTotal.selectOption({ label: "Alternative zu Pos. 2" });
+  await expectAccessible(page);
+  await page.getByRole("button", { name: "Übernehmen" }).click();
+  await expect(
+    page.getByRole("button", { name: "Position 3 bearbeiten: Hosting 1 Jahr, Paket L" }),
+  ).toContainText("Alternative zu 2");
+
+  if (isMobile) await page.getByRole("button", { name: "Vorschau" }).click();
+  const paper = page.frameLocator('iframe[title="Vorschau: Angebot"]');
+  await expect(paper.locator("tr.not-in-total")).toContainText("Hosting 1 Jahr, Paket L");
+  await expect(paper.locator("tr.not-in-total")).toContainText("Alternative zu Pos. 2");
+});

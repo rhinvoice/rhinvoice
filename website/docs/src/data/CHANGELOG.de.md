@@ -23,6 +23,10 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
   aus. *In Rechnung umwandeln* fragt dann, welche Positionen der Kunde genommen hat, mit dem
   Total der Auswahl, und die Rechnung erhält sie als normale Positionen (#87).
 
+### Geändert
+- Der Editor nummeriert Positionen wie das PDF: Textzeilen und durchlaufende Posten haben keine
+  Nummer, *Position 3* im Editor ist also auch auf dem Papier Position 3.
+
 ### Behoben
 - Angebote sagen nicht mehr, eine ausgeblendete Angabe stehe «nur in der E-Rechnung» oder die
   Referenz sei für die XRechnung nötig: Ein Angebot hat keine E-Rechnung. Eine in der Druckvorlage

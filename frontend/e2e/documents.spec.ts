@@ -87,13 +87,16 @@ test("create, issue, pay and cancel an invoice", async ({ page, isMobile }, test
     await page.locator("#lines-2-description").press("Escape");
     await expect(page.locator("#lines-2-description")).toHaveCount(0);
 
-    // Alt+↑ moves the travel costs above the text line (WCAG 2.5.7).
+    // Alt+↑ moves the travel costs above the text line (WCAG 2.5.7). Lines are named by the
+    // number the PDF prints, which text lines do not have.
+    await expect(page.getByRole("button", { name: "Zeile bearbeiten: Spesen" })).toBeVisible();
     await page
-      .getByRole("button", { name: "Position 3 bearbeiten: Fahrtkosten" })
+      .getByRole("button", { name: "Position 2 bearbeiten: Fahrtkosten" })
       .press("Alt+ArrowUp");
-    await expect(
-      page.getByRole("button", { name: "Position 2 bearbeiten: Fahrtkosten" }),
-    ).toBeFocused();
+    await expect(page.locator("#line-1-summary")).toBeFocused();
+    await expect(page.locator("#line-1-summary")).toHaveAccessibleName(
+      "Position 2 bearbeiten: Fahrtkosten",
+    );
 
     // Dragging a line onto another moves it there (and back here).
     await page

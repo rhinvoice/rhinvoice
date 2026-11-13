@@ -41,6 +41,7 @@ import {
   fieldId,
   isBlankLine,
   lineFromArticle,
+  lineLabel,
   linePercents,
   MAX_LINES,
   ownTreatment,
@@ -52,6 +53,7 @@ import {
   inTotalChoice,
   inTotalTag,
   orphanedAlternatives,
+  positionNumbers,
   parseInTotalChoice,
   replaceableLines,
   type InTotalTag,
@@ -351,7 +353,8 @@ function LineSummary({
   const line = useWatch({ control, name: `lines.${index}` });
   const lines = useWatch({ control, name: "lines" });
   const currency = useWatch({ control, name: "currency" });
-  const number = index + 1;
+  // The number the PDF prints; text lines and pass-through items have none.
+  const position = positionNumbers(lines).get(line.key);
   const tag = inTotalTag(lines, index);
   const unit = units.data?.find((candidate) => candidate.code === line.unit);
   const unitLabel = unit === undefined ? "" : unitName(locale, unit);
@@ -403,7 +406,9 @@ function LineSummary({
           onDrop();
         }}
         onDragEnd={onDragEnd}
-        aria-label={t("documents.editLine", { number, description: line.description })}
+        aria-label={lineLabel(t, "documents.editLine", position, {
+          description: line.description,
+        })}
         className="group -mx-2 grid w-[calc(100%+1rem)] grid-cols-[1.75rem_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-0.5 rounded-md px-2 py-3 text-left transition-colors hover:bg-muted focus-visible:bg-muted"
         onClick={onOpen}
         onKeyDown={(event) => {
@@ -417,7 +422,7 @@ function LineSummary({
         }}
       >
         <span className="relative text-sm text-muted-foreground tabular-nums">
-          <span className="group-hover:invisible">{isItem ? number : ""}</span>
+          <span className="group-hover:invisible">{position ?? ""}</span>
           <GripVerticalIcon
             className="invisible absolute top-0.5 left-0 size-4 cursor-grab group-hover:visible"
             aria-hidden="true"
@@ -539,7 +544,9 @@ function LineEditor({
   const createArticle = useCreateArticle();
   const errorMessage = useErrorMessage();
   const errors = formState.errors.lines?.[index];
-  const number = index + 1;
+  const lines = useWatch({ control, name: "lines" });
+  // The number the PDF prints; text lines and pass-through items have none.
+  const position = positionNumbers(lines).get(line.key);
   const path = (field: string) => `lines.${String(index)}.${field}`;
   const id = (field: string) => fieldId(path(field));
   const describedBy = (field: keyof NonNullable<typeof errors>) =>
@@ -594,7 +601,7 @@ function LineEditor({
 
   return (
     <li
-      aria-label={t("documents.lineLabel", { number })}
+      aria-label={lineLabel(t, "documents.lineLabel", position)}
       className="my-2 flex flex-col gap-3 rounded-lg border border-primary/50 bg-card p-4 shadow-sm ring-3 ring-ring/15"
     >
       <div className="flex flex-col gap-1.5">
@@ -630,7 +637,7 @@ function LineEditor({
         {showDetails || details !== "" ? (
           <>
             <label htmlFor={id("details")} className="sr-only">
-              {t("documents.lineDetails", { number })}
+              {lineLabel(t, "documents.lineDetails", position)}
             </label>
             <Textarea
               id={id("details")}
@@ -652,7 +659,7 @@ function LineEditor({
             }}
           >
             {t("documents.addDetails")}
-            <span className="sr-only">{t("documents.lineLabel", { number })}</span>
+            <span className="sr-only">{lineLabel(t, "documents.lineLabel", position)}</span>
           </Button>
         )}
       </div>
@@ -829,7 +836,7 @@ function LineEditor({
             onClick={() => {
               onMove(index - 1);
             }}
-            aria-label={t("documents.moveUp", { number })}
+            aria-label={lineLabel(t, "documents.moveUp", position)}
           >
             <ArrowUpIcon aria-hidden="true" />
           </Button>
@@ -841,7 +848,7 @@ function LineEditor({
             onClick={() => {
               onMove(index + 1);
             }}
-            aria-label={t("documents.moveDown", { number })}
+            aria-label={lineLabel(t, "documents.moveDown", position)}
           >
             <ArrowDownIcon aria-hidden="true" />
           </Button>
@@ -851,7 +858,7 @@ function LineEditor({
             size="icon-sm"
             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={onRemove}
-            aria-label={t("documents.removeLine", { number })}
+            aria-label={lineLabel(t, "documents.removeLine", position)}
           >
             <Trash2Icon aria-hidden="true" />
           </Button>
@@ -900,7 +907,9 @@ function InTotalField({ index, onKeyDown, onChange }: InTotalFieldProps) {
         <option value="optional">{t("documents.inTotalOptional")}</option>
         {replaceableLines(lines, index).map((target) => (
           <option key={target.key} value={`alternative:${target.key}`}>
-            {t("documents.inTotalAlternativeTo", { number: target.number })}
+            {target.number === null
+              ? t("documents.inTotalAlternativeToLine", { description: target.description })
+              : t("documents.inTotalAlternativeTo", { number: target.number })}
           </option>
         ))}
       </NativeSelect>

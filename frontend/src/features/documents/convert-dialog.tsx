@@ -17,6 +17,7 @@ import { conversionRequest, initialChoice } from "@/features/documents/convert-m
 import { inTotalTag } from "@/features/documents/in-total-model";
 import { TotalTag } from "@/features/documents/line-items";
 import { FormAlert } from "@/features/shared/form-alert";
+import { taxChoiceOf } from "@/features/shared/tax-rate-model";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { cn } from "@/lib/cn";
 import { todayIso } from "@/lib/dates";
@@ -71,7 +72,7 @@ function ConvertForm({ quote, onCancel, onConvert }: ConvertFormProps) {
   const preview = useQuery(
     previewQuery(chosen.size === 0 ? null : conversionRequest(quote, chosen, locale, todayIso())),
   );
-  const marked = quote.lines.map((line) => ({ ...line, key: line.id }));
+  const marked = quote.lines.map((line) => ({ ...line, key: line.id, tax: taxChoiceOf(line) }));
   const money = (amount: string) => formatMoney(amount, quote.currency, locale);
 
   const toggle = (id: string, on: boolean) => {

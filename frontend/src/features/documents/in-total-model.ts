@@ -3,6 +3,8 @@
  * the total. An alternative replaces another item of the same quote that counts itself.
  */
 
+import { PASS_THROUGH } from "@/features/shared/tax-rate-model";
+
 export const IN_TOTAL = ["yes", "optional", "alternative"] as const;
 export type InTotal = (typeof IN_TOTAL)[number];
 
@@ -12,6 +14,9 @@ export interface MarkedLine {
   readonly kind: "item" | "text";
   readonly in_total: InTotal;
   readonly alternative_to: string | null;
+  /** The tax choice of the line; pass-through items have no position number. */
+  readonly tax: string;
+  readonly description: string;
 }
 
 const ALTERNATIVE_PREFIX = "alternative:";
@@ -34,13 +39,29 @@ export function parseInTotalChoice(value: string): Pick<MarkedLine, "in_total" |
 
 const counts = (line: MarkedLine) => line.kind === "item" && line.in_total === "yes";
 
-/** The lines an item at ``index`` can replace: every other item that counts, with its number. */
-export function replaceableLines(
-  lines: readonly MarkedLine[],
-  index: number,
-): { readonly key: string; readonly number: number }[] {
+/**
+ * The number of each position as the PDF prints it: items only, without text lines and
+ * pass-through items, which the PDF lists in their own block.
+ */
+export function positionNumbers(lines: readonly MarkedLine[]): ReadonlyMap<string, number> {
+  const printed = lines.filter((line) => line.kind === "item" && line.tax !== PASS_THROUGH);
+  return new Map(printed.map((line, at) => [line.key, at + 1]));
+}
+
+/** A line an alternative can replace; ``number`` is null for one without a position number. */
+export interface ReplaceableLine {
+  readonly key: string;
+  readonly number: number | null;
+  readonly description: string;
+}
+
+/** The lines an item at ``index`` can replace: every other item that counts. */
+export function replaceableLines(lines: readonly MarkedLine[], index: number): ReplaceableLine[] {
+  const numbers = positionNumbers(lines);
   return lines.flatMap((line, at) =>
-    at !== index && counts(line) ? [{ key: line.key, number: at + 1 }] : [],
+    at !== index && counts(line)
+      ? [{ key: line.key, number: numbers.get(line.key) ?? null, description: line.description }]
+      : [],
   );
 }
 
@@ -61,11 +82,12 @@ export type InTotalTag =
   | { readonly kind: "alternative"; readonly number: number | null }
   | null;
 
-/** The tag of the line at ``index``; an alternative names the number of the line it replaces. */
+/** The tag of the line at ``index``; an alternative names the position it replaces, as printed. */
 export function inTotalTag(lines: readonly MarkedLine[], index: number): InTotalTag {
   const line = lines[index];
   if (line === undefined || line.in_total === "yes") return null;
   if (line.in_total === "optional") return { kind: "optional" };
-  const at = lines.findIndex((other) => other.key === line.alternative_to);
-  return { kind: "alternative", number: at < 0 ? null : at + 1 };
+  const number =
+    line.alternative_to === null ? undefined : positionNumbers(lines).get(line.alternative_to);
+  return { kind: "alternative", number: number ?? null };
 }

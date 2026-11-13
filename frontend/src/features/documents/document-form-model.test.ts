@@ -10,6 +10,7 @@ import {
   documentToForm,
   emptyDocument,
   emptyLine,
+  lineLabel,
   fieldId,
   customerVatHint,
   formToDraft,
@@ -558,6 +559,17 @@ describe("errors", () => {
     expect(documentFieldFor("type")).toBeNull();
   });
 
+  it("names lines by the number the PDF prints", () => {
+    expect(lineLabel(t, "documents.editLine", 3, { description: "Hosting" })).toBe(
+      "Position 3 bearbeiten: Hosting",
+    );
+    expect(lineLabel(t, "documents.editLine", undefined, { description: "Phase 1" })).toBe(
+      "Zeile bearbeiten: Phase 1",
+    );
+    expect(lineLabel(t, "documents.removeLine", 2)).toBe("Position 2 entfernen");
+    expect(lineLabel(t, "documents.removeLine", undefined)).toBe("Zeile entfernen");
+  });
+
   it("derives element ids from field paths", () => {
     expect(fieldId("lines.2.unit_price")).toBe("lines-2-unit_price");
     expect(fieldId("subject")).toBe("subject");
@@ -565,6 +577,7 @@ describe("errors", () => {
 
   it("lists errors in visual order with line numbers", () => {
     const lineErrors = [] as unknown[];
+    lineErrors[0] = { description: { type: "custom", message: "Zu lang" } };
     lineErrors[1] = {
       description: { type: "custom", message: "Bitte ausfüllen." },
       quantity: { type: "custom", message: "Zahl" },
@@ -578,20 +591,24 @@ describe("errors", () => {
       }),
       closing_text: { type: "custom", message: "Zu lang" },
     } as unknown as FieldErrors<DocumentFormValues>;
-    expect(documentSummaryItems(errors, t)).toEqual([
+    // Lines are named by the number the PDF prints; the heading has none.
+    const lines = [emptyLine("text"), emptyLine()];
+    expect(documentSummaryItems(errors, lines, t)).toEqual([
       { fieldId: "customer_id", message: "Kunde fehlt" },
       { fieldId: "lines", message: "Mindestens eine Position" },
-      { fieldId: "lines-1-description", message: "Position 2: Bitte ausfüllen." },
-      { fieldId: "lines-1-quantity", message: "Position 2: Zahl" },
+      { fieldId: "lines-0-description", message: "Zeile: Zu lang" },
+      { fieldId: "lines-1-description", message: "Position 1: Bitte ausfüllen." },
+      { fieldId: "lines-1-quantity", message: "Position 1: Zahl" },
       { fieldId: "subject", message: "Zu lang" },
       { fieldId: "closing_text", message: "Zu lang" },
     ]);
-    expect(documentSummaryItems({}, t)).toEqual([]);
+    expect(documentSummaryItems({}, [], t)).toEqual([]);
     expect(
       documentSummaryItems(
         {
           lines: { type: "server", message: "Mindestens eine Position" },
         },
+        [],
         t,
       ),
     ).toEqual([{ fieldId: "lines", message: "Mindestens eine Position" }]);

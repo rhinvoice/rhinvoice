@@ -10,7 +10,11 @@ import type {
   DraftRequest,
   TaxTreatment,
 } from "@/features/documents/api";
-import { IN_TOTAL, orphanedAlternatives } from "@/features/documents/in-total-model";
+import {
+  IN_TOTAL,
+  orphanedAlternatives,
+  positionNumbers,
+} from "@/features/documents/in-total-model";
 import type { Company } from "@/features/shared/company-api";
 import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import { fields, toApiDecimal } from "@/features/shared/form-schema";
@@ -23,7 +27,7 @@ import {
 } from "@/features/shared/tax-rate-model";
 import { formatDecimalInput } from "@/lib/format";
 import { MAX_FIELD_VALUE } from "@/lib/info-block";
-import type { T } from "@/lib/i18n";
+import type { MessageKey, T } from "@/lib/i18n";
 import type { Locale } from "@/lib/locale";
 
 export type LineRequest = NonNullable<DraftRequest["lines"]>[number];
@@ -551,28 +555,61 @@ export function fieldId(path: string): string {
   return path.replaceAll(".", "-");
 }
 
+/** The labels that name a line, each with its wording for a line without a printed number. */
+const UNNUMBERED = {
+  "documents.editLine": "documents.editLineUnnumbered",
+  "documents.lineLabel": "documents.lineLabelUnnumbered",
+  "documents.lineDetails": "documents.lineDetailsUnnumbered",
+  "documents.moveUp": "documents.moveUpUnnumbered",
+  "documents.moveDown": "documents.moveDownUnnumbered",
+  "documents.removeLine": "documents.removeLineUnnumbered",
+  "documents.lineError": "documents.lineErrorUnnumbered",
+} as const satisfies Partial<Record<MessageKey, MessageKey>>;
+
+export type LineLabel = keyof typeof UNNUMBERED;
+
+/**
+ * A label naming a line by the number the PDF prints, so that the editor and the PDF agree;
+ * text lines and pass-through items have no number and are named as a plain line.
+ */
+export function lineLabel(
+  t: T,
+  label: LineLabel,
+  position: number | undefined,
+  values: Readonly<Record<string, string>> = {},
+): string {
+  return position === undefined
+    ? t(UNNUMBERED[label], values)
+    : t(label, { ...values, number: position });
+}
+
 /** Error summary items in visual order, including errors inside lines. */
 export function documentSummaryItems(
   errors: FieldErrors<DocumentFormValues>,
+  lines: readonly LineFormValues[],
   t: T,
 ): ErrorSummaryItem[] {
   const items: ErrorSummaryItem[] = [];
+  const positions = positionNumbers(lines);
   for (const name of TOP_LEVEL_FIELDS) {
     if (name === "lines") {
-      const lines = errors.lines;
+      const lineErrors = errors.lines;
       // An array error lives in "root" (validation) or directly on the field (server).
-      const linesMessage = lines?.root?.message ?? lines?.message;
+      const linesMessage = lineErrors?.root?.message ?? lineErrors?.message;
       if (typeof linesMessage === "string") {
         items.push({ fieldId: fieldId("lines"), message: linesMessage });
       }
-      const entries = Array.isArray(lines) ? (lines as FieldErrors<LineFormValues>[]) : [];
+      const entries = Array.isArray(lineErrors)
+        ? (lineErrors as FieldErrors<LineFormValues>[])
+        : [];
+      const numbers = lines.map((line) => positions.get(line.key));
       entries.forEach((lineErrors, index) => {
         for (const field of LINE_FIELDS) {
           const message = lineErrors[field]?.message;
           if (typeof message === "string") {
             items.push({
               fieldId: fieldId(`lines.${String(index)}.${field}`),
-              message: t("documents.lineError", { number: index + 1, message }),
+              message: lineLabel(t, "documents.lineError", numbers[index], { message }),
             });
           }
         }

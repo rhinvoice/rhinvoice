@@ -424,9 +424,14 @@ function LineSummary({
           />
         </span>
         <span className="flex min-w-0 flex-col">
-          <span className={cn("break-words", isItem ? "font-medium" : "font-semibold")}>
-            {line.description}
-            <TotalTag tag={tag} className="ml-2 align-[1px]" />
+          <span
+            className={cn(
+              "flex flex-wrap items-center gap-x-2 gap-y-1",
+              isItem ? "font-medium" : "font-semibold",
+            )}
+          >
+            <span className="min-w-0 break-words">{line.description}</span>
+            <TotalTag tag={tag} />
           </span>
           {line.details === "" ? null : (
             <span className="text-sm break-words whitespace-pre-line text-muted-foreground">

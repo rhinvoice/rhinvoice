@@ -117,9 +117,9 @@ function ConvertForm({ quote, onCancel, onConvert }: ConvertFormProps) {
                   toggle(line.id, event.target.checked);
                 }}
               />
-              <span className="min-w-0 break-words">
-                {line.description}
-                <TotalTag tag={inTotalTag(marked, index)} className="ml-2 align-[1px]" />
+              <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="min-w-0 break-words">{line.description}</span>
+                <TotalTag tag={inTotalTag(marked, index)} />
               </span>
               <span className="tabular-nums">{line.amount === null ? "" : money(line.amount)}</span>
             </label>
@@ -129,13 +129,14 @@ function ConvertForm({ quote, onCancel, onConvert }: ConvertFormProps) {
       {chosen.size === 0 ? (
         <p className="text-sm text-destructive">{t("error.no_positions_chosen")}</p>
       ) : null}
-      <DialogFooter className="items-center sm:justify-between">
-        <p className="font-semibold tabular-nums" aria-live="polite">
+      {/* The total first; the buttons follow below it where the row is too narrow. */}
+      <DialogFooter className="flex-col items-center gap-y-3 sm:flex-row sm:flex-wrap sm:justify-between">
+        <p className="font-semibold whitespace-nowrap tabular-nums" aria-live="polite">
           {chosen.size === 0 || preview.data === undefined
             ? null
             : t("documents.convertTotal", { amount: money(preview.data.totals.total) })}
         </p>
-        <div className="flex flex-col-reverse gap-2 sm:flex-row">
+        <div className="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row">
           <Button type="button" variant="outline" onClick={onCancel}>
             {t("common.cancel")}
           </Button>

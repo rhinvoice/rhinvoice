@@ -5,6 +5,8 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.13.0] – 2026-11-13
+
 ### Neu
 - `{DD}` in Nummernmustern: der Tag, an dem die Nummer vergeben wird, bei Dokumenten der Tag des
   Ausstellens, z. B. `R{YYYY}{MM}{DD}-{NN}` (#86).

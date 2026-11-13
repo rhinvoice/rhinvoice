@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Ein Angebot in Rhinvoice durchläuft die Status *Entwurf*, *Versendet* und dann *Angenommen*, *Abgelehnt* oder *Abgelaufen*. Ein versendetes oder angenommenes Angebot wandeln Sie mit **In Rechnung umwandeln** in einen Rechnungsentwurf um, ohne etwas neu zu erfassen.
@@ -50,7 +51,7 @@ Ab *Versendet* ändert sich ein Angebot nicht mehr. Brauchen Sie eine geänderte
 
 ## Optionale und alternative Positionen
 
-Ein Angebot kann mehr anbieten, als der Kunde bestellen muss: eine Erweiterung zusätzlich oder ein zweites Paket statt des ersten. Solche Positionen zeigen ihren Betrag, das Total des Angebots enthält sie aber nicht.
+Ein Angebot kann mehr anbieten, als der Kunde bestellen muss: eine Erweiterung zusätzlich oder ein zweites Paket statt des ersten. Solche Positionen zeigen ihren Betrag, das Total des Angebots enthält sie aber nicht. <Since version="0.13.0" />
 
 <Steps>
 

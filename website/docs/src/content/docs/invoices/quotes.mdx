@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../components/Faq.astro";
+import Since from "../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 A quote in Rhinvoice goes from *Draft* to *Sent* and then to *Accepted*, *Declined* or *Expired*. A sent or accepted quote becomes an invoice draft with **Turn into invoice**, without entering anything twice.
@@ -50,7 +51,7 @@ You set *Accepted* and *Declined* yourself with the buttons of the same name on 
 
 ## Optional and alternative items
 
-A quote can offer more than the customer has to order: an add-on on top, or a second package instead of the first. Such items show their amount, but the total of the quote does not include them.
+A quote can offer more than the customer has to order: an add-on on top, or a second package instead of the first. Such items show their amount, but the total of the quote does not include them. <Since version="0.13.0" />
 
 <Steps>
 

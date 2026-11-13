@@ -590,7 +590,7 @@ export const en: Catalog<MessageKey> = {
   "numbering.kind.article": "Articles",
   "numbering.pattern": "Pattern",
   "numbering.patternHint":
-    "{YYYY} year, {YY} two-digit year, {MM} month, {NNNN} counter (number of N = minimum digits).",
+    "{YYYY} year, {YY} two-digit year, {MM} month, {DD} day, {NNNN} counter (number of N = minimum digits).",
   "numbering.nextValue": "Next counter",
   "numbering.nextValueHint": "To continue seamlessly from a previous program.",
   "numbering.startValue": "Start value after year change",
@@ -598,7 +598,8 @@ export const en: Catalog<MessageKey> = {
   "numbering.preview": "Next number",
   "numbering.saved": "Number sequence saved.",
   "numbering.problem.length": "The pattern must have 1 to 40 characters.",
-  "numbering.problem.placeholder": "Unknown placeholder. Allowed are {YYYY}, {YY}, {MM} and {N…}.",
+  "numbering.problem.placeholder":
+    "Unknown placeholder. Allowed are {YYYY}, {YY}, {MM}, {DD} and {N…}.",
   "numbering.problem.counter": "The pattern needs exactly one counter such as {NNNN}.",
   "numbering.problem.characters": "Allowed are letters, digits and - _ / . plus the placeholders.",
   "numbering.problem.year":

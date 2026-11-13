@@ -5,6 +5,10 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Neu
+- `{DD}` in Nummernmustern: der Tag, an dem die Nummer vergeben wird, bei Dokumenten der Tag des
+  Ausstellens, z. B. `R{YYYY}{MM}{DD}-{NN}` (#86).
+
 ### Behoben
 - Angebote sagen nicht mehr, eine ausgeblendete Angabe stehe «nur in der E-Rechnung» oder die
   Referenz sei für die XRechnung nötig: Ein Angebot hat keine E-Rechnung. Eine in der Druckvorlage

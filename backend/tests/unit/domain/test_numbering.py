@@ -17,6 +17,8 @@ def test_format_number_placeholders() -> None:
     on = date(2026, 3, 9)
     assert format_number("R{YYYY}{NNNN}", 12, on) == "R20260012"
     assert format_number("{YY}-{MM}/{NNN}", 7, on) == "26-03/007"
+    assert format_number("R{YY}{MM}{DD}-{NN}", 3, on) == "R260309-03"
+    assert format_number("{DD}{N}", 1, date(2026, 12, 31)) == "311"
     assert format_number("{N}", 12345, on) == "12345"
     assert format_number("{YY}{NN}", 5, date(2009, 1, 1)) == "0905"
 
@@ -169,7 +171,7 @@ def test_sequence_validates_its_pattern_with_reset_flag() -> None:
         ("{N}" + "x" * 38, False, "pattern must have 1 to 40 characters"),
         ("R{YYYY}", False, "pattern must contain exactly one counter such as {NNNN}"),
         ("{NN}{NNN}", False, "pattern must contain exactly one counter such as {NNNN}"),
-        ("{DD}{NNN}", False, "unknown placeholder {DD}"),
+        ("{D}{NNN}", False, "unknown placeholder {D}"),
         (
             "R {NNN}",
             False,
@@ -201,6 +203,7 @@ def test_invalid_patterns(pattern: str, reset: bool, message: str) -> None:
 def test_valid_patterns() -> None:
     validate_pattern("{N}" + "x" * 37, yearly_reset=False)
     validate_pattern("RE/{YY}.{MM}-{NNNN}_x", yearly_reset=True)
+    validate_pattern("R{YYYY}{MM}{DD}-{NN}", yearly_reset=True)
 
 
 @pytest.mark.parametrize(

@@ -418,6 +418,8 @@ def test_converting_takes_the_positions_the_customer_chose(
     ]
     assert all(line.in_total is InTotal.YES for line in invoice.content.lines)
     assert all(line.alternative_to is None for line in invoice.content.lines)
+    assert invoice.created_at == NOW
+    assert invoice.events == (DocumentEvent(NOW, EventKind.CREATED_FROM, quote.issued_number),)
     # 3000 + 8.1 % and 37.05 + 2.6 %, rounded to 0.05.
     assert view.totals.total == Money(Decimal("3281.00"), Currency.CHF)
     assert store.documents[quote.id].document.converted_to_id == invoice.id

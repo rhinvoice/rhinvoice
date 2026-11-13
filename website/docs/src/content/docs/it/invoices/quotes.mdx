@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Un’offerta in Rhinvoice passa da *Bozza* a *Inviata* e poi ad *Accettata*, *Rifiutata* o *Scaduta*. Un’offerta inviata o accettata diventa una bozza di fattura con **Converti in fattura**, senza inserire nulla due volte.
@@ -50,7 +51,7 @@ Da *Inviata* in poi un’offerta non cambia più. Per una versione modificata sc
 
 ## Posizioni opzionali e alternative
 
-Un’offerta può proporre più di quanto il cliente debba ordinare: un’estensione in aggiunta, oppure un secondo pacchetto al posto del primo. Queste posizioni mostrano il loro importo, ma il totale dell’offerta non le comprende.
+Un’offerta può proporre più di quanto il cliente debba ordinare: un’estensione in aggiunta, oppure un secondo pacchetto al posto del primo. Queste posizioni mostrano il loro importo, ma il totale dell’offerta non le comprende. <Since version="0.13.0" />
 
 <Steps>
 

@@ -15,6 +15,7 @@ faq:
 ---
 
 import Faq from "../../../../components/Faq.astro";
+import Since from "../../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 Dans Rhinvoice, une offre passe de *Brouillon* à *Envoyée*, puis à *Acceptée*, *Refusée* ou *Expirée*. Une offre envoyée ou acceptée devient un brouillon de facture avec **Convertir en facture**, sans rien saisir deux fois.
@@ -50,7 +51,7 @@ Vous définissez vous-même *Acceptée* et *Refusée* avec les boutons du même 
 
 ## Positions en option et variantes
 
-Une offre peut proposer plus que ce que le client doit commander : une extension en plus, ou un second forfait à la place du premier. Ces positions montrent leur montant, mais le total de l’offre ne les comprend pas.
+Une offre peut proposer plus que ce que le client doit commander : une extension en plus, ou un second forfait à la place du premier. Ces positions montrent leur montant, mais le total de l’offre ne les comprend pas. <Since version="0.13.0" />
 
 <Steps>
 

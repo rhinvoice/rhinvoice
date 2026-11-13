@@ -5,6 +5,8 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.13.0] – 2026-11-13
+
 ### Added
 - `{DD}` in number patterns: the day the number is assigned, for documents the day of issuing,
   e.g. `R{YYYY}{MM}{DD}-{NN}` (#86).

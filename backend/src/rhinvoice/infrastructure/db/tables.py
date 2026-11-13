@@ -329,6 +329,7 @@ document_lines = Table(
     Column("in_total", String(12), nullable=False, server_default="yes"),
     Column("alternative_to", Uuid()),
     UniqueConstraint("document_id", "position", name="uq_document_lines_document_position"),
+    CheckConstraint("in_total IN ('yes', 'optional', 'alternative')", name="in_total_known"),
     CheckConstraint(
         "(in_total = 'alternative') = (alternative_to IS NOT NULL)",
         name="alternative_names_its_position",

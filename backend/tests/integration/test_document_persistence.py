@@ -292,7 +292,12 @@ def test_options_of_quotes_are_persisted_and_frozen(
     hours, alternative, option = created.content.lines
     assert (alternative.in_total, alternative.alternative_to) == (InTotal.ALTERNATIVE, hours.id)
     assert (option.in_total, option.alternative_to) == (InTotal.OPTIONAL, None)
-    # Even a draft cannot hold an alternative without its position.
+    # Even a draft cannot hold an unknown mark or an alternative without its position.
+    with engine.begin() as connection, pytest.raises(IntegrityError, match="in_total_known"):
+        connection.execute(
+            text("UPDATE document_lines SET in_total = 'maybe' WHERE id = :id"),
+            {"id": option.id},
+        )
     with engine.begin() as connection, pytest.raises(IntegrityError, match="alternative_names"):
         connection.execute(
             text("UPDATE document_lines SET alternative_to = NULL WHERE id = :id"),

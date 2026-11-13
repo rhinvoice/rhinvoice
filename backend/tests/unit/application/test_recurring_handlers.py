@@ -1,6 +1,7 @@
 """Recurring invoice plans and the run that writes their invoices."""
 
 import logging
+from collections.abc import Collection
 from dataclasses import replace
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -36,15 +37,15 @@ from rhinvoice.domain.recurring.plan import (
     RunOutcome,
 )
 from rhinvoice.domain.shared.clock import FixedClock
-from rhinvoice.domain.shared.country import CountryCode
 from rhinvoice.domain.shared.email import EmailAddress
 from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.iban import Iban
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
-from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import REDUCED
 from rhinvoice.domain.tax.supply import Supply
+from rhinvoice.domain.tax.tax_rate import RateCategory, RateValue, TaxRate
 from rhinvoice.infrastructure.rendering.html import JinjaDocumentRenderer
 from tests.helpers import raises_exactly
 from tests.unit.application.conftest import NOW
@@ -54,6 +55,7 @@ from tests.unit.domain import factories
 
 CUSTOMER = UUID(int=1)
 TODAY = NOW.date()
+RATES = list(factories.tax_rates().values())
 HOSTING = LineInput(
     kind=LineKind.ITEM, description="Hosting", quantity="1", unit="MON", unit_price="29"
 )
@@ -156,14 +158,15 @@ def test_templates_keep_what_the_editor_sent() -> None:
             price_mode=PriceMode.GROSS,
             lines=(
                 LineInput(kind=LineKind.TEXT, description="Monthly"),
-                replace(HOSTING, tax_category=TaxCategory.REDUCED, supply=Supply.GOODS),
+                replace(HOSTING, tax_rate_id=factories.rate_id(REDUCED), supply=Supply.GOODS),
             ),
             discount_kind=DiscountKind.AMOUNT,
             discount_value="5",
             reference="K-1",
             intro_text="Hello",
             closing_text="Thanks",
-        )
+        ),
+        RATES,
     )
     assert template.discount is not None
     assert (template.discount.kind, template.discount.value) == (DiscountKind.AMOUNT, Decimal(5))
@@ -173,12 +176,14 @@ def test_templates_keep_what_the_editor_sent() -> None:
         "K-1",
     )
     assert [line.supply for line in template.lines] == [Supply.SERVICE, Supply.GOODS]
-    plain = to_template(DraftInput(customer_id=CUSTOMER, currency=Currency.CHF, lines=(HOSTING,)))
+    plain = to_template(
+        DraftInput(customer_id=CUSTOMER, currency=Currency.CHF, lines=(HOSTING,)), RATES
+    )
     assert plain.discount is None
     with raises_exactly(ValidationError, "a plan names its currency"):
-        to_template(DraftInput(customer_id=CUSTOMER, lines=(HOSTING,)))
+        to_template(DraftInput(customer_id=CUSTOMER, lines=(HOSTING,)), RATES)
     with raises_exactly(ValidationError, "the invoice needs at least one position with an amount"):
-        to_template(DraftInput(customer_id=CUSTOMER, currency=Currency.CHF))
+        to_template(DraftInput(customer_id=CUSTOMER, currency=Currency.CHF), RATES)
 
 
 def test_plans_need_their_customer(recurring: RecurringHandlers) -> None:
@@ -493,16 +498,37 @@ def test_an_invoice_that_cannot_be_created(recurring: RecurringHandlers, store: 
 
 
 def test_a_total_that_cannot_be_calculated(recurring: RecurringHandlers, store: Store) -> None:
-    lodging = replace(HOSTING, tax_category=TaxCategory.SPECIAL)
+    # A rate that applies from a later date has no percentage today.
+    later = TaxRate(
+        id=new_id(),
+        name="Ab 2030",
+        category=RateCategory.STANDARD,
+        values=(RateValue(date(2030, 1, 1), Decimal(9)),),
+    )
+    store.tax_rates = [*RATES, later]
+    lodging = replace(HOSTING, tax_rate_id=later.id)
     plan = recurring.create(
         save(template=DraftInput(customer_id=CUSTOMER, currency=Currency.CHF, lines=(lodging,)))
     ).plan
-    assert store.company is not None
-    # Germany has no special rate.
-    germany = factories.address(country=CountryCode("DE"))
-    store.company = replace(store.company, address=germany)
-    store.customers[CUSTOMER] = replace(store.customers[CUSTOMER], address=germany)
     assert recurring.get(plan.id).total is None
+
+
+def test_plans_keep_their_hidden_rates(recurring: RecurringHandlers, store: Store) -> None:
+    reduced = factories.rate_id(REDUCED)
+    books = replace(HOSTING, tax_rate_id=reduced)
+    template = DraftInput(customer_id=CUSTOMER, currency=Currency.CHF, lines=(books,))
+    plan = recurring.create(save(template=template)).plan
+    store.tax_rates = [replace(rate, hidden=rate.id == reduced) for rate in RATES]
+    # The plan keeps the rate when it is saved again and when it writes the invoice.
+    assert recurring.update(plan.id, save(template=template)).plan.template.rate_ids == (reduced,)
+    [run] = recurring.run_due()
+    assert run.document_id is not None
+    invoice = store.documents[run.document_id].document
+    assert invoice.content.lines[0].tax_rate_id == reduced
+    # A new plan does not choose it.
+    with raises_exactly(ValidationError, "the tax rate is hidden") as hidden:
+        recurring.create(save(template=template))
+    assert (hidden.value.field, hidden.value.code) == ("lines.0.tax_rate_id", "tax_rate_hidden")
 
 
 def test_a_plan_turns_into_the_invoice_it_was_given() -> None:
@@ -521,10 +547,11 @@ def test_a_plan_turns_into_the_invoice_it_was_given() -> None:
                 unit="MON",
                 unit_price="29.9",
                 discount_percent="10",
-                tax_category=TaxCategory.REDUCED,
+                tax_rate_id=factories.rate_id(REDUCED),
                 supply=Supply.GOODS,
                 article_id=UUID(int=7),
             ),
+            LineInput(kind=LineKind.ITEM, description="Domain fee", pass_through=True),
         ),
         discount_kind=DiscountKind.AMOUNT,
         discount_value="5",
@@ -541,13 +568,13 @@ def test_a_plan_turns_into_the_invoice_it_was_given() -> None:
         interval=Interval.MONTHLY,
         start_date=TODAY,
         action=PlanAction.DRAFT,
-        template=to_template(draft),
+        template=to_template(draft, RATES),
         today=TODAY,
         now=NOW,
     )
     # Text lines keep their default numbers; every other field comes back as given.
     text_line = replace(draft.lines[0], quantity="1", unit_price="0", discount_percent="0")
-    assert plan_draft(plan) == replace(draft, lines=(text_line, draft.lines[1]))
+    assert plan_draft(plan) == replace(draft, lines=(text_line, *draft.lines[1:]))
     without_discount = replace(plan, template=replace(plan.template, discount=None))
     assert (
         plan_draft(without_discount).discount_kind,
@@ -605,9 +632,15 @@ def test_the_period_is_marked_as_taken_while_it_is_written(
     seen: list[PlanRun] = []
 
     class Watching(DocumentHandlers):
-        def create(self, document_type: DocumentType, draft: DraftInput) -> DocumentView:
+        def create(
+            self,
+            document_type: DocumentType,
+            draft: DraftInput,
+            *,
+            kept_rates: Collection[UUID] = (),
+        ) -> DocumentView:
             seen.extend(store.runs)
-            return super().create(document_type, draft)
+            return super().create(document_type, draft, kept_rates=kept_rates)
 
     documents = recurring.documents
     replace(recurring, documents=Watching(uow=documents.uow, clock=documents.clock)).run_due()

@@ -11,13 +11,22 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
+from decimal import Decimal
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from rhinvoice.domain.company.print_layout import MAX_INFO_ENTRIES, is_field_key
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.document.calculation import CalculationInput, Totals, calculate
-from rhinvoice.domain.document.lines import Discount, DocumentLine, LineKind, PriceMode
+from rhinvoice.domain.document.lines import (
+    Discount,
+    DocumentLine,
+    InTotal,
+    LineKind,
+    PriceMode,
+    check_alternatives,
+    require_counted,
+)
 from rhinvoice.domain.document.write_off import WriteOff, WriteOffReason
 from rhinvoice.domain.numbering.sequence import SequenceKind
 from rhinvoice.domain.shared.errors import InvalidStateError, ValidationError
@@ -28,18 +37,17 @@ from rhinvoice.domain.tax.supply import line_treatment
 from rhinvoice.domain.tax.treatment import TaxTreatment
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Collection, Iterator, Mapping
     from datetime import datetime
-    from decimal import Decimal
     from uuid import UUID
 
     from rhinvoice.domain.company.bank_account import BankAccount
     from rhinvoice.domain.company.company import Company
     from rhinvoice.domain.company.print_layout import PrintLayout
     from rhinvoice.domain.customer.customer import Customer
-    from rhinvoice.domain.shared.country import Country
     from rhinvoice.domain.shared.language import Language
     from rhinvoice.domain.shared.money import Currency
+    from rhinvoice.domain.tax.tax_rate import FrozenRate, TaxRate
 
 MAX_LINES = 500
 _NOT_FOR_GOODS = frozenset({TaxTreatment.EXPORT})
@@ -51,6 +59,7 @@ MAX_TEXT = 4000
 MAX_NOTE = 500
 MAX_EVENT_DETAIL = 500
 DEFAULT_QUOTE_VALIDITY = timedelta(days=30)
+ZERO = Decimal(0)
 
 
 class DocumentType(StrEnum):
@@ -183,6 +192,8 @@ class IssueSnapshot:
     """Notice of the goods lines' own treatment (e.g. export delivery), when they have one."""
     logo: IssuedLogo | None = None
     """The logo of that day, so a PDF made later looks the same; None before 0.9 (today's)."""
+    rates: tuple[FrozenRate, ...] = ()
+    """The tax rates of the positions as of that day (ADR 0044); none before 0.13."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -260,6 +271,7 @@ class DraftContent:
             raise ValidationError("treatment_override", "this treatment does not apply to goods")
         if len(self.lines) > MAX_LINES:
             raise ValidationError("lines", f"a document has at most {MAX_LINES} lines")
+        check_alternatives(self.lines)
         object.__setattr__(
             self, "subject", clean_text(self.subject, "subject", max_length=MAX_SUBJECT)
         )
@@ -312,6 +324,24 @@ class DraftContent:
         return tuple(sorted(found, key=lambda treatment: treatment is not self.treatment))
 
     @property
+    def rate_ids(self) -> tuple[UUID, ...]:
+        """The tax rates of the positions, in the order they first appear."""
+        return tuple(
+            dict.fromkeys(line.tax_rate_id for line in self.lines if line.tax_rate_id is not None)
+        )
+
+    @property
+    def taxed_rate_ids(self) -> tuple[UUID, ...]:
+        """The rates of the positions taxed in the company's country; their notices print."""
+        return tuple(
+            dict.fromkeys(
+                line.tax_rate_id
+                for line in self.lines
+                if line.tax_rate_id is not None and self.treatment_of(line).charges_vat
+            )
+        )
+
+    @property
     def charges_vat(self) -> bool:
         """Whether any position is taxed (then the rates are printed)."""
         return any(treatment.charges_vat for treatment in self.treatments)
@@ -355,6 +385,7 @@ class Document:
     ) -> Document:
         if document_type is DocumentType.CANCELLATION:
             raise ValidationError("type", "cancellations are created by cancelling an invoice")
+        _check_offer(document_type, content)
         events = [DocumentEvent(now, EventKind.CREATED)]
         if content.treatment_overridden:
             events.append(_override_event(now, content, override_reason))
@@ -469,24 +500,63 @@ class Document:
         now: datetime,
         *,
         today: date,
+        chosen: Collection[UUID] | None = None,
     ) -> Document:
         """Duplicate or convert (quote → invoice): same content, a new draft dated ``today``.
 
         Like a new document it opens with today's date; the due date follows the terms
-        when issuing.
+        when issuing. A copy as a quote keeps its optional and alternative positions; any
+        other copy takes the ``chosen`` positions (None: those in the total) as ordinary
+        ones, and every text line (ADR 0045).
         """
         self._require_own("copied")
-        content = replace(
-            self.content,
-            lines=tuple(replace(line, id=new_id(), tax_rate=None) for line in self.content.lines),
-            issue_date=today,
-            due_date=None,
-        )
+        ids = {line.id: new_id() for line in self.content.lines}
+        if document_type is DocumentType.QUOTE:
+            lines = tuple(
+                replace(
+                    line,
+                    id=ids[line.id],
+                    tax_rate=None,
+                    alternative_to=None
+                    if line.alternative_to is None
+                    else ids[line.alternative_to],
+                )
+                for line in self.content.lines
+            )
+        else:
+            picked = self._chosen_positions(chosen)
+            lines = tuple(
+                replace(
+                    line, id=ids[line.id], tax_rate=None, in_total=InTotal.YES, alternative_to=None
+                )
+                for line in self.content.lines
+                if not line.is_item or line.id in picked
+            )
+        content = replace(self.content, lines=lines, issue_date=today, due_date=None)
         return replace(
             Document.new_draft(document_id, document_type, content, now),
             source_id=self.id if document_type is not self.type else None,
             events=(DocumentEvent(now, EventKind.CREATED_FROM, self.number or str(self.id)),),
         )
+
+    def _chosen_positions(self, chosen: Collection[UUID] | None) -> frozenset[UUID]:
+        """Check the positions chosen for an invoice; None: the ones in the total."""
+        items = frozenset(line.id for line in self.content.lines if line.is_item)
+        if chosen is None:
+            picked = frozenset(
+                line.id for line in self.content.lines if line.is_item and line.counts
+            )
+        else:
+            picked = frozenset(chosen)
+            if not picked <= items:
+                raise ValidationError(
+                    "line_ids", "the document has no such position", code="line_not_in_document"
+                )
+        if items and not picked:
+            raise ValidationError(
+                "line_ids", "choose at least one position", code="no_positions_chosen"
+            )
+        return picked
 
     # --- Queries -----------------------------------------------------------------
 
@@ -538,11 +608,12 @@ class Document:
             return DisplayStatus.EXPIRED
         return DisplayStatus(self.status.value)
 
-    def totals(self, company_country: Country, *, cash_rounding: bool, today: date) -> Totals:
+    def totals(self, rates: Mapping[UUID, TaxRate], *, cash_rounding: bool, today: date) -> Totals:
         """Frozen totals of issued documents, current ones of drafts.
 
-        Drafts without service period or date use the rates valid ``today``,
-        the date they would be issued on.
+        Drafts take the percentages of the company's ``rates`` on their date of supply;
+        without service period or date the ones valid ``today``, the date they would be
+        issued on.
         """
         if self.issued_totals is not None:
             return self.issued_totals
@@ -551,7 +622,7 @@ class Document:
         def rate_for(line: DocumentLine) -> Decimal:
             if line.tax_rate is not None:
                 return line.tax_rate
-            return profile_of(company_country).rates_on(tax_date).rate(line.tax_category)
+            return rate_of(line, rates).percent_on(tax_date)
 
         return calculate(
             CalculationInput(
@@ -655,6 +726,7 @@ class Document:
 
     def edit(self, content: DraftContent, now: datetime, *, override_reason: str = "") -> Document:
         self._require(DocumentStatus.DRAFT, action="changed")
+        _check_offer(self.type, content)
         events = self.events
         newly_overridden = content.treatment_overridden and (
             not self.content.treatment_overridden or content.treatment is not self.content.treatment
@@ -663,16 +735,21 @@ class Document:
             events = (*events, _override_event(now, content, override_reason))
         return replace(self, content=content, events=events)
 
-    def issue(
+    def issue(  # noqa: PLR0913 - what issuing freezes, each given by the caller
         self,
         *,
         number: str,
         issue_date: date,
         due_date: date,
         snapshot: IssueSnapshot,
+        rates: Mapping[UUID, TaxRate],
         now: datetime,
     ) -> Document:
-        """Assign the number and freeze content, tax rates, totals and parties."""
+        """Assign the number and freeze content, tax rates, totals and parties.
+
+        ``rates`` are the company's; each line keeps the percentage of its rate on the date
+        of supply.
+        """
         self._require(DocumentStatus.DRAFT, action="issued")
         if not any(line.kind is LineKind.ITEM for line in self.content.lines):
             raise ValidationError(
@@ -688,11 +765,10 @@ class Document:
             raise problem
         company = snapshot.company
         tax_date = self.content.service_to or self.content.service_from or issue_date
-        rates = profile_of(company.country).rates_on(tax_date)
         # Lines with a rate keep it: a cancellation reverses its invoice at the
         # invoice's rates, even when the rates changed in between.
         frozen_lines = tuple(
-            replace(line, tax_rate=rates.rate(line.tax_category))
+            replace(line, tax_rate=_frozen_percent(line, rates, tax_date))
             if line.kind is LineKind.ITEM and line.tax_rate is None
             else line
             for line in self.content.lines
@@ -701,9 +777,8 @@ class Document:
             self.content, lines=frozen_lines, issue_date=issue_date, due_date=due_date
         )
         issuing = replace(self, content=content)
-        totals = issuing.totals(
-            company.country, cash_rounding=company.cash_rounding, today=issue_date
-        )
+        # Every position has its percentage now: the rates are not asked again.
+        totals = issuing.totals({}, cash_rounding=company.cash_rounding, today=issue_date)
         if self.type is DocumentType.INVOICE and not totals.total.amount > 0:
             # Credits are cancellations; an invoice of zero or less could never be paid.
             raise ValidationError(
@@ -990,6 +1065,37 @@ class Document:
     def delete_check(self) -> None:
         """Only drafts may be deleted; issued documents are kept forever."""
         self._require(DocumentStatus.DRAFT, action="deleted")
+
+
+def known_rate(rate_id: UUID | None, rates: Mapping[UUID, TaxRate]) -> TaxRate:
+    """Return one of the company's rates; a line cannot refer to an unknown one."""
+    rate = None if rate_id is None else rates.get(rate_id)
+    if rate is None:
+        raise ValidationError("tax_rate_id", "unknown tax rate", code="tax_rate_unknown")
+    return rate
+
+
+def rate_of(line: DocumentLine, rates: Mapping[UUID, TaxRate]) -> TaxRate:
+    """Return the company's rate of a position; it must be known and of the line's kind."""
+    rate = known_rate(line.tax_rate_id, rates)
+    if rate.kind is not line.tax_category:
+        raise ValidationError(
+            "tax_rate_id", f"the line is {line.tax_category}, its rate {rate.kind}"
+        )
+    return rate
+
+
+def _frozen_percent(line: DocumentLine, rates: Mapping[UUID, TaxRate], on: date) -> Decimal:
+    """Return the percentage an issued line keeps: its rate's on the date of supply."""
+    if line.is_pass_through:
+        return ZERO
+    return rate_of(line, rates).percent_on(on)
+
+
+def _check_offer(document_type: DocumentType, content: DraftContent) -> None:
+    """Only quotes offer optional and alternative positions (ADR 0045)."""
+    if document_type is not DocumentType.QUOTE:
+        require_counted(content.lines)
 
 
 def _reverse_charge_problems(

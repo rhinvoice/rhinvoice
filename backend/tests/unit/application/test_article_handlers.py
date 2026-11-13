@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import timedelta
 from decimal import Decimal
 
@@ -12,13 +13,16 @@ from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import EXEMPT, REDUCED, STANDARD
 from tests.helpers import raises_exactly
 from tests.unit.application.conftest import NOW
 from tests.unit.application.fakes import InMemoryUnitOfWork, Store
+from tests.unit.domain import factories
 
 
 @pytest.fixture
 def handlers(store: Store, clock: FixedClock) -> ArticleHandlers:
+    store.tax_rates = list(factories.tax_rates().values())
     return ArticleHandlers(uow=lambda: InMemoryUnitOfWork(store), clock=clock)
 
 
@@ -32,7 +36,7 @@ def test_create_article(handlers: ArticleHandlers) -> None:
     article = handlers.create(
         command(
             prices={Currency.CHF: "150.50", Currency.EUR: " "},
-            tax_category=TaxCategory.REDUCED,
+            tax_rate_id=factories.rate_id(REDUCED),
             description="Stundenansatz",
             group="Dienstleistung",
         ),
@@ -40,7 +44,10 @@ def test_create_article(handlers: ArticleHandlers) -> None:
     assert article.number == "1"
     assert article.prices == {Currency.CHF: Decimal("150.50")}
     assert article.unit.code == "HUR"
-    assert article.tax_category is TaxCategory.REDUCED
+    assert (article.tax_category, article.tax_rate_id) == (
+        TaxCategory.STANDARD,
+        factories.rate_id(REDUCED),
+    )
     assert article.created_at == NOW
     assert handlers.create(command()).number == "2"
 
@@ -48,8 +55,35 @@ def test_create_article(handlers: ArticleHandlers) -> None:
 def test_defaults(handlers: ArticleHandlers) -> None:
     article = handlers.create(SaveArticle(name="Kabel"))
     assert article.unit.code == "C62"
-    assert article.tax_category is TaxCategory.STANDARD
+    assert (article.tax_category, article.tax_rate_id) == (
+        TaxCategory.STANDARD,
+        factories.rate_id(STANDARD),
+    )
     assert article.prices == {}
+
+
+def test_articles_take_the_company_rates(handlers: ArticleHandlers, store: Store) -> None:
+    exempt = handlers.create(command(tax_rate_id=factories.rate_id(EXEMPT)))
+    assert (exempt.tax_category, exempt.tax_rate_id) == (
+        TaxCategory.EXEMPT,
+        factories.rate_id(EXEMPT),
+    )
+    fee = handlers.create(command(name="Gebühr", pass_through=True))
+    assert (fee.tax_category, fee.tax_rate_id) == (TaxCategory.PASS_THROUGH, None)
+    with raises_exactly(ValidationError, "unknown tax rate") as unknown:
+        handlers.create(command(tax_rate_id=new_id()))
+    assert (unknown.value.field, unknown.value.code) == ("tax_rate_id", "tax_rate_unknown")
+    # A hidden rate stays on the article that has it, but is not chosen anew.
+    store.tax_rates = [
+        replace(rate, hidden=rate.id == exempt.tax_rate_id) for rate in store.tax_rates
+    ]
+    renamed = handlers.update(exempt.id, command(name="Kurs", tax_rate_id=exempt.tax_rate_id))
+    assert renamed.tax_rate_id == exempt.tax_rate_id
+    with raises_exactly(ValidationError, "the tax rate is hidden") as hidden:
+        handlers.update(fee.id, command(tax_rate_id=exempt.tax_rate_id))
+    assert hidden.value.code == "tax_rate_hidden"
+    with raises_exactly(ValidationError, "the tax rate is hidden"):
+        handlers.create(command(tax_rate_id=exempt.tax_rate_id))
 
 
 def test_invalid_input(handlers: ArticleHandlers, store: Store) -> None:

@@ -61,7 +61,7 @@ Issued documents keep the bank details they were issued with. Changing or deleti
 
 Under *Settings → Number sequences* you see the patterns of invoices, quotes, cancellation invoices, customers and articles. Invoice numbers are assigned only when issuing, gapless and unique. The default patterns are `R{YYYY}{NNNN}` for invoices (e.g. R20260001), `A{YYYY}{NNNN}` for quotes and `S{YYYY}{NNNN}` for cancellation invoices, each starting again every year.
 
-- *Pattern*: `{YYYY}` year, `{YY}` two-digit year, `{MM}` month, `{NNNN}` counter (the number of N is the minimum of digits).
+- *Pattern*: `{YYYY}` year, `{YY}` two-digit year, `{MM}` month, `{DD}` day, `{NNNN}` counter (the number of N is the minimum of digits).
 - *Next counter*: to continue from your previous program without a gap.
 - *Reset every year*: needs `{YYYY}` or `{YY}` in the pattern, otherwise numbers repeat.
 - *Next number*: shows the number the next document will get.

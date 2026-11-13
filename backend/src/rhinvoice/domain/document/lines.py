@@ -11,8 +11,10 @@ from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.text import clean_multiline, clean_text
 from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.supply import Supply
+from rhinvoice.domain.tax.tax_rate import check_rate_choice
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
     from uuid import UUID
 
     from rhinvoice.domain.catalog.unit import Unit
@@ -31,6 +33,16 @@ class LineKind(StrEnum):
     ITEM = "item"
     TEXT = "text"
     """A heading or free text without amount."""
+
+
+class InTotal(StrEnum):
+    """Whether a position of a quote counts into its total (ADR 0045)."""
+
+    YES = "yes"
+    OPTIONAL = "optional"
+    """Offered on top; the customer may order it."""
+    ALTERNATIVE = "alternative"
+    """Offered instead of another position (``alternative_to``)."""
 
 
 class PriceMode(StrEnum):
@@ -56,10 +68,18 @@ class DocumentLine:
     unit_price: Decimal = Decimal(0)
     discount_percent: Decimal = Decimal(0)
     tax_category: TaxCategory = TaxCategory.STANDARD
+    """The kind of the line's tax: the category of its rate, or pass-through (ADR 0044)."""
     supply: Supply = Supply.SERVICE
     article_id: UUID | None = None
     tax_rate: Decimal | None = field(default=None)
     """VAT rate frozen when the document is issued (None while it is a draft)."""
+    tax_rate_id: UUID | None = None
+    """The company's rate of a position; None for text lines and pass-through items (and
+    lines of recurring plans saved before the company had its rates, see check_rate_choice)."""
+    in_total: InTotal = InTotal.YES
+    """Optional and alternative positions of quotes stay out of every total (ADR 0045)."""
+    alternative_to: UUID | None = None
+    """The position of the same quote an alternative replaces; None for all other lines."""
 
     def __post_init__(self) -> None:
         required = self.kind is LineKind.ITEM
@@ -73,9 +93,21 @@ class DocumentLine:
         object.__setattr__(
             self, "details", clean_multiline(self.details, "details", max_length=MAX_DETAILS)
         )
+        if (self.in_total is InTotal.ALTERNATIVE) is not (self.alternative_to is not None):
+            raise ValidationError(
+                "alternative_to",
+                "an alternative names the position it replaces, no other line does",
+                code="alternative_target_missing",
+            )
         if self.kind is LineKind.TEXT:
             if not (self.description or self.details):
                 raise ValidationError("description", "a text line needs a text")
+            if self.tax_rate_id is not None:
+                raise ValidationError("tax_rate_id", "a text line has no tax rate")
+            if self.in_total is not InTotal.YES:
+                raise ValidationError(
+                    "in_total", "a text line has no amount to leave out", code="text_line_in_total"
+                )
             return
         if abs(self.quantity) > MAX_QUANTITY:
             raise ValidationError("quantity", "quantity is too large")
@@ -88,6 +120,7 @@ class DocumentLine:
         if not Decimal(0) <= self.discount_percent <= HUNDRED:
             raise ValidationError("discount_percent", "discount must be between 0 and 100 percent")
         _precise(self.discount_percent, PERCENT_STEP, "discount_percent", "discount")
+        check_rate_choice(self.tax_category, self.tax_rate_id)
 
     @property
     def is_item(self) -> bool:
@@ -98,9 +131,37 @@ class DocumentLine:
         """A position paid in the customer's name and for the customer's account (ADR 0039)."""
         return self.is_item and self.tax_category is TaxCategory.PASS_THROUGH
 
+    @property
+    def counts(self) -> bool:
+        """Whether the line belongs to the total: all but optional and alternative positions."""
+        return self.in_total is InTotal.YES
+
     def raw_amount(self) -> Decimal:
         """Quantity x unit price minus line discount, unrounded."""
         return self.quantity * self.unit_price * (HUNDRED - self.discount_percent) / HUNDRED
+
+
+def check_alternatives(lines: Sequence[DocumentLine]) -> None:
+    """Every alternative replaces a position in the total of the same document."""
+    counted = {line.id for line in lines if line.is_item and line.counts}
+    for index, line in enumerate(lines):
+        if line.alternative_to is not None and line.alternative_to not in counted:
+            raise ValidationError(
+                f"lines.{index}.alternative_to",
+                "an alternative replaces a position in the total of the same document",
+                code="alternative_target_invalid",
+            )
+
+
+def require_counted(lines: Iterable[DocumentLine]) -> None:
+    """Refuse optional and alternative positions: only quotes offer them (ADR 0045)."""
+    for index, line in enumerate(lines):
+        if not line.counts:
+            raise ValidationError(
+                f"lines.{index}.in_total",
+                "only quotes have optional and alternative positions",
+                code="in_total_quotes_only",
+            )
 
 
 class DiscountKind(StrEnum):

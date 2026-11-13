@@ -45,7 +45,7 @@ from rhinvoice.application.importing.parsing import (
     parse_flag,
     parse_language,
     parse_supply,
-    parse_tax_category,
+    parse_tax_rate,
     parse_unit,
     parse_whole_number,
     split_postal_city,
@@ -68,6 +68,7 @@ from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.shared.text import clean_text
+from rhinvoice.domain.tax.category import TaxCategory
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -82,6 +83,7 @@ if TYPE_CHECKING:
     from rhinvoice.domain.customer.customer import Customer
     from rhinvoice.domain.shared.address import Address
     from rhinvoice.domain.shared.clock import Clock
+    from rhinvoice.domain.tax.tax_rate import TaxRate
 
 MAX_TEMPLATE_NAME = 60
 
@@ -560,6 +562,7 @@ class _ArticleRows:
     duplicates: DuplicateStrategy
     by_number: dict[str, Article]
     by_name: dict[str, Article]
+    rates: list[TaxRate]
 
     @property
     def profile(self) -> CountryProfile:
@@ -569,7 +572,7 @@ class _ArticleRows:
     def load(
         cls, uow: UnitOfWork, clock: Clock, company: Company, duplicates: DuplicateStrategy
     ) -> _ArticleRows:
-        rows = cls(uow, clock, company, duplicates, {}, {})
+        rows = cls(uow, clock, company, duplicates, {}, {}, uow.tax_rates.list())
         for article in sorted(uow.articles.all(), key=lambda a: (a.created_at, a.number)):
             rows.remember(article)
         return rows
@@ -613,12 +616,19 @@ class _ArticleRows:
         now = self.clock.now()
         if updating is not None:
             article = build_article(
-                updating.id, updating.number, command, now=now, existing=updating
+                updating.id,
+                updating.number,
+                command,
+                now=now,
+                existing=updating,
+                rates=self.rates,
             )
             self.uow.articles.update(article)
             status = RowStatus.UPDATED
         else:
-            probe = build_article(new_id(), PLACEHOLDER_NUMBER, command, now=now, existing=None)
+            probe = build_article(
+                new_id(), PLACEHOLDER_NUMBER, command, now=now, existing=None, rates=self.rates
+            )
             if not number or number in self.by_number:
                 number = next_free_article_number(self.uow, self.clock.today())
             article = replace(probe, number=number)
@@ -638,17 +648,19 @@ class _ArticleRows:
         for key, currency in (("price_chf", Currency.CHF), ("price_eur", Currency.EUR)):
             if key in cells:
                 prices[currency] = parse_amount(cells[key], key, dot_thousands=dot_thousands)
+        rate_id, pass_through = base.tax_rate_id, base.pass_through
+        if "tax_category" in cells:
+            rate_id, pass_through = parse_tax_rate(
+                cells["tax_category"], self.rates, self.clock.today()
+            )
         return replace(
             base,
             name=cells.get("name", base.name),
             description=cells.get("description", base.description),
             group=cells.get("group", base.group),
             unit=parse_unit(cells["unit"], DEFAULT_UNIT_CODE) if "unit" in cells else base.unit,
-            tax_category=(
-                parse_tax_category(cells["tax_category"], self.profile.rates)
-                if "tax_category" in cells
-                else base.tax_category
-            ),
+            tax_rate_id=rate_id,
+            pass_through=pass_through,
             supply=parse_supply(cells["supply"]) if "supply" in cells else base.supply,
             prices=prices,
         )
@@ -664,7 +676,8 @@ def _article_command(article: Article) -> SaveArticle:
         name=article.name,
         number=article.number,
         unit=article.unit.code,
-        tax_category=article.tax_category,
+        tax_rate_id=article.tax_rate_id,
+        pass_through=article.tax_category is TaxCategory.PASS_THROUGH,
         prices={currency: str(price) for currency, price in article.prices.items()},
         description=article.description,
         group=article.group,

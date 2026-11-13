@@ -38,7 +38,7 @@ from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.tax.vat_number import VatNumber
 from tests.helpers import raises_exactly
 from tests.unit.domain import factories
-from tests.unit.domain.test_document import NOW, TODAY, draft, issued, line, pay
+from tests.unit.domain.test_document import CH_RATES, NOW, TODAY, draft, issued, line, pay
 from tests.unit.domain.test_imported_document import imported
 
 MARCH = ExportPeriod.month(2026, 3)
@@ -63,6 +63,7 @@ def cancelled(invoice: Document) -> tuple[Document, Document]:
         issue_date=TODAY,
         due_date=TODAY,
         snapshot=invoice.issued_snapshot,
+        rates=CH_RATES,
         now=NOW,
     )
     return invoice.cancel(cancellation, NOW), cancellation

@@ -31,15 +31,16 @@ from rhinvoice.domain.document.document import (
     EventKind,
     FieldValue,
 )
-from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
+from rhinvoice.domain.document.lines import DiscountKind, InTotal, LineKind, PriceMode
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
-from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import BASE_KEYS, REDUCED
 from rhinvoice.domain.tax.supply import Supply
 from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.text.template import TextKind
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork
+from tests.unit.domain import factories
 from tests.unit.domain.factories import CH_IBAN, CH_QR_IBAN
 
 NOW = datetime(2026, 3, 9, 9, 0, tzinfo=UTC)
@@ -61,12 +62,22 @@ FOOD = LineInput(
     quantity="3",
     unit="C62",
     unit_price="12.35",
-    tax_category=TaxCategory.REDUCED,
+    tax_rate_id=factories.rate_id(REDUCED),
 )
 
 
 def factory(engine: Engine) -> Callable[[], SqlUnitOfWork]:
     return lambda: SqlUnitOfWork(engine)
+
+
+def fixed_rate_ids(engine: Engine) -> None:
+    """Give the rates seeded with the company the ids of the unit tests (factories.rate_id)."""
+    with engine.begin() as connection:
+        for key in BASE_KEYS:
+            connection.execute(
+                text("UPDATE tax_rates SET id = :id WHERE preset = :preset"),
+                {"id": factories.rate_id(key), "preset": key},
+            )
 
 
 @pytest.fixture
@@ -80,6 +91,7 @@ def setup(engine: Engine) -> tuple[DocumentHandlers, UUID, FixedClock]:
             cash_rounding=True,
         ),
     )
+    fixed_rate_ids(engine)
     CompanyHandlers(uow=factory(engine)).create_bank_account(
         SaveBankAccount(
             currency=Currency.CHF,
@@ -265,6 +277,44 @@ def test_issued_documents_are_protected_by_triggers(
         connection.execute(
             text("UPDATE documents SET status = 'paid' WHERE id = :id"), {"id": document.id}
         )
+
+
+def test_options_of_quotes_are_persisted_and_frozen(
+    engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
+) -> None:
+    handlers, customer, _ = setup
+    larger = replace(HOURS, quantity="20", in_total=InTotal.ALTERNATIVE, alternative_to=0)
+    extra = replace(FOOD, in_total=InTotal.OPTIONAL)
+    created = handlers.create(
+        DocumentType.QUOTE, draft(customer, lines=(HOURS, larger, extra))
+    ).document
+    assert handlers.get(created.id).document == created
+    hours, alternative, option = created.content.lines
+    assert (alternative.in_total, alternative.alternative_to) == (InTotal.ALTERNATIVE, hours.id)
+    assert (option.in_total, option.alternative_to) == (InTotal.OPTIONAL, None)
+    # Even a draft cannot hold an unknown mark or an alternative without its position.
+    with engine.begin() as connection, pytest.raises(IntegrityError, match="in_total_known"):
+        connection.execute(
+            text("UPDATE document_lines SET in_total = 'maybe' WHERE id = :id"),
+            {"id": option.id},
+        )
+    with engine.begin() as connection, pytest.raises(IntegrityError, match="alternative_names"):
+        connection.execute(
+            text("UPDATE document_lines SET alternative_to = NULL WHERE id = :id"),
+            {"id": alternative.id},
+        )
+    quote = handlers.issue(created.id).document
+    assert handlers.get(quote.id).document == quote
+    statements = [
+        "UPDATE document_lines SET in_total = 'yes', alternative_to = NULL WHERE document_id = :id",
+        "UPDATE document_lines SET in_total = 'optional' WHERE document_id = :id",
+    ]
+    for statement in statements:
+        with engine.begin() as connection, pytest.raises(IntegrityError, match="immutable"):
+            connection.execute(text(statement), {"id": quote.id})
+    invoice = handlers.convert_to_invoice(quote.id, [alternative.id, option.id]).document
+    assert handlers.get(invoice.id).document == invoice
+    assert [line.in_total for line in invoice.content.lines] == [InTotal.YES, InTotal.YES]
 
 
 def test_deleting_a_converted_draft_frees_the_quote(

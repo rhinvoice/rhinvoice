@@ -15,6 +15,8 @@ needed on the way:
   their own, numbered after the printed positions. "O" may stand alone only
   (BR-O-11), and EN 16931 knows one breakdown per category and rate (BR-E-08):
   next to "O" or other exempt lines they join that breakdown (ADR 0039).
+* Exempt lines name the exemption reasons of their rates (BT-120, ADR 0044); documents
+  issued before kept no rates and name the fallback reason.
 
 See ADR 0013.
 """
@@ -45,6 +47,7 @@ from rhinvoice.domain.document.lines import HUNDRED, LineKind, PriceMode
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, round_half_up
 from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.tax_rate import RateCategory
 from rhinvoice.domain.tax.vat_code import VatCode, vat_code
 from rhinvoice.infrastructure.payment.qr_bill import payment_reference, qr_bill_account
 from rhinvoice.infrastructure.rendering.labels import LABELS
@@ -401,7 +404,10 @@ def _sign(model: PrintModel) -> int:
 
 
 def _exemption(model: PrintModel, category: str) -> tuple[str | None, str | None]:
-    """BT-120 and BT-121: the notices of the treatments that end up in ``category``."""
+    """BT-120 and BT-121: the notices of the treatments that end up in ``category``.
+
+    Exempt lines of the company's country add the reasons of their rates (ADR 0044).
+    """
     if category not in EXEMPT_CATEGORIES:
         return None, None
     language = model.view.document.content.language
@@ -410,6 +416,14 @@ def _exemption(model: PrintModel, category: str) -> tuple[str | None, str | None
         for treatment, text in model.view.notices
         if text and vat_category(model, vat_code(treatment, TaxCategory.STANDARD)) == category
     ]
+    if category == VatCode.EXEMPT.value:
+        notices.extend(
+            dict.fromkeys(
+                rate.exemption_reason
+                for rate in model.view.rates
+                if rate.category is RateCategory.EXEMPT
+            )
+        )
     reason = " ".join(notices) or FALLBACK_EXEMPTION[language]
     return reason, EXEMPTION_CODES.get(category)
 

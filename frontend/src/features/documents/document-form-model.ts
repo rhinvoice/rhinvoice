@@ -10,26 +10,30 @@ import type {
   DraftRequest,
   TaxTreatment,
 } from "@/features/documents/api";
+import {
+  IN_TOTAL,
+  orphanedAlternatives,
+  positionNumbers,
+} from "@/features/documents/in-total-model";
 import type { Company } from "@/features/shared/company-api";
 import { DOCUMENT_LANGUAGES } from "@/features/shared/document-languages";
 import { fields, toApiDecimal } from "@/features/shared/form-schema";
+import {
+  PASS_THROUGH,
+  taxChoice,
+  taxChoiceOf,
+  taxChoiceToRequest,
+  type Percents,
+} from "@/features/shared/tax-rate-model";
 import { formatDecimalInput } from "@/lib/format";
 import { MAX_FIELD_VALUE } from "@/lib/info-block";
-import type { T } from "@/lib/i18n";
+import type { MessageKey, T } from "@/lib/i18n";
 import type { Locale } from "@/lib/locale";
 
 export type LineRequest = NonNullable<DraftRequest["lines"]>[number];
 export type UnitCode = NonNullable<LineRequest["unit"]>;
 export type Currency = "CHF" | "EUR";
 
-export const TAX_CATEGORIES = [
-  "standard",
-  "reduced",
-  "special",
-  "zero",
-  "exempt",
-  "pass_through",
-] as const;
 export const SUPPLIES = ["service", "goods"] as const;
 /** Treatments that can be chosen for a document; goods get theirs from it. */
 export const TREATMENTS = [
@@ -66,9 +70,14 @@ export function documentSchema(t: T, locale: Locale) {
       unit: unitCode,
       unit_price: f.decimal({ max: MAX_PRICE, decimals: 4 }),
       discount_percent: f.decimal({ max: 100, decimals: 2 }),
-      tax_category: z.enum(TAX_CATEGORIES),
+      /** A rate id, PASS_THROUGH, or "" for the default rate (ADR 0044). */
+      tax: taxChoice,
       supply: z.enum(SUPPLIES),
       article_id: z.string().nullable(),
+      /** Quotes only: optional and alternative items stay out of the total (ADR 0045). */
+      in_total: z.enum(IN_TOTAL),
+      /** The key of the line an alternative replaces. */
+      alternative_to: z.string().nullable(),
     })
     .superRefine((value, context) => {
       if (value.description === "") {
@@ -124,7 +133,7 @@ export function documentSchema(t: T, locale: Locale) {
         values.discount_value !== "" &&
         Number(toApiDecimal(values.discount_value, locale)) > 0 &&
         items.length > 0 &&
-        items.every((line) => line.tax_category === "pass_through")
+        items.every((line) => line.tax === PASS_THROUGH)
       ) {
         issue("discount_value", t("error.discount_on_pass_through_only"));
       }
@@ -167,9 +176,11 @@ export function emptyLine(kind: "item" | "text" = "item"): LineFormValues {
     unit: kind === "item" ? "C62" : "",
     unit_price: "",
     discount_percent: "",
-    tax_category: "standard",
+    tax: "",
     supply: "service",
     article_id: null,
+    in_total: "yes",
+    alternative_to: null,
   };
 }
 
@@ -240,7 +251,7 @@ export function lineFromArticle(
     details: article.description,
     unit: article.unit,
     unit_price: price === undefined ? line.unit_price : formatDecimalInput(price, locale),
-    tax_category: article.tax_category,
+    tax: taxChoiceOf(article),
     supply: article.supply,
     article_id: article.id,
   };
@@ -274,7 +285,7 @@ export function articleFromLine(
     description: line.details.trim(),
     group: "",
     unit: line.unit as ArticleRequest["unit"],
-    tax_category: line.tax_category,
+    ...taxChoiceToRequest(line.tax),
     supply: line.supply,
     prices: price === "" ? {} : { [currency]: toApiDecimal(price, locale) },
   };
@@ -288,8 +299,6 @@ export function hasSupply(
   return lines.some((line) => line.kind === "item" && line.supply === supply);
 }
 
-type Rates = Partial<Record<(typeof TAX_CATEGORIES)[number], string>>;
-
 /** The treatment of a line of its own (goods exported, delivered in the EU), or null. */
 export function ownTreatment(
   supply: LineFormValues["supply"],
@@ -300,10 +309,10 @@ export function ownTreatment(
     : null;
 }
 
-/** Rates offered for a line: goods exported or delivered in the EU carry no VAT. */
-export function lineRates(rates: Rates | undefined, own: TaxTreatment | null): Rates | undefined {
-  if (own === null || own === "domestic" || rates === undefined) return rates;
-  return Object.fromEntries(Object.keys(rates).map((category) => [category, "0"]));
+/** Percentages of a line's rates: goods exported or delivered in the EU carry no VAT. */
+export function linePercents(percents: Percents, own: TaxTreatment | null): Percents {
+  if (own === null || own === "domestic") return percents;
+  return Object.fromEntries(Object.keys(percents).map((id) => [id, "0"]));
 }
 
 /**
@@ -366,8 +375,14 @@ export function documentToForm(document: DocumentDetail, locale: Locale): Docume
   };
 }
 
-/** What a stored line (of a document or a plan) says, as the form edits it. */
-export type StoredLine = Omit<DocumentDetail["lines"][number], "id" | "tax_rate" | "amount">;
+type DocumentLine = DocumentDetail["lines"][number];
+
+/** What a stored line (of a document or a plan) says, as the form edits it; plans have no marks. */
+export type StoredLine = Omit<
+  DocumentLine,
+  "id" | "tax_rate" | "amount" | "in_total" | "alternative_to"
+> &
+  Partial<Pick<DocumentLine, "in_total" | "alternative_to">>;
 
 export function lineToForm(line: StoredLine, key: string, locale: Locale): LineFormValues {
   return {
@@ -380,9 +395,12 @@ export function lineToForm(line: StoredLine, key: string, locale: Locale): LineF
     unit: (line.unit ?? "") as UnitCode | "",
     unit_price: line.kind === "item" ? decimalInput(line.unit_price, locale, 2) : "",
     discount_percent: decimalInput(line.discount_percent, locale),
-    tax_category: line.tax_category,
+    tax: taxChoiceOf(line),
     supply: line.supply,
     article_id: line.article_id,
+    in_total: line.in_total ?? "yes",
+    // The id of the replaced line, which is its key in a document's form.
+    alternative_to: line.alternative_to ?? null,
   };
 }
 
@@ -390,7 +408,11 @@ function apiDecimal(value: string, locale: Locale): string {
   return value === "" ? "0" : toApiDecimal(value, locale);
 }
 
-function lineToRequest(line: LineFormValues, locale: Locale): LineRequest {
+/**
+ * The line as the API takes it; ``target`` is the index of the line an alternative replaces,
+ * null when it has none (any more): then it is optional.
+ */
+function lineToRequest(line: LineFormValues, locale: Locale, target: number | null): LineRequest {
   if (line.kind === "text") {
     // Text lines have no amount; the server ignores the numeric defaults.
     return {
@@ -401,9 +423,12 @@ function lineToRequest(line: LineFormValues, locale: Locale): LineRequest {
       unit: null,
       unit_price: "0",
       discount_percent: "0",
-      tax_category: "standard",
+      tax_rate_id: null,
+      pass_through: false,
       supply: "service",
       article_id: null,
+      in_total: "yes",
+      alternative_to: null,
     };
   }
   return {
@@ -414,9 +439,12 @@ function lineToRequest(line: LineFormValues, locale: Locale): LineRequest {
     unit: line.unit === "" ? null : line.unit,
     unit_price: apiDecimal(line.unit_price, locale),
     discount_percent: apiDecimal(line.discount_percent, locale),
-    tax_category: line.tax_category,
+    ...taxChoiceToRequest(line.tax),
     supply: line.supply,
     article_id: line.article_id,
+    ...(line.in_total === "alternative" && target !== null
+      ? { in_total: "alternative", alternative_to: target }
+      : { in_total: line.in_total === "yes" ? "yes" : "optional", alternative_to: null }),
   };
 }
 
@@ -444,8 +472,23 @@ export function formToDraft(values: DocumentFormValues, locale: Locale): DraftRe
     discount_value: apiDecimal(values.discount_value, locale),
     treatment_override: values.treatment === "" ? null : values.treatment,
     override_reason: values.treatment === "" ? "" : values.override_reason,
-    lines: values.lines.map((line) => lineToRequest(line, locale)),
+    lines: linesToRequest(values.lines, locale),
   };
+}
+
+/** The lines with each alternative naming its line by index; orphaned ones become optional. */
+function linesToRequest(lines: readonly LineFormValues[], locale: Locale): LineRequest[] {
+  const orphans = new Set(orphanedAlternatives(lines));
+  const index = new Map(lines.map((line, at) => [line.key, at]));
+  return lines.map((line, at) =>
+    lineToRequest(
+      line,
+      locale,
+      orphans.has(at) || line.alternative_to === null
+        ? null
+        : (index.get(line.alternative_to) ?? null),
+    ),
+  );
 }
 
 const TOP_LEVEL_FIELDS = [
@@ -476,9 +519,20 @@ const LINE_FIELDS = [
   "unit",
   "unit_price",
   "discount_percent",
-  "tax_category",
+  "tax",
   "supply",
+  "in_total",
 ] as const satisfies readonly (keyof LineFormValues)[];
+
+/**
+ * Line fields the API names differently: the tax choice is a rate or a pass-through item, and
+ * the "In total" choice names the line an alternative replaces.
+ */
+const LINE_FIELD_ALIASES: Readonly<Record<string, (typeof LINE_FIELDS)[number]>> = {
+  tax_rate_id: "tax",
+  pass_through: "tax",
+  alternative_to: "in_total",
+};
 
 /** Map API error fields ("lines.2.quantity", "discount") onto form fields. */
 export function documentFieldFor(apiField: string): Path<DocumentFormValues> | null {
@@ -487,9 +541,11 @@ export function documentFieldFor(apiField: string): Path<DocumentFormValues> | n
   if ((TOP_LEVEL_FIELDS as readonly string[]).includes(apiField)) {
     return apiField as Path<DocumentFormValues>;
   }
-  const lineField = /^lines\.\d+\.(\w+)$/.exec(apiField)?.[1];
-  if (lineField !== undefined && (LINE_FIELDS as readonly string[]).includes(lineField)) {
-    return apiField as Path<DocumentFormValues>;
+  const match = /^(lines\.\d+)\.(\w+)$/.exec(apiField);
+  if (match?.[1] === undefined || match[2] === undefined) return null;
+  const lineField = LINE_FIELD_ALIASES[match[2]] ?? match[2];
+  if ((LINE_FIELDS as readonly string[]).includes(lineField)) {
+    return `${match[1]}.${lineField}` as Path<DocumentFormValues>;
   }
   return null;
 }
@@ -499,28 +555,61 @@ export function fieldId(path: string): string {
   return path.replaceAll(".", "-");
 }
 
+/** The labels that name a line, each with its wording for a line without a printed number. */
+const UNNUMBERED = {
+  "documents.editLine": "documents.editLineUnnumbered",
+  "documents.lineLabel": "documents.lineLabelUnnumbered",
+  "documents.lineDetails": "documents.lineDetailsUnnumbered",
+  "documents.moveUp": "documents.moveUpUnnumbered",
+  "documents.moveDown": "documents.moveDownUnnumbered",
+  "documents.removeLine": "documents.removeLineUnnumbered",
+  "documents.lineError": "documents.lineErrorUnnumbered",
+} as const satisfies Partial<Record<MessageKey, MessageKey>>;
+
+export type LineLabel = keyof typeof UNNUMBERED;
+
+/**
+ * A label naming a line by the number the PDF prints, so that the editor and the PDF agree;
+ * text lines and pass-through items have no number and are named as a plain line.
+ */
+export function lineLabel(
+  t: T,
+  label: LineLabel,
+  position: number | undefined,
+  values: Readonly<Record<string, string>> = {},
+): string {
+  return position === undefined
+    ? t(UNNUMBERED[label], values)
+    : t(label, { ...values, number: position });
+}
+
 /** Error summary items in visual order, including errors inside lines. */
 export function documentSummaryItems(
   errors: FieldErrors<DocumentFormValues>,
+  lines: readonly LineFormValues[],
   t: T,
 ): ErrorSummaryItem[] {
   const items: ErrorSummaryItem[] = [];
+  const positions = positionNumbers(lines);
   for (const name of TOP_LEVEL_FIELDS) {
     if (name === "lines") {
-      const lines = errors.lines;
+      const lineErrors = errors.lines;
       // An array error lives in "root" (validation) or directly on the field (server).
-      const linesMessage = lines?.root?.message ?? lines?.message;
+      const linesMessage = lineErrors?.root?.message ?? lineErrors?.message;
       if (typeof linesMessage === "string") {
         items.push({ fieldId: fieldId("lines"), message: linesMessage });
       }
-      const entries = Array.isArray(lines) ? (lines as FieldErrors<LineFormValues>[]) : [];
+      const entries = Array.isArray(lineErrors)
+        ? (lineErrors as FieldErrors<LineFormValues>[])
+        : [];
+      const numbers = lines.map((line) => positions.get(line.key));
       entries.forEach((lineErrors, index) => {
         for (const field of LINE_FIELDS) {
           const message = lineErrors[field]?.message;
           if (typeof message === "string") {
             items.push({
               fieldId: fieldId(`lines.${String(index)}.${field}`),
-              message: t("documents.lineError", { number: index + 1, message }),
+              message: lineLabel(t, "documents.lineError", numbers[index], { message }),
             });
           }
         }

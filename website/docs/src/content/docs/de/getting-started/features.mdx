@@ -30,11 +30,12 @@ Rhinvoice schreibt **Angebote, Rechnungen, Stornorechnungen und Mahnungen** für
 - Neuen Kunden direkt aus der Rechnung anlegen, in einem Fenster neben der Rechnung
 - Was zum Ausstellen noch fehlt, steht oben im Editor, mit einem Knopf zum passenden Formular
 - Nummern werden erst beim Ausstellen vergeben, ohne Lücken und ohne Doppelte
-- Nummernkreise mit eigenem Muster (`{YYYY}`, `{YY}`, `{MM}`, `{NNNN}`), Jahreswechsel und Vorschau der nächsten Nummer
+- Nummernkreise mit eigenem Muster (`{YYYY}`, `{YY}`, `{MM}`, `{DD}`, `{NNNN}`), Jahreswechsel und Vorschau der nächsten Nummer
 - Ausgestellte Dokumente sind gesperrt, auch in der Datenbank, und das PDF wird mit seiner SHA-256-Prüfsumme aufbewahrt (Art. 958f OR, GoBD, BAO)
 - Korrekturen nur per Stornorechnung mit eigener Nummer
 - Angebote als versendet, angenommen oder abgelehnt markieren; nach der Gültigkeit (voreingestellt 30 Tage) gelten sie als abgelaufen
-- *In Rechnung umwandeln* macht aus einem Angebot einen Rechnungsentwurf
+- Optionale und alternative Positionen in Angeboten: mit Betrag in Klammern, ausserhalb des Totals
+- *In Rechnung umwandeln* macht aus einem Angebot einen Rechnungsentwurf mit den Positionen, die der Kunde gewählt hat
 - *Duplizieren* legt eine Kopie als Entwurf an
 - Verlauf pro Dokument, zum Beispiel Ausstellen, Zahlungen, Mahnungen, E-Mails und eine manuelle Wahl des Steuerfalls
 - Listen mit Ansichten (*Entwürfe*, *Offen*, *Überfällig*, *Bezahlt*, *Storniert*, *Abgeschrieben*), Filter nach Jahr und Kunde, Summen
@@ -66,6 +67,8 @@ Anleitungen: [Zahlungen und Mahnungen](/docs/de/invoices/payments-and-reminders/
 - Schweiz und Liechtenstein: 8.1 / 2.6 / 3.8 %, dazu die früheren Sätze seit 2011
 - Deutschland: 19 / 7 %, dazu 16 / 5 % für das zweite Halbjahr 2020
 - Österreich: 20 / 10 / 13 %
+- Eigene Steuersätze pro Firma mit Vorlagen pro Land, z. B. die Durchschnittssätze nach § 24 UStG; ein neuer Prozentsatz wird mit Datum ergänzt
+- Art jedes Satzes für die E-Rechnung (S, Z, E), beim Speichern nach EN 16931 geprüft
 - Steuerfall automatisch aus Firmenland, Kundenland und UID bzw. USt-IdNr.: Inland, Reverse Charge, innergemeinschaftliche Lieferung, Ausfuhrlieferung, Export, Kleinunternehmer, steuerbefreit
 - Manuelle Wahl des Steuerfalls mit Begründung, die im Verlauf steht
 - Waren und Dienstleistungen getrennt, auch auf gemischten Rechnungen, jeweils mit dem passenden Hinweis
@@ -77,7 +80,7 @@ Anleitungen: [Zahlungen und Mahnungen](/docs/de/invoices/payments-and-reminders/
 - Begriffe pro Land: MWST und UID in der Schweiz und in Liechtenstein, USt. und USt-IdNr. in Deutschland, USt. und UID in Österreich
 - Weitere Länder lassen sich als eigenes Länderprofil ergänzen
 
-Anleitungen: [Schweiz](/docs/de/countries/switzerland/), [Liechtenstein](/docs/de/countries/liechtenstein/), [Deutschland](/docs/de/countries/germany/), [Österreich](/docs/de/countries/austria/), [Weitere Länder](/docs/de/countries/more-countries/)
+Anleitungen: [Schweiz](/docs/de/countries/switzerland/), [Liechtenstein](/docs/de/countries/liechtenstein/), [Deutschland](/docs/de/countries/germany/), [Österreich](/docs/de/countries/austria/), [Weitere Länder](/docs/de/countries/more-countries/), [Eigene Steuersätze](/docs/de/invoices/tax-rates/)
 
 ## Zahlungs-QR-Codes und Bankkonten
 

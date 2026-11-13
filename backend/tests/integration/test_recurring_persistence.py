@@ -21,18 +21,20 @@ from rhinvoice.domain.recurring.plan import (
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
-from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import REDUCED
 from rhinvoice.domain.tax.supply import Supply
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork
 from tests.integration.test_document_persistence import NOW, TODAY, setup
+from tests.unit.domain import factories
 
 __all__ = ["setup"]  # the fixture of the document tests
 
+RATES = list(factories.tax_rates().values())
 TEMPLATE = InvoiceTemplate(
     currency=Currency.EUR,
     price_mode=PriceMode.GROSS,
     lines=(
-        LineInput(kind=LineKind.TEXT, description="Monat", details="laufend").to_domain(0),
+        LineInput(kind=LineKind.TEXT, description="Monat", details="laufend").to_domain(0, RATES),
         LineInput(
             kind=LineKind.ITEM,
             description="Server",
@@ -40,9 +42,9 @@ TEMPLATE = InvoiceTemplate(
             unit="MON",
             unit_price="29.9",
             discount_percent="10",
-            tax_category=TaxCategory.REDUCED,
+            tax_rate_id=factories.rate_id(REDUCED),
             supply=Supply.GOODS,
-        ).to_domain(1),
+        ).to_domain(1, RATES),
     ),
     language=Language.EN,
     discount=Discount(DiscountKind.AMOUNT, Decimal(5)),

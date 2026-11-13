@@ -16,7 +16,6 @@ from rhinvoice.application.importing.files import ImportFile
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import round_half_up
-from rhinvoice.domain.tax.category import TaxCategory
 
 if TYPE_CHECKING:
     from rhinvoice.domain.company.company import Company
@@ -101,7 +100,7 @@ def old_invoices(
         issued = date(year, old.month, old.day)
         due = issued + PAYMENT_TERMS
         profile = profile_of(company.country)
-        rate = profile.rates_on(issued).rate(TaxCategory.STANDARD)
+        rate = profile.rates_on(issued).standard
         tax_name = profile.terms[Language.DE].tax_name
         total = old.net + round_half_up(old.net * rate / 100, CENT)
         if old.customer is None:

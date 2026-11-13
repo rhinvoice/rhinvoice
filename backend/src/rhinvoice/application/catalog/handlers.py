@@ -7,16 +7,16 @@ from typing import TYPE_CHECKING
 
 from rhinvoice.application.errors import ConflictError, NotFoundError
 from rhinvoice.application.numbering.handlers import allocate_number
+from rhinvoice.application.tax.handlers import chosen_rate
 from rhinvoice.domain.catalog.article import Article
 from rhinvoice.domain.catalog.unit import DEFAULT_UNIT_CODE, Unit
 from rhinvoice.domain.numbering.sequence import SequenceKind
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.money import Currency, parse_decimal
-from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.supply import Supply
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
     from datetime import date, datetime
     from uuid import UUID
 
@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from rhinvoice.application.common import Page
     from rhinvoice.application.uow import UnitOfWork, UnitOfWorkFactory
     from rhinvoice.domain.shared.clock import Clock
+    from rhinvoice.domain.tax.tax_rate import TaxRate
 
 MAX_NUMBER_ATTEMPTS = 100
 
@@ -34,7 +35,10 @@ class SaveArticle:
     number: str = ""
     """Empty: take the next number of the article sequence."""
     unit: str = DEFAULT_UNIT_CODE
-    tax_category: TaxCategory = TaxCategory.STANDARD
+    tax_rate_id: UUID | None = None
+    """The company's rate; None: the default rate (ADR 0044)."""
+    pass_through: bool = False
+    """Paid in the customer's name: no rate, no VAT (ADR 0039)."""
     prices: dict[Currency, str] = field(default_factory=dict[Currency, str])
     description: str = ""
     group: str = ""
@@ -57,7 +61,14 @@ class ArticleHandlers:
     def create(self, command: SaveArticle) -> Article:
         with self.uow() as uow:
             number = command.number.strip() or next_free_article_number(uow, self.clock.today())
-            article = build_article(new_id(), number, command, now=self.clock.now(), existing=None)
+            article = build_article(
+                new_id(),
+                number,
+                command,
+                now=self.clock.now(),
+                existing=None,
+                rates=uow.tax_rates.list(),
+            )
             self._ensure_unique(uow, article.number, exclude_id=None)
             uow.articles.add(article)
             uow.commit()
@@ -68,7 +79,12 @@ class ArticleHandlers:
             existing = self._require(uow, article_id)
             number = command.number.strip() or existing.number
             article = build_article(
-                article_id, number, command, now=self.clock.now(), existing=existing
+                article_id,
+                number,
+                command,
+                now=self.clock.now(),
+                existing=existing,
+                rates=uow.tax_rates.list(),
             )
             self._ensure_unique(uow, article.number, exclude_id=article_id)
             uow.articles.update(article)
@@ -102,15 +118,25 @@ class ArticleHandlers:
         return article
 
 
-def build_article(
+def build_article(  # noqa: PLR0913 - the command and what it is built against
     article_id: UUID,
     number: str,
     command: SaveArticle,
     *,
     now: datetime,
     existing: Article | None,
+    rates: Sequence[TaxRate],
 ) -> Article:
-    """Build the article of a create or update command; raise ValidationError if invalid."""
+    """Build the article of a create or update command; raise ValidationError if invalid.
+
+    A hidden rate stays on the article that had it, but is not chosen anew.
+    """
+    category, rate_id = chosen_rate(
+        rates,
+        command.tax_rate_id,
+        pass_through=command.pass_through,
+        kept=() if existing is None or existing.tax_rate_id is None else (existing.tax_rate_id,),
+    )
     prices = {
         currency: parse_decimal(price, f"prices.{currency}")
         for currency, price in command.prices.items()
@@ -121,7 +147,8 @@ def build_article(
         number=number,
         name=command.name,
         unit=Unit(command.unit),
-        tax_category=command.tax_category,
+        tax_category=category,
+        tax_rate_id=rate_id,
         prices=prices,
         created_at=now if existing is None else existing.created_at,
         description=command.description,

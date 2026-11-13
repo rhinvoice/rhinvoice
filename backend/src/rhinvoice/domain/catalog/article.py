@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.text import clean_multiline, clean_text
 from rhinvoice.domain.tax.supply import Supply
+from rhinvoice.domain.tax.tax_rate import check_rate_choice
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -35,6 +36,7 @@ class Article:
     name: str
     unit: Unit
     tax_category: TaxCategory
+    """The kind of the article's tax: the category of its rate, or pass-through (ADR 0044)."""
     prices: Mapping[Currency, Decimal]
     """Net unit price per currency (up to four decimal places)."""
     created_at: datetime
@@ -42,6 +44,9 @@ class Article:
     group: str = ""
     archived: bool = False
     supply: Supply = Supply.SERVICE
+    tax_rate_id: UUID | None = None
+    """The company's rate the article is sold at; None for pass-through items, and the default
+    rate for articles saved before the company had its rates (migration 0027)."""
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -68,6 +73,7 @@ class Article:
                     f"price must have at most {PRICE_DECIMALS} decimal places",
                 )
         object.__setattr__(self, "prices", dict(self.prices))
+        check_rate_choice(self.tax_category, self.tax_rate_id)
 
     def price(self, currency: Currency) -> Decimal | None:
         return self.prices.get(currency)

@@ -19,12 +19,11 @@ from rhinvoice.domain.shared.country import CountryCode
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
-from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.infrastructure.export.table import neutralised, rate_text
 from rhinvoice.infrastructure.export.writer import FileExportWriter
 from tests.helpers import raises_exactly
 from tests.unit.domain import factories
-from tests.unit.domain.test_document import NOW, TODAY, issued, line, pay
+from tests.unit.domain.test_document import NOW, PASS, TODAY, issued, line, pay
 from tests.unit.domain.test_export import cancelled
 from tests.unit.domain.test_imported_document import imported
 
@@ -359,7 +358,7 @@ def test_a_file_that_cannot_be_had_ends_the_zip() -> None:
 
 
 def with_pass_through() -> ExportListing:
-    fee = line("1", "250.35", TaxCategory.PASS_THROUGH)
+    fee = line("1", "250.35", PASS)
     plain = issued(lines=(line(),))
     return export_listing(MARCH, [issued(lines=(line(), fee)), plain], TODAY, with_files=False)
 
@@ -410,7 +409,7 @@ def test_the_printed_list_with_pass_through_items(language: Language, title: str
 
 
 def with_rounding() -> ExportListing:
-    fee = line("1", "250.37", TaxCategory.PASS_THROUGH)
+    fee = line("1", "250.37", PASS)
     plain = issued(lines=(line(),))
     return export_listing(MARCH, [issued(lines=(line(), fee)), plain], TODAY, with_files=False)
 

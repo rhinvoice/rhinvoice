@@ -55,7 +55,7 @@ from rhinvoice.domain.document.document import (
     DocumentType,
     EventKind,
 )
-from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
+from rhinvoice.domain.document.lines import DiscountKind, InTotal, LineKind, PriceMode
 from rhinvoice.domain.document.write_off import WriteOffReason, tax_share
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency, Money
@@ -88,9 +88,17 @@ class LineRequest(ApiModel):
     unit: str | None = Field(default=None, json_schema_extra={"enum": [*UNIT_CODES, None]})
     unit_price: str = Field(default="0", pattern=DECIMAL_PATTERN)
     discount_percent: str = Field(default="0", pattern=PERCENT_PATTERN)
-    tax_category: TaxCategory = TaxCategory.STANDARD
+    tax_rate_id: UUID | None = None
+    """One of the company's rates (GET /api/tax-rates); none: the default rate. Text lines
+    and pass-through items take none."""
+    pass_through: bool = False
+    """Paid in the customer's name and for the customer's account: no rate, no VAT."""
     supply: Supply = Supply.SERVICE
     article_id: UUID | None = None
+    in_total: InTotal = InTotal.YES
+    """Quotes only: "optional" and "alternative" positions stay out of the total."""
+    alternative_to: int | None = Field(default=None, ge=0, lt=MAX_LINES)
+    """For an alternative: the index in ``lines`` of the position in the total it replaces."""
 
     def to_input(self) -> LineInput:
         return LineInput(
@@ -101,9 +109,12 @@ class LineRequest(ApiModel):
             unit=self.unit,
             unit_price=self.unit_price,
             discount_percent=self.discount_percent,
-            tax_category=self.tax_category,
+            tax_rate_id=self.tax_rate_id,
+            pass_through=self.pass_through,
             supply=self.supply,
             article_id=self.article_id,
+            in_total=self.in_total,
+            alternative_to=self.alternative_to,
         )
 
 
@@ -163,6 +174,12 @@ class CreateRequest(DraftRequest):
     type: DocumentType = Field(json_schema_extra={"enum": ["quote", "invoice"]})
 
 
+class ConvertRequest(ApiModel):
+    line_ids: list[UUID] | None = Field(default=None, max_length=MAX_LINES)
+    """The positions of the quote the invoice takes over, as ordinary ones; text lines
+    always come along. None: the positions in the quote's total."""
+
+
 class PaymentRequest(ApiModel):
     paid_on: date
     amount: str = Field(pattern=AMOUNT_PATTERN)
@@ -210,13 +227,20 @@ class LineResponse(ApiModel):
     unit: str | None
     unit_price: str
     discount_percent: str
+    tax_rate_id: UUID | None
+    """The company's rate of a position; None for text lines and pass-through items."""
     tax_category: TaxCategory
+    """The kind of the line's tax: the category of its rate, or pass_through."""
     supply: Supply
     tax_rate: str | None
-    """Frozen rate of issued documents; None for drafts."""
+    """Frozen percentage of issued documents; None for drafts."""
     amount: str | None
     """Line amount after the line discount (None for text lines)."""
     article_id: UUID | None
+    in_total: InTotal
+    """Optional and alternative positions of quotes stay out of the totals."""
+    alternative_to: UUID | None
+    """The id of the line an alternative replaces."""
 
 
 class TaxGroupResponse(ApiModel):
@@ -428,11 +452,14 @@ class DocumentResponse(ApiModel):
                     unit=None if line.unit is None else line.unit.code,
                     unit_price=price_text(line.unit_price),
                     discount_percent=plain_number(line.discount_percent),
+                    tax_rate_id=line.tax_rate_id,
                     tax_category=line.tax_category,
                     supply=line.supply,
                     tax_rate=None if line.tax_rate is None else plain_number(line.tax_rate),
                     amount=amount(amounts[line.id]) if line.id in amounts else None,
                     article_id=line.article_id,
+                    in_total=line.in_total,
+                    alternative_to=line.alternative_to,
                 )
                 for line in content.lines
             ],
@@ -506,8 +533,9 @@ class DocumentPreviewResponse(ApiModel):
     line_amounts: list[str | None]
     """Amount of each line after its discount, in input order (None for text lines)."""
     totals: TotalsResponse
-    rates: dict[TaxCategory, str]
-    """Rate per tax category for this draft (0 when the treatment charges no VAT)."""
+    rates: dict[str, str]
+    """The percentage of each rate (by id) on the draft's date of supply; 0 when the
+    treatment charges no VAT. Rates not valid yet on that date are left out."""
     notice: str
     """Legal notice the treatment puts on the document."""
     customer_vat_missing: bool
@@ -536,7 +564,7 @@ class DocumentPreviewResponse(ApiModel):
             issue_blockers=list(preview.issue_blockers),
             e_invoice_problems=list(e_invoice_problems),
             xrechnung_problems=list(xrechnung_problems),
-            rates={category: plain_number(rate) for category, rate in preview.rates.items()},
+            rates={str(rate_id): plain_number(rate) for rate_id, rate in preview.rates.items()},
             treatment=view.document.content.treatment,
             goods_treatment=view.document.content.goods_treatment,
             line_amounts=[
@@ -1110,10 +1138,14 @@ def decline_quote(
 
 @router.post("/documents/{document_id}/convert", status_code=status.HTTP_201_CREATED)
 def convert_quote(
-    document_id: UUID, _user: CurrentUser, container: ContainerDep
+    document_id: UUID,
+    _user: CurrentUser,
+    container: ContainerDep,
+    body: ConvertRequest | None = None,
 ) -> DocumentResponse:
-    """Create an invoice draft from a quote."""
-    return DocumentResponse.of(container.documents.convert_to_invoice(document_id))
+    """Create an invoice draft from a quote, with the positions the customer took."""
+    line_ids = None if body is None else body.line_ids
+    return DocumentResponse.of(container.documents.convert_to_invoice(document_id, line_ids))
 
 
 @router.post("/documents/{document_id}/duplicate", status_code=status.HTTP_201_CREATED)

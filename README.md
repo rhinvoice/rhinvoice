@@ -36,6 +36,7 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 
 **Documents**
 - Quotes, invoices and cancellation invoices; turn a quote into an invoice, duplicate, cancel
+- Optional and alternative items in quotes; the invoice takes the items the customer chose
 - Editor with a live paper preview, line and document discounts, net or gross prices
 - Numbers assigned when issuing, without gaps; issued documents are immutable, also in the
   database (GoBD, OR 958f, BAO), the PDF is kept with its SHA-256
@@ -51,6 +52,8 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 
 **Taxes and countries**
 - Dated VAT rates for CH, FL, DE and AT; the rate of the service date applies
+- Own tax rates per company with presets per country (e.g. the German average rates of § 24 UStG),
+  each with its e-invoice category (S, Z, E) checked against EN 16931
 - Tax treatment decided automatically: domestic, reverse charge, intra-Community supply of goods,
   export, small business, exempt; a manual override is logged
 - Goods and services kept apart, also on mixed invoices, each with its legal notice

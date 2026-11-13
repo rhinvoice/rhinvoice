@@ -1,0 +1,109 @@
+---
+title: Own tax rates, § 24 UStG and the e-invoice category
+description: "Tax rates in Rhinvoice: presets per country, own rates with dates, the German average rates of § 24 UStG and the categories S, Z and E, checked for the e-invoice."
+since: 0.13.0
+faq:
+  - q: Can I add a tax rate of my own in Rhinvoice?
+    a: Yes. Under "Settings → Tax rates → New rate" you enter a name, the category for the e-invoice, the percentage and the date it applies from. Line items and articles offer it from then on.
+  - q: How do I invoice at the German average rates for farmers (§ 24 UStG)?
+    a: Under "Settings → Tax rates → From preset …" take over "Agriculture § 24 (7.8 %)", "Forestry § 24 (5.5 %)" or "Beverages, sawmill products § 24 (19 %)". The line item shows the average rate, the invoice the notice "Taxed at average rates (§ 24 UStG)".
+  - q: What happens to old invoices when a rate changes?
+    a: Nothing. Issuing freezes the percentage, category, name and notice of every line item. A new percentage is added with "Change from date …" and applies to supplies from that date.
+  - q: What do S, Z and E mean?
+    a: The category of the rate for the e-invoice under EN 16931. S is taxable at a percentage above 0 %, Z taxable at 0 %, E exempt from VAT, with a reason. Rhinvoice does not save a rate that breaks these rules.
+  - q: Can I delete a tax rate?
+    a: Only while no line item, article or recurring invoice uses it. Otherwise hide it. New line items and articles then no longer offer it; those that use it keep it.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Every company in Rhinvoice has **its own tax rates**: a name, a category for the e-invoice (S, Z or E), percentages with the date each applies from and, if you like, a notice for the invoice. When it is set up, the company gets the rates of its country; others such as the **German average rates of § 24 UStG** are taken over from a preset, and you can add your own.
+
+<Aside type="note" title="No tax advice">
+Rhinvoice checks the form of a rate, not whether it is the right one for your supply. If in doubt, ask your tax adviser.
+</Aside>
+
+## Which rates a company has
+
+*Settings → Tax rates* lists all rates as a table: the name, below it since when today's percentage applies and which one applied before (or which one comes), the exemption reason or notice, then the category for the e-invoice and today's percentage. A click on a row opens the rate.
+
+When the company is set up, Rhinvoice adds the rates of its country with their official values and history:
+
+| Rate | Switzerland and Liechtenstein | Germany | Austria |
+|---|---|---|---|
+| *Standard rate* | 8.1 % | 19 % | 20 % |
+| *Reduced rate* | 2.6 % | 7 % | 10 % |
+| third rate | 3.8 % *Accommodation rate* | – | 13 % *Second reduced rate* |
+| *0 % (taxable)* | 0 % | 0 % | 0 % |
+| *Exempt* | 0 %, with a reason | 0 %, with a reason | 0 %, with a reason |
+
+Line items without a chosen rate take the standard rate. The country pages give the sources and the earlier values: [Switzerland](/docs/countries/switzerland/), [Liechtenstein](/docs/countries/liechtenstein/), [Germany](/docs/countries/germany/), [Austria](/docs/countries/austria/).
+
+## S, Z and E: the category for the e-invoice
+
+An e-invoice under EN 16931 (ZUGFeRD, XRechnung) names a VAT category for every line item. So every rate in Rhinvoice has one:
+
+| Category | Meaning | Percentage | Example |
+|---|---|---|---|
+| **S** *Taxable* | The supply is taxable | above 0 % | standard rate 8.1 % or 19 % |
+| **Z** *Zero-rated* | Taxable, but at 0 % | exactly 0 % | certain supplies abroad |
+| **E** *Exempt* | Exempt from VAT | exactly 0 %, with a *reason for the exemption* | medical care, letting |
+
+Rhinvoice checks this as you type and again when saving. A wrong combination cannot be saved, and the message says why, for example "Taxable (S) needs a percentage above 0 %." So no e-invoice carries a broken rate. The *reason for the exemption* is printed with the line item and sent as the exemption reason in the e-invoice.
+
+The category of a rate stays once the rate exists, because line items and articles depend on it. For another category, add a new rate.
+
+Reverse charge, exports, intra-Community supplies and small businesses are still decided per document from the company and the customer. Then the invoice carries no VAT, whatever rate the line item has. [Pass-through items](/docs/invoices/pass-through/) are not a rate but a choice of their own in the line item.
+
+## Add a rate of your own
+
+<Steps>
+
+1. Open *Settings → Tax rates* and click **New rate**.
+2. Enter a *Name* and choose the *Category for the e-invoice*. For *Exempt (E)* give the *Reason for the exemption*.
+3. Enter the *Percentage* and, under *Valid from*, the date it applies from. 1 January of the current year is suggested.
+4. If you like, write a *Notice on the invoice*. It is printed on every document that uses the rate.
+5. Click **Save**.
+
+</Steps>
+
+## Change a percentage from a date
+
+When a rate changes, you do not overwrite it but add the new value with its date. Open the rate, click **Change from date …**, enter the date and the new percentage and save. **Show history** lists all values; remove one entered by mistake there.
+
+The value on the **date of supply** applies: the end of the service period, otherwise its start, otherwise the invoice date. If a rate does not apply yet on that date, the editor says so.
+
+Rates from a preset get the new value with a Rhinvoice update when the law changes, as long as you did not change their percentages yourself. You keep your own rates up to date yourself.
+
+## Average rates under § 24 UStG
+
+Farms and forestry businesses in Germany can be taxed at average rates (§ 24 UStG). For a German company, *From preset …* offers three rates, each of category S, valid since 1 January 2025:
+
+| Preset | Rate | Legal basis |
+|---|---|---|
+| *Forestry § 24 (5.5 %)* | 5.5 % | § 24 Abs. 1 Satz 1 Nr. 1 UStG |
+| *Beverages, sawmill products § 24 (19 %)* | 19 % | § 24 Abs. 1 Satz 1 Nr. 2 UStG |
+| *Agriculture § 24 (7.8 %)* | 7.8 % | § 24 Abs. 1 Satz 1 Nr. 3 UStG, since 2025 (BGBl. 2024 I Nr. 387) |
+
+Under § 24 Abs. 1 Satz 4 UStG the invoice states the average rate. Rhinvoice prints it with every line item, and the presets bring the notice "Taxed at average rates (§ 24 UStG)" (German documents: «Besteuerung nach Durchschnittssätzen (§ 24 UStG)»). Add values from before 2025 with *Change from date …* if you need them.
+
+Because the standard rate and the beverages under § 24 both have 19 %, the line item then names the rate next to the percentage.
+
+## Choose the rate in a line item or an article
+
+In the line item and in the article you choose under *Tax rate*. The list groups the rates into **Taxable** and **Without tax**, each with its percentage on the date of supply, for example "Standard rate – 8.1%". The pass-through item comes last. A closed line item shows only the percentage, unless another rate has the same one; then its name is shown as well.
+
+## Hide instead of delete
+
+- **Hide** removes a rate from the choice of new line items and articles. Line items, articles and recurring invoices that already use it keep it; the choice shows it there with "(hidden)". **Show** offers it again.
+- **Delete** works only while nothing uses the rate. Otherwise the dialog says "In use: hide it instead of deleting it."
+- A deleted preset is offered again under *From preset …*.
+
+## Issued invoices
+
+Issuing freezes the percentage, category, name and notice of the rate on every line item. Later changes and hidden or deleted rates do not change issued invoices, cancellations or their PDFs. Drafts calculate with the current rates. More: [Issue and cancel invoices](/docs/invoices/issue-and-cancel/), [E-invoices](/docs/invoices/e-invoice/).
+
+## Questions
+
+<Faq />

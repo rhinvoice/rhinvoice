@@ -1,0 +1,109 @@
+---
+title: Propres taux de TVA, § 24 UStG et catégories S, Z et E
+description: "Taux de TVA dans Rhinvoice : modèles par pays, propres taux datés, taux moyens allemands du § 24 UStG et catégories S, Z et E, vérifiées pour la facture électronique."
+since: 0.13.0
+faq:
+  - q: Puis-je créer mon propre taux de TVA dans Rhinvoice?
+    a: "Oui. Sous « Paramètres → Taux de TVA → Nouveau taux », indiquez le nom, la catégorie pour la facture électronique, le pourcentage et la date dès laquelle il s’applique. Les positions et les articles le proposent ensuite."
+  - q: Comment facturer selon les taux moyens allemands pour l’agriculture (§ 24 UStG)?
+    a: "Sous « Paramètres → Taux de TVA → Depuis un modèle … », reprenez « Agriculture § 24 (7,8 %) », « Sylviculture § 24 (5,5 %) » ou « Boissons, produits de scierie § 24 (19 %) ». La position indique le taux moyen, la facture la mention « Besteuerung nach Durchschnittssätzen (§ 24 UStG) »."
+  - q: Qu’arrive-t-il aux anciennes factures quand un taux change?
+    a: "Rien. L’émission fige le pourcentage, la catégorie, le nom et la mention de chaque position. Un nouveau pourcentage s’ajoute avec « Changer à partir d’une date … » et vaut pour les prestations dès cette date."
+  - q: Que signifient S, Z et E?
+    a: "La catégorie du taux pour la facture électronique selon EN 16931. S est imposable à un pourcentage supérieur à 0 %, Z imposable à 0 %, E exonéré ou exclu du champ de l’impôt, avec un motif. Rhinvoice n’enregistre aucun taux qui enfreint ces règles."
+  - q: Puis-je supprimer un taux de TVA?
+    a: "Seulement tant qu’aucune position, aucun article et aucune facture récurrente ne l’utilise. Sinon, masquez-le. Les nouvelles positions et les nouveaux articles ne le proposent plus, ceux qui l’utilisent le gardent."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Chaque entreprise dans Rhinvoice a **ses propres taux de TVA** : un nom, une catégorie pour la facture électronique (S, Z ou E), des pourcentages avec la date dès laquelle chacun s’applique et, si vous le souhaitez, une mention pour la facture. À sa configuration, l’entreprise reçoit les taux de son pays; d’autres, comme les **taux moyens allemands du § 24 UStG**, se reprennent d’un modèle, et vous pouvez créer les vôtres.
+
+<Aside type="note" title="Pas de conseil fiscal">
+Rhinvoice vérifie la forme d’un taux, pas s’il est le bon pour votre prestation. En cas de doute, demandez à votre fiduciaire.
+</Aside>
+
+## Quels taux une entreprise a
+
+*Paramètres → Taux de TVA* liste tous les taux dans un tableau : le nom, en dessous depuis quand le pourcentage d’aujourd’hui s’applique et lequel valait avant (ou lequel viendra), le motif d’exonération ou la mention, puis la catégorie pour la facture électronique et le pourcentage d’aujourd’hui. Un clic sur une ligne ouvre le taux.
+
+À la configuration de l’entreprise, Rhinvoice crée les taux de son pays avec leurs valeurs officielles et leur historique :
+
+| Taux | Suisse et Liechtenstein | Allemagne | Autriche |
+|---|---|---|---|
+| *Taux normal* | 8.1 % | 19 % | 20 % |
+| *Taux réduit* | 2.6 % | 7 % | 10 % |
+| troisième taux | 3.8 % *Taux spécial pour l’hébergement* | – | 13 % *Deuxième taux réduit* |
+| *0 % (imposable)* | 0 % | 0 % | 0 % |
+| *Exclu du champ de l’impôt* | 0 %, avec motif | 0 %, avec motif | 0 %, avec motif |
+
+Les positions sans taux choisi prennent le taux normal. Les pages des pays indiquent les sources et les valeurs antérieures : [Suisse](/docs/fr/countries/switzerland/), [Liechtenstein](/docs/fr/countries/liechtenstein/), [Allemagne](/docs/fr/countries/germany/), [Autriche](/docs/fr/countries/austria/).
+
+## S, Z et E : la catégorie pour la facture électronique
+
+Une facture électronique selon EN 16931 (ZUGFeRD, XRechnung) indique une catégorie de TVA pour chaque position. Chaque taux dans Rhinvoice en a donc une :
+
+| Catégorie | Signification | Pourcentage | Exemple |
+|---|---|---|---|
+| **S** *Imposable* | La prestation est imposable | supérieur à 0 % | taux normal 8.1 % ou 19 % |
+| **Z** *Taux zéro* | Imposable, mais à 0 % | exactement 0 % | certaines livraisons à l’étranger |
+| **E** *Exonéré / exclu* | Exonéré ou exclu du champ de l’impôt | exactement 0 %, avec *motif de l’exonération* | soins médicaux, location |
+
+Rhinvoice le vérifie pendant la saisie et à l’enregistrement. Une combinaison erronée ne peut pas être enregistrée, et le message dit pourquoi, par exemple « Imposable (S) demande un pourcentage supérieur à 0 %. ». Ainsi, aucune facture électronique ne contient un taux erroné. Le *motif de l’exonération* figure sur la position et part dans la facture électronique.
+
+La catégorie d’un taux reste fixe après sa création, car les positions et les articles en dépendent. Pour une autre catégorie, créez un nouveau taux.
+
+L’autoliquidation, l’exportation, les livraisons intracommunautaires et les petites entreprises restent déterminées par document, selon l’entreprise et le client. La facture n’a alors pas de TVA, quel que soit le taux de la position. Les [débours](/docs/fr/invoices/pass-through/) ne sont pas un taux mais un choix à part dans la position.
+
+## Créer votre propre taux
+
+<Steps>
+
+1. Ouvrez *Paramètres → Taux de TVA* et cliquez sur **Nouveau taux**.
+2. Saisissez un *Nom* et choisissez la *Catégorie pour la facture électronique*. Pour *Exonéré / exclu (E)*, indiquez le *Motif de l’exonération*.
+3. Saisissez le *Pourcentage* et, sous *Valable dès le*, la date dès laquelle il s’applique. Le 1er janvier de l’année en cours est proposé.
+4. Si vous le souhaitez, écrivez une *Mention sur la facture*. Elle figure sur chaque document qui utilise le taux.
+5. Cliquez sur **Enregistrer**.
+
+</Steps>
+
+## Changer un pourcentage à partir d’une date
+
+Quand un taux change, vous ne l’écrasez pas : vous ajoutez la nouvelle valeur avec sa date. Ouvrez le taux, cliquez sur **Changer à partir d’une date …**, indiquez la date et le nouveau pourcentage, puis enregistrez. **Afficher l’historique** liste toutes les valeurs; supprimez-y une valeur saisie par erreur.
+
+C’est la valeur à la **date de la prestation** qui s’applique : la fin de la période de prestation, sinon son début, sinon la date de facture. Si un taux ne s’applique pas encore à cette date, l’éditeur le signale.
+
+Les taux issus d’un modèle reçoivent la nouvelle valeur avec une mise à jour de Rhinvoice quand la loi change, tant que vous n’avez pas modifié leurs pourcentages vous-même. Vos propres taux, c’est vous qui les tenez à jour.
+
+## Taux moyens selon le § 24 UStG
+
+En Allemagne, les exploitations agricoles et sylvicoles peuvent être imposées selon des taux moyens (§ 24 UStG). Pour une entreprise allemande, *Depuis un modèle …* propose trois taux, chacun de catégorie S, valables depuis le 1er janvier 2025 :
+
+| Modèle | Taux | Base légale |
+|---|---|---|
+| *Sylviculture § 24 (5,5 %)* | 5,5 % | § 24 Abs. 1 Satz 1 Nr. 1 UStG |
+| *Boissons, produits de scierie § 24 (19 %)* | 19 % | § 24 Abs. 1 Satz 1 Nr. 2 UStG |
+| *Agriculture § 24 (7,8 %)* | 7,8 % | § 24 Abs. 1 Satz 1 Nr. 3 UStG, depuis 2025 (BGBl. 2024 I Nr. 387) |
+
+Selon le § 24 Abs. 1 Satz 4 UStG, la facture indique le taux moyen. Rhinvoice l’imprime sur chaque position, et les modèles apportent la mention « Imposition selon les taux moyens (§ 24 UStG) » (documents allemands : « Besteuerung nach Durchschnittssätzen (§ 24 UStG) »). Ajoutez au besoin des valeurs antérieures à 2025 avec *Changer à partir d’une date …*.
+
+Comme le taux normal et les boissons du § 24 ont tous deux 19 %, la position nomme alors le taux à côté du pourcentage.
+
+## Choisir le taux dans une position ou un article
+
+Dans la position et dans l’article, vous choisissez sous *Taux de TVA*. La liste répartit les taux entre **Imposable** et **Sans TVA**, chacun sous la forme « Nom – pourcentage » à la date de la prestation. Les débours viennent en dernier. Une position fermée n’indique que le pourcentage, sauf si un autre taux a le même; son nom s’affiche alors aussi.
+
+## Masquer au lieu de supprimer
+
+- **Masquer** retire un taux du choix des nouvelles positions et des nouveaux articles. Les positions, articles et factures récurrentes qui l’utilisent déjà le gardent; le choix l’y affiche avec « (masqué) ». **Afficher** le propose de nouveau.
+- **Supprimer** n’est possible que tant que rien n’utilise le taux. Sinon, le dialogue indique « Utilisé : masquez-le au lieu de le supprimer. »
+- Un modèle supprimé est de nouveau proposé sous *Depuis un modèle …*.
+
+## Factures émises
+
+L’émission fige sur chaque position le pourcentage, la catégorie, le nom et la mention du taux. Les modifications ultérieures et les taux masqués ou supprimés ne changent ni les factures émises, ni les annulations, ni leurs PDF. Les brouillons calculent avec les taux actuels. Plus d’informations : [Émettre et annuler une facture](/docs/fr/invoices/issue-and-cancel/), [Factures électroniques](/docs/fr/invoices/e-invoice/).
+
+## Questions fréquentes
+
+<Faq />

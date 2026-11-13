@@ -13,6 +13,7 @@ from rhinvoice.application.document.bad_debts import BadDebtYear, bad_debts_by_y
 from rhinvoice.application.document.ports import DocumentIndex
 from rhinvoice.application.errors import NotFoundError
 from rhinvoice.application.numbering.handlers import allocate_number
+from rhinvoice.application.tax.handlers import chosen_rate
 from rhinvoice.application.text.handlers import effective_notice
 from rhinvoice.domain.catalog.unit import Unit
 from rhinvoice.domain.company.bank_account import paying_account
@@ -34,11 +35,13 @@ from rhinvoice.domain.document.document import (
     IssueSnapshot,
     Payment,
     default_due_date,
+    known_rate,
 )
 from rhinvoice.domain.document.lines import (
     Discount,
     DiscountKind,
     DocumentLine,
+    InTotal,
     LineKind,
     PriceMode,
 )
@@ -57,7 +60,7 @@ from rhinvoice.domain.tax.treatment import (
 from rhinvoice.domain.text.template import TextKind
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Collection, Sequence
     from datetime import date
     from uuid import UUID
 
@@ -75,6 +78,7 @@ if TYPE_CHECKING:
     from rhinvoice.domain.document.write_off import WriteOffReason
     from rhinvoice.domain.shared.clock import Clock
     from rhinvoice.domain.shared.language import Language
+    from rhinvoice.domain.tax.tax_rate import FrozenRate, TaxRate
     from rhinvoice.domain.text.template import TextTemplate
 
 
@@ -91,15 +95,39 @@ class LineInput:
     unit: str | None = None
     unit_price: str = "0"
     discount_percent: str = "0"
-    tax_category: TaxCategory = TaxCategory.STANDARD
+    tax_rate_id: UUID | None = None
+    """The company's rate of a position; None: the default rate (ADR 0044)."""
+    pass_through: bool = False
+    """Paid in the customer's name: no rate, no VAT (ADR 0039)."""
     supply: Supply = Supply.SERVICE
     article_id: UUID | None = None
+    in_total: InTotal = InTotal.YES
+    """Optional and alternative positions are for quotes (ADR 0045)."""
+    alternative_to: int | None = None
+    """The index of the position an alternative replaces, among the draft's lines."""
 
-    def to_domain(self, index: int) -> DocumentLine:
+    def to_domain(
+        self,
+        index: int,
+        rates: Sequence[TaxRate],
+        kept: Collection[UUID] = (),
+        line_ids: Sequence[UUID] = (),
+    ) -> DocumentLine:
+        """Build the line; ``kept`` are hidden rates the stored line had (they stay).
+
+        ``line_ids`` are the new ids of the draft's lines in their order; an alternative
+        refers to its position by one of them.
+        """
         prefix = f"lines.{index}"
         try:
+            if self.kind is LineKind.TEXT:
+                category, rate_id = TaxCategory.STANDARD, None
+            else:
+                category, rate_id = chosen_rate(
+                    rates, self.tax_rate_id, pass_through=self.pass_through, kept=kept
+                )
             return DocumentLine(
-                id=new_id(),
+                id=line_ids[index] if line_ids else new_id(),
                 kind=self.kind,
                 description=self.description,
                 details=self.details,
@@ -107,12 +135,29 @@ class LineInput:
                 unit=None if self.kind is LineKind.TEXT or self.unit is None else Unit(self.unit),
                 unit_price=parse_decimal(self.unit_price, "unit_price"),
                 discount_percent=parse_decimal(self.discount_percent, "discount_percent"),
-                tax_category=self.tax_category,
+                tax_category=category,
                 supply=self.supply,
                 article_id=self.article_id,
+                tax_rate_id=rate_id,
+                in_total=self.in_total,
+                alternative_to=self._target(line_ids),
             )
         except ValidationError as error:
-            raise ValidationError(f"{prefix}.{error.field}", error.message) from None
+            raise ValidationError(
+                f"{prefix}.{error.field}", error.message, code=error.code
+            ) from None
+
+    def _target(self, line_ids: Sequence[UUID]) -> UUID | None:
+        """Return the id of the position an alternative replaces."""
+        if self.alternative_to is None:
+            return None
+        if not 0 <= self.alternative_to < len(line_ids):
+            raise ValidationError(
+                "alternative_to",
+                "an alternative replaces a position in the total of the same document",
+                code="alternative_target_invalid",
+            )
+        return line_ids[self.alternative_to]
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,11 +221,24 @@ class DocumentView:
     """
     company: Company
     """The current company (issued documents print their snapshot)."""
+    rates: tuple[FrozenRate, ...] = ()
+    """The rates of the positions taxed in the company's country, for their notices and
+    exemption reasons: as issued, the current ones for drafts (ADR 0044)."""
+
+    @property
+    def rate_notices(self) -> tuple[str, ...]:
+        """The notices of the rates, each once, printed after the treatments' notices."""
+        return tuple(dict.fromkeys(rate.notice for rate in self.rates if rate.notice))
+
+    @property
+    def printed_notices(self) -> tuple[str, ...]:
+        """Every notice the document prints: the treatments', then the rates'."""
+        return (*(text for _, text in self.notices if text), *self.rate_notices)
 
     @property
     def notice(self) -> str:
         """All notices of the document, one per line."""
-        return "\n".join(text for _, text in self.notices if text)
+        return "\n".join(self.printed_notices)
 
     def notice_of(self, treatment: TaxTreatment) -> str:
         return next((text for found, text in self.notices if found is treatment), "")
@@ -189,8 +247,10 @@ class DocumentView:
 @dataclass(frozen=True, slots=True)
 class DocumentPreview:
     view: DocumentView
-    rates: dict[TaxCategory, Decimal]
-    """Rate per tax category that the draft's lines would get, for the line selects."""
+    rates: dict[UUID, Decimal]
+    """The percentage of each rate on the draft's date of supply, for the line selects.
+
+    Zero when the document's treatment charges no VAT; rates not valid yet are left out."""
     customer_vat_missing: bool = False
     """The customer is an EU business without a VAT number: with one, reverse charge."""
     issue_blockers: tuple[str, ...] = ()
@@ -256,11 +316,16 @@ class DocumentHandlers:
 
     # --- Drafts ------------------------------------------------------------------
 
-    def create(self, document_type: DocumentType, draft: DraftInput) -> DocumentView:
+    def create(
+        self, document_type: DocumentType, draft: DraftInput, *, kept_rates: Collection[UUID] = ()
+    ) -> DocumentView:
+        """Create a draft; ``kept_rates``: hidden rates it may use (those of a recurring plan)."""
         with self.uow() as uow:
             company = self._company(uow)
             customer = self._customer(uow, draft.customer_id)
-            content = self._content(uow, company, customer, draft, previous=None)
+            content = self._content(
+                uow, company, customer, draft, previous=None, kept_rates=kept_rates
+            )
             document = Document.new_draft(
                 new_id(),
                 document_type,
@@ -278,21 +343,30 @@ class DocumentHandlers:
         """Calculate a draft without saving it, for live totals in the editor.
 
         ``customer`` stands in for one that is not saved (the layout preview's sample).
+        Hidden rates are allowed: the draft being edited may have them from before.
         """
         with self.uow() as uow:
             company = self._company(uow)
             if customer is None:
                 customer = self._customer(uow, draft.customer_id)
-            content = self._content(uow, company, customer, draft, previous=None)
+            rates = uow.tax_rates.list()
+            content = self._content(
+                uow,
+                company,
+                customer,
+                draft,
+                previous=None,
+                kept_rates=[rate.id for rate in rates],
+            )
             document = Document.new_draft(new_id(), document_type, content, self.clock.now())
-            rates = profile_of(company.country).rates_on(content.tax_date or self.clock.today())
-            available: dict[TaxCategory, Decimal] = {}
-            for category in TaxCategory:
+            on = content.tax_date or self.clock.today()
+            available: dict[UUID, Decimal] = {}
+            for rate in rates:
                 try:
-                    rate = rates.rate(category)
+                    percent = rate.percent_on(on)
                 except ValidationError:
-                    continue  # e.g. no special rate in Germany
-                available[category] = rate if content.treatment.charges_vat else Decimal(0)
+                    continue  # the rate applies from a later date
+                available[rate.id] = percent if content.treatment.charges_vat else Decimal(0)
             view = replace(self._view(uow, document), customer=customer)
             blockers = document.issue_blockers(company, customer, view.totals.total)
             if document_type is DocumentType.INVOICE and self._account(uow, content) is None:
@@ -311,7 +385,14 @@ class DocumentHandlers:
             document = self._require(uow, document_id, for_update=True)
             company = self._company(uow)
             customer = self._customer(uow, draft.customer_id)
-            content = self._content(uow, company, customer, draft, previous=document.content)
+            content = self._content(
+                uow,
+                company,
+                customer,
+                draft,
+                previous=document.content,
+                kept_rates=document.content.rate_ids,
+            )
             document = document.edit(
                 content, self.clock.now(), override_reason=draft.override_reason
             )
@@ -337,12 +418,22 @@ class DocumentHandlers:
             uow.commit()
         return view
 
-    def convert_to_invoice(self, quote_id: UUID) -> DocumentView:
+    def convert_to_invoice(
+        self, quote_id: UUID, line_ids: Collection[UUID] | None = None
+    ) -> DocumentView:
+        """Write the invoice of a quote with the ``line_ids`` positions the customer took.
+
+        None: the positions in the quote's total. Text lines always come along (ADR 0045).
+        """
         with self.uow() as uow:
             quote = self._require(uow, quote_id, for_update=True)
             quote.convert_check()
             invoice = quote.copy_as_draft(
-                new_id(), DocumentType.INVOICE, self.clock.now(), today=self.clock.today()
+                new_id(),
+                DocumentType.INVOICE,
+                self.clock.now(),
+                today=self.clock.today(),
+                chosen=line_ids,
             )
             invoice = replace(
                 invoice,
@@ -621,6 +712,7 @@ class DocumentHandlers:
             company.payment_terms_days if terms is None else terms,
         )
         number = allocate_number(uow, document.type.sequence, issue_date)
+        rates = {rate.id: rate for rate in uow.tax_rates.list()}
         if snapshot is None:
             logo = uow.company.get_logo()
             if logo is not None:
@@ -640,19 +732,23 @@ class DocumentHandlers:
                 accounts=tuple(uow.bank_accounts.list()),
                 goods_notice=_goods_notice(uow, document.content, company),
                 logo=IssuedLogo(None if logo is None else logo.sha256),
+                rates=tuple(
+                    known_rate(rate_id, rates).frozen() for rate_id in document.content.rate_ids
+                ),
             )
         issued = document.issue(
             number=number,
             issue_date=issue_date,
             due_date=due_date,
             snapshot=snapshot,
+            rates=rates,
             now=self.clock.now(),
         )
         # Committed together with the document: a refused issue requests nothing.
         uow.backups.request(BackupReason.DOCUMENT, self.clock.now())
         return issued
 
-    def _content(
+    def _content(  # noqa: PLR0913 - the parties, the input and what it may keep
         self,
         uow: UnitOfWork,
         company: Company,
@@ -660,6 +756,7 @@ class DocumentHandlers:
         draft: DraftInput,
         *,
         previous: DraftContent | None,
+        kept_rates: Collection[UUID],
     ) -> DraftContent:
         currency = draft.currency or customer.default_currency or company.default_currency
         check_print_layout(uow, draft.print_layout_id)
@@ -678,7 +775,7 @@ class DocumentHandlers:
             currency=currency,
             language=draft.language or customer.default_language or company.default_language,
             price_mode=draft.price_mode,
-            lines=tuple(line.to_domain(index) for index, line in enumerate(draft.lines)),
+            lines=draft_lines(draft, uow.tax_rates.list(), kept_rates),
             treatment=treatment,
             treatment_overridden=overridden,
             goods_treatment=_goods_treatment(treatment, company, customer, overridden=overridden),
@@ -700,11 +797,18 @@ class DocumentHandlers:
     def _view(self, uow: UnitOfWork, document: Document) -> DocumentView:
         company = self._company(uow)
         customer = uow.customers.get(document.content.customer_id)
+        rates = {rate.id: rate for rate in uow.tax_rates.list()}
         totals = document.totals(
-            company.country, cash_rounding=company.cash_rounding, today=self.clock.today()
+            rates, cash_rounding=company.cash_rounding, today=self.clock.today()
         )
         content = document.content
         snapshot = None if document.is_draft else document.issued_snapshot
+        if snapshot is None:
+            used = tuple(known_rate(rate_id, rates).frozen() for rate_id in content.taxed_rate_ids)
+        else:
+            # Documents issued before 0.13 kept no rates: they print no rate notices.
+            issued = {rate.id: rate for rate in snapshot.rates}
+            used = tuple(issued[rate_id] for rate_id in content.taxed_rate_ids if rate_id in issued)
         notices: list[tuple[TaxTreatment, str]] = []
         for treatment in content.treatments:
             frozen = None
@@ -726,6 +830,7 @@ class DocumentHandlers:
             display_status=document.display_status(self.clock.today()),
             notices=tuple(notices),
             company=company,
+            rates=used,
         )
 
     def save_in(self, uow: UnitOfWork, document: Document) -> DocumentView:
@@ -784,6 +889,16 @@ def chosen_account(uow: UnitOfWork, account_id: UUID | None, currency: Currency)
             code="bank_account_currency",
         )
     return account_id
+
+
+def draft_lines(
+    draft: DraftInput, rates: Sequence[TaxRate], kept: Collection[UUID]
+) -> tuple[DocumentLine, ...]:
+    """Build the lines of the editor's content with the company's rates (ADR 0044)."""
+    line_ids = tuple(new_id() for _ in draft.lines)
+    return tuple(
+        line.to_domain(index, rates, kept, line_ids) for index, line in enumerate(draft.lines)
+    )
 
 
 def _tax_context(company: Company, customer: Customer) -> TaxContext:

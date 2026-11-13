@@ -16,6 +16,7 @@ import { PrintLayoutSettings } from "@/features/company/print-layout-settings";
 import { DunningSettings } from "@/features/dunning/dunning-settings";
 import { MailSettings } from "@/features/mail/mail-settings";
 import { NumberingSettings } from "@/features/numbering/numbering-settings";
+import { TaxRatesSettings } from "@/features/tax-rates/tax-rates-settings";
 import { TextsSettings } from "@/features/texts/texts-settings";
 
 import { SETTINGS_TABS, type SettingsTab } from "@/app/pages/settings-tabs";
@@ -34,6 +35,7 @@ export function SettingsPage({ user, tab, onTabChange }: SettingsPageProps) {
   const labels: Record<SettingsTab, string> = {
     company: t("settings.tabCompany"),
     "bank-accounts": t("settings.tabBankAccounts"),
+    "tax-rates": t("settings.tabTaxRates"),
     numbering: t("settings.tabNumbering"),
     texts: t("settings.tabTexts"),
     mail: t("settings.tabMail"),
@@ -73,6 +75,9 @@ export function SettingsPage({ user, tab, onTabChange }: SettingsPageProps) {
             defaultCurrency={company.data?.default_currency ?? "CHF"}
             profile={company.data?.profile}
           />
+        </TabsContent>
+        <TabsContent value="tax-rates">
+          <TaxRatesSettings />
         </TabsContent>
         <TabsContent value="numbering">
           <NumberingSettings />

@@ -405,7 +405,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
     );
   };
 
-  const summary = [...(plan?.problems ?? []), ...documentSummaryItems(errors, t)];
+  const summary = [...(plan?.problems ?? []), ...documentSummaryItems(errors, values.lines, t)];
   const issueLabel = type === "quote" ? t("documents.send") : t("documents.issue");
   const title = type === "quote" ? t("documentType.quote") : t("documentType.invoice");
 
@@ -704,7 +704,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
                   </div>
                 </div>
               ) : null}
-              <InfoInputs plan={plan !== undefined} />
+              <InfoInputs plan={plan !== undefined} eInvoice={type === "invoice"} />
               <BankAccountChoice />
             </Card>
 
@@ -727,7 +727,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
               </div>
               <LineItems
                 amounts={amounts}
-                rates={preview.data?.rates}
+                percents={preview.data?.rates}
                 profile={company.profile}
                 goodsTreatment={
                   preview.data?.goods_treatment === preview.data?.treatment
@@ -736,6 +736,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
                 }
                 editing={editing}
                 onEditingChange={setEditing}
+                offersOptions={type === "quote"}
               />
             </Card>
 

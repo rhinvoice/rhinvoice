@@ -24,6 +24,7 @@ from rhinvoice.domain.company.print_layout import (
     InfoField,
     PrintLayout,
 )
+from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.customer.customer import CustomerKind
 from rhinvoice.domain.document.document import DocumentType
 from rhinvoice.domain.document.lines import DiscountKind, LineKind, PriceMode
@@ -33,7 +34,7 @@ from rhinvoice.domain.shared.email import EmailAddress
 from rhinvoice.domain.shared.iban import Bic, Iban
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
-from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax import presets
 from rhinvoice.domain.tax.supply import Supply
 from rhinvoice.domain.tax.vat_number import VatNumber
 from rhinvoice.infrastructure.einvoice.cii import CiiWriter
@@ -80,7 +81,7 @@ REDUCED = LineInput(
     description="Fachbuch",
     quantity="2",
     unit_price="38.50",
-    tax_category=TaxCategory.REDUCED,
+    tax_rate_id=factories.rate_id(presets.REDUCED),
 )
 HEADING = LineInput(kind=LineKind.TEXT, description="Phase 1")
 CREDIT_DISCOUNTED = LineInput(
@@ -91,10 +92,16 @@ CREDIT_DISCOUNTED = LineInput(
     discount_percent="15",
 )
 EXPORT_BOOK = LineInput(
-    kind=LineKind.ITEM, description="Ausfuhr", unit_price="50", tax_category=TaxCategory.ZERO
+    kind=LineKind.ITEM,
+    description="Ausfuhr",
+    unit_price="50",
+    tax_rate_id=factories.rate_id(presets.ZERO),
 )
 EXEMPT = LineInput(
-    kind=LineKind.ITEM, description="Schulung", unit_price="200", tax_category=TaxCategory.EXEMPT
+    kind=LineKind.ITEM,
+    description="Schulung",
+    unit_price="200",
+    tax_rate_id=factories.rate_id(presets.EXEMPT),
 )
 PRINTER = LineInput(
     kind=LineKind.ITEM,
@@ -110,7 +117,7 @@ LABELS = LineInput(
     description="Etiketten (Rolle)",
     quantity="20",
     unit_price="7.80",
-    tax_category=TaxCategory.REDUCED,
+    tax_rate_id=factories.rate_id(presets.REDUCED),
     supply=Supply.GOODS,
 )
 CREDIT = LineInput(
@@ -122,7 +129,7 @@ FEE = LineInput(
     description="Gebühr Handelsregister",
     details="Rechnung des Amts auf den Namen des Kunden",
     unit_price="250.37",
-    tax_category=TaxCategory.PASS_THROUGH,
+    pass_through=True,
 )
 COPIES = LineInput(
     kind=LineKind.ITEM,
@@ -130,7 +137,31 @@ COPIES = LineInput(
     quantity="2",
     unit="C62",
     unit_price="20",
-    tax_category=TaxCategory.PASS_THROUGH,
+    pass_through=True,
+)
+# German farmers and foresters charge the average rates of § 24 UStG (ADR 0044, #80).
+GRAIN = LineInput(
+    kind=LineKind.ITEM,
+    description="Futtergerste",
+    quantity="40",
+    unit="KGM",
+    unit_price="0.45",
+    tax_rate_id=factories.rate_id("de_24_other"),
+)
+TIMBER = LineInput(
+    kind=LineKind.ITEM,
+    description="Brennholz",
+    quantity="6",
+    unit_price="85",
+    tax_rate_id=factories.rate_id("de_24_forestry"),
+)
+CIDER = LineInput(
+    kind=LineKind.ITEM,
+    description="Apfelwein",
+    quantity="12",
+    unit="C62",
+    unit_price="4.20",
+    tax_rate_id=factories.rate_id("de_24_beverages"),
 )
 
 
@@ -142,6 +173,8 @@ class Sample:
     draft: DraftInput
     cancel: bool = False
     layout: PrintLayout | None = None
+    presets: tuple[str, ...] = ()
+    """Presets of special schemes the company took over, besides its country's rates."""
 
 
 def _swiss() -> Company:
@@ -640,6 +673,15 @@ def samples() -> dict[str, Sample]:
             (_chf_qr_account(),),
             _draft((CONSULTING, PRINTER), language=Language.FR),
         ),
+        # A farm under § 24 UStG: the average rates, 19 % twice in one breakdown, and
+        # the notice of the scheme; the advice at the standard rate.
+        "de-average-rates": Sample(
+            _german(name="Hof Beispiel"),
+            replace(german_customer, kind=CustomerKind.COMPANY, company_name="Mühle Beispiel GmbH"),
+            (berlin_account,),
+            _draft((GRAIN, TIMBER, CIDER, CONSULTING)),
+            presets=("de_24_other", "de_24_forestry", "de_24_beverages"),
+        ),
         "at-domestic": Sample(
             factories.company(
                 name="Muster OG",
@@ -673,6 +715,13 @@ def issue(sample: Sample) -> tuple[PrintHandlers, UUID]:
     """Issue the sample's invoice (and its cancellation); return the document to print."""
     store = Store()
     store.company = sample.company
+    country, language = sample.company.country, sample.company.default_language
+    taken = [
+        preset.to_rate(factories.rate_id(preset.key), language)
+        for preset in profile_of(country).scheme_presets
+        if preset.key in sample.presets
+    ]
+    store.tax_rates = [*factories.tax_rates(country, language).values(), *taken]
     store.customers[CUSTOMER] = sample.customer
     if sample.layout is not None:
         store.use_layout(sample.layout)

@@ -1,6 +1,9 @@
 """Cell texts of imported files become values; what cannot be read is reported by field."""
 
+from dataclasses import replace
 from datetime import date
+from decimal import Decimal
+from uuid import UUID
 
 import pytest
 
@@ -15,7 +18,7 @@ from rhinvoice.application.importing.parsing import (
     parse_flag,
     parse_language,
     parse_supply,
-    parse_tax_category,
+    parse_tax_rate,
     parse_unit,
     parse_whole_number,
     split_postal_city,
@@ -26,9 +29,11 @@ from rhinvoice.domain.shared.country import Country
 from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
-from rhinvoice.domain.tax.category import TaxCategory
+from rhinvoice.domain.tax.presets import EXEMPT, REDUCED, SPECIAL, STANDARD, ZERO
 from rhinvoice.domain.tax.supply import Supply
+from rhinvoice.domain.tax.tax_rate import RateValue
 from tests.helpers import raises_exactly
+from tests.unit.domain import factories
 
 
 @pytest.mark.parametrize(
@@ -188,44 +193,114 @@ def test_unknown_units_are_rejected() -> None:
     assert (caught.value.field, caught.value.code) == ("unit", "unknown_unit")
 
 
+ON = date(2026, 3, 9)
+PASS = "pass"
+"""A pass-through item: no rate."""
+
+
 @pytest.mark.parametrize(
     ("country", "text", "expected"),
     [
-        (Country.CH, "", TaxCategory.STANDARD),
-        (Country.CH, "normal", TaxCategory.STANDARD),
-        (Country.CH, "8.1", TaxCategory.STANDARD),
-        (Country.CH, "8,1 %", TaxCategory.STANDARD),
-        (Country.CH, "7.7", TaxCategory.STANDARD),
+        (Country.CH, "normal", STANDARD),
+        (Country.CH, "8.1", STANDARD),
+        (Country.CH, "8,1 %", STANDARD),
+        (Country.CH, "7.7", STANDARD),
         # The standard rate of 2011 to 2017.
-        (Country.CH, "8", TaxCategory.STANDARD),
-        (Country.CH, "2.6", TaxCategory.REDUCED),
-        (Country.CH, "2.5", TaxCategory.REDUCED),
-        (Country.CH, "ermässigt", TaxCategory.REDUCED),
-        (Country.CH, "3.8", TaxCategory.SPECIAL),
-        (Country.LI, "3.7", TaxCategory.SPECIAL),
-        (Country.CH, "Beherbergung", TaxCategory.SPECIAL),
-        (Country.CH, "0", TaxCategory.ZERO),
-        (Country.CH, "0.0", TaxCategory.ZERO),
-        (Country.CH, "steuerfrei", TaxCategory.EXEMPT),
-        (Country.CH, "Durchlaufender Posten", TaxCategory.PASS_THROUGH),
-        (Country.DE, "durchlaufend", TaxCategory.PASS_THROUGH),
-        (Country.AT, "pass-through", TaxCategory.PASS_THROUGH),
-        (Country.LI, "pass_through", TaxCategory.PASS_THROUGH),
-        (Country.DE, "19%", TaxCategory.STANDARD),
-        (Country.DE, "7", TaxCategory.REDUCED),
+        (Country.CH, "8", STANDARD),
+        (Country.CH, "2.6", REDUCED),
+        (Country.CH, "2.5", REDUCED),
+        (Country.CH, "ermässigt", REDUCED),
+        (Country.CH, "3.8", SPECIAL),
+        (Country.LI, "3.7", SPECIAL),
+        (Country.CH, "Beherbergung", SPECIAL),
+        (Country.CH, "0", ZERO),
+        (Country.CH, "0.0", ZERO),
+        (Country.CH, "steuerfrei", EXEMPT),
+        (Country.CH, "Durchlaufender Posten", PASS),
+        (Country.DE, "durchlaufend", PASS),
+        (Country.AT, "pass-through", PASS),
+        (Country.LI, "pass_through", PASS),
+        (Country.DE, "19%", STANDARD),
+        (Country.DE, "7", REDUCED),
         # The rates of the second half of 2020.
-        (Country.DE, "16", TaxCategory.STANDARD),
-        (Country.DE, "5", TaxCategory.REDUCED),
-        (Country.AT, "20.00", TaxCategory.STANDARD),
-        (Country.AT, "10", TaxCategory.REDUCED),
+        (Country.DE, "16", STANDARD),
+        (Country.DE, "5", REDUCED),
+        (Country.AT, "20.00", STANDARD),
+        (Country.AT, "10", REDUCED),
         # Austria's 13 % is its own rate, not the 10 % one.
-        (Country.AT, "13", TaxCategory.SPECIAL),
+        (Country.AT, "13", SPECIAL),
     ],
 )
-def test_tax_categories_are_read_from_names_and_rates(
-    country: Country, text: str, expected: TaxCategory
+def test_tax_rates_are_read_from_names_and_percentages(
+    country: Country, text: str, expected: str
 ) -> None:
-    assert parse_tax_category(text, profile_of(country).rates) is expected
+    rates = list(factories.tax_rates(country).values())
+    rate_id = None if expected == PASS else factories.rate_id(expected)
+    assert parse_tax_rate(text, rates, ON) == (rate_id, expected == PASS)
+
+
+def test_an_empty_cell_takes_the_default_rate() -> None:
+    assert parse_tax_rate(" ", list(factories.tax_rates().values()), ON) == (None, False)
+
+
+def test_a_percentage_prefers_a_taxed_rate_then_the_order() -> None:
+    """ADR 0044: § 24 UStG beverages are 19 % too; the standard rate comes first."""
+    german = factories.tax_rates(Country.DE)
+    schemes = profile_of(Country.DE).scheme_presets
+    average = [preset.to_rate(factories.rate_id(preset.key), Language.DE) for preset in schemes]
+    rates = [*average, *german.values()]
+    assert parse_tax_rate("19", rates, ON) == (average[1].id, False)
+    assert parse_tax_rate("19", [*german.values(), *average], ON) == (
+        factories.rate_id(STANDARD),
+        False,
+    )
+    assert parse_tax_rate("7,8", rates, ON) == (average[2].id, False)
+    # The percentage of the date wins over a rate that had it before, whatever the order.
+    former = replace(german[factories.rate_id(STANDARD)], id=UUID(int=5), preset=None, name="Alt")
+    former = replace(former, values=(*former.values, RateValue(date(2026, 1, 1), Decimal(20))))
+    assert parse_tax_rate("19", [former, *german.values()], ON) == (
+        factories.rate_id(STANDARD),
+        False,
+    )
+    # On the date of the document first: 7.8 % applies from 2025 on only.
+    assert parse_tax_rate("7.8", rates, date(2024, 6, 1)) == (average[2].id, False)
+    # Zero-rated and exempt rates are both 0 %: the order decides.
+    assert parse_tax_rate("0.00", rates, ON) == (factories.rate_id(ZERO), False)
+    zero_last = sorted(rates, key=lambda rate: rate.preset == ZERO)
+    assert parse_tax_rate("0.00", zero_last, ON) == (factories.rate_id(EXEMPT), False)
+
+
+def test_names_stand_for_the_rate_of_their_preset_or_category() -> None:
+    rates = factories.tax_rates()
+    own_exempt = replace(
+        rates[factories.rate_id(EXEMPT)], id=UUID(int=9), preset=None, name="Heilbehandlung"
+    )
+    own_standard = replace(rates[factories.rate_id(STANDARD)], id=UUID(int=8), preset=None)
+    others = [rate for rate in rates.values() if rate.preset not in {EXEMPT, STANDARD}]
+    assert parse_tax_rate("befreit", [*others, own_exempt], ON) == (own_exempt.id, False)
+    assert parse_tax_rate("Normal", [own_standard, *others], ON) == (own_standard.id, False)
+    # The preset's rate first, before another one of its category.
+    preset = rates[factories.rate_id(STANDARD)]
+    assert parse_tax_rate("Normal", [own_standard, preset], ON) == (preset.id, False)
+    # Without any rate of the category, the name is unknown.
+    with pytest.raises(ValidationError) as none:
+        parse_tax_rate("befreit", [own_standard], ON)
+    assert none.value.code == "unknown_tax_rate"
+    # A reduced or special rate means a percentage of its own: no other rate stands in.
+    without_reduced = [rate for rate in rates.values() if rate.preset != REDUCED]
+    with pytest.raises(ValidationError) as caught:
+        parse_tax_rate("reduziert", without_reduced, ON)
+    assert caught.value.code == "unknown_tax_rate"
+
+
+def test_hidden_rates_are_not_chosen() -> None:
+    rates = [
+        replace(rate, hidden=rate.preset == REDUCED) for rate in factories.tax_rates().values()
+    ]
+    for text in ("2.6", "reduziert"):
+        with pytest.raises(ValidationError) as caught:
+            parse_tax_rate(text, rates, ON)
+        assert caught.value.code == "unknown_tax_rate"
 
 
 @pytest.mark.parametrize(
@@ -237,11 +312,12 @@ def test_tax_categories_are_read_from_names_and_rates(
         (Country.CH, "19"),
         (Country.DE, "13"),
         (Country.DE, "8.1"),
+        (Country.DE, "Sondersatz"),
     ],
 )
 def test_unknown_tax_rates_are_rejected(country: Country, text: str) -> None:
     with pytest.raises(ValidationError) as caught:
-        parse_tax_category(text, profile_of(country).rates)
+        parse_tax_rate(text, list(factories.tax_rates(country).values()), ON)
     assert (caught.value.field, caught.value.code) == ("tax_category", "unknown_tax_rate")
     assert caught.value.details == {"tax_category": f"'{text}' is not a known VAT rate"}
 

@@ -30,11 +30,12 @@ Rhinvoice writes **quotes, invoices, cancellation invoices and payment reminders
 - Create a new customer right from the invoice, in a panel beside it
 - What issuing still needs is listed on top of the editor, with a button that opens the form for it
 - Numbers are assigned only when issuing, without gaps and without duplicates
-- Number sequences with your own pattern (`{YYYY}`, `{YY}`, `{MM}`, `{NNNN}`), yearly reset and a preview of the next number
+- Number sequences with your own pattern (`{YYYY}`, `{YY}`, `{MM}`, `{DD}`, `{NNNN}`), yearly reset and a preview of the next number
 - Issued documents are locked, also in the database, and the PDF is kept with its SHA-256 checksum (GoBD, Art. 958f CO, BAO)
 - Corrections only by a cancellation invoice with its own number
 - Mark quotes as sent, accepted or declined; after their validity (30 days by default) they count as expired
-- *Turn into invoice* makes an invoice draft from a quote
+- Optional and alternative items in quotes: shown with their amount in brackets, outside the total
+- *Turn into invoice* makes an invoice draft from a quote, with the items the customer chose
 - *Duplicate* creates a copy as a draft
 - History per document, for example issuing, payments, reminders, e-mails and a manual choice of tax treatment
 - Lists with views (*Drafts*, *Open*, *Overdue*, *Paid*, *Cancelled*, *Written off*), filters by year and customer, totals
@@ -66,6 +67,8 @@ Guides: [Payments and reminders](/docs/invoices/payments-and-reminders/), [Writi
 - Switzerland and Liechtenstein: 8.1 / 2.6 / 3.8 %, plus the earlier rates since 2011
 - Germany: 19 / 7 %, plus 16 / 5 % for the second half of 2020
 - Austria: 20 / 10 / 13 %
+- Own tax rates per company with presets per country, e.g. the average rates of § 24 UStG; a new percentage is added with its date
+- Category of every rate for the e-invoice (S, Z, E), checked against EN 16931 on saving
 - Tax treatment decided from the company's country, the customer's country and VAT number: domestic, reverse charge, intra-Community supply, export delivery, export, small business, exempt
 - Manual choice of the tax treatment with a reason that goes into the history
 - Goods and services kept apart, also on mixed invoices, each with its notice
@@ -77,7 +80,7 @@ Guides: [Payments and reminders](/docs/invoices/payments-and-reminders/), [Writi
 - Wording per country: MWST and UID in Switzerland and Liechtenstein, USt. and USt-IdNr. in Germany, USt. and UID in Austria
 - More countries can be added as a country profile of their own
 
-Guides: [Switzerland](/docs/countries/switzerland/), [Liechtenstein](/docs/countries/liechtenstein/), [Germany](/docs/countries/germany/), [Austria](/docs/countries/austria/), [More countries](/docs/countries/more-countries/)
+Guides: [Switzerland](/docs/countries/switzerland/), [Liechtenstein](/docs/countries/liechtenstein/), [Germany](/docs/countries/germany/), [Austria](/docs/countries/austria/), [More countries](/docs/countries/more-countries/), [Own tax rates](/docs/invoices/tax-rates/)
 
 ## Payment QR codes and bank accounts
 

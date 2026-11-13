@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { useRunOnce } from "@/components/use-run-once";
 import { useI18n } from "@/components/i18n/use-i18n";
 import { Autocomplete } from "@/components/ui/autocomplete";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -40,19 +41,37 @@ import {
   fieldId,
   isBlankLine,
   lineFromArticle,
-  lineRates,
+  lineLabel,
+  linePercents,
   MAX_LINES,
   ownTreatment,
   SUPPLIES,
-  TAX_CATEGORIES,
   type DocumentFormValues,
   type LineFormValues,
 } from "@/features/documents/document-form-model";
-import { taxCategoryLabel, type CountryProfile } from "@/features/shared/country-profile-model";
+import {
+  inTotalChoice,
+  inTotalTag,
+  orphanedAlternatives,
+  positionNumbers,
+  parseInTotalChoice,
+  replaceableLines,
+  type InTotalTag,
+} from "@/features/documents/in-total-model";
+import type { CountryProfile } from "@/features/shared/country-profile-model";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { unitsQuery } from "@/features/shared/reference-api";
+import {
+  PASS_THROUGH,
+  percentsOn,
+  shortRate,
+  type Percents,
+} from "@/features/shared/tax-rate-model";
+import { TaxRateSelect } from "@/features/shared/tax-rate-select";
+import { taxRatesQuery, type TaxRate } from "@/features/shared/tax-rates-api";
 import { cn } from "@/lib/cn";
-import { formatMoney, formatNumber, formatPercent } from "@/lib/format";
+import { todayIso } from "@/lib/dates";
+import { formatMoney, formatNumber } from "@/lib/format";
 import { parseDecimal } from "@/lib/format/parse-decimal";
 import { unitName } from "@/lib/locale";
 
@@ -66,20 +85,20 @@ function ErrorText({ id, error }: { readonly id: string; readonly error: FieldEr
   );
 }
 
-type Rates = Partial<Record<(typeof TAX_CATEGORIES)[number], string>>;
-
 interface LineItemsProps {
   /** Line amounts after the line discount, by index (null for text lines). */
   readonly amounts: readonly (string | null)[];
-  /** Rate per tax category for this document; undefined until known. */
-  readonly rates: Rates | undefined;
-  /** The company's country: names the rates (e.g. "Sondersatz Beherbergung"). */
+  /** Percentage of each rate on the document's date of supply; undefined until known. */
+  readonly percents: Percents | undefined;
+  /** The company's country: names its tax on pass-through items ("ohne MWST"). */
   readonly profile: CountryProfile;
   /** Treatment of goods lines when it differs from the document's (e.g. export). */
   readonly goodsTreatment: TaxTreatment | null | undefined;
   /** Index of the line being edited, null when all lines are closed. */
   readonly editing: number | null;
   readonly onEditingChange: (index: number | null) => void;
+  /** Quotes offer optional and alternative items (ADR 0045). */
+  readonly offersOptions?: boolean;
 }
 
 /**
@@ -88,15 +107,19 @@ interface LineItemsProps {
  */
 export function LineItems({
   amounts,
-  rates,
+  percents,
   profile,
   goodsTreatment,
   editing,
   onEditingChange,
+  offersOptions = false,
 }: LineItemsProps) {
   const { t } = useI18n();
   const { control, formState, getValues, setValue } = useFormContext<DocumentFormValues>();
   const { fields, append, insert, remove, move } = useFieldArray({ control, name: "lines" });
+  const rates = useQuery(taxRatesQuery).data;
+  // Until the preview names them for the date of supply, today's percentages.
+  const known = percents ?? percentsOn(rates ?? [], todayIso());
   const linesError = formState.errors.lines;
   const rootMessage = linesError?.root?.message ?? linesError?.message;
   // The open line as it was when it was opened, for "Cancel"; null for a new line.
@@ -117,6 +140,13 @@ export function LineItems({
   const [dragging, setDragging] = useState<number | null>(null);
   const [dropTarget, setDropTarget] = useState<number | null>(null);
 
+  // An alternative whose line was removed or stopped counting becomes optional.
+  const releaseAlternatives = () => {
+    for (const at of orphanedAlternatives(getValues("lines"))) {
+      setValue(`lines.${at}.in_total`, "optional", { shouldDirty: true });
+      setValue(`lines.${at}.alternative_to`, null, { shouldDirty: true });
+    }
+  };
   const open = (index: number) => {
     setSnapshot({ index, line: getValues(`lines.${index}`) });
     onEditingChange(index);
@@ -139,11 +169,13 @@ export function LineItems({
   const cancel = (index: number) => {
     if (original === null) {
       remove(index);
+      releaseAlternatives();
       setSnapshot(null);
       onEditingChange(null);
       return;
     }
     setValue(`lines.${index}`, original, { shouldDirty: true, shouldValidate: true });
+    releaseAlternatives();
     close(index);
   };
   const reorder = (from: number, to: number) => {
@@ -170,8 +202,11 @@ export function LineItems({
                 index={index}
                 count={fields.length}
                 rates={rates}
+                percents={known}
                 profile={profile}
                 goodsTreatment={goodsTreatment}
+                offersOptions={offersOptions}
+                onMarksChange={releaseAlternatives}
                 isNew={editing === index && original === null}
                 onApply={() => {
                   close(index);
@@ -184,6 +219,7 @@ export function LineItems({
                 }}
                 onRemove={() => {
                   remove(index);
+                  releaseAlternatives();
                   setSnapshot(null);
                   onEditingChange(null);
                 }}
@@ -194,6 +230,9 @@ export function LineItems({
                 index={index}
                 count={fields.length}
                 amount={amounts[index] ?? null}
+                rates={rates}
+                percents={known}
+                goodsTreatment={goodsTreatment}
                 dragState={
                   dragging === index
                     ? "dragging"
@@ -279,6 +318,9 @@ interface LineSummaryProps {
   readonly index: number;
   readonly count: number;
   readonly amount: string | null;
+  readonly rates: readonly TaxRate[] | undefined;
+  readonly percents: Percents;
+  readonly goodsTreatment: TaxTreatment | null | undefined;
   readonly dragState: "none" | "dragging" | "above" | "below";
   readonly onOpen: () => void;
   readonly onMove: (to: number) => void;
@@ -293,6 +335,9 @@ function LineSummary({
   index,
   count,
   amount,
+  rates,
+  percents,
+  goodsTreatment,
   dragState,
   onOpen,
   onMove,
@@ -306,11 +351,24 @@ function LineSummary({
   const { control } = useFormContext<DocumentFormValues>();
   const units = useQuery(unitsQuery);
   const line = useWatch({ control, name: `lines.${index}` });
+  const lines = useWatch({ control, name: "lines" });
   const currency = useWatch({ control, name: "currency" });
-  const number = index + 1;
+  // The number the PDF prints; text lines and pass-through items have none.
+  const position = positionNumbers(lines).get(line.key);
+  const tag = inTotalTag(lines, index);
   const unit = units.data?.find((candidate) => candidate.code === line.unit);
   const unitLabel = unit === undefined ? "" : unitName(locale, unit);
   const isItem = line.kind === "item";
+  // The rate as the line shows it (variant 3B): "8.1 %", or with its name where unclear.
+  const rate =
+    line.tax === PASS_THROUGH
+      ? t("documents.passThroughShort")
+      : shortRate(
+          rates ?? [],
+          line.tax,
+          linePercents(percents, ownTreatment(line.supply, goodsTreatment)),
+          locale,
+        );
   // What the user typed, in the number format of the language; unparsable input as typed.
   const display = (input: string, format: (value: string) => string) => {
     const value = parseDecimal(input, locale);
@@ -348,7 +406,9 @@ function LineSummary({
           onDrop();
         }}
         onDragEnd={onDragEnd}
-        aria-label={t("documents.editLine", { number, description: line.description })}
+        aria-label={lineLabel(t, "documents.editLine", position, {
+          description: line.description,
+        })}
         className="group -mx-2 grid w-[calc(100%+1rem)] grid-cols-[1.75rem_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-0.5 rounded-md px-2 py-3 text-left transition-colors hover:bg-muted focus-visible:bg-muted"
         onClick={onOpen}
         onKeyDown={(event) => {
@@ -362,15 +422,21 @@ function LineSummary({
         }}
       >
         <span className="relative text-sm text-muted-foreground tabular-nums">
-          <span className="group-hover:invisible">{isItem ? number : ""}</span>
+          <span className="group-hover:invisible">{position ?? ""}</span>
           <GripVerticalIcon
             className="invisible absolute top-0.5 left-0 size-4 cursor-grab group-hover:visible"
             aria-hidden="true"
           />
         </span>
         <span className="flex min-w-0 flex-col">
-          <span className={cn("break-words", isItem ? "font-medium" : "font-semibold")}>
-            {line.description}
+          <span
+            className={cn(
+              "flex flex-wrap items-center gap-x-2 gap-y-1",
+              isItem ? "font-medium" : "font-semibold",
+            )}
+          >
+            <span className="min-w-0 break-words">{line.description}</span>
+            <TotalTag tag={tag} />
           </span>
           {line.details === "" ? null : (
             <span className="text-sm break-words whitespace-pre-line text-muted-foreground">
@@ -386,12 +452,18 @@ function LineSummary({
               {line.discount_percent === "" || line.discount_percent === "0"
                 ? ""
                 : ` · −${display(line.discount_percent, (value) => formatNumber(value, locale, 2))} %`}
-              {line.tax_category === "pass_through" ? ` · ${t("documents.passThroughShort")}` : ""}
+              {rate === null ? "" : ` · ${rate}`}
               {line.supply === "goods" ? ` · ${t("supply.goods")}` : ""}
             </span>
           ) : null}
         </span>
-        <span className="flex items-center gap-2 text-right font-semibold tabular-nums">
+        <span
+          className={cn(
+            "flex items-center gap-2 text-right font-semibold tabular-nums",
+            // Not in the total: the amount is muted, as in the PDF (ADR 0045).
+            tag !== null && "font-normal text-muted-foreground",
+          )}
+        >
           {isItem && amount !== null ? formatMoney(amount, currency, locale) : ""}
           <PencilIcon
             className="size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
@@ -403,12 +475,37 @@ function LineSummary({
   );
 }
 
+/** "Optional" or "Alternative to 2" next to an item outside the total. */
+export function TotalTag({
+  tag,
+  className,
+}: {
+  readonly tag: InTotalTag;
+  readonly className?: string;
+}) {
+  const { t } = useI18n();
+  if (tag === null) return null;
+  return (
+    <Badge variant={tag.kind === "optional" ? "neutral" : "info"} className={className}>
+      {tag.kind === "optional"
+        ? t("documents.inTotalOptional")
+        : tag.number === null
+          ? t("documents.alternativeTagPlain")
+          : t("documents.alternativeTag", { number: tag.number })}
+    </Badge>
+  );
+}
+
 interface LineEditorProps {
-  readonly rates: Rates | undefined;
+  readonly rates: readonly TaxRate[] | undefined;
+  readonly percents: Percents;
   readonly profile: CountryProfile;
   readonly goodsTreatment: TaxTreatment | null | undefined;
   readonly index: number;
   readonly count: number;
+  readonly offersOptions: boolean;
+  /** Called after the line's place in the total changed. */
+  readonly onMarksChange: () => void;
   readonly isNew: boolean;
   readonly onApply: () => void;
   readonly onCancel: () => void;
@@ -420,8 +517,11 @@ function LineEditor({
   index,
   count,
   rates,
+  percents,
   profile,
   goodsTreatment,
+  offersOptions,
+  onMarksChange,
   isNew,
   onApply,
   onCancel,
@@ -435,17 +535,18 @@ function LineEditor({
   const kind = useWatch({ control, name: `lines.${index}.kind` });
   const currency = useWatch({ control, name: "currency" });
   const details = useWatch({ control, name: `lines.${index}.details` });
-  const taxCategory = useWatch({ control, name: `lines.${index}.tax_category` });
+  const tax = useWatch({ control, name: `lines.${index}.tax` });
   const supply = useWatch({ control, name: `lines.${index}.supply` });
   const line = useWatch({ control, name: `lines.${index}` });
   const own = ownTreatment(supply, goodsTreatment);
-  const offered = lineRates(rates, own);
   const [showDetails, setShowDetails] = useState(false);
   const [saveAsArticle, setSaveAsArticle] = useState(false);
   const createArticle = useCreateArticle();
   const errorMessage = useErrorMessage();
   const errors = formState.errors.lines?.[index];
-  const number = index + 1;
+  const lines = useWatch({ control, name: "lines" });
+  // The number the PDF prints; text lines and pass-through items have none.
+  const position = positionNumbers(lines).get(line.key);
   const path = (field: string) => `lines.${String(index)}.${field}`;
   const id = (field: string) => fieldId(path(field));
   const describedBy = (field: keyof NonNullable<typeof errors>) =>
@@ -500,7 +601,7 @@ function LineEditor({
 
   return (
     <li
-      aria-label={t("documents.lineLabel", { number })}
+      aria-label={lineLabel(t, "documents.lineLabel", position)}
       className="my-2 flex flex-col gap-3 rounded-lg border border-primary/50 bg-card p-4 shadow-sm ring-3 ring-ring/15"
     >
       <div className="flex flex-col gap-1.5">
@@ -536,7 +637,7 @@ function LineEditor({
         {showDetails || details !== "" ? (
           <>
             <label htmlFor={id("details")} className="sr-only">
-              {t("documents.lineDetails", { number })}
+              {lineLabel(t, "documents.lineDetails", position)}
             </label>
             <Textarea
               id={id("details")}
@@ -558,7 +659,7 @@ function LineEditor({
             }}
           >
             {t("documents.addDetails")}
-            <span className="sr-only">{t("documents.lineLabel", { number })}</span>
+            <span className="sr-only">{lineLabel(t, "documents.lineLabel", position)}</span>
           </Button>
         )}
       </div>
@@ -628,43 +729,46 @@ function LineEditor({
             <ErrorText id={`${id("discount_percent")}-error`} error={errors?.discount_percent} />
           </div>
           <div className="col-span-2 flex flex-col gap-1.5">
-            <label htmlFor={id("tax_category")} className="text-sm font-medium">
+            <label htmlFor={id("tax")} className="text-sm font-medium">
               {t("documents.lineTax")}
             </label>
-            <NativeSelect
-              id={id("tax_category")}
-              aria-describedby={
-                taxCategory === "pass_through" ? `${id("tax_category")}-pass-through` : undefined
-              }
-              onKeyDown={onKeyDown}
-              {...register(`lines.${index}.tax_category`)}
-            >
-              {TAX_CATEGORIES.filter(
-                // Categories without a rate in the country (e.g. no special rate in DE)
-                // are not offered, unless the line already uses one.
-                (category) => rates === undefined || category in rates || category === taxCategory,
-              ).map((category) => {
-                // Pass-through items carry no tax at all, not a rate of 0 %.
-                const rate = category === "pass_through" ? undefined : offered?.[category];
-                const label = taxCategoryLabel(category, profile, locale, t);
-                return (
-                  <option key={category} value={category}>
-                    {rate === undefined ? label : `${label} (${formatPercent(rate, locale)})`}
-                  </option>
-                );
-              })}
-            </NativeSelect>
-            {taxCategory === "pass_through" ? (
-              <p
-                id={`${id("tax_category")}-pass-through`}
-                className="text-xs text-muted-foreground"
-              >
+            <Controller
+              control={control}
+              name={`lines.${index}.tax`}
+              render={({ field }) => (
+                <TaxRateSelect
+                  id={id("tax")}
+                  ref={field.ref}
+                  value={field.value}
+                  rates={rates}
+                  percents={linePercents(percents, own)}
+                  profile={profile}
+                  aria-invalid={errors?.tax === undefined ? undefined : true}
+                  aria-describedby={
+                    errors?.tax === undefined
+                      ? tax === PASS_THROUGH
+                        ? `${id("tax")}-pass-through`
+                        : undefined
+                      : `${id("tax")}-error`
+                  }
+                  onKeyDown={onKeyDown}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                />
+              )}
+            />
+            <ErrorText id={`${id("tax")}-error`} error={errors?.tax} />
+            {tax === PASS_THROUGH ? (
+              <p id={`${id("tax")}-pass-through`} className="text-xs text-muted-foreground">
                 {t("documents.passThroughHint")}
               </p>
             ) : null}
           </div>
+          {offersOptions ? (
+            <InTotalField index={index} onKeyDown={onKeyDown} onChange={onMarksChange} />
+          ) : null}
           {/* Goods or services matter for the tax only: not for pass-through items. */}
-          {taxCategory === "pass_through" ? null : (
+          {tax === PASS_THROUGH ? null : (
             <div className="col-span-2 flex flex-col gap-1.5">
               <label htmlFor={id("supply")} className="text-sm font-medium">
                 {t("documents.lineSupply")}
@@ -732,7 +836,7 @@ function LineEditor({
             onClick={() => {
               onMove(index - 1);
             }}
-            aria-label={t("documents.moveUp", { number })}
+            aria-label={lineLabel(t, "documents.moveUp", position)}
           >
             <ArrowUpIcon aria-hidden="true" />
           </Button>
@@ -744,7 +848,7 @@ function LineEditor({
             onClick={() => {
               onMove(index + 1);
             }}
-            aria-label={t("documents.moveDown", { number })}
+            aria-label={lineLabel(t, "documents.moveDown", position)}
           >
             <ArrowDownIcon aria-hidden="true" />
           </Button>
@@ -754,13 +858,68 @@ function LineEditor({
             size="icon-sm"
             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={onRemove}
-            aria-label={t("documents.removeLine", { number })}
+            aria-label={lineLabel(t, "documents.removeLine", position)}
           >
             <Trash2Icon aria-hidden="true" />
           </Button>
         </span>
       </div>
     </li>
+  );
+}
+
+interface InTotalFieldProps {
+  readonly index: number;
+  readonly onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
+  readonly onChange: () => void;
+}
+
+/** Whether an item of a quote counts: yes, optional or instead of another item (ADR 0045). */
+function InTotalField({ index, onKeyDown, onChange }: InTotalFieldProps) {
+  const { t } = useI18n();
+  const { control, formState, setValue } = useFormContext<DocumentFormValues>();
+  const lines = useWatch({ control, name: "lines" });
+  const line = useWatch({ control, name: `lines.${index}` });
+  const error = formState.errors.lines?.[index]?.in_total;
+  const id = fieldId(`lines.${String(index)}.in_total`);
+  const choice = inTotalChoice(line);
+  const describedBy =
+    error === undefined ? (choice === "yes" ? undefined : `${id}-hint`) : `${id}-error`;
+  return (
+    <div className="col-span-2 flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm font-medium">
+        {t("documents.lineInTotal")}
+      </label>
+      <NativeSelect
+        id={id}
+        value={choice}
+        aria-invalid={error === undefined ? undefined : true}
+        aria-describedby={describedBy}
+        onKeyDown={onKeyDown}
+        onChange={(event) => {
+          const marks = parseInTotalChoice(event.target.value);
+          setValue(`lines.${index}.in_total`, marks.in_total, { shouldDirty: true });
+          setValue(`lines.${index}.alternative_to`, marks.alternative_to, { shouldDirty: true });
+          onChange();
+        }}
+      >
+        <option value="yes">{t("documents.inTotalYes")}</option>
+        <option value="optional">{t("documents.inTotalOptional")}</option>
+        {replaceableLines(lines, index).map((target) => (
+          <option key={target.key} value={`alternative:${target.key}`}>
+            {target.number === null
+              ? t("documents.inTotalAlternativeToLine", { description: target.description })
+              : t("documents.inTotalAlternativeTo", { number: target.number })}
+          </option>
+        ))}
+      </NativeSelect>
+      <ErrorText id={`${id}-error`} error={error} />
+      {error === undefined && choice !== "yes" ? (
+        <p id={`${id}-hint`} className="text-xs text-muted-foreground">
+          {t("documents.inTotalHint")}
+        </p>
+      ) : null}
+    </div>
   );
 }
 

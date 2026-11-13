@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from rhinvoice.application.numbering.ports import NumberSequenceRepository
     from rhinvoice.application.onboarding.ports import OnboardingRepository
     from rhinvoice.application.recurring.ports import RecurringRepository
+    from rhinvoice.application.tax.ports import TaxRateRepository
     from rhinvoice.application.text.ports import LegalNoticeRepository, TextTemplateRepository
 
 
@@ -46,6 +47,9 @@ class UnitOfWork(Protocol):
 
     @property
     def customers(self) -> CustomerRepository: ...
+
+    @property
+    def tax_rates(self) -> TaxRateRepository: ...
 
     @property
     def articles(self) -> ArticleRepository: ...

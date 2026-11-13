@@ -30,11 +30,12 @@ Rhinvoice scrive **offerte, fatture, fatture di storno e solleciti** per aziende
 - Creare un nuovo cliente direttamente dalla fattura, in un pannello accanto
 - Ciò che manca ancora per l’emissione appare in alto nell’editor, con un pulsante verso il modulo giusto
 - I numeri vengono assegnati solo all’emissione, senza lacune e senza doppioni
-- Numerazioni con un modello proprio (`{YYYY}`, `{YY}`, `{MM}`, `{NNNN}`), azzeramento annuale e anteprima del prossimo numero
+- Numerazioni con un modello proprio (`{YYYY}`, `{YY}`, `{MM}`, `{DD}`, `{NNNN}`), azzeramento annuale e anteprima del prossimo numero
 - I documenti emessi sono bloccati, anche nella banca dati, e il PDF viene conservato con la sua somma di controllo SHA-256 (art. 958f CO, GoBD, BAO)
 - Correzioni solo con una fattura di storno con un proprio numero
 - Segnare le offerte come inviate, accettate o rifiutate; dopo la validità (30 giorni per impostazione predefinita) risultano scadute
-- *Converti in fattura* crea una bozza di fattura da un’offerta
+- Posizioni opzionali e alternative nelle offerte: importo tra parentesi, fuori dal totale
+- *Converti in fattura* crea una bozza di fattura da un’offerta, con le posizioni scelte dal cliente
 - *Duplica* crea una copia come bozza
 - Cronologia per documento, per esempio emissione, pagamenti, solleciti, e-mail e scelta manuale del trattamento fiscale
 - Elenchi con viste (*Bozze*, *Aperti*, *Scaduti*, *Pagati*, *Stornati*, *Registrati come perdita*), filtri per anno e cliente, totali
@@ -66,6 +67,8 @@ Guide: [Pagamenti e solleciti](/docs/it/invoices/payments-and-reminders/), [Stra
 - Svizzera e Liechtenstein: 8.1 / 2.6 / 3.8 %, più le aliquote precedenti dal 2011
 - Germania: 19 / 7 %, più 16 / 5 % per il secondo semestre 2020
 - Austria: 20 / 10 / 13 %
+- Aliquote IVA proprie per azienda con modelli per Paese, p. es. le aliquote medie del § 24 UStG; una nuova percentuale si aggiunge con la sua data
+- Categoria di ogni aliquota per la fattura elettronica (S, Z, E), verificata secondo EN 16931 al salvataggio
 - Trattamento fiscale determinato dal paese dell’azienda, dal paese del cliente e dal suo numero IVA: nazionale, inversione contabile, cessione intracomunitaria, cessione all’esportazione, esportazione, piccola impresa, esente
 - Scelta manuale del trattamento fiscale con un motivo che finisce nella cronologia
 - Beni e servizi tenuti separati, anche nelle fatture miste, ognuno con la sua indicazione
@@ -77,7 +80,7 @@ Guide: [Pagamenti e solleciti](/docs/it/invoices/payments-and-reminders/), [Stra
 - Termini per paese: IVA e IDI in Svizzera e Liechtenstein, USt. e USt-IdNr. in Germania, USt. e UID in Austria
 - Altri paesi si possono aggiungere come profilo di paese proprio
 
-Guide: [Svizzera](/docs/it/countries/switzerland/), [Liechtenstein](/docs/it/countries/liechtenstein/), [Germania](/docs/it/countries/germany/), [Austria](/docs/it/countries/austria/), [Altri paesi](/docs/it/countries/more-countries/)
+Guide: [Svizzera](/docs/it/countries/switzerland/), [Liechtenstein](/docs/it/countries/liechtenstein/), [Germania](/docs/it/countries/germany/), [Austria](/docs/it/countries/austria/), [Altri paesi](/docs/it/countries/more-countries/), [Aliquote IVA proprie](/docs/it/invoices/tax-rates/)
 
 ## Codici QR di pagamento e conti bancari
 

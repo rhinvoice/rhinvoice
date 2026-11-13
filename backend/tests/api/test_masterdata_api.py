@@ -1,5 +1,9 @@
+import pytest
 from fastapi.testclient import TestClient
 
+from rhinvoice.domain.shared.identifier import new_id
+from rhinvoice.domain.tax.presets import REDUCED, STANDARD
+from tests.unit.domain import factories
 from tests.unit.domain.factories import CH_IBAN, CH_QR_IBAN
 
 ADDRESS = {
@@ -207,6 +211,7 @@ def test_customer_validation(user_client: TestClient) -> None:
     assert unknown_param.status_code == 422
 
 
+@pytest.mark.usefixtures("customer_id")
 def test_articles(user_client: TestClient) -> None:
     created = user_client.post(
         "/api/articles",
@@ -223,7 +228,17 @@ def test_articles(user_client: TestClient) -> None:
     assert article["unit_label_de"] == "Std."
     assert article["prices"] == {"CHF": "150.00", "EUR": "160.00"}
     assert user_client.get(f"/api/articles/{article['id']}").json() == article
-    assert article["tax_category"] == "standard"
+    assert (article["tax_category"], article["tax_rate_id"]) == (
+        "standard",
+        str(factories.rate_id(STANDARD)),
+    )
+    book = {"name": "Buch", "tax_rate_id": str(factories.rate_id(REDUCED))}
+    assert user_client.post("/api/articles", json=book).json()["tax_rate_id"] == book["tax_rate_id"]
+    fee = user_client.post("/api/articles", json={"name": "Gebühr", "pass_through": True}).json()
+    assert (fee["tax_category"], fee["tax_rate_id"]) == ("pass_through", None)
+    unknown = user_client.post("/api/articles", json={"name": "X", "tax_rate_id": str(new_id())})
+    assert unknown.status_code == 422
+    assert unknown.json()["error"]["code"] == "tax_rate_unknown"
     updated = user_client.put(
         f"/api/articles/{article['id']}", json={"name": "Beratung Senior", "prices": {"CHF": "180"}}
     )
@@ -238,7 +253,7 @@ def test_articles(user_client: TestClient) -> None:
     assert updated.json()["unit"] == "C62"
     assert user_client.get("/api/articles", params={"q": "senior"}).json()["total"] == 1
     assert user_client.post(f"/api/articles/{article['id']}/archive").json()["archived"] is True
-    assert user_client.get("/api/articles").json()["total"] == 1
+    assert user_client.get("/api/articles").json()["total"] == 3
     assert user_client.post(f"/api/articles/{article['id']}/restore").json()["archived"] is False
     assert user_client.get(f"/api/articles/{article['id']}").json()["name"] == "Beratung Senior"
     invalid = user_client.post("/api/articles", json={"name": "X", "prices": {"CHF": "1.00001"}})
@@ -299,6 +314,7 @@ def test_country_profiles(user_client: TestClient) -> None:
     assert profiles["AT"]["rates"]["special"] == "13"
 
 
+@pytest.mark.usefixtures("customer_id")
 def test_number_conflicts_point_to_the_number_field(user_client: TestClient) -> None:
     body = {"kind": "company", "company_name": "X", "address": ADDRESS, "number": "7"}
     assert user_client.post("/api/customers", json=body).status_code == 201

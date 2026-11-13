@@ -18,8 +18,8 @@
 
 ## What Rhinvoice does
 
-- **Documents:** quotes, invoices and cancellation invoices with a live paper preview; numbers assigned without gaps when a document is issued; issued documents cannot be changed (GoBD, Swiss OR 958f, Austrian BAO), corrections only by cancellation.
-- **VAT per country:** dated rates for CH, LI, DE and AT; the tax treatment (domestic, reverse charge, intra-Community supply of goods, export, small business, exempt) follows from the countries of company and customer, with the legally required notice on the invoice; goods and services are treated separately.
+- **Documents:** quotes, invoices and cancellation invoices with a live paper preview; quotes with optional and alternative items outside the total, turned into an invoice with the items the customer chose; numbers assigned without gaps when a document is issued; issued documents cannot be changed (GoBD, Swiss OR 958f, Austrian BAO), corrections only by cancellation.
+- **VAT per country:** dated rates for CH, LI, DE and AT as the company's own tax rates, with presets per country (incl. the German average rates of § 24 UStG) and own rates, each with its e-invoice category (S, Z, E) checked against EN 16931; the tax treatment (domestic, reverse charge, intra-Community supply of goods, export, small business, exempt) follows from the countries of company and customer, with the legally required notice on the invoice; goods and services are treated separately.
 - **Payment codes and bank accounts:** Swiss QR-bill (QR or creditor reference) for Switzerland and Liechtenstein; EPC QR code (GiroCode) for euro invoices; several bank accounts per currency, one as default, another chosen per quote or invoice; an account can belong to a third party such as a financial service provider (factoring), which the PDF, the QR-bill and the e-invoice then name as payee.
 - **E-invoices:** ZUGFeRD / Factur-X (EN 16931) embedded in every PDF (PDF/A-3b); XRechnung 3.0 for German public authorities; validated with the KoSIT validator and Mustang.
 - **Print templates and fields:** several named print templates, one the default, another per customer or per invoice; each sets the design, logo place, footer and the details top right in their order (customer number, due date, date of supply and reference can be hidden). Fields for project, contract, purchase order, sales order, delivery note, tender or lot, object and cost centre also go into the e-invoice (BT-11 to BT-19); own fields print in the PDF. A sample PDF marked as such can be sent before switching.
@@ -103,6 +103,7 @@ The user documentation, in English (https://rhinvoice.com/docs/) and German (htt
 - [Export for bookkeeping](https://rhinvoice.com/docs/invoices/export/): Excel, CSV or PDF list of a period, with the invoice PDFs as ZIP
 - [Pass-through items](https://rhinvoice.com/docs/invoices/pass-through/): fees paid in the customer's name without VAT, in a block of their own, with the third-party invoice attached
 - [Print templates](https://rhinvoice.com/docs/invoices/print-templates/): several templates, one per customer or invoice, with a sample PDF
+- [Own tax rates](https://rhinvoice.com/docs/invoices/tax-rates/): rates per company with presets per country, dated percentages, the German average rates of § 24 UStG, categories S, Z and E checked for the e-invoice
 - [Taking over old invoices](https://rhinvoice.com/docs/moving/old-invoices/): from the previous program, with the original PDFs
 - [Backup and restore](https://rhinvoice.com/docs/operations/backup/)
 - [Backup in the program for Windows and Mac](https://rhinvoice.com/docs/operations/backup-desktop/)

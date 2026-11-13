@@ -37,7 +37,9 @@ from rhinvoice.domain.shared.country import Country
 from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
+from rhinvoice.domain.tax.presets import RatePreset
 from rhinvoice.domain.tax.rates import TaxRateSet
+from rhinvoice.domain.tax.tax_rate import RateCategory, RateValue
 from rhinvoice.domain.tax.treatment import TaxTreatment, VatRules, VatSystem
 
 if TYPE_CHECKING:
@@ -104,6 +106,68 @@ def check_invoice(company: Company, customer: Customer, total: Money) -> None:  
             code="company_tax_id_missing",
         )
 
+
+_AVERAGE_RATE_SOURCES = (
+    "https://www.gesetze-im-internet.de/ustg_1980/__24.html (Abs. 1 Satz 1 Nr. 1 to 3, Satz 4)",
+    "BGBl. 2024 I Nr. 387, Art. 25 (Nr. 3: 7,8 Prozent from 2025-01-01)",
+)
+_AVERAGE_RATE_NOTICE = {
+    Language.DE: "Besteuerung nach Durchschnittssätzen (§ 24 UStG)",
+    Language.EN: "Taxed at average rates (§ 24 UStG)",
+    Language.FR: "Imposition selon les taux moyens (§ 24 UStG)",
+    Language.IT: "Imposizione secondo le aliquote medie (§ 24 UStG)",
+}
+"""§ 24 Abs. 1 Satz 4 UStG: the invoice states the average rate; the line shows it, the notice
+names the scheme."""
+# Only the values of the law in force since 2025 (earlier ones changed several times); users
+# add older values to their rate where they need them.
+_SINCE_2025 = date(2025, 1, 1)
+
+
+_LANGUAGES = (Language.DE, Language.EN, Language.FR, Language.IT)
+AVERAGE_RATES = tuple(
+    RatePreset(
+        key,
+        dict(zip(_LANGUAGES, names, strict=True)),
+        RateCategory.STANDARD,
+        (RateValue(_SINCE_2025, Decimal(percent)),),
+        notices=_AVERAGE_RATE_NOTICE,
+        sources=_AVERAGE_RATE_SOURCES,
+    )
+    for key, percent, names in (
+        (
+            "de_24_forestry",
+            "5.5",
+            (
+                "Forstwirtschaft § 24 (5,5 %)",
+                "Forestry § 24 (5.5 %)",
+                "Sylviculture § 24 (5,5 %)",
+                "Silvicoltura § 24 (5,5 %)",
+            ),
+        ),
+        (
+            "de_24_beverages",
+            "19",
+            (
+                "Getränke, Sägewerkserzeugnisse § 24 (19 %)",
+                "Beverages, sawmill products § 24 (19 %)",
+                "Boissons, produits de scierie § 24 (19 %)",
+                "Bevande, prodotti di segheria § 24 (19 %)",
+            ),
+        ),
+        (
+            "de_24_other",
+            "7.8",
+            (
+                "Landwirtschaft § 24 (7,8 %)",
+                "Agriculture § 24 (7.8 %)",
+                "Agriculture § 24 (7,8 %)",
+                "Agricoltura § 24 (7,8 %)",
+            ),
+        ),
+    )
+)
+"""§ 24 UStG average rates for farmers and foresters (#80)."""
 
 PROFILE = CountryProfile(
     country=Country.DE,
@@ -207,4 +271,5 @@ PROFILE = CountryProfile(
         "https://eur-lex.europa.eu/eli/dir/2010/45/oj (art. 226, 11 bis, French and Italian)",
         "https://eur-lex.europa.eu/eli/dir/2020/285/oj (art. 284, French and Italian)",
     ),
+    scheme_presets=AVERAGE_RATES,
 )

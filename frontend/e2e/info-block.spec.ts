@@ -122,7 +122,9 @@ test("a hidden row is still asked for, with a hint that fits the document", asyn
       lines,
     });
     await openApp(page, `/documents/${quote.id}`, "Angebot (Entwurf)");
-    await expect(reference).toHaveAccessibleDescription(/Nicht im PDF \(Druckvorlage\)\.$/);
+    await expect(reference).toHaveAccessibleDescription(
+      "z. B. Bestellnummer des Kunden. Nicht im PDF (Druckvorlage).",
+    );
     await expect(reference).not.toHaveAccessibleDescription(/E-Rechnung|XRechnung/);
     await expectAccessible(page);
   } finally {

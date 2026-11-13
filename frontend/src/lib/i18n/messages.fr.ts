@@ -959,10 +959,10 @@ export const fr: Catalog<MessageKey> = {
   "documents.subject": "Objet",
   "documents.subjectHint": "p. ex. « Refonte du site web, phase 2 »",
   "documents.reference": "Référence",
-  "documents.referenceHint": "p. ex. numéro de commande du client",
+  "documents.referenceHint": "p. ex. numéro de commande du client.",
   "documents.referenceHintXRechnung":
-    "Numéro de commande ou similaire – nécessaire pour la XRechnung",
-  "documents.referenceHintFixed": "La XRechnung utilise la Leitweg-ID du client : {value}",
+    "Numéro de commande ou similaire – nécessaire pour la XRechnung.",
+  "documents.referenceHintFixed": "La XRechnung utilise la Leitweg-ID du client : {value}.",
   "documents.currency": "Monnaie",
   "documents.language": "Langue",
   "documents.sectionDates": "Dates",

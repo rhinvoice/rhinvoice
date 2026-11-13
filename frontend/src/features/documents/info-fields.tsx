@@ -36,19 +36,27 @@ function useDocumentLayout() {
  * A row the layout hides stays to be filled in: the e-invoice carries it all the same (and
  * the date of supply decides the VAT rate). Only fields of the document's layout are shown;
  * values of fields it does not list stay with the document and come back with a layout that
- * lists them. Plans set the service period themselves.
+ * lists them. Plans set the service period themselves. Quotes get no e-invoice, so they are
+ * spared its hints.
  */
-export function InfoInputs({ plan }: { readonly plan: boolean }) {
+export function InfoInputs({
+  plan,
+  eInvoice,
+}: {
+  readonly plan: boolean;
+  readonly eInvoice: boolean;
+}) {
   const { t } = useI18n();
   const { register, formState, control } = useFormContext<DocumentFormValues>();
   const errors = formState.errors;
   const { layout } = useDocumentLayout();
   const customerId = useWatch({ control, name: "customer_id" });
   const customer = useQuery({ ...customerOptionQuery(customerId), enabled: customerId !== "" });
-  const hint = referenceHint(customerId === "" ? undefined : customer.data);
+  const hint = referenceHint(customerId === "" || !eInvoice ? undefined : customer.data);
   const entries = layout === undefined ? [] : layout.layout.info_block;
   const hidden = (key: InfoRow) => entries.some((entry) => entry.key === key && !entry.shown);
-  const onlyEInvoice = (key: InfoRow) => (hidden(key) ? t("documents.onlyInEInvoice") : null);
+  const notPrinted = (key: InfoRow) =>
+    hidden(key) ? t(eInvoice ? "documents.onlyInEInvoice" : "documents.notInPdf") : null;
   return (
     <div className="grid gap-4 @md:grid-cols-2">
       {plan ? (
@@ -66,7 +74,7 @@ export function InfoInputs({ plan }: { readonly plan: boolean }) {
           </Field>
           <Field
             label={t("documents.serviceTo")}
-            description={[t("documents.serviceHint"), onlyEInvoice("service_date")]
+            description={[t("documents.serviceHint"), notPrinted("service_date")]
               .filter(Boolean)
               .join(" ")}
             error={errors.service_to?.message}
@@ -79,7 +87,7 @@ export function InfoInputs({ plan }: { readonly plan: boolean }) {
       <Field
         className="@md:col-span-2"
         label={t("documents.reference")}
-        description={[t(hint.key, { value: hint.value }), onlyEInvoice("reference")]
+        description={[t(hint.key, { value: hint.value }), notPrinted("reference")]
           .filter(Boolean)
           .join(" ")}
         error={errors.reference?.message}

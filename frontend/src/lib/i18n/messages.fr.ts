@@ -888,6 +888,7 @@ export const fr: Catalog<MessageKey> = {
   "documents.reverseChargeHint":
     "Autoliquidation (reverse charge) : pas de {tax}. La mention et l’IDE / le n° TVA du client figurent automatiquement sur le document.",
   "documents.sectionMore": "Autres informations",
+  "documents.notInPdf": "Pas dans le PDF (mise en page).",
   "documents.onlyInEInvoice":
     "Pas dans le PDF (mise en page), seulement dans la facture électronique.",
   "recurring.servicePeriodByPlan":
@@ -958,10 +959,10 @@ export const fr: Catalog<MessageKey> = {
   "documents.subject": "Objet",
   "documents.subjectHint": "p. ex. « Refonte du site web, phase 2 »",
   "documents.reference": "Référence",
-  "documents.referenceHint": "p. ex. numéro de commande du client",
+  "documents.referenceHint": "p. ex. numéro de commande du client.",
   "documents.referenceHintXRechnung":
-    "Numéro de commande ou similaire – nécessaire pour la XRechnung",
-  "documents.referenceHintFixed": "La XRechnung utilise la Leitweg-ID du client : {value}",
+    "Numéro de commande ou similaire – nécessaire pour la XRechnung.",
+  "documents.referenceHintFixed": "La XRechnung utilise la Leitweg-ID du client : {value}.",
   "documents.currency": "Monnaie",
   "documents.language": "Langue",
   "documents.sectionDates": "Dates",

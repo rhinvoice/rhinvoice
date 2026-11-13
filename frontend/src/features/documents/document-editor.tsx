@@ -704,7 +704,7 @@ export function DocumentEditor<Saved = DocumentDetail>({
                   </div>
                 </div>
               ) : null}
-              <InfoInputs plan={plan !== undefined} />
+              <InfoInputs plan={plan !== undefined} eInvoice={type === "invoice"} />
               <BankAccountChoice />
             </Card>
 

@@ -87,3 +87,50 @@ test("the print template lists the facts top right, with fields for every invoic
     });
   }
 });
+
+test("a hidden row is still asked for, with a hint that fits the document", async ({
+  page,
+}, testInfo) => {
+  const before = await defaultLayout(page);
+  try {
+    const hidden = before.layout.info_block.map((entry) =>
+      entry.key === "reference" ? { ...entry, shown: false } : entry,
+    );
+    await page.request.put(`/api/print-layouts/${before.id}`, {
+      data: { name: before.name, layout: { ...before.layout, info_block: hidden } },
+      headers: HEADERS,
+    });
+    const customerId = await createCustomer(page, `Hinweis ${unique(testInfo.project.name)} AG`);
+    const lines = [{ description: "Beratung", quantity: "1", unit: "HUR", unit_price: "150" }];
+
+    // The invoice still sends the reference in its e-invoice.
+    const invoice = await post<{ id: string }>(page, "/api/documents", {
+      type: "invoice",
+      customer_id: customerId,
+      lines,
+    });
+    await openApp(page, `/documents/${invoice.id}`, "Rechnung (Entwurf)");
+    const reference = page.getByRole("region", { name: "Daten" }).getByRole("textbox", {
+      name: "Referenz",
+    });
+    await expect(reference).toHaveAccessibleDescription(/nur in der E-Rechnung/);
+
+    // A quote has no e-invoice: it only says the PDF leaves the reference out.
+    const quote = await post<{ id: string }>(page, "/api/documents", {
+      type: "quote",
+      customer_id: customerId,
+      lines,
+    });
+    await openApp(page, `/documents/${quote.id}`, "Angebot (Entwurf)");
+    await expect(reference).toHaveAccessibleDescription(
+      "z. B. Bestellnummer des Kunden. Nicht im PDF (Druckvorlage).",
+    );
+    await expect(reference).not.toHaveAccessibleDescription(/E-Rechnung|XRechnung/);
+    await expectAccessible(page);
+  } finally {
+    await page.request.put(`/api/print-layouts/${before.id}`, {
+      data: { name: before.name, layout: before.layout },
+      headers: HEADERS,
+    });
+  }
+});

@@ -880,6 +880,7 @@ export const it: Catalog<MessageKey> = {
   "documents.reverseChargeHint":
     "Inversione contabile (reverse charge): nessuna {tax}. L’indicazione e l’IDI del cliente vengono riportate automaticamente sul documento.",
   "documents.sectionMore": "Altri dati",
+  "documents.notInPdf": "Non nel PDF (layout).",
   "documents.onlyInEInvoice": "Non nel PDF (layout), solo nella fattura elettronica.",
   "recurring.servicePeriodByPlan":
     "Il piano inserisce da sé il periodo della prestazione se sopra «Inserisci il periodo della prestazione» è attivo.",
@@ -945,9 +946,9 @@ export const it: Catalog<MessageKey> = {
   "documents.subject": "Oggetto",
   "documents.subjectHint": "p. es. «Rifacimento del sito web, fase 2»",
   "documents.reference": "Riferimento",
-  "documents.referenceHint": "p. es. numero d’ordine del cliente",
-  "documents.referenceHintXRechnung": "Numero d’ordine o simile – necessario per la XRechnung",
-  "documents.referenceHintFixed": "La XRechnung usa la Leitweg-ID del cliente: {value}",
+  "documents.referenceHint": "p. es. numero d’ordine del cliente.",
+  "documents.referenceHintXRechnung": "Numero d’ordine o simile – necessario per la XRechnung.",
+  "documents.referenceHintFixed": "La XRechnung usa la Leitweg-ID del cliente: {value}.",
   "documents.currency": "Valuta",
   "documents.language": "Lingua",
   "documents.sectionDates": "Date",

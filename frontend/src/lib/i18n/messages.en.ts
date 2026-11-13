@@ -839,6 +839,7 @@ export const en: Catalog<MessageKey> = {
   "documents.reverseChargeHint":
     "Reverse charge: no {tax}. The notice and the customer's VAT number are added automatically.",
   "documents.sectionMore": "More details",
+  "documents.notInPdf": "Not in the PDF (print template).",
   "documents.onlyInEInvoice": "Not in the PDF (print template), only in the e-invoice.",
   "recurring.servicePeriodByPlan":
     "The plan enters the service period itself when “Fill in the service period” is switched on above.",
@@ -904,9 +905,9 @@ export const en: Catalog<MessageKey> = {
   "documents.subject": "Subject",
   "documents.subjectHint": "e.g. “Website relaunch, phase 2”",
   "documents.reference": "Reference",
-  "documents.referenceHint": "e.g. the customer's order number",
-  "documents.referenceHintXRechnung": "Order number or similar – needed for the XRechnung",
-  "documents.referenceHintFixed": "The XRechnung uses the customer's Leitweg-ID: {value}",
+  "documents.referenceHint": "e.g. the customer's order number.",
+  "documents.referenceHintXRechnung": "Order number or similar – needed for the XRechnung.",
+  "documents.referenceHintFixed": "The XRechnung uses the customer's Leitweg-ID: {value}.",
   "documents.currency": "Currency",
   "documents.language": "Language",
   "documents.sectionDates": "Dates",

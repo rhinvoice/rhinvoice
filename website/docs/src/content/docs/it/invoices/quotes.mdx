@@ -10,6 +10,8 @@ faq:
     a: No. «Segna come inviata» assegna all’offerta il suo numero e la blocca. Per modificarla, la duplichi e segni la copia come inviata.
   - q: Un’offerta si può trasformare in fattura più di una volta?
     a: No, una sola volta. Se elimina la bozza di fattura creata, l’offerta può essere di nuovo trasformata in fattura.
+  - q: Un’offerta può contenere posizioni opzionali o alternative?
+    a: "Sì. Apra la posizione e scelga in «Nel totale» «Opzionale» oppure «Alternativa alla pos.» e la posizione che sostituisce. Queste posizioni mostrano il loro importo tra parentesi, ma non contano nel totale."
 ---
 
 import Faq from "../../../../components/Faq.astro";
@@ -46,6 +48,20 @@ Da *Inviata* in poi un’offerta non cambia più. Per una versione modificata sc
 
 *Accettata* e *Rifiutata* li imposta Lei con i pulsanti omonimi sull’offerta inviata. *Scaduta* non la imposta nessuno: Rhinvoice la deriva dalla data di validità. Nell’elenco in *Offerte*, *Vista* filtra per ciascuno di questi stati.
 
+## Posizioni opzionali e alternative
+
+Un’offerta può proporre più di quanto il cliente debba ordinare: un’estensione in aggiunta, oppure un secondo pacchetto al posto del primo. Queste posizioni mostrano il loro importo, ma il totale dell’offerta non le comprende.
+
+<Steps>
+
+1. Clicchi sulla posizione tra le posizioni dell’offerta.
+2. In *Nel totale* scelga *Opzionale* per un’estensione, oppure *Alternativa alla pos. …* e la posizione che sostituisce. Si possono sostituire solo posizioni che sono a loro volta nel totale.
+3. Clicchi su *Applica*. La posizione mostra l’etichetta *Opzionale* o *Alternativa a …*, e il suo importo è in grigio.
+
+</Steps>
+
+Nel PDF le posizioni restano al loro posto, in grigio, con una piccola nota («Opzionale», «Alternativa alla pos. 2») e l’importo tra parentesi. Sotto i totali una nota indica che gli importi tra parentesi non sono compresi nel totale. IVA, sconto e arrotondamento contano solo le posizioni nel totale, così come l’importo aperto nella panoramica. Se la posizione sostituita viene eliminata o diventa a sua volta opzionale, l’alternativa diventa opzionale. Solo le offerte hanno tali posizioni; nelle fatture e nelle fatture ricorrenti conta ogni riga.
+
 ## Trasformare un’offerta in fattura
 
 Su un’offerta inviata o accettata scelga *Altre azioni → Converti in fattura*. Rhinvoice crea una **bozza di fattura**:
@@ -56,6 +72,8 @@ Su un’offerta inviata o accettata scelga *Altre azioni → Converti in fattura
 - con un collegamento all’offerta. Un’offerta inviata conta da quel momento come *Accettata*.
 
 Controlli la bozza, la completi se necessario e la emetta come qualsiasi altra fattura ([emettere e stornare](/docs/it/invoices/issue-and-cancel/)). L’aliquota IVA segue allora la data della prestazione della fattura, non quella dell’offerta.
+
+Se l’offerta contiene posizioni opzionali o alternative, *Converti in fattura* chiede prima che cosa ha preso il cliente: *Posizioni per la fattura* elenca ogni posizione con una casella, con le posizioni nel totale già selezionate, e mostra il totale della fattura per la Sua scelta. **Crea fattura** riprende le posizioni selezionate come posizioni normali, senza nota; le righe di testo vengono sempre riprese. Almeno una posizione deve essere selezionata. Un’offerta senza tali posizioni diventa subito una fattura, come prima.
 
 Un’offerta diventa fattura una **sola volta**. Se elimina la bozza di fattura, l’offerta torna libera. *Apri fattura* o *Apri bozza di fattura* La porta dall’offerta alla fattura, *Apri documento d’origine* indietro.
 

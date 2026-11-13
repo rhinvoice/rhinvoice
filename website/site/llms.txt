@@ -18,7 +18,7 @@
 
 ## What Rhinvoice does
 
-- **Documents:** quotes, invoices and cancellation invoices with a live paper preview; numbers assigned without gaps when a document is issued; issued documents cannot be changed (GoBD, Swiss OR 958f, Austrian BAO), corrections only by cancellation.
+- **Documents:** quotes, invoices and cancellation invoices with a live paper preview; quotes with optional and alternative items outside the total, turned into an invoice with the items the customer chose; numbers assigned without gaps when a document is issued; issued documents cannot be changed (GoBD, Swiss OR 958f, Austrian BAO), corrections only by cancellation.
 - **VAT per country:** dated rates for CH, LI, DE and AT as the company's own tax rates, with presets per country (incl. the German average rates of § 24 UStG) and own rates, each with its e-invoice category (S, Z, E) checked against EN 16931; the tax treatment (domestic, reverse charge, intra-Community supply of goods, export, small business, exempt) follows from the countries of company and customer, with the legally required notice on the invoice; goods and services are treated separately.
 - **Payment codes and bank accounts:** Swiss QR-bill (QR or creditor reference) for Switzerland and Liechtenstein; EPC QR code (GiroCode) for euro invoices; several bank accounts per currency, one as default, another chosen per quote or invoice; an account can belong to a third party such as a financial service provider (factoring), which the PDF, the QR-bill and the e-invoice then name as payee.
 - **E-invoices:** ZUGFeRD / Factur-X (EN 16931) embedded in every PDF (PDF/A-3b); XRechnung 3.0 for German public authorities; validated with the KoSIT validator and Mustang.

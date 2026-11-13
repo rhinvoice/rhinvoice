@@ -36,6 +36,7 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 
 **Documents**
 - Quotes, invoices and cancellation invoices; turn a quote into an invoice, duplicate, cancel
+- Optional and alternative items in quotes; the invoice takes the items the customer chose
 - Editor with a live paper preview, line and document discounts, net or gross prices
 - Numbers assigned when issuing, without gaps; issued documents are immutable, also in the
   database (GoBD, OR 958f, BAO), the PDF is kept with its SHA-256

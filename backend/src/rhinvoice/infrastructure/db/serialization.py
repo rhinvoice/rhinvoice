@@ -11,7 +11,6 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from rhinvoice.domain.catalog.unit import Unit
 from rhinvoice.domain.company.bank_account import BankAccount
 from rhinvoice.domain.company.company import Company
 from rhinvoice.domain.company.print_layout import (
@@ -455,7 +454,7 @@ def template_to_json(template: InvoiceTemplate) -> Json:
                 "description": line.description,
                 "details": line.details,
                 "quantity": str(line.quantity),
-                "unit": None if line.unit is None else line.unit.code,
+                "unit_id": _opt(line.unit_id),
                 "unit_price": str(line.unit_price),
                 "discount_percent": str(line.discount_percent),
                 "tax_category": line.tax_category.value,
@@ -497,7 +496,7 @@ def template_from_json(data: Json) -> InvoiceTemplate:
                 description=line["description"],
                 details=line["details"],
                 quantity=Decimal(line["quantity"]),
-                unit=None if line["unit"] is None else Unit(line["unit"]),
+                unit_id=_optional_uuid(line.get("unit_id")),
                 unit_price=Decimal(line["unit_price"]),
                 discount_percent=Decimal(line["discount_percent"]),
                 tax_category=stored_kind(line["tax_category"]),

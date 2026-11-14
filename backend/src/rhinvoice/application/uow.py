@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from rhinvoice.application.backup.ports import BackupRepository
-    from rhinvoice.application.catalog.ports import ArticleRepository
+    from rhinvoice.application.catalog.ports import ArticleRepository, UnitRepository
     from rhinvoice.application.company.ports import (
         BankAccountRepository,
         CompanyRepository,
@@ -53,6 +53,9 @@ class UnitOfWork(Protocol):
 
     @property
     def articles(self) -> ArticleRepository: ...
+
+    @property
+    def units(self) -> UnitRepository: ...
 
     @property
     def sequences(self) -> NumberSequenceRepository: ...

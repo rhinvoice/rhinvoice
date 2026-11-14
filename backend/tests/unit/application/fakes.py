@@ -71,6 +71,7 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
     from rhinvoice.application.importing.fields import ImportTarget
+    from rhinvoice.domain.catalog.unit import Unit
     from rhinvoice.domain.company.company import Company
     from rhinvoice.domain.document.document import Document
     from rhinvoice.domain.mail.server import MailServer
@@ -136,6 +137,10 @@ class Store:
     tax_rates_seeded: bool = False
     tax_rate_locks: int = 0
     """How often the rates were read for a change (locked in the database)."""
+    units: list[Unit] = field(default_factory=lambda: list(factories.units().values()))
+    """In their order; every installation starts with the units of before (migration 0029)."""
+    unit_locks: int = 0
+    """How often the units were read for a change (locked in the database)."""
     legacy_categories: dict[UUID, str] = field(default_factory=dict[UUID, str])
     """The category stored before 0.13 of articles and plan lines without a rate."""
     dunning_levels: list[DunningLevel] = field(default_factory=list[DunningLevel])
@@ -325,6 +330,49 @@ class InMemoryTaxRateRepository:
         used = {line.tax_rate_id for line in lines}
         used |= {article.tax_rate_id for article in self.store.articles.values()}
         return frozenset(rate_id for rate_id in used if rate_id is not None)
+
+
+class InMemoryUnitRepository:
+    def __init__(self, data: list[Unit], store: Store) -> None:
+        self.data = data
+        self.store = store
+
+    def list(self, *, for_update: bool = False) -> list[Unit]:
+        if for_update is True:
+            # Counted, so that tests see that changes lock the units first.
+            self.store.unit_locks += 1
+        return list(self.data)
+
+    def add(self, unit: Unit) -> None:
+        if any(other.label.casefold() == unit.label.casefold() for other in self.data):
+            # Like the unique index of the database.
+            msg = "a second unit of this label"
+            raise AssertionError(msg)
+        self.data.append(unit)
+
+    def update(self, unit: Unit) -> None:
+        self.data = [unit if other.id == unit.id else other for other in self.data]
+
+    def delete(self, unit_id: UUID) -> None:
+        self.data = [unit for unit in self.data if unit.id != unit_id]
+
+    def reorder(self, unit_ids: Sequence[UUID]) -> None:
+        by_id = {unit.id: unit for unit in self.data}
+        assert sorted(unit_ids) == sorted(by_id), "the order names every unit once"
+        self.data = [by_id[unit_id] for unit_id in unit_ids]
+
+    def used_ids(self) -> frozenset[UUID]:
+        """Return the units of the saved lines, articles and plans, like the database."""
+        lines = [
+            line
+            for stored in self.store.documents.values()
+            for line in stored.document.content.lines
+        ]
+        lines += [line for plan in self.store.plans.values() for line in plan.template.lines]
+        used = {line.unit_id for line in lines} | {
+            article.unit_id for article in self.store.articles.values()
+        }
+        return frozenset(unit_id for unit_id in used if unit_id is not None)
 
 
 class InMemoryBankAccountRepository:
@@ -1127,6 +1175,7 @@ class InMemoryUnitOfWork:
                     factories.tax_rates(company.country, company.default_language).values()
                 )
         self.tax_rates = InMemoryTaxRateRepository(list(self.store.tax_rates), self.store)
+        self.units = InMemoryUnitRepository(list(self.store.units), self.store)
         self.bank_accounts = InMemoryBankAccountRepository(dict(self.store.bank_accounts))
         self.customers = InMemoryCustomerRepository(dict(self.store.customers))
         self.articles = InMemoryArticleRepository(
@@ -1174,6 +1223,7 @@ class InMemoryUnitOfWork:
         self.store.print_layouts = dict(self.print_layouts.data)
         self.store.tax_rates = list(self.tax_rates.data)
         self.store.tax_rates_seeded = True
+        self.store.units = list(self.units.data)
         self.store.issued_logos = dict(self.company.issued_logos)
         self.store.bank_accounts = dict(self.bank_accounts.data)
         self.store.customers = dict(self.customers.data)

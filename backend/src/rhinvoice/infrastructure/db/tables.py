@@ -211,6 +211,25 @@ tax_rates = Table(
     Index("uq_tax_rates_preset", "preset", unique=True),
 )
 
+# The company's units (ADR 0046); lines, articles and recurring plans refer to them.
+units = Table(
+    "units",
+    metadata,
+    Column("id", Uuid(), primary_key=True),
+    # A code of the EN 16931 unit code list (UN/ECE Rec 20 and Rec 21), sent as BT-130.
+    Column("code", String(3), nullable=False),
+    Column("label", String(20), nullable=False),
+    # The labels of English, French and Italian documents that differ: {"en": "pcs"}.
+    Column("labels", JSONB, nullable=False, server_default=text("'{}'::jsonb")),
+    Column("description", String(100), nullable=False, server_default=""),
+    Column("preset", String(3)),
+    Column("hidden", Boolean, nullable=False, server_default="false"),
+    Column("position", SmallInteger, nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False, server_default=text("now()")),
+    Index("uq_units_label", text("lower(label)"), unique=True),
+    Index("uq_units_preset", "preset", unique=True),
+)
+
 articles = Table(
     "articles",
     metadata,
@@ -219,7 +238,7 @@ articles = Table(
     Column("name", String(120), nullable=False),
     Column("description", Text, nullable=False, server_default=""),
     Column("article_group", String(50), nullable=False, server_default=""),
-    Column("unit", String(3), nullable=False),
+    Column("unit_id", Uuid(), ForeignKey("units.id", ondelete="RESTRICT"), nullable=False),
     Column("tax_category", String(20), nullable=False),
     Column("tax_rate_id", Uuid(), ForeignKey("tax_rates.id", ondelete="RESTRICT")),
     Column("supply", String(10), nullable=False, server_default="service"),
@@ -316,7 +335,10 @@ document_lines = Table(
     Column("description", String(500), nullable=False, server_default=""),
     Column("details", Text, nullable=False, server_default=""),
     Column("quantity", Numeric(14, 4), nullable=False),
-    Column("unit", String(3)),
+    Column("unit_id", Uuid(), ForeignKey("units.id", ondelete="RESTRICT"), index=True),
+    # The unit frozen when issuing: its code and its label in the document's language.
+    Column("unit_code", String(3)),
+    Column("unit_label", String(20)),
     Column("unit_price", Numeric(14, 4), nullable=False),
     Column("discount_percent", Numeric(5, 2), nullable=False),
     Column("tax_category", String(20), nullable=False),
@@ -330,6 +352,7 @@ document_lines = Table(
     Column("alternative_to", Uuid()),
     UniqueConstraint("document_id", "position", name="uq_document_lines_document_position"),
     CheckConstraint("in_total IN ('yes', 'optional', 'alternative')", name="in_total_known"),
+    CheckConstraint("(unit_code IS NULL) = (unit_label IS NULL)", name="unit_frozen_whole"),
     CheckConstraint(
         "(in_total = 'alternative') = (alternative_to IS NOT NULL)",
         name="alternative_names_its_position",

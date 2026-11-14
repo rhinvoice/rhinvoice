@@ -37,7 +37,7 @@ from rhinvoice.application.document.ports import (
     DocumentSummary,
     MonthlyRevenue,
 )
-from rhinvoice.domain.catalog.unit import Unit
+from rhinvoice.domain.catalog.unit import LineUnit
 from rhinvoice.domain.document.attachment import Attachment
 from rhinvoice.domain.document.document import (
     DisplayStatus,
@@ -199,7 +199,9 @@ def _line_values(document_id: UUID, position: int, line: DocumentLine) -> dict[s
         "description": line.description,
         "details": line.details,
         "quantity": line.quantity,
-        "unit": None if line.unit is None else line.unit.code,
+        "unit_id": line.unit_id,
+        "unit_code": None if line.unit is None else line.unit.code,
+        "unit_label": None if line.unit is None else line.unit.label,
         "unit_price": line.unit_price,
         "discount_percent": line.discount_percent,
         "tax_category": line.tax_category.value,
@@ -219,7 +221,8 @@ def _line_from_row(row: RowMapping) -> DocumentLine:
         description=row["description"],
         details=row["details"],
         quantity=Decimal(row["quantity"]),
-        unit=None if row["unit"] is None else Unit(row["unit"]),
+        unit_id=row["unit_id"],
+        unit=None if row["unit_code"] is None else LineUnit(row["unit_code"], row["unit_label"]),
         unit_price=Decimal(row["unit_price"]),
         discount_percent=Decimal(row["discount_percent"]),
         tax_category=TaxCategory(row["tax_category"]),

@@ -39,7 +39,11 @@ if TYPE_CHECKING:
 TODAY = NOW.date()
 CUSTOMER = UUID(int=1)
 HOURS = LineInput(
-    kind=LineKind.ITEM, description="Beratung", quantity="2", unit="HUR", unit_price="150"
+    kind=LineKind.ITEM,
+    description="Beratung",
+    quantity="2",
+    unit_id=factories.unit_id("HUR"),
+    unit_price="150",
 )
 
 

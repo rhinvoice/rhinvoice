@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from rhinvoice.application.document.printing import PrintHandlers
     from rhinvoice.application.mail.handlers import MailHandlers
     from rhinvoice.application.uow import UnitOfWork, UnitOfWorkFactory
+    from rhinvoice.domain.catalog.unit import Unit
     from rhinvoice.domain.document.lines import DocumentLine
     from rhinvoice.domain.recurring.plan import Interval
     from rhinvoice.domain.shared.clock import Clock
@@ -118,7 +119,7 @@ class RecurringHandlers:
                 interval=command.interval,
                 start_date=command.start_date,
                 action=command.action,
-                template=to_template(command.template, uow.tax_rates.list()),
+                template=to_template(command.template, uow.tax_rates.list(), uow.units.list()),
                 today=self.clock.today(),
                 now=self.clock.now(),
                 end_date=command.end_date,
@@ -139,9 +140,13 @@ class RecurringHandlers:
                 interval=command.interval,
                 start_date=command.start_date,
                 action=command.action,
-                # Hidden rates the plan had stay; new ones are not chosen.
+                # Hidden rates and units the plan had stay; new ones are not chosen.
                 template=to_template(
-                    command.template, uow.tax_rates.list(), previous.template.rate_ids
+                    command.template,
+                    uow.tax_rates.list(),
+                    uow.units.list(),
+                    previous.template.rate_ids,
+                    previous.template.unit_ids,
                 ),
                 today=self.clock.today(),
                 end_date=command.end_date,
@@ -265,7 +270,10 @@ class RecurringHandlers:
         )
         try:
             invoice = self.documents.create(
-                DocumentType.INVOICE, draft, kept_rates=plan.template.rate_ids
+                DocumentType.INVOICE,
+                draft,
+                kept_rates=plan.template.rate_ids,
+                kept_units=plan.template.unit_ids,
             ).document.id
         except DomainError as error:
             return _failed(run, error)
@@ -342,11 +350,15 @@ class RecurringHandlers:
 
 
 def to_template(
-    draft: DraftInput, rates: Sequence[TaxRate], kept: Collection[UUID] = ()
+    draft: DraftInput,
+    rates: Sequence[TaxRate],
+    units: Sequence[Unit],
+    kept: Collection[UUID] = (),
+    kept_units: Collection[UUID] = (),
 ) -> InvoiceTemplate:
     """Turn the editor's content into a plan's template (the lines are checked here).
 
-    ``kept``: hidden rates the plan had before; they stay.
+    ``kept`` and ``kept_units``: hidden rates and units the plan had before; they stay.
     """
     discount = (
         None
@@ -358,7 +370,7 @@ def to_template(
     return InvoiceTemplate(
         currency=draft.currency,
         price_mode=draft.price_mode,
-        lines=draft_lines(draft, rates, kept),
+        lines=draft_lines(draft, rates, units, kept, kept_units),
         language=draft.language,
         discount=discount,
         subject=draft.subject,
@@ -401,7 +413,7 @@ def _line_input(line: DocumentLine) -> LineInput:
         description=line.description,
         details=line.details,
         quantity=str(line.quantity),
-        unit=None if line.unit is None else line.unit.code,
+        unit_id=line.unit_id,
         unit_price=str(line.unit_price),
         discount_percent=str(line.discount_percent),
         tax_rate_id=line.tax_rate_id,

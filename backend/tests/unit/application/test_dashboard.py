@@ -46,7 +46,11 @@ from tests.unit.domain import factories
 
 CUSTOMER = UUID(int=1)
 LINE = LineInput(
-    kind=LineKind.ITEM, description="Beratung", quantity="1", unit="HUR", unit_price="100"
+    kind=LineKind.ITEM,
+    description="Beratung",
+    quantity="1",
+    unit_id=factories.unit_id("HUR"),
+    unit_price="100",
 )
 
 

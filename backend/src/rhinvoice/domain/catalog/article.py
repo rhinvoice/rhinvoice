@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from datetime import datetime
     from uuid import UUID
 
-    from rhinvoice.domain.catalog.unit import Unit
     from rhinvoice.domain.shared.money import Currency
     from rhinvoice.domain.tax.category import TaxCategory
 
@@ -34,7 +33,8 @@ class Article:
     id: UUID
     number: str
     name: str
-    unit: Unit
+    unit_id: UUID
+    """The company's unit the article is sold in (ADR 0046)."""
     tax_category: TaxCategory
     """The kind of the article's tax: the category of its rate, or pass-through (ADR 0044)."""
     prices: Mapping[Currency, Decimal]

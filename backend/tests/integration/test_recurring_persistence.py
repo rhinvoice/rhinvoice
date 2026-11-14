@@ -30,21 +30,24 @@ from tests.unit.domain import factories
 __all__ = ["setup"]  # the fixture of the document tests
 
 RATES = list(factories.tax_rates().values())
+UNITS = list(factories.units().values())
 TEMPLATE = InvoiceTemplate(
     currency=Currency.EUR,
     price_mode=PriceMode.GROSS,
     lines=(
-        LineInput(kind=LineKind.TEXT, description="Monat", details="laufend").to_domain(0, RATES),
+        LineInput(kind=LineKind.TEXT, description="Monat", details="laufend").to_domain(
+            0, RATES, UNITS
+        ),
         LineInput(
             kind=LineKind.ITEM,
             description="Server",
             quantity="1.5",
-            unit="MON",
+            unit_id=factories.unit_id("MON"),
             unit_price="29.9",
             discount_percent="10",
             tax_rate_id=factories.rate_id(REDUCED),
             supply=Supply.GOODS,
-        ).to_domain(1, RATES),
+        ).to_domain(1, RATES, UNITS),
     ),
     language=Language.EN,
     discount=Discount(DiscountKind.AMOUNT, Decimal(5)),

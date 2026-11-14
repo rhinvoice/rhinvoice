@@ -15,7 +15,6 @@ from rhinvoice.api.schemas import (
     DECIMAL_PATTERN,
     ERROR_RESPONSES,
     PERCENT_PATTERN,
-    UNIT_CODES,
     AddressSchema,
     ApiModel,
     FieldValues,
@@ -85,7 +84,9 @@ class LineRequest(ApiModel):
     description: str = text(500)
     details: str = text(4000)
     quantity: str = Field(default="1", pattern=QUANTITY_PATTERN)
-    unit: str | None = Field(default=None, json_schema_extra={"enum": [*UNIT_CODES, None]})
+    unit_id: UUID | None = None
+    """One of the company's units (GET /api/units); none: the position has no unit. Text
+    lines take none."""
     unit_price: str = Field(default="0", pattern=DECIMAL_PATTERN)
     discount_percent: str = Field(default="0", pattern=PERCENT_PATTERN)
     tax_rate_id: UUID | None = None
@@ -106,7 +107,7 @@ class LineRequest(ApiModel):
             description=self.description,
             details=self.details,
             quantity=self.quantity,
-            unit=self.unit,
+            unit_id=self.unit_id,
             unit_price=self.unit_price,
             discount_percent=self.discount_percent,
             tax_rate_id=self.tax_rate_id,
@@ -224,7 +225,12 @@ class LineResponse(ApiModel):
     description: str
     details: str
     quantity: str
-    unit: str | None
+    unit_id: UUID | None
+    """The company's unit of a position."""
+    unit_code: str | None
+    """The unit's code for the e-invoice: as issued, the current one in drafts."""
+    unit_label: str | None
+    """The unit's label in the document's language: as issued, the current one in drafts."""
     unit_price: str
     discount_percent: str
     tax_rate_id: UUID | None
@@ -449,7 +455,9 @@ class DocumentResponse(ApiModel):
                     description=line.description,
                     details=line.details,
                     quantity=plain_number(line.quantity),
-                    unit=None if line.unit is None else line.unit.code,
+                    unit_id=line.unit_id,
+                    unit_code=None if unit is None else unit.code,
+                    unit_label=None if unit is None else unit.label,
                     unit_price=price_text(line.unit_price),
                     discount_percent=plain_number(line.discount_percent),
                     tax_rate_id=line.tax_rate_id,
@@ -461,7 +469,7 @@ class DocumentResponse(ApiModel):
                     in_total=line.in_total,
                     alternative_to=line.alternative_to,
                 )
-                for line in content.lines
+                for line, unit in ((line, view.unit_of(line)) for line in content.lines)
             ],
             totals=TotalsResponse.of(view.totals),
             payments=[

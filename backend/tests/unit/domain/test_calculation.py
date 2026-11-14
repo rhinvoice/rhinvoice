@@ -6,7 +6,6 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from rhinvoice.domain.catalog.unit import Unit
 from rhinvoice.domain.document.calculation import CalculationInput, LineAmount, Totals, calculate
 from rhinvoice.domain.document.lines import (
     Discount,
@@ -24,6 +23,7 @@ from rhinvoice.domain.tax.supply import Supply
 from rhinvoice.domain.tax.treatment import TaxTreatment
 from rhinvoice.domain.tax.vat_code import VatCode
 from tests.helpers import raises_exactly
+from tests.unit.domain import factories
 
 STANDARD, REDUCED, SPECIAL, ZERO_RATE, EXEMPT = (UUID(int=number) for number in range(1, 6))
 """The company's rates (ADR 0044); zero-rated and exempt lines never ask for a percentage."""
@@ -46,7 +46,7 @@ def item(
         kind=LineKind.ITEM,
         description="Position",
         quantity=Decimal(quantity),
-        unit=Unit("C62"),
+        unit_id=factories.unit_id("C62"),
         unit_price=Decimal(price),
         discount_percent=Decimal(discount),
         tax_category=kind or TaxCategory.STANDARD,
@@ -677,7 +677,7 @@ def test_cancellation_negates_every_amount(
             kind=line.kind,
             description=line.description,
             quantity=-line.quantity,
-            unit=line.unit,
+            unit_id=line.unit_id,
             unit_price=line.unit_price,
             discount_percent=line.discount_percent,
             tax_category=line.tax_category,

@@ -7,11 +7,12 @@ from typing import TYPE_CHECKING, Protocol
 from rhinvoice.application.common import PageRequest, SortDirection
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
     from uuid import UUID
 
     from rhinvoice.application.common import Page
     from rhinvoice.domain.catalog.article import Article
+    from rhinvoice.domain.catalog.unit import Unit
     from rhinvoice.domain.tax.tax_rate import TaxRate
 
 
@@ -48,4 +49,28 @@ class ArticleRepository(Protocol):
         ``rates`` names the rate of each former category as stored (standard, reduced,
         special, zero, exempt); pass-through items stay without (migration 0027).
         """
+        ...
+
+
+class UnitRepository(Protocol):
+    def list(self, *, for_update: bool = False) -> list[Unit]:
+        """Return every unit of the company in its order, hidden ones too.
+
+        ``for_update`` locks them until the commit, so that changes run one after the other
+        and labels stay unique.
+        """
+        ...
+
+    def add(self, unit: Unit) -> None:
+        """Add a unit after the others."""
+        ...
+
+    def update(self, unit: Unit) -> None: ...
+    def delete(self, unit_id: UUID) -> None: ...
+    def reorder(self, unit_ids: Sequence[UUID]) -> None:
+        """Put the units in this order; ``unit_ids`` names every unit once."""
+        ...
+
+    def used_ids(self) -> frozenset[UUID]:
+        """Return the units that document lines, articles or recurring plans refer to."""
         ...

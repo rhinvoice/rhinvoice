@@ -15,6 +15,7 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
+from rhinvoice.domain.catalog.unit import known_unit
 from rhinvoice.domain.company.print_layout import MAX_INFO_ENTRIES, is_field_key
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.document.calculation import CalculationInput, Totals, calculate
@@ -41,6 +42,7 @@ if TYPE_CHECKING:
     from datetime import datetime
     from uuid import UUID
 
+    from rhinvoice.domain.catalog.unit import Unit
     from rhinvoice.domain.company.bank_account import BankAccount
     from rhinvoice.domain.company.company import Company
     from rhinvoice.domain.company.print_layout import PrintLayout
@@ -331,6 +333,11 @@ class DraftContent:
         )
 
     @property
+    def unit_ids(self) -> tuple[UUID, ...]:
+        """The units of the positions, in the order they first appear."""
+        return tuple(dict.fromkeys(line.unit_id for line in self.lines if line.unit_id is not None))
+
+    @property
     def taxed_rate_ids(self) -> tuple[UUID, ...]:
         """The rates of the positions taxed in the company's country; their notices print."""
         return tuple(
@@ -517,6 +524,7 @@ class Document:
                     line,
                     id=ids[line.id],
                     tax_rate=None,
+                    unit=None,
                     alternative_to=None
                     if line.alternative_to is None
                     else ids[line.alternative_to],
@@ -527,7 +535,12 @@ class Document:
             picked = self._chosen_positions(chosen)
             lines = tuple(
                 replace(
-                    line, id=ids[line.id], tax_rate=None, in_total=InTotal.YES, alternative_to=None
+                    line,
+                    id=ids[line.id],
+                    tax_rate=None,
+                    unit=None,
+                    in_total=InTotal.YES,
+                    alternative_to=None,
                 )
                 for line in self.content.lines
                 if not line.is_item or line.id in picked
@@ -743,12 +756,13 @@ class Document:
         due_date: date,
         snapshot: IssueSnapshot,
         rates: Mapping[UUID, TaxRate],
+        units: Mapping[UUID, Unit],
         now: datetime,
     ) -> Document:
-        """Assign the number and freeze content, tax rates, totals and parties.
+        """Assign the number and freeze content, tax rates, units, totals and parties.
 
-        ``rates`` are the company's; each line keeps the percentage of its rate on the date
-        of supply.
+        ``rates`` and ``units`` are the company's; each line keeps the percentage of its rate
+        on the date of supply and its unit in the document's language.
         """
         self._require(DocumentStatus.DRAFT, action="issued")
         if not any(line.kind is LineKind.ITEM for line in self.content.lines):
@@ -765,12 +779,8 @@ class Document:
             raise problem
         company = snapshot.company
         tax_date = self.content.service_to or self.content.service_from or issue_date
-        # Lines with a rate keep it: a cancellation reverses its invoice at the
-        # invoice's rates, even when the rates changed in between.
         frozen_lines = tuple(
-            replace(line, tax_rate=_frozen_percent(line, rates, tax_date))
-            if line.kind is LineKind.ITEM and line.tax_rate is None
-            else line
+            _issued_line(line, rates, units, tax_date, self.content.language)
             for line in self.content.lines
         )
         content = replace(
@@ -1083,6 +1093,27 @@ def rate_of(line: DocumentLine, rates: Mapping[UUID, TaxRate]) -> TaxRate:
             "tax_rate_id", f"the line is {line.tax_category}, its rate {rate.kind}"
         )
     return rate
+
+
+def _issued_line(
+    line: DocumentLine,
+    rates: Mapping[UUID, TaxRate],
+    units: Mapping[UUID, Unit],
+    on: date,
+    language: Language,
+) -> DocumentLine:
+    """Freeze on a position the percentage of its rate on ``on`` and its unit (ADR 0046).
+
+    What a line has frozen already it keeps: a cancellation reverses its invoice at the
+    invoice's rates and units, even when they changed in between.
+    """
+    if line.kind is not LineKind.ITEM:
+        return line
+    if line.tax_rate is None:
+        line = replace(line, tax_rate=_frozen_percent(line, rates, on))
+    if line.unit is None and line.unit_id is not None:
+        line = replace(line, unit=known_unit(line.unit_id, units).frozen(language))
+    return line
 
 
 def _frozen_percent(line: DocumentLine, rates: Mapping[UUID, TaxRate], on: date) -> Decimal:

@@ -5,11 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from rhinvoice.application.catalog.units import chosen_unit, default_unit
 from rhinvoice.application.errors import ConflictError, NotFoundError
 from rhinvoice.application.numbering.handlers import allocate_number
 from rhinvoice.application.tax.handlers import chosen_rate
 from rhinvoice.domain.catalog.article import Article
-from rhinvoice.domain.catalog.unit import DEFAULT_UNIT_CODE, Unit
 from rhinvoice.domain.numbering.sequence import SequenceKind
 from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.money import Currency, parse_decimal
@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from rhinvoice.application.catalog.ports import ArticleQuery
     from rhinvoice.application.common import Page
     from rhinvoice.application.uow import UnitOfWork, UnitOfWorkFactory
+    from rhinvoice.domain.catalog.unit import Unit
     from rhinvoice.domain.shared.clock import Clock
     from rhinvoice.domain.tax.tax_rate import TaxRate
 
@@ -34,7 +35,8 @@ class SaveArticle:
     name: str
     number: str = ""
     """Empty: take the next number of the article sequence."""
-    unit: str = DEFAULT_UNIT_CODE
+    unit_id: UUID | None = None
+    """The company's unit; None: the first unit offered (ADR 0046)."""
     tax_rate_id: UUID | None = None
     """The company's rate; None: the default rate (ADR 0044)."""
     pass_through: bool = False
@@ -68,6 +70,7 @@ class ArticleHandlers:
                 now=self.clock.now(),
                 existing=None,
                 rates=uow.tax_rates.list(),
+                units=uow.units.list(),
             )
             self._ensure_unique(uow, article.number, exclude_id=None)
             uow.articles.add(article)
@@ -85,6 +88,7 @@ class ArticleHandlers:
                 now=self.clock.now(),
                 existing=existing,
                 rates=uow.tax_rates.list(),
+                units=uow.units.list(),
             )
             self._ensure_unique(uow, article.number, exclude_id=article_id)
             uow.articles.update(article)
@@ -126,16 +130,20 @@ def build_article(  # noqa: PLR0913 - the command and what it is built against
     now: datetime,
     existing: Article | None,
     rates: Sequence[TaxRate],
+    units: Sequence[Unit],
 ) -> Article:
     """Build the article of a create or update command; raise ValidationError if invalid.
 
-    A hidden rate stays on the article that had it, but is not chosen anew.
+    A hidden rate or unit stays on the article that had it, but is not chosen anew.
     """
     category, rate_id = chosen_rate(
         rates,
         command.tax_rate_id,
         pass_through=command.pass_through,
         kept=() if existing is None or existing.tax_rate_id is None else (existing.tax_rate_id,),
+    )
+    unit_id = chosen_unit(
+        units, command.unit_id, kept=() if existing is None else (existing.unit_id,)
     )
     prices = {
         currency: parse_decimal(price, f"prices.{currency}")
@@ -146,7 +154,7 @@ def build_article(  # noqa: PLR0913 - the command and what it is built against
         id=article_id,
         number=number,
         name=command.name,
-        unit=Unit(command.unit),
+        unit_id=default_unit(units).id if unit_id is None else unit_id,
         tax_category=category,
         tax_rate_id=rate_id,
         prices=prices,

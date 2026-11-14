@@ -3,6 +3,7 @@ from dataclasses import replace
 from datetime import timedelta
 from decimal import Decimal
 from typing import Any
+from uuid import UUID
 
 import pytest
 from fastapi import FastAPI
@@ -17,12 +18,17 @@ from tests.unit.domain import factories
 type Json = dict[str, Any]
 
 LINES = [
-    {"description": "Beratung", "quantity": "10", "unit": "HUR", "unit_price": "150"},
+    {
+        "description": "Beratung",
+        "quantity": "10",
+        "unit_id": str(factories.unit_id("HUR")),
+        "unit_price": "150",
+    },
     {"kind": "text", "description": "Phase 2"},
     {
         "description": "Kaffee",
         "quantity": "3",
-        "unit": "C62",
+        "unit_id": str(factories.unit_id("C62")),
         "unit_price": "12.35",
         "tax_rate_id": str(factories.rate_id(REDUCED)),
     },
@@ -550,7 +556,8 @@ def test_preview_calculates_without_saving(user_client: TestClient, customer_id:
     }
     assert user_client.get("/api/documents").json()["total"] == 0
     invalid = user_client.post(
-        "/api/documents/preview", json={**body, "lines": [{"description": "x", "unit": "XYZ"}]}
+        "/api/documents/preview",
+        json={**body, "lines": [{"description": "x", "unit_id": str(UUID(int=0x404))}]},
     )
     assert invalid.status_code == 422
 

@@ -2,6 +2,7 @@
 
 import io
 from collections import Counter
+from dataclasses import replace
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from itertools import pairwise
@@ -14,6 +15,7 @@ from rhinvoice.application.company.handlers import CompanyHandlers
 from rhinvoice.application.customer.handlers import CustomerHandlers
 from rhinvoice.application.demo.handlers import (
     ACCOUNT_SETS,
+    ARTICLE_UNITS,
     ARTICLES,
     CUSTOMERS,
     DEMO_ACCOUNTS,
@@ -163,6 +165,26 @@ def test_the_book_is_sold_at_the_reduced_rate(demo: DemoHandlers, store: Store) 
     ]
     assert books
     assert {line.tax_rate_id for line in books} == {reduced}
+
+
+def test_the_articles_are_sold_in_their_units(demo: DemoHandlers, store: Store) -> None:
+    store.company = factories.company(name="Pixelwerk GmbH")
+    # A unit removed before: its articles take the first unit offered.
+    store.units = [replace(unit, hidden=unit.code == "DAY") for unit in store.units]
+    demo.seed()
+    units = {article.name: article.unit_id for article in store.articles.values()}
+    assert units == {
+        name: factories.unit_id("C62" if code == "DAY" else code)
+        for name, code in ARTICLE_UNITS.items()
+    }
+    hours = [
+        line
+        for stored in store.documents.values()
+        for line in stored.document.content.lines
+        if line.description == "Beratung"
+    ]
+    assert hours
+    assert {line.unit_id for line in hours} == {factories.unit_id("HUR")}
 
 
 def test_a_swiss_installation_gets_invoices_since_january_of_last_year(

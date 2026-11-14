@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from rhinvoice.application.backup.handlers import BackupHandlers
 from rhinvoice.application.catalog.handlers import ArticleHandlers
+from rhinvoice.application.catalog.units import UnitHandlers
 from rhinvoice.application.company.handlers import CompanyHandlers
 from rhinvoice.application.customer.handlers import CustomerHandlers
 from rhinvoice.application.demo.handlers import DemoHandlers
@@ -65,6 +66,7 @@ class Container:
     customers: CustomerHandlers
     articles: ArticleHandlers
     tax_rates: TaxRateHandlers
+    units: UnitHandlers
     numbering: NumberingHandlers
     documents: DocumentHandlers
     dashboard: DashboardHandlers
@@ -198,6 +200,7 @@ def build_container(
         customers=customers,
         articles=articles,
         tax_rates=TaxRateHandlers(uow=uow),
+        units=UnitHandlers(uow=uow),
         numbering=NumberingHandlers(uow=uow, clock=effective_clock),
         idempotency=IdempotencyHandlers(uow=uow, clock=effective_clock),
         documents=documents,

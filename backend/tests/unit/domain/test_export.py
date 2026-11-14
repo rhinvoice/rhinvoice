@@ -64,6 +64,7 @@ def cancelled(invoice: Document) -> tuple[Document, Document]:
         due_date=TODAY,
         snapshot=invoice.issued_snapshot,
         rates=CH_RATES,
+        units=factories.units(),
         now=NOW,
     )
     return invoice.cancel(cancellation, NOW), cancellation

@@ -9,7 +9,6 @@ from rhinvoice.api.dependencies import ContainerDep, CurrentUser
 from rhinvoice.api.schemas import (
     DECIMAL_PATTERN,
     ERROR_RESPONSES,
-    UNIT_CODES,
     ApiModel,
     SearchParams,
     price_text,
@@ -18,8 +17,6 @@ from rhinvoice.api.schemas import (
 from rhinvoice.application.catalog.handlers import SaveArticle
 from rhinvoice.application.catalog.ports import ArticleQuery, ArticleSort
 from rhinvoice.domain.catalog.article import Article
-from rhinvoice.domain.catalog.unit import DEFAULT_UNIT_CODE
-from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.supply import Supply
@@ -34,7 +31,8 @@ class ArticleRequest(ApiModel):
     name: str = text(120, required=True)
     description: str = text(4000)
     group: str = text(50)
-    unit: str = Field(default=DEFAULT_UNIT_CODE, json_schema_extra={"enum": UNIT_CODES})
+    unit_id: UUID | None = None
+    """One of the company's units (GET /api/units); none: the first unit offered."""
     tax_rate_id: UUID | None = None
     """One of the company's rates (GET /api/tax-rates); none: the default rate."""
     pass_through: bool = False
@@ -48,7 +46,7 @@ class ArticleRequest(ApiModel):
         return SaveArticle(
             name=self.name,
             number=self.number,
-            unit=self.unit,
+            unit_id=self.unit_id,
             tax_rate_id=self.tax_rate_id,
             pass_through=self.pass_through,
             supply=self.supply,
@@ -64,11 +62,8 @@ class ArticleResponse(ApiModel):
     name: str
     description: str
     group: str
-    unit: str = Field(json_schema_extra={"enum": UNIT_CODES})
-    unit_label_de: str
-    unit_label_en: str
-    unit_label_fr: str
-    unit_label_it: str
+    unit_id: UUID
+    """The company's unit (GET /api/units)."""
     tax_rate_id: UUID | None
     """The company's rate; None for pass-through items."""
     tax_category: TaxCategory
@@ -86,11 +81,7 @@ class ArticleResponse(ApiModel):
             name=article.name,
             description=article.description,
             group=article.group,
-            unit=article.unit.code,
-            unit_label_de=article.unit.label_de,
-            unit_label_en=article.unit.label_en,
-            unit_label_fr=article.unit.label(Language.FR),
-            unit_label_it=article.unit.label(Language.IT),
+            unit_id=article.unit_id,
             tax_rate_id=article.tax_rate_id,
             tax_category=article.tax_category,
             supply=article.supply,

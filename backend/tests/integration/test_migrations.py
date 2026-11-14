@@ -11,6 +11,8 @@ from sqlalchemy import Connection, Engine, inspect, select, text
 from rhinvoice.application.catalog.handlers import ArticleHandlers, SaveArticle
 from rhinvoice.application.company.handlers import CompanyHandlers, SaveCompany
 from rhinvoice.application.document.handlers import DocumentHandlers, DraftInput, LineInput
+from rhinvoice.domain.catalog.unit import LineUnit
+from rhinvoice.domain.catalog.unit_presets import START, preset_of
 from rhinvoice.domain.company.print_layout import (
     DEFAULT_INFO_BLOCK,
     InfoEntry,
@@ -22,6 +24,7 @@ from rhinvoice.domain.document.document import DocumentType, FieldValue
 from rhinvoice.domain.document.lines import InTotal, LineKind
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.identifier import new_id
+from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.category import TaxCategory
 from rhinvoice.domain.tax.presets import REDUCED
@@ -30,7 +33,7 @@ from rhinvoice.infrastructure.db.tables import dunning_levels, metadata, text_te
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork
 from tests.helpers import raises_exactly
 from tests.integration.test_document_persistence import ZURICH, setup
-from tests.integration.test_recurring_persistence import RATES, TEMPLATE, plan
+from tests.integration.test_recurring_persistence import RATES, TEMPLATE, UNITS, plan
 from tests.unit.domain import factories
 
 __all__ = ["setup"]  # the fixture of the document tests
@@ -62,6 +65,10 @@ def test_migrations_round_trip(database_url: str, migrated_engine: Engine) -> No
             ),
         ).all()
     assert len(rows) == 27  # 7 per language; English has no "net" payment term
+    # 0029 gives every installation the units of before, also one without a company.
+    with migrated_engine.connect() as connection:
+        units = connection.execute(text("SELECT code FROM units ORDER BY position")).scalars()
+        assert list(units) == [preset.key for preset in START]
     assert {(row.document_type, row.language) for row in rows} == {
         (document_type, language)
         for document_type in ("invoice", "quote")
@@ -126,7 +133,7 @@ def test_pass_through_items_fall_back_to_exempt_on_a_downgrade(
     ArticleHandlers(uow=lambda: SqlUnitOfWork(engine), clock=clock).create(
         SaveArticle(name="Gebühr", pass_through=True)
     )
-    template = replace(TEMPLATE, lines=(*TEMPLATE.lines, fee.to_domain(2, RATES)))
+    template = replace(TEMPLATE, lines=(*TEMPLATE.lines, fee.to_domain(2, RATES, UNITS)))
     with SqlUnitOfWork(engine) as uow:
         uow.recurring.add(replace(plan(customer, "Wartung", clock.today()), template=template))
         uow.recurring.add(plan(customer, "Hosting", clock.today()))
@@ -565,3 +572,124 @@ def test_options_stop_the_downgrade(
         "quotes hold optional or alternative positions: they need version 0.13 or later",
     ):
         downgrade(database_url, "0027")
+
+
+# --- 0029: own units (ADR 0046) ----------------------------------------------------------
+
+
+def test_the_units_of_before_become_the_units_of_the_installation(
+    database_url: str, engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
+) -> None:
+    """Issued lines keep their code and get the label they printed, in their language."""
+    documents, customer, clock = setup
+    hours = LineInput(
+        kind=LineKind.ITEM,
+        description="Beratung",
+        unit_price="80",
+        unit_id=factories.unit_id("HUR"),
+    )
+    pieces = replace(hours, description="Kabel", unit_id=factories.unit_id("C62"))
+    loose = replace(hours, description="Pauschale", unit_id=None)
+    heading = LineInput(kind=LineKind.TEXT, description="Phase 1")
+    english = DraftInput(customer_id=customer, language=Language.EN, lines=(heading, hours))
+    issued = documents.issue(documents.create(DocumentType.INVOICE, english).document.id)
+    draft = documents.create(
+        DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(pieces, loose))
+    ).document.id
+    ArticleHandlers(uow=lambda: SqlUnitOfWork(engine), clock=clock).create(
+        SaveArticle(name="Beratung", unit_id=factories.unit_id("HUR"))
+    )
+    with SqlUnitOfWork(engine) as uow:
+        uow.recurring.add(plan(customer, "Hosting", clock.today()))
+        uow.commit()
+    downgrade(database_url, "0028")
+    with engine.begin() as connection:
+        assert "units" not in inspect(connection).get_table_names()
+        assert rows(connection, "SELECT unit FROM articles") == [("HUR",)]
+        assert rows(
+            connection,
+            "SELECT unit FROM document_lines WHERE document_id = :id ORDER BY position",
+            id=issued.document.id,
+        ) == [(None,), ("HUR",)]
+        assert rows(
+            connection,
+            "SELECT unit FROM document_lines WHERE document_id = :id ORDER BY position",
+            id=draft,
+        ) == [("C62",), (None,)]
+        assert rows(
+            connection,
+            "SELECT jsonb_path_query_array(template, '$.lines[*].unit'),"
+            " template -> 'lines' -> 1 ? 'unit_id' FROM recurring_plans",
+        ) == [([None, "MON"], False)]
+        # A code the units of before did not have, written by someone else.
+        connection.execute(text("UPDATE articles SET unit = 'DTN'"))
+    upgrade(database_url)
+    with engine.connect() as connection:
+        units = {
+            code: (unit_id, label, labels, preset)
+            for unit_id, code, label, labels, preset in rows(
+                connection, "SELECT id, code, label, labels, preset FROM units ORDER BY position"
+            )
+        }
+        assert list(units) == [*(preset.key for preset in START), "DTN"]
+        assert units["C62"][1:] == ("Stk.", {"en": "pcs", "fr": "pce", "it": "pz."}, "C62")
+        assert units["KGM"][1:] == ("kg", {}, "KGM")
+        assert units["DTN"][1:] == ("DTN", {}, None)
+        assert rows(connection, "SELECT unit_id FROM articles") == [(units["DTN"][0],)]
+        assert rows(
+            connection,
+            "SELECT unit_id, unit_code, unit_label FROM document_lines WHERE document_id = :id"
+            " ORDER BY position",
+            id=issued.document.id,
+        ) == [(None, None, None), (units["HUR"][0], "HUR", "h")]
+        assert rows(
+            connection,
+            "SELECT unit_id, unit_code, unit_label FROM document_lines WHERE document_id = :id"
+            " ORDER BY position",
+            id=draft,
+        ) == [(units["C62"][0], None, None), (None, None, None)]
+        lines = connection.execute(
+            text("SELECT template -> 'lines' FROM recurring_plans")
+        ).scalar_one()
+        assert [(line.get("unit"), line["unit_id"]) for line in lines] == [
+            (None, None),
+            (None, str(units["MON"][0])),
+        ]
+    # The documents read as before.
+    view = documents.get(issued.document.id)
+    assert view.unit_of(view.document.content.lines[1]) == LineUnit("HUR", "h")
+    assert view.totals.total == issued.totals.total
+    current = documents.get(draft)
+    assert current.unit_of(current.document.content.lines[0]) == LineUnit("C62", "Stk.")
+
+
+def test_own_units_stop_the_downgrade(
+    database_url: str, engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
+) -> None:
+    documents, customer, clock = setup
+    quintal = preset_of("DTN")
+    assert quintal is not None
+    message = (
+        "documents, articles or recurring plans use own units: they need version 0.14 or later"
+    )
+    template = replace(
+        TEMPLATE, lines=(replace(TEMPLATE.lines[1], unit_id=factories.unit_id("DTN")),)
+    )
+    with SqlUnitOfWork(engine) as uow:
+        uow.units.add(quintal.to_unit(factories.unit_id("DTN")))
+        uow.recurring.add(replace(plan(customer, "Wartung", clock.today()), template=template))
+        uow.commit()
+    with raises_exactly(RuntimeError, message):
+        downgrade(database_url, "0028")
+    with SqlUnitOfWork(engine) as uow:
+        uow.recurring.delete(uow.recurring.all()[0].id)
+        uow.commit()
+    grain = LineInput(
+        kind=LineKind.ITEM,
+        description="Weizen",
+        unit_price="45",
+        unit_id=factories.unit_id("DTN"),
+    )
+    documents.create(DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(grain,)))
+    with raises_exactly(RuntimeError, message):
+        downgrade(database_url, "0028")

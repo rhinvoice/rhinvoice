@@ -8,6 +8,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from rhinvoice.domain.catalog.unit import LineUnit
 from rhinvoice.domain.document.lines import (
     Discount,
     DocumentLine,
@@ -236,6 +237,13 @@ def test_template_rules() -> None:
             lines=(replace(HOSTING, tax_rate=Decimal("8.1")),),
         )
     assert frozen.value.field == "lines"
+    with raises_exactly(ValidationError, "a template has no frozen units") as unit:
+        InvoiceTemplate(
+            currency=Currency.CHF,
+            price_mode=PriceMode.NET,
+            lines=(replace(HOSTING, unit_id=new_id(), unit=LineUnit("HUR", "Std.")),),
+        )
+    assert unit.value.field == "lines"
     with raises_exactly(
         ValidationError, "only quotes have optional and alternative positions"
     ) as optional:
@@ -291,3 +299,16 @@ def test_a_template_names_the_rates_of_its_positions() -> None:
     again = replace(HOSTING, id=new_id())
     template = replace(TEMPLATE, lines=(text, HOSTING, fee, again))
     assert template.rate_ids == (HOSTING.tax_rate_id,)
+
+
+def test_a_template_names_the_units_of_its_positions() -> None:
+    text = DocumentLine(id=new_id(), kind=LineKind.TEXT, description="Monatlich")
+    hours, months = new_id(), new_id()
+    lines = (
+        text,
+        replace(HOSTING, unit_id=months),
+        replace(HOSTING, id=new_id(), unit_id=hours),
+        replace(HOSTING, id=new_id(), unit_id=months),
+        replace(HOSTING, id=new_id()),
+    )
+    assert replace(TEMPLATE, lines=lines).unit_ids == (months, hours)

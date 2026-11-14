@@ -5,16 +5,24 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.14.0] – 2026-11-14
+
 ### Neu
 - Eigene Einheiten pro Firma (*Einstellungen → Einheiten*): Jede Einheit hat die Bezeichnung, die
   auf der Rechnung steht, eine Beschreibung für Sie, ihren Code der Einheitenliste von EN 16931
   für die E-Rechnung (UN/ECE-Empfehlungen 20 und 21, beim Speichern geprüft) und auf Wunsch eine
-  eigene Bezeichnung auf englischen, französischen oder italienischen Rechnungen. Jede Firma
-  beginnt mit den bisherigen Einheiten; *Aus Vorlage …* ergänzt gängige nach Gruppen, darunter dz
-  (Doppelzentner, DTN), Hektar, Karton und Palette. Die Liste bestimmt die Reihenfolge der
-  Auswahl, sortiert durch Ziehen, die Pfeile oder Alt+↑/↓. *Entfernen* löscht eine Einheit, die
-  nichts verwendet, und blendet eine verwendete aus; ausgestellte Dokumente behalten Code und
-  Bezeichnung, mit denen sie ausgestellt wurden (#95).
+  eigene Bezeichnung auf Rechnungen in den anderen Sprachen. Jede Firma beginnt mit den
+  bisherigen Einheiten, in der Sprache ihrer Dokumente; *Aus Vorlage …* ergänzt gängige nach
+  Gruppen, darunter dz (Doppelzentner, DTN), Hektar, Karton und Palette. Die Liste bestimmt die
+  Reihenfolge der Auswahl, sortiert durch Ziehen, die Pfeile oder Alt+↑/↓. *Entfernen* löscht
+  eine Einheit, die nichts verwendet, und blendet eine verwendete aus; ausgestellte Dokumente
+  behalten Code und Bezeichnung, mit denen sie ausgestellt wurden (#95).
+
+### Geändert
+- Angebote: *Fertigstellen* statt *Als versendet markieren*. Das Angebot erhält damit seine
+  Nummer und ist gesperrt; erst dann ist es bereit für PDF und E-Mail. Der Status eines solchen
+  Angebots heisst *Offen* statt *Versendet*; ein per E-Mail verschicktes Angebot nennt das
+  weiterhin in seinem Verlauf.
 
 ## [0.13.0] – 2026-11-13
 

@@ -5,15 +5,22 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.14.0] – 2026-11-14
+
 ### Added
 - Own units per company (*Settings → Units*): each unit has the label the invoice prints, a
   description for you, its code of the EN 16931 unit list for the e-invoice (UN/ECE
-  Recommendations 20 and 21, checked on saving) and, if you like, its own label on English,
-  French or Italian invoices. Every company starts with the units of before; *From catalogue …*
-  adds common ones by group, among them dz (Doppelzentner, DTN), hectare, carton and pallet.
-  The list sets the order of the selects, sorted by dragging, the arrows or Alt+↑/↓. *Remove*
-  deletes a unit nothing uses and hides one in use; issued documents keep the code and label
-  they were issued with (#95).
+  Recommendations 20 and 21, checked on saving) and, if you like, its own label on invoices in
+  the other languages. Every company starts with the units of before, worded in its document
+  language; *From catalogue …* adds common ones by group, among them dz (Doppelzentner, DTN),
+  hectare, carton and pallet. The list sets the order of the selects, sorted by dragging, the
+  arrows or Alt+↑/↓. *Remove* deletes a unit nothing uses and hides one in use; issued
+  documents keep the code and label they were issued with (#95).
+
+### Changed
+- Quotes: *Finalise* instead of *Mark as sent*. It gives the quote its number and locks it;
+  only then is it ready for the PDF and the e-mail. The status of such a quote is *Open*
+  instead of *Sent*; a quote sent by e-mail still says so in its history.
 
 ## [0.13.0] – 2026-11-13
 

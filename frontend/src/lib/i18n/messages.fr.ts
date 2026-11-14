@@ -582,7 +582,15 @@ export const fr: Catalog<MessageKey> = {
   "units.codes": "Codes",
   "units.codeNone": "Aucun code trouvé",
   "units.codeRequired": "Choisissez un code dans la liste.",
-  "units.translations": "Autre désignation sur les factures en anglais, en français ou en italien",
+  "units.translations.de":
+    "Autre désignation sur les factures en anglais, en français ou en italien",
+  "units.translations.en":
+    "Autre désignation sur les factures en allemand, en français ou en italien",
+  "units.translations.fr":
+    "Autre désignation sur les factures en allemand, en anglais ou en italien",
+  "units.translations.it":
+    "Autre désignation sur les factures en allemand, en anglais ou en français",
+  "units.label_de": "Allemand",
   "units.translationsHint": "Vide : la désignation ci-dessus s’applique.",
   "units.label_en": "Anglais",
   "units.label_fr": "Français",

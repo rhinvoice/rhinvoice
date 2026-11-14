@@ -81,6 +81,7 @@ def _unit(row: RowMapping) -> Unit:
         id=row["id"],
         code=row["code"],
         label=row["label"],
+        label_de=labels.get("de", ""),
         label_en=labels.get("en", ""),
         label_fr=labels.get("fr", ""),
         label_it=labels.get("it", ""),

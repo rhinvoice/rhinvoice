@@ -1,9 +1,10 @@
 """Units of measure owned by the company (ADR 0046).
 
-A unit has the label documents print, optionally another one for English, French or Italian
-documents, and the code of the EN 16931 unit code list (UN/ECE Recommendation 20 with the
-Recommendation 21 codes, BT-130) that the e-invoice sends. Several units may share a code
-("Std." and "Stunde" are both HUR). Issuing freezes code and label on each line.
+A unit has the label documents print, optionally another one per document language (German,
+English, French, Italian), and the code of the EN 16931 unit code list (UN/ECE
+Recommendation 20 with the Recommendation 21 codes, BT-130) that the e-invoice sends.
+Several units may share a code ("Std." and "Stunde" are both HUR). Issuing freezes code and
+label on each line.
 """
 
 from __future__ import annotations
@@ -24,8 +25,8 @@ if TYPE_CHECKING:
 
 MAX_UNIT_LABEL = 20
 MAX_UNIT_DESCRIPTION = 100
-TRANSLATED = (Language.EN, Language.FR, Language.IT)
-"""The languages a unit may have a label of its own for; others print the main label."""
+TRANSLATED = (Language.DE, Language.EN, Language.FR, Language.IT)
+"""The languages a unit may have a label of its own for; the others print the main label."""
 
 
 # The file names the source and the version of the list.
@@ -59,6 +60,7 @@ class Unit:
     """The code of the EN 16931 unit code list, sent in the e-invoice."""
     label: str
     """Printed on documents, also in languages without a label of their own."""
+    label_de: str = ""
     label_en: str = ""
     label_fr: str = ""
     label_it: str = ""
@@ -87,8 +89,9 @@ class Unit:
 
     @property
     def translations(self) -> dict[Language, str]:
-        """The labels of its own the unit has for English, French or Italian documents."""
+        """The labels of its own the unit has for documents in some languages."""
         own = {
+            Language.DE: self.label_de,
             Language.EN: self.label_en,
             Language.FR: self.label_fr,
             Language.IT: self.label_it,

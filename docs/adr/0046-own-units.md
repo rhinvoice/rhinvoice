@@ -13,8 +13,8 @@ prefixed by X.
 
 ## Decision
 - **Units belong to the company**, like the tax rates (ADR 0044): a label printed on
-  documents, optional labels of its own for English, French and Italian documents (an empty
-  one prints the main label), a description for the user only, and the code for the
+  documents, optional labels of its own per document language (an empty one prints the main
+  label), a description for the user only, and the code for the
   e-invoice. Several units may share a code ("Std." and "Stunde" are both HUR); labels are
   unique whatever the case. At most 100 units.
 - **The code list is data**: `domain/catalog/unit_codes.json` holds the 2162 codes the CEN
@@ -33,7 +33,8 @@ prefixed by X.
 - **The order is the user's**: the settings list the units offered, sorted by drag and drop
   or keyboard; the selects of lines, articles and plans follow it. A new article without a
   unit takes the first one.
-- **Removing** deletes a unit nothing uses; a unit that a line, an article or a recurring
+- **Removing** deletes a unit nothing uses (a line or an article saved meanwhile makes the
+  database refuse the delete: the unit is hidden then); a unit that a line, an article or a recurring
   plan uses is hidden instead, one action for the user (the answer says which). Hidden units
   are not listed in the settings and not offered for new lines; a line, article or plan
   that has one keeps it and shows it marked. They come back through the catalogue. The last
@@ -56,5 +57,8 @@ prefixed by X.
   `/api/units/codes` lists the code list and `/api/units/presets` the catalogue. Lines,
   articles and plans send `unit_id`; lines answer with the unit's code and label. The API
   makes no compatibility promise before 1.0.
-- The main label is the German one in the seeded units (the labels of before); a company
-  writing mainly in another language renames them or sets the label of that language.
+- The seeded units take the label of the company's document language as their main one;
+  the other languages, German included, keep theirs as labels of their own where they
+  differ, so every document prints what it did before. Migration 0029 does so for an
+  existing company; an installation without a company gets German labels, which the first
+  save of the company rewords (units the user changed stay as they are).

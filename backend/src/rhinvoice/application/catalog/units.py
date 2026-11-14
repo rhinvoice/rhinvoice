@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
     from rhinvoice.application.uow import UnitOfWork, UnitOfWorkFactory
     from rhinvoice.domain.catalog.unit_presets import UnitGroup
+    from rhinvoice.domain.company.company import Company
 
 MAX_UNITS = 100
 
@@ -33,6 +34,7 @@ MAX_UNITS = 100
 class SaveUnit:
     label: str
     code: str
+    label_de: str = ""
     label_en: str = ""
     label_fr: str = ""
     label_it: str = ""
@@ -89,6 +91,7 @@ class UnitHandlers:
                 id=new_id(),
                 code=command.code,
                 label=command.label,
+                label_de=command.label_de,
                 label_en=command.label_en,
                 label_fr=command.label_fr,
                 label_it=command.label_it,
@@ -107,6 +110,7 @@ class UnitHandlers:
                 _require(units, unit_id),
                 code=command.code,
                 label=command.label,
+                label_de=command.label_de,
                 label_en=command.label_en,
                 label_fr=command.label_fr,
                 label_it=command.label_it,
@@ -168,23 +172,24 @@ class UnitHandlers:
     def presets(self) -> list[UnitOffer]:
         """List the catalogue entries no unit comes from yet, then the hidden units.
 
-        A hidden unit from the catalogue shows in its group; an entry whose label a unit
-        has already is not offered.
+        Entries are worded in the company's language. A hidden unit from the catalogue shows
+        in its group; an entry whose label a unit has already is not offered.
         """
         with self.uow() as uow:
             units = uow.units.list()
+            language = _language(uow)
         taken = {unit.preset for unit in units}
         labels = {unit.label.casefold() for unit in units}
         offers = [
             UnitOffer(
                 code=preset.code,
-                label=preset.labels[Language.DE],
+                label=preset.labels[language],
                 group=preset.group,
                 names=preset.names,
                 key=preset.key,
             )
             for preset in PRESETS
-            if preset.key not in taken and preset.labels[Language.DE].casefold() not in labels
+            if preset.key not in taken and preset.labels[language].casefold() not in labels
         ]
         for unit in units:
             if unit.hidden:
@@ -205,6 +210,7 @@ class UnitHandlers:
         """Show the hidden ``unit_ids`` again and add the catalogue's ``keys``, at the end."""
         with self.uow() as uow:
             units = uow.units.list(for_update=True)
+            language = _language(uow)
             hidden = [_require(units, unit_id) for unit_id in dict.fromkeys(unit_ids)]
             _shown(uow, units, hidden)
             added: list[Unit] = []
@@ -218,7 +224,7 @@ class UnitHandlers:
                     raise ConflictError(
                         "a unit comes from this entry already", code="unit_preset_taken"
                     )
-                unit = preset.to_unit(new_id())
+                unit = preset.to_unit(new_id(), language)
                 _check_label([*units, *added], unit)
                 added.append(unit)
             _check_room(units, len(added))
@@ -228,6 +234,27 @@ class UnitHandlers:
             views = [UnitView(unit, unit.id in used) for unit in uow.units.list()]
             uow.commit()
         return views
+
+
+def relabel_units(uow: UnitOfWork, company: Company) -> None:
+    """Word the units of the start list in the language of a new company (migration 0029).
+
+    Units from the catalogue that are still as seeded in German take the label of the
+    company's language as their main one; every document prints what it did before. Units
+    the user changed, and labels another unit has, stay.
+    """
+    language = company.default_language
+    units = uow.units.list(for_update=True)
+    taken = {unit.label.casefold() for unit in units}
+    for unit in units:
+        preset = preset_of(unit.preset)
+        if preset is None or replace(unit, hidden=False) != preset.to_unit(unit.id):
+            continue
+        worded = replace(preset.to_unit(unit.id, language), hidden=unit.hidden)
+        if worded.label.casefold() in taken - {unit.label.casefold()}:
+            continue
+        taken = (taken - {unit.label.casefold()}) | {worded.label.casefold()}
+        uow.units.update(worded)
 
 
 def default_unit(units: Sequence[Unit]) -> Unit:
@@ -270,6 +297,12 @@ def _shown(uow: UnitOfWork, units: Sequence[Unit], showing: Sequence[Unit]) -> l
             ]
         )
     return [replace(unit, hidden=False) for unit in showing]
+
+
+def _language(uow: UnitOfWork) -> Language:
+    """Return the language units are worded in: the company's, German before it is set up."""
+    company = uow.company.get()
+    return Language.DE if company is None else company.default_language
 
 
 def _require(units: Sequence[Unit], unit_id: UUID) -> Unit:

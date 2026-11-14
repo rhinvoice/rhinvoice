@@ -1,10 +1,13 @@
 """Own units of the company (ADR 0046).
 
 Every installation gets the 21 units of before as its units, in their order and with their
-labels, also one without a company yet (articles may be saved before it). Articles, lines
-and the lines of recurring plans refer to the unit of their stored code; a code that is not
-one of the 21 gets a unit of its own. Issued lines keep their code and get the label they
-printed with, in the document's language, so issued documents look the same.
+labels, also one without a company yet (articles may be saved before it). The label of the
+company's language is a unit's main one; without a company it is German until the first
+save of the company rewords them (application.catalog.units.relabel_units). The other
+languages keep their labels where they differ. Articles, lines and the lines of recurring
+plans refer to the unit of their stored code; a code that is not one of the 21 gets a unit
+of its own. Issued lines keep their code and get the label they printed with, in the
+document's language, so issued documents look the same.
 
 The units are copied here as they were on the day of this migration: the domain's catalogue
 may change later, a migration must not.
@@ -82,13 +85,15 @@ def _seed(bind: sa.Connection) -> tuple[dict[str, uuid.UUID], Labels]:
     known = {code for code, _ in rows}
     # Never written by Rhinvoice, which knew the 21 only; such a code prints as it is.
     rows += [(code, dict.fromkeys(LANGUAGES, code)) for code in sorted(stored - known)]
+    company = bind.execute(sa.text("SELECT default_language FROM company")).scalar()
+    main = "de" if company is None else str(company)
     units: dict[str, uuid.UUID] = {}
     for position, (code, labels) in enumerate(rows):
         units[code] = uuid.uuid4()
         own = {
             language: label
             for language, label in labels.items()
-            if language != "de" and label != labels["de"]
+            if language != main and label != labels[main]
         }
         bind.execute(
             sa.text(
@@ -98,7 +103,7 @@ def _seed(bind: sa.Connection) -> tuple[dict[str, uuid.UUID], Labels]:
             {
                 "id": units[code],
                 "code": code,
-                "label": labels["de"],
+                "label": labels[main],
                 "labels": json.dumps(own),
                 "preset": code if code in known else None,
                 "position": position,

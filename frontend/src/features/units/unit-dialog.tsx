@@ -29,6 +29,7 @@ import {
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useRunOnce, useSubmitOnce } from "@/components/use-run-once";
+import { companyQuery } from "@/features/shared/company-api";
 import { FormAlert } from "@/features/shared/form-alert";
 import { applyServerErrors } from "@/features/shared/server-errors";
 import { useErrorMessage } from "@/features/shared/use-error-message";
@@ -47,6 +48,7 @@ import {
   emptyUnit,
   formToRequest,
   hasTranslations,
+  otherLanguages,
   unitFieldFor,
   unitSchema,
   unitToForm,
@@ -84,6 +86,9 @@ export function UnitDialog({
   useUnsavedChanges(isDirty);
   const translationsId = useId();
   const [translations, setTranslations] = useState(hasTranslations(defaultValues));
+  // The company's documents print the main label; the others may have their own.
+  const own = useQuery(companyQuery).data?.default_language ?? "de";
+  const languages = otherLanguages(defaultValues, own);
 
   const submit = form.handleSubmit(async (values) => {
     try {
@@ -156,13 +161,13 @@ export function UnitDialog({
                 aria-hidden="true"
                 className={translations ? "rotate-90 transition-transform" : "transition-transform"}
               />
-              {t("units.translations")}
+              {t(`units.translations.${own}`)}
             </Button>
             {translations ? (
               <div id={translationsId} className="flex flex-col gap-3">
                 <p className="text-sm text-muted-foreground">{t("units.translationsHint")}</p>
                 <div className="grid gap-3 sm:grid-cols-3">
-                  {(["en", "fr", "it"] as const).map((language) => (
+                  {languages.map((language) => (
                     <Field
                       key={language}
                       label={t(`units.label_${language}`)}

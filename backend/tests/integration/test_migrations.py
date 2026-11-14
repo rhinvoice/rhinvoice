@@ -693,3 +693,34 @@ def test_own_units_stop_the_downgrade(
     documents.create(DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(grain,)))
     with raises_exactly(RuntimeError, message):
         downgrade(database_url, "0028")
+
+
+def test_the_units_of_a_company_speak_its_language(
+    database_url: str, engine: Engine, setup: tuple[DocumentHandlers, UUID, FixedClock]
+) -> None:
+    """A French company gets French main labels; German ones stay for German documents."""
+    documents, customer, _ = setup
+    hours = LineInput(
+        kind=LineKind.ITEM,
+        description="Beratung",
+        unit_price="80",
+        unit_id=factories.unit_id("HUR"),
+    )
+    draft = documents.create(
+        DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(hours,))
+    ).document.id
+    downgrade(database_url, "0028")
+    with engine.begin() as connection:
+        connection.execute(text("UPDATE company SET default_language = 'fr'"))
+    upgrade(database_url)
+    with engine.connect() as connection:
+        assert rows(
+            connection,
+            "SELECT label, labels FROM units WHERE code IN ('C62', 'DAY') ORDER BY position",
+        ) == [
+            ("pce", {"de": "Stk.", "en": "pcs", "it": "pz."}),
+            ("jour", {"de": "Tag", "en": "day", "it": "giorno"}),
+        ]
+    # The German draft prints what it did.
+    view = documents.get(draft)
+    assert view.unit_of(view.document.content.lines[0]) == LineUnit("HUR", "Std.")

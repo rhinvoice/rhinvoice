@@ -10,6 +10,7 @@ import {
   formToRequest,
   groupedOffers,
   hasTranslations,
+  otherLanguages,
   MAX_CODE_SUGGESTIONS,
   offerKey,
   offerName,
@@ -95,13 +96,14 @@ describe("the unit form", () => {
         issues({
           label: long,
           code: "DTN",
+          label_de: long,
           label_en: long,
           label_fr: long,
           label_it: long,
           description: "x".repeat(101),
         }),
       ),
-    ).toEqual(["label", "label_en", "label_fr", "label_it", "description"]);
+    ).toEqual(["label", "label_de", "label_en", "label_fr", "label_it", "description"]);
     const longest = { label: "x".repeat(20), description: "x".repeat(100) };
     expect(issues({ ...emptyUnit(), code: "DTN", ...longest })).toEqual({});
   });
@@ -112,6 +114,7 @@ describe("the unit form", () => {
     expect(form).toEqual({
       label: "dz",
       code: "DTN",
+      label_de: "",
       label_en: "dt",
       label_fr: "q",
       label_it: "q",
@@ -120,7 +123,7 @@ describe("the unit form", () => {
     expect(formToRequest(form)).toEqual({
       label: "dz",
       code: "DTN",
-      labels: { en: "dt", fr: "q", it: "q" },
+      labels: { de: "", en: "dt", fr: "q", it: "q" },
       description: "Doppelzentner (100 kg)",
     });
   });
@@ -130,6 +133,19 @@ describe("the unit form", () => {
     expect(hasTranslations({ ...emptyUnit(), label_en: "dt" })).toBe(true);
     expect(hasTranslations({ ...emptyUnit(), label_fr: "q" })).toBe(true);
     expect(hasTranslations({ ...emptyUnit(), label_it: "q" })).toBe(true);
+    expect(hasTranslations({ ...emptyUnit(), label_de: "dz" })).toBe(true);
+  });
+
+  it("asks for the labels of the languages but the company's", () => {
+    expect(otherLanguages(emptyUnit(), "de")).toEqual(["en", "fr", "it"]);
+    expect(otherLanguages(emptyUnit(), "fr")).toEqual(["de", "en", "it"]);
+    // A label of its own for the company's language shows, too, so it can be emptied.
+    expect(otherLanguages({ ...emptyUnit(), label_fr: "q" }, "fr")).toEqual([
+      "de",
+      "en",
+      "fr",
+      "it",
+    ]);
   });
 
   it("maps the server's fields onto the form", () => {

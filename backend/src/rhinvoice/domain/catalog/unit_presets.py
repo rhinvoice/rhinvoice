@@ -3,7 +3,8 @@
 Each entry has its code of the EN 16931 unit code list (checked against it), the labels in
 the four document languages (French and Italian as written in Switzerland), the names that
 the catalogue lists and searches, and a group. A company starts with the first 21 entries,
-the fixed units of before (migration 0029) with their labels unchanged.
+the fixed units of before (migration 0029) with their labels unchanged; the label of its
+document language is the main one, the others are labels of their own where they differ.
 
 Hectare has no code of its own in the list (HAR is deprecated since Rec 20 revision 17):
 it is sent as H18, the square hectometre, which is exactly one hectare.
@@ -67,10 +68,14 @@ class UnitPreset:
         """What the catalogue lists and searches, in each language."""
         return dict(zip(LANGUAGES, self.name_words, strict=True))
 
-    def to_unit(self, unit_id: UUID) -> Unit:
-        """Return the entry as a company's unit: the German label, the others where they differ."""
+    def to_unit(self, unit_id: UUID, language: Language = Language.DE) -> Unit:
+        """Return the entry as a unit of a company writing in ``language``.
+
+        The label of ``language`` is the main one; the other languages get theirs where they
+        differ, so every document prints what it did before.
+        """
         labels = self.labels
-        label = labels[Language.DE]
+        label = labels[language]
 
         def own(language: Language) -> str:
             return "" if labels[language] == label else labels[language]
@@ -79,6 +84,7 @@ class UnitPreset:
             id=unit_id,
             code=self.code,
             label=label,
+            label_de=own(Language.DE),
             label_en=own(Language.EN),
             label_fr=own(Language.FR),
             label_it=own(Language.IT),

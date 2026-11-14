@@ -14,12 +14,14 @@ from rhinvoice.application.catalog.units import (
     UnitView,
     chosen_unit,
     default_unit,
+    relabel_units,
 )
 from rhinvoice.application.document.handlers import DocumentHandlers, DraftInput, LineInput
 from rhinvoice.application.errors import ConflictError, NotFoundError
 from rhinvoice.application.recurring.handlers import to_template
 from rhinvoice.domain.catalog.unit import Unit
 from rhinvoice.domain.catalog.unit_presets import PRESETS, START, UnitGroup, preset_of
+from rhinvoice.domain.company.company import Company
 from rhinvoice.domain.document.document import DocumentType
 from rhinvoice.domain.document.lines import LineKind
 from rhinvoice.domain.recurring.plan import Interval, PlanAction, RecurringPlan
@@ -61,7 +63,14 @@ def test_the_units_of_the_company(handlers: UnitHandlers, store: Store) -> None:
 
 def test_create_an_own_unit(handlers: UnitHandlers, store: Store) -> None:
     created = handlers.create(
-        command(label=" dz ", label_en="dt", label_fr="q", label_it="q ", description="100 kg")
+        command(
+            label=" dz ",
+            label_de="Dz.",
+            label_en="dt",
+            label_fr="q",
+            label_it="q ",
+            description="100 kg",
+        )
     )
     assert created == UnitView(store.units[-1], in_use=False)
     unit = created.unit
@@ -73,7 +82,12 @@ def test_create_an_own_unit(handlers: UnitHandlers, store: Store) -> None:
         None,
         False,
     )
-    assert unit.translations == {Language.EN: "dt", Language.FR: "q", Language.IT: "q"}
+    assert unit.translations == {
+        Language.DE: "Dz.",
+        Language.EN: "dt",
+        Language.FR: "q",
+        Language.IT: "q",
+    }
     assert store.unit_locks == 1
     assert unit.id != handlers.create(command(label="Doppelzentner")).unit.id
     assert labels(store)[-2:] == ["dz", "Doppelzentner"]
@@ -131,8 +145,10 @@ def test_change_a_unit(handlers: UnitHandlers, store: Store) -> None:
     assert store.unit_locks == 1
     assert not handlers.update(PIECES, command(label="Stück", code="C62")).in_use
     # The code may change too; issued lines keep theirs.
-    pair = handlers.update(PIECES, command(label="Stück", code="PR", label_it="paio"))
-    assert (pair.unit.code, pair.unit.label_it) == ("PR", "paio")
+    pair = handlers.update(
+        PIECES, command(label="Stück", code="PR", label_de="Paar", label_it="paio")
+    )
+    assert (pair.unit.code, pair.unit.label_de, pair.unit.label_it) == ("PR", "Paar", "paio")
     assert store.units[0] == pair.unit
     # Its own label is no conflict; another unit's is.
     handlers.update(HOURS, command(label="stunde", code="HUR"))
@@ -318,3 +334,50 @@ def test_choose_a_unit() -> None:
     assert default_unit([replace(unit, hidden=unit.id == PIECES) for unit in units]).id == HOURS
     with raises_exactly(ValidationError, "a unit is required"):
         default_unit([replace(unit, hidden=True) for unit in units])
+
+
+def test_the_catalogue_speaks_the_company_language(handlers: UnitHandlers, store: Store) -> None:
+    store.company = factories.company(default_language=Language.FR)
+    quintal = next(offer for offer in handlers.presets() if offer.key == "DTN")
+    assert quintal.label == "q"
+    # A label a unit has already keeps its entry out, in that language too.
+    handlers.create(command(label="Q", code="QTL"))
+    assert "DTN" not in [offer.key for offer in handlers.presets()]
+    store.units = store.units[:-1]
+    added = handlers.take_over(["DTN"], [])[-1].unit
+    assert (added.label, added.label_de, added.label_en, added.label_it) == ("q", "dz", "dt", "")
+
+
+def relabel(store: Store, company: Company) -> None:
+    with InMemoryUnitOfWork(store) as uow:
+        relabel_units(uow, company)
+        uow.commit()
+
+
+def test_a_new_company_words_its_units_in_its_language(store: Store) -> None:
+    """ADR 0046: the start list is German until the company is saved for the first time."""
+    renamed = replace(factories.units()[HOURS], label="Stunde")
+    hidden = replace(factories.units()[PIECES], hidden=True)
+    own = Unit(id=new_id(), code="MIN", label="min")
+    store.units = [
+        unit for unit in [*factories.units().values(), own] if unit.id not in {HOURS, PIECES}
+    ]
+    store.units = [hidden, renamed, *store.units]
+    relabel(store, factories.company(default_language=Language.FR))
+    words = {unit.code: unit for unit in store.units}
+    # Untouched units speak French; German becomes their own label; hidden stays hidden.
+    assert (words["C62"].label, words["C62"].label_de, words["C62"].hidden) == (
+        "pce",
+        "Stk.",
+        True,
+    )
+    assert (words["DAY"].label, words["DAY"].label_de) == ("jour", "Tag")
+    # A unit the user changed stays as it is; so does one whose new label a unit has.
+    assert words["HUR"] == renamed
+    assert next(unit for unit in store.units if unit.preset == "MIN").label == "Min."
+    assert store.unit_locks == 1
+
+
+def test_a_german_company_keeps_its_units(store: Store) -> None:
+    relabel(store, factories.company())
+    assert store.units == list(factories.units().values())

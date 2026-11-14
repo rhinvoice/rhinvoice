@@ -4686,9 +4686,14 @@ export interface components {
         UnitGroup: "time" | "quantity" | "weight" | "length" | "area" | "volume" | "energy" | "packaging";
         /**
          * UnitLabels
-         * @description Labels of English, French and Italian documents; empty: the main label.
+         * @description Labels of documents in a language; empty: the main label.
          */
         UnitLabels: {
+            /**
+             * De
+             * @default
+             */
+            de: string;
             /**
              * En
              * @default

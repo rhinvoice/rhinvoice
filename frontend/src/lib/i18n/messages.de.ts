@@ -573,8 +573,15 @@ export const de = {
   "units.codes": "Codes",
   "units.codeNone": "Kein Code gefunden",
   "units.codeRequired": "Wählen Sie einen Code aus der Liste.",
-  "units.translations":
+  "units.translations.de":
     "Andere Bezeichnung auf englischen, französischen oder italienischen Rechnungen",
+  "units.translations.en":
+    "Andere Bezeichnung auf deutschen, französischen oder italienischen Rechnungen",
+  "units.translations.fr":
+    "Andere Bezeichnung auf deutschen, englischen oder italienischen Rechnungen",
+  "units.translations.it":
+    "Andere Bezeichnung auf deutschen, englischen oder französischen Rechnungen",
+  "units.label_de": "Deutsch",
   "units.translationsHint": "Leer: Es gilt die Bezeichnung oben.",
   "units.label_en": "Englisch",
   "units.label_fr": "Französisch",

@@ -29,6 +29,7 @@ export function unitSchema(t: T, locale: Locale) {
     label: f.requiredText(MAX_UNIT_LABEL),
     /** Set by picking from the code list; "" until a code is chosen. */
     code: z.string().min(1, t("units.codeRequired")),
+    label_de: f.optionalText(MAX_UNIT_LABEL),
     label_en: f.optionalText(MAX_UNIT_LABEL),
     label_fr: f.optionalText(MAX_UNIT_LABEL),
     label_it: f.optionalText(MAX_UNIT_LABEL),
@@ -39,13 +40,22 @@ export function unitSchema(t: T, locale: Locale) {
 export type UnitFormValues = z.infer<ReturnType<typeof unitSchema>>;
 
 export function emptyUnit(): UnitFormValues {
-  return { label: "", code: "", label_en: "", label_fr: "", label_it: "", description: "" };
+  return {
+    label: "",
+    code: "",
+    label_de: "",
+    label_en: "",
+    label_fr: "",
+    label_it: "",
+    description: "",
+  };
 }
 
 export function unitToForm(unit: Unit): UnitFormValues {
   return {
     label: unit.label,
     code: unit.code,
+    label_de: unit.labels.de,
     label_en: unit.labels.en,
     label_fr: unit.labels.fr,
     label_it: unit.labels.it,
@@ -57,14 +67,27 @@ export function formToRequest(values: UnitFormValues): UnitRequest {
   return {
     label: values.label,
     code: values.code,
-    labels: { en: values.label_en, fr: values.label_fr, it: values.label_it },
+    labels: { de: values.label_de, en: values.label_en, fr: values.label_fr, it: values.label_it },
     description: values.description,
   };
 }
 
-/** Whether a unit has a label of its own for English, French or Italian documents. */
+export const LABEL_LANGUAGES = ["de", "en", "fr", "it"] as const;
+export type LabelLanguage = (typeof LABEL_LANGUAGES)[number];
+
+/**
+ * The languages the dialog asks a label of its own for: all but the company's, whose
+ * documents print the main label; that one too where a label of its own is set already.
+ */
+export function otherLanguages(values: UnitFormValues, company: LabelLanguage): LabelLanguage[] {
+  return LABEL_LANGUAGES.filter(
+    (language) => language !== company || values[`label_${language}`] !== "",
+  );
+}
+
+/** Whether a unit has a label of its own for documents in some language. */
 export function hasTranslations(values: UnitFormValues): boolean {
-  return values.label_en !== "" || values.label_fr !== "" || values.label_it !== "";
+  return LABEL_LANGUAGES.some((language) => values[`label_${language}`] !== "");
 }
 
 /** Map API error fields ("labels.en", "label_en") onto form fields. */

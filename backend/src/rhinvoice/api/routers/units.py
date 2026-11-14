@@ -20,15 +20,16 @@ PresetKey = Annotated[str, Field(pattern=CODE_PATTERN)]
 
 
 class UnitLabels(ApiModel):
-    """Labels of English, French and Italian documents; empty: the main label."""
+    """Labels of documents in a language; empty: the main label."""
 
+    de: str = text(MAX_UNIT_LABEL)
     en: str = text(MAX_UNIT_LABEL)
     fr: str = text(MAX_UNIT_LABEL)
     it: str = text(MAX_UNIT_LABEL)
 
     @classmethod
     def of(cls, unit: Unit) -> Self:
-        return cls(en=unit.label_en, fr=unit.label_fr, it=unit.label_it)
+        return cls(de=unit.label_de, en=unit.label_en, fr=unit.label_fr, it=unit.label_it)
 
 
 class UnitRequest(ApiModel):
@@ -44,6 +45,7 @@ class UnitRequest(ApiModel):
         return SaveUnit(
             label=self.label,
             code=self.code,
+            label_de=self.labels.de,
             label_en=self.labels.en,
             label_fr=self.labels.fr,
             label_it=self.labels.it,

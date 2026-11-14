@@ -12,7 +12,7 @@ type Json = dict[str, Any]
 QUINTAL = {
     "label": "dz",
     "code": "DTN",
-    "labels": {"en": "dt", "fr": "q", "it": "q"},
+    "labels": {"de": "", "en": "dt", "fr": "q", "it": "q"},
     "description": "Doppelzentner (100 kg)",
 }
 
@@ -40,7 +40,7 @@ def test_every_installation_starts_with_the_units_of_before(user_client: TestCli
         "id": str(factories.unit_id("C62")),
         "code": "C62",
         "label": "Stk.",
-        "labels": {"en": "pcs", "fr": "pce", "it": "pz."},
+        "labels": {"de": "", "en": "pcs", "fr": "pce", "it": "pz."},
         "description": "",
         "preset": "C62",
         "hidden": False,
@@ -62,7 +62,7 @@ def test_own_units_are_added_changed_sorted_and_removed(user_client: TestClient)
     ).json()
     assert (changed["label"], changed["labels"], changed["description"]) == (
         "Dz.",
-        {"en": "", "fr": "", "it": ""},
+        {"de": "", "en": "", "fr": "", "it": ""},
         "",
     )
     ids = [unit["id"] for unit in user_client.get("/api/units").json()]

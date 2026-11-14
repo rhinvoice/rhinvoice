@@ -216,8 +216,7 @@ def parse_unit(text: str, units: Sequence[Unit]) -> UUID | None:
     labelled = (
         unit
         for unit in offered
-        if value
-        in {normalize(label) for label in (unit.label, unit.label_en, unit.label_fr, unit.label_it)}
+        if value in {normalize(label) for label in (unit.label, *unit.translations.values())}
     )
     code = _UNIT_WORDS.get(value)
     coded = (

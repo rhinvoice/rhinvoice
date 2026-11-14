@@ -114,6 +114,7 @@ def test_a_unit_needs_a_label_and_a_known_code() -> None:
     ("field", "limit"),
     [
         ("label", MAX_UNIT_LABEL),
+        ("label_de", MAX_UNIT_LABEL),
         ("label_en", MAX_UNIT_LABEL),
         ("label_fr", MAX_UNIT_LABEL),
         ("label_it", MAX_UNIT_LABEL),
@@ -206,6 +207,28 @@ def test_an_entry_becomes_a_unit() -> None:
         Language.FR: "h",
         Language.IT: "h",
     }
+
+
+def test_an_entry_speaks_the_company_language() -> None:
+    unit_id = new_id()
+    piece = preset_of("C62")
+    assert piece is not None
+    french = piece.to_unit(unit_id, Language.FR)
+    assert french == Unit(
+        id=unit_id,
+        code="C62",
+        label="pce",
+        label_de="Stk.",
+        label_en="pcs",
+        label_it="pz.",
+        preset="C62",
+    )
+    # Every document prints what it did before.
+    assert [french.label_in(language) for language in LANGUAGES] == ["Stk.", "pcs", "pce", "pz."]
+    hours = preset_of("HUR")
+    assert hours is not None
+    assert hours.to_unit(unit_id, Language.EN).translations == {Language.DE: "Std."}
+    assert unit(label="Std", label_de="Std.").label_in(Language.DE) == "Std."
 
 
 def test_an_entry_has_a_known_code() -> None:

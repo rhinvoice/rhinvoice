@@ -122,6 +122,27 @@ export async function post<T>(page: Page, path: string, data: unknown): Promise<
   return (await response.json()) as T;
 }
 
+interface Unit {
+  readonly id: string;
+  readonly code: string;
+  readonly label: string;
+  readonly hidden: boolean;
+}
+
+/** The company's units as the API lists them (ADR 0046). */
+export async function units(page: Page): Promise<readonly Unit[]> {
+  const response = await page.request.get("/api/units");
+  expect(response.ok(), await response.text()).toBe(true);
+  return (await response.json()) as Unit[];
+}
+
+/** The id of the first unit offered with this code, e.g. "HUR" for "Std.". */
+export async function unitId(page: Page, code: string): Promise<string> {
+  const found = (await units(page)).find((unit) => unit.code === code && !unit.hidden);
+  if (found === undefined) throw new Error(`no unit with the code ${code} is offered`);
+  return found.id;
+}
+
 /** A date relative to today in the browser's time zone (playwright.config.ts). */
 export function isoDaysFromToday(days: number): string {
   // en-CA formats as YYYY-MM-DD; calendar arithmetic in UTC avoids DST shifts.

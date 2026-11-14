@@ -7,6 +7,7 @@ import {
   test,
   unique,
   waitForToastsToClose,
+  unitId,
 } from "./fixtures";
 
 interface Line {
@@ -27,10 +28,30 @@ test("a quote offers an alternative and an option; the invoice takes what was ch
     customer_id: customerId,
     subject: "Website",
     lines: [
-      { description: "Design und Umsetzung", quantity: "1", unit: "LS", unit_price: "4000" },
-      { description: "Hosting 1 Jahr, Paket S", quantity: "1", unit: "ANN", unit_price: "300" },
-      { description: "Hosting 1 Jahr, Paket L", quantity: "1", unit: "ANN", unit_price: "600" },
-      { description: "Mehrsprachigkeit FR/IT", quantity: "1", unit: "LS", unit_price: "1200" },
+      {
+        description: "Design und Umsetzung",
+        quantity: "1",
+        unit_id: await unitId(page, "LS"),
+        unit_price: "4000",
+      },
+      {
+        description: "Hosting 1 Jahr, Paket S",
+        quantity: "1",
+        unit_id: await unitId(page, "ANN"),
+        unit_price: "300",
+      },
+      {
+        description: "Hosting 1 Jahr, Paket L",
+        quantity: "1",
+        unit_id: await unitId(page, "ANN"),
+        unit_price: "600",
+      },
+      {
+        description: "Mehrsprachigkeit FR/IT",
+        quantity: "1",
+        unit_id: await unitId(page, "LS"),
+        unit_price: "1200",
+      },
     ],
   });
   await openApp(page, `/documents/${quote.id}`, "Angebot (Entwurf)");
@@ -157,16 +178,31 @@ test("the editor numbers positions as the PDF does", async ({ page, isMobile }, 
     subject: "Website",
     lines: [
       { kind: "text", description: "Phase 1" },
-      { description: "Design und Umsetzung", quantity: "1", unit: "LS", unit_price: "4000" },
+      {
+        description: "Design und Umsetzung",
+        quantity: "1",
+        unit_id: await unitId(page, "LS"),
+        unit_price: "4000",
+      },
       {
         description: "Domaingebühr",
         quantity: "1",
-        unit: "ANN",
+        unit_id: await unitId(page, "ANN"),
         unit_price: "20",
         pass_through: true,
       },
-      { description: "Hosting 1 Jahr, Paket S", quantity: "1", unit: "ANN", unit_price: "300" },
-      { description: "Hosting 1 Jahr, Paket L", quantity: "1", unit: "ANN", unit_price: "600" },
+      {
+        description: "Hosting 1 Jahr, Paket S",
+        quantity: "1",
+        unit_id: await unitId(page, "ANN"),
+        unit_price: "300",
+      },
+      {
+        description: "Hosting 1 Jahr, Paket L",
+        quantity: "1",
+        unit_id: await unitId(page, "ANN"),
+        unit_price: "600",
+      },
     ],
   });
   await openApp(page, `/documents/${quote.id}`, "Angebot (Entwurf)");

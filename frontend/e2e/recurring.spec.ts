@@ -1,4 +1,13 @@
-import { createCustomer, expect, expectAccessible, openApp, post, test, unique } from "./fixtures";
+import {
+  createCustomer,
+  expect,
+  expectAccessible,
+  openApp,
+  post,
+  test,
+  unique,
+  unitId,
+} from "./fixtures";
 
 test("a recurring invoice is planned, paused and deleted", async ({ page }, testInfo) => {
   const suffix = unique(testInfo.project.name);
@@ -60,7 +69,14 @@ test("an invoice is made recurring", async ({ page }, testInfo) => {
     type: "invoice",
     customer_id: customerId,
     subject: `Wartung ${suffix}`,
-    lines: [{ description: "Wartungspauschale", quantity: "1", unit: "LS", unit_price: "450" }],
+    lines: [
+      {
+        description: "Wartungspauschale",
+        quantity: "1",
+        unit_id: await unitId(page, "LS"),
+        unit_price: "450",
+      },
+    ],
   });
   await post(page, `/api/documents/${invoice.id}/issue`, {});
   await page.goto(`/documents/${invoice.id}`);

@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { createCustomer, expect, expectAccessible, post, test, unique } from "./fixtures";
+import { createCustomer, expect, expectAccessible, post, test, unique, unitId } from "./fixtures";
 
 // The mail catcher of the E2E stack (compose.e2e.yml); absent when run without it.
 const MAILPIT = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
@@ -56,7 +56,14 @@ test("an invoice goes out by mail with its PDF", async ({ page }, testInfo) => {
   const invoice = await post<{ id: string }>(page, "/api/documents", {
     type: "invoice",
     customer_id: customerId,
-    lines: [{ description: "Beratung", quantity: "2", unit: "HUR", unit_price: "150" }],
+    lines: [
+      {
+        description: "Beratung",
+        quantity: "2",
+        unit_id: await unitId(page, "HUR"),
+        unit_price: "150",
+      },
+    ],
   });
   const issued = await post<{ number: string }>(page, `/api/documents/${invoice.id}/issue`, {});
 

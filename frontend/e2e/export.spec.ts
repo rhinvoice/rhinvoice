@@ -9,6 +9,7 @@ import {
   post,
   test,
   unique,
+  unitId,
 } from "./fixtures";
 
 test("the invoices of a period are exported for the bookkeeping", async ({ page }, testInfo) => {
@@ -18,7 +19,14 @@ test("the invoices of a period are exported for the bookkeeping", async ({ page 
   const draft = await post<{ id: string }>(page, "/api/documents", {
     type: "invoice",
     customer_id: customerId,
-    lines: [{ description: "Beratung", quantity: "2", unit: "HUR", unit_price: "100" }],
+    lines: [
+      {
+        description: "Beratung",
+        quantity: "2",
+        unit_id: await unitId(page, "HUR"),
+        unit_price: "100",
+      },
+    ],
   });
   const invoice = await post<{ number: string }>(page, `/api/documents/${draft.id}/issue`, {});
 

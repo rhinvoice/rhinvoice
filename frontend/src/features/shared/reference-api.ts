@@ -8,12 +8,6 @@ export const countriesQuery = queryOptions({
   staleTime: Number.POSITIVE_INFINITY,
 });
 
-export const unitsQuery = queryOptions({
-  queryKey: ["reference", "units"],
-  queryFn: () => unwrap(api.GET("/api/reference/units")),
-  staleTime: Number.POSITIVE_INFINITY,
-});
-
 /** The company countries Rhinvoice supports, with what differs between them. */
 export const countryProfilesQuery = queryOptions({
   queryKey: ["reference", "country-profiles"],

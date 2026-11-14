@@ -14,8 +14,15 @@ const schema = articleSchema(translatorFor("de-DE"), "de-DE");
 
 describe("article form", () => {
   it("validates name and prices", () => {
-    expect(schema.safeParse(emptyArticle()).success).toBe(false);
-    const ok = { ...emptyArticle(), name: "Beratung", price_chf: "1.234,5", price_eur: "" };
+    expect(schema.safeParse(emptyArticle("unit-hours")).success).toBe(false);
+    // An article has a unit.
+    expect(schema.safeParse({ ...emptyArticle(), name: "Beratung" }).success).toBe(false);
+    const ok = {
+      ...emptyArticle("unit-hours"),
+      name: "Beratung",
+      price_chf: "1.234,5",
+      price_eur: "",
+    };
     expect(schema.safeParse(ok).success).toBe(true);
     expect(schema.safeParse({ ...ok, price_chf: "1,00001" }).success).toBe(false);
     expect(schema.safeParse({ ...ok, price_chf: "-5" }).success).toBe(false);
@@ -27,7 +34,10 @@ describe("article form", () => {
       "de-DE",
     );
     expect(request.prices).toEqual({ CHF: "1234.5" });
-    expect(request).toMatchObject({ tax_rate_id: null, pass_through: false });
+    expect(request).toMatchObject({ tax_rate_id: null, pass_through: false, unit_id: "" });
+    expect(formToRequest({ ...emptyArticle("unit-hours"), name: "X" }, "de-DE").unit_id).toBe(
+      "unit-hours",
+    );
     expect(
       formToRequest({ ...emptyArticle(), name: "X", tax: "pass_through" }, "de-DE"),
     ).toMatchObject({ tax_rate_id: null, pass_through: true });
@@ -44,11 +54,7 @@ describe("article form", () => {
         name: "Beratung",
         description: "",
         group: "",
-        unit: "HUR",
-        unit_label_de: "Std.",
-        unit_label_en: "h",
-        unit_label_fr: "h",
-        unit_label_it: "h",
+        unit_id: "unit-hours",
         tax_rate_id: "0b5e2c4e-7f1a-4c1e-9d55-3a6f8e2b9c10",
         tax_category: "standard",
         supply: "goods",
@@ -60,6 +66,7 @@ describe("article form", () => {
     );
     expect(form.price_chf).toBe("150,00");
     expect(form.supply).toBe("goods");
+    expect(form.unit).toBe("unit-hours");
     expect(form.tax).toBe("0b5e2c4e-7f1a-4c1e-9d55-3a6f8e2b9c10");
     expect(form.price_eur).toBe("");
   });
@@ -70,6 +77,7 @@ describe("article form", () => {
     expect(articleFieldFor("name")).toBe("name");
     expect(articleFieldFor("tax_rate_id")).toBe("tax");
     expect(articleFieldFor("pass_through")).toBe("tax");
+    expect(articleFieldFor("unit_id")).toBe("unit");
     expect(articleFieldFor("x")).toBeNull();
   });
 });

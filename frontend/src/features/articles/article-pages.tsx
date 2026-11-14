@@ -20,6 +20,8 @@ import { ArticleForm } from "@/features/articles/article-form";
 import { articleToForm, emptyArticle, formToRequest } from "@/features/articles/article-form-model";
 import { BackLink } from "@/features/shared/back-link";
 import { FormAlert } from "@/features/shared/form-alert";
+import { defaultUnitId } from "@/features/shared/unit-model";
+import { unitsQuery } from "@/features/shared/units-api";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 
 import { showUndoToast } from "@/features/shared/undo";
@@ -29,18 +31,24 @@ export function NewArticlePage() {
   useDocumentTitle(t("app.pageTitle", { title: t("articles.new") }));
   const navigate = useNavigate();
   const create = useCreateArticle();
+  // A new article starts in the first unit offered.
+  const units = useQuery(unitsQuery);
   return (
     <>
       <BackLink to="/articles" label={t("articles.title")} />
       <PageHeader title={t("articles.new")} />
-      <ArticleForm
-        defaultValues={emptyArticle()}
-        onSubmit={async (values) => {
-          const article = await create.mutateAsync(formToRequest(values, locale));
-          toast.success(t("articles.created", { name: article.name }));
-          await navigate({ to: "/articles/$articleId", params: { articleId: article.id } });
-        }}
-      />
+      {units.isPending ? (
+        <Skeleton className="h-96 max-w-2xl" />
+      ) : (
+        <ArticleForm
+          defaultValues={emptyArticle(defaultUnitId(units.data))}
+          onSubmit={async (values) => {
+            const article = await create.mutateAsync(formToRequest(values, locale));
+            toast.success(t("articles.created", { name: article.name }));
+            await navigate({ to: "/articles/$articleId", params: { articleId: article.id } });
+          }}
+        />
+      )}
     </>
   );
 }

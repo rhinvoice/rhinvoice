@@ -59,8 +59,11 @@ import {
   type InTotalTag,
 } from "@/features/documents/in-total-model";
 import type { CountryProfile } from "@/features/shared/country-profile-model";
+import { moveTarget } from "@/features/shared/reorder-model";
 import { useErrorMessage } from "@/features/shared/use-error-message";
-import { unitsQuery } from "@/features/shared/reference-api";
+import { defaultUnitId, unitLabelOf } from "@/features/shared/unit-model";
+import { UnitSelect } from "@/features/shared/unit-select";
+import { unitsQuery } from "@/features/shared/units-api";
 import {
   PASS_THROUGH,
   percentsOn,
@@ -73,7 +76,6 @@ import { cn } from "@/lib/cn";
 import { todayIso } from "@/lib/dates";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { parseDecimal } from "@/lib/format/parse-decimal";
-import { unitName } from "@/lib/locale";
 
 function ErrorText({ id, error }: { readonly id: string; readonly error: FieldError | undefined }) {
   if (error?.message === undefined) return null;
@@ -118,6 +120,8 @@ export function LineItems({
   const { control, formState, getValues, setValue } = useFormContext<DocumentFormValues>();
   const { fields, append, insert, remove, move } = useFieldArray({ control, name: "lines" });
   const rates = useQuery(taxRatesQuery).data;
+  // A new position starts in the first unit offered (ADR 0046).
+  const unit = defaultUnitId(useQuery(unitsQuery).data);
   // Until the preview names them for the date of supply, today's percentages.
   const known = percents ?? percentsOn(rates ?? [], todayIso());
   const linesError = formState.errors.lines;
@@ -132,7 +136,7 @@ export function LineItems({
   // it instead of restoring an empty line that then fails its checks and stays open.
   if (editing !== null && snapshot?.index !== editing) {
     const line = getValues(`lines.${editing}`);
-    setSnapshot({ index: editing, line: isBlankLine(line) ? null : line });
+    setSnapshot({ index: editing, line: isBlankLine(line, unit) ? null : line });
   }
   const original = snapshot?.index === editing ? snapshot.line : null;
 
@@ -153,8 +157,8 @@ export function LineItems({
   };
   const add = (kind: "item" | "text", index = fields.length) => {
     const focusName = `lines.${String(index)}.description` as const;
-    if (index === fields.length) append(emptyLine(kind), { focusName });
-    else insert(index, emptyLine(kind), { focusName });
+    if (index === fields.length) append(emptyLine(kind, unit), { focusName });
+    else insert(index, emptyLine(kind, unit), { focusName });
     setSnapshot({ index, line: null });
     onEditingChange(index);
   };
@@ -307,13 +311,6 @@ export function LineItems({
   );
 }
 
-/** Alt+↑/↓ reorders lines without dragging (WCAG 2.5.7). */
-function moveTarget(event: KeyboardEvent<HTMLElement>, index: number, count: number) {
-  if (!event.altKey || (event.key !== "ArrowUp" && event.key !== "ArrowDown")) return null;
-  const to = event.key === "ArrowUp" ? index - 1 : index + 1;
-  return to >= 0 && to < count ? to : null;
-}
-
 interface LineSummaryProps {
   readonly index: number;
   readonly count: number;
@@ -349,15 +346,14 @@ function LineSummary({
 }: LineSummaryProps) {
   const { t, locale } = useI18n();
   const { control } = useFormContext<DocumentFormValues>();
-  const units = useQuery(unitsQuery);
+  const units = useQuery(unitsQuery).data;
   const line = useWatch({ control, name: `lines.${index}` });
   const lines = useWatch({ control, name: "lines" });
   const currency = useWatch({ control, name: "currency" });
   // The number the PDF prints; text lines and pass-through items have none.
   const position = positionNumbers(lines).get(line.key);
   const tag = inTotalTag(lines, index);
-  const unit = units.data?.find((candidate) => candidate.code === line.unit);
-  const unitLabel = unit === undefined ? "" : unitName(locale, unit);
+  const unitLabel = unitLabelOf(units, line.unit);
   const isItem = line.kind === "item";
   // The rate as the line shows it (variant 3B): "8.1 %", or with its name where unclear.
   const rate =
@@ -685,18 +681,22 @@ function LineEditor({
             <label htmlFor={id("unit")} className="text-sm font-medium">
               {t("documents.lineUnit")}
             </label>
-            <NativeSelect
-              id={id("unit")}
-              onKeyDown={onKeyDown}
-              {...register(`lines.${index}.unit`)}
-            >
-              <option value="">{t("common.none")}</option>
-              {(units.data ?? []).map((unit) => (
-                <option key={unit.code} value={unit.code}>
-                  {unitName(locale, unit)}
-                </option>
-              ))}
-            </NativeSelect>
+            <Controller
+              control={control}
+              name={`lines.${index}.unit`}
+              render={({ field }) => (
+                <UnitSelect
+                  id={id("unit")}
+                  ref={field.ref}
+                  value={field.value}
+                  units={units.data}
+                  allowNone
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  onKeyDown={onKeyDown}
+                />
+              )}
+            />
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor={id("unit_price")} className="text-sm font-medium">

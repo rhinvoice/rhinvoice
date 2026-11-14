@@ -1695,26 +1695,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/reference/units": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Units
-         * @description UN/ECE Recommendation 20 unit codes supported for document lines.
-         */
-        get: operations["reference_list_units"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/reminders/{reminder_id}/html": {
         parameters: {
             query?: never;
@@ -1990,6 +1970,164 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Units
+         * @description Every unit of the company, hidden ones too, in their order.
+         */
+        get: operations["units_list_units"];
+        put?: never;
+        /**
+         * Create Unit
+         * @description Add an own unit at the end of the list.
+         *
+         *     422 unit_code_unknown; 409 unit_label_taken, too_many_units.
+         */
+        post: operations["units_create_unit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/units/codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Unit Codes
+         * @description List the EN 16931 unit codes (UN/ECE Recommendation 20 and 21) with their names.
+         */
+        get: operations["units_list_unit_codes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/units/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Order Units
+         * @description Sort the units offered; the order is that of the unit selects.
+         *
+         *     422 unit_order_incomplete.
+         */
+        put: operations["units_order_units"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/units/presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Unit Presets
+         * @description List the catalogue entries no unit comes from yet, then the hidden units.
+         */
+        get: operations["units_list_unit_presets"];
+        put?: never;
+        /**
+         * Take Over Unit Presets
+         * @description Show hidden units again and add catalogue entries, at the end of the list.
+         *
+         *     404 unit_preset_unknown; 409 unit_preset_taken, unit_label_taken, too_many_units.
+         */
+        post: operations["units_take_over_unit_presets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/units/{unit_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save Unit
+         * @description Change label, code and texts; issued documents keep what they were issued with.
+         *
+         *     422 unit_code_unknown; 409 unit_label_taken.
+         */
+        put: operations["units_save_unit"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/units/{unit_id}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove Unit
+         * @description Delete a unit nothing uses, else hide it.
+         *
+         *     409 unit_last_visible: the last unit offered stays.
+         */
+        post: operations["units_remove_unit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/units/{unit_id}/show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Show Unit
+         * @description Offer a hidden unit again, at the end of the list.
+         */
+        post: operations["units_show_unit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/updates": {
         parameters: {
             query?: never;
@@ -2192,12 +2330,8 @@ export interface components {
             supply: components["schemas"]["Supply"];
             /** Tax Rate Id */
             tax_rate_id?: string | null;
-            /**
-             * Unit
-             * @default C62
-             * @enum {string}
-             */
-            unit: "ANN" | "C62" | "DAY" | "E48" | "GRM" | "HUR" | "KGM" | "KMT" | "KWH" | "LS" | "LTR" | "MIN" | "MON" | "MTK" | "MTQ" | "MTR" | "PR" | "SET" | "TNE" | "WEE" | "XPK";
+            /** Unit Id */
+            unit_id?: string | null;
         };
         /** ArticleResponse */
         ArticleResponse: {
@@ -2230,18 +2364,10 @@ export interface components {
             /** Tax Rate Id */
             tax_rate_id: string | null;
             /**
-             * Unit
-             * @enum {string}
+             * Unit Id
+             * Format: uuid
              */
-            unit: "ANN" | "C62" | "DAY" | "E48" | "GRM" | "HUR" | "KGM" | "KMT" | "KWH" | "LS" | "LTR" | "MIN" | "MON" | "MTK" | "MTQ" | "MTR" | "PR" | "SET" | "TNE" | "WEE" | "XPK";
-            /** Unit Label De */
-            unit_label_de: string;
-            /** Unit Label En */
-            unit_label_en: string;
-            /** Unit Label Fr */
-            unit_label_fr: string;
-            /** Unit Label It */
-            unit_label_it: string;
+            unit_id: string;
         };
         /**
          * ArticleSort
@@ -3438,8 +3564,8 @@ export interface components {
             tax_category: components["schemas"]["TaxCategory"];
             /** Tax Rate Id */
             tax_rate_id: string | null;
-            /** Unit */
-            unit: string | null;
+            /** Unit Id */
+            unit_id: string | null;
             /** Unit Price */
             unit_price: string;
         };
@@ -3586,11 +3712,8 @@ export interface components {
             supply: components["schemas"]["Supply"];
             /** Tax Rate Id */
             tax_rate_id?: string | null;
-            /**
-             * Unit
-             * @enum {unknown}
-             */
-            unit?: "ANN" | "C62" | "DAY" | "E48" | "GRM" | "HUR" | "KGM" | "KMT" | "KWH" | "LS" | "LTR" | "MIN" | "MON" | "MTK" | "MTQ" | "MTR" | "PR" | "SET" | "TNE" | "WEE" | "XPK" | null;
+            /** Unit Id */
+            unit_id?: string | null;
             /**
              * Unit Price
              * @default 0
@@ -3626,8 +3749,12 @@ export interface components {
             tax_rate: string | null;
             /** Tax Rate Id */
             tax_rate_id: string | null;
-            /** Unit */
-            unit: string | null;
+            /** Unit Code */
+            unit_code: string | null;
+            /** Unit Id */
+            unit_id: string | null;
+            /** Unit Label */
+            unit_label: string | null;
             /** Unit Price */
             unit_price: string;
         };
@@ -4113,6 +4240,16 @@ export interface components {
             /** Total */
             total: string;
         };
+        /**
+         * Removal
+         * @description What removing a unit did.
+         * @enum {string}
+         */
+        Removal: "deleted" | "hidden";
+        /** RemovalResponse */
+        RemovalResponse: {
+            removal: components["schemas"]["Removal"];
+        };
         /** RemovePaymentsRequest */
         RemovePaymentsRequest: {
             /** Payments */
@@ -4322,6 +4459,13 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** TakeOverRequest */
+        TakeOverRequest: {
+            /** Keys */
+            keys?: string[];
+            /** Unit Ids */
+            unit_ids?: string[];
+        };
         /**
          * TaxCategory
          * @description The kind of a line's tax: the category of its rate, or pass-through (ADR 0044).
@@ -4527,18 +4671,99 @@ export interface components {
             /** Secret */
             secret: string;
         };
+        /** UnitCodeResponse */
+        UnitCodeResponse: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * UnitGroup
+         * @description How the catalogue groups its units.
+         * @enum {string}
+         */
+        UnitGroup: "time" | "quantity" | "weight" | "length" | "area" | "volume" | "energy" | "packaging";
+        /**
+         * UnitLabels
+         * @description Labels of English, French and Italian documents; empty: the main label.
+         */
+        UnitLabels: {
+            /**
+             * En
+             * @default
+             */
+            en: string;
+            /**
+             * Fr
+             * @default
+             */
+            fr: string;
+            /**
+             * It
+             * @default
+             */
+            it: string;
+        };
+        /**
+         * UnitOfferResponse
+         * @description A catalogue entry to add (``key``) or a hidden unit to show again (``unit_id``).
+         */
+        UnitOfferResponse: {
+            /** Code */
+            code: string;
+            /** Description */
+            description: string;
+            group: components["schemas"]["UnitGroup"] | null;
+            /** Key */
+            key: string | null;
+            /** Label */
+            label: string;
+            /** Names */
+            names: {
+                [key: string]: string;
+            };
+            /** Unit Id */
+            unit_id: string | null;
+        };
+        /** UnitOrderRequest */
+        UnitOrderRequest: {
+            /** Unit Ids */
+            unit_ids: string[];
+        };
+        /** UnitRequest */
+        UnitRequest: {
+            /** Code */
+            code: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Label */
+            label: string;
+            labels?: components["schemas"]["UnitLabels"];
+        };
         /** UnitResponse */
         UnitResponse: {
             /** Code */
             code: string;
-            /** Label De */
-            label_de: string;
-            /** Label En */
-            label_en: string;
-            /** Label Fr */
-            label_fr: string;
-            /** Label It */
-            label_it: string;
+            /** Description */
+            description: string;
+            /** Hidden */
+            hidden: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** In Use */
+            in_use: boolean;
+            /** Label */
+            label: string;
+            labels: components["schemas"]["UnitLabels"];
+            /** Preset */
+            preset: string | null;
         };
         /**
          * UpdateAction
@@ -13458,80 +13683,6 @@ export interface operations {
             };
         };
     };
-    reference_list_units: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UnitResponse"][];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
     dunning_reminder_html: {
         parameters: {
             query?: never;
@@ -14879,6 +15030,694 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TextTemplateResponse"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    units_list_units: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitResponse"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    units_create_unit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    units_list_unit_codes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitCodeResponse"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    units_order_units: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnitOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitResponse"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    units_list_unit_presets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitOfferResponse"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    units_take_over_unit_presets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TakeOverRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitResponse"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    units_save_unit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    units_remove_unit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RemovalResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    units_show_unit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitResponse"];
                 };
             };
             /** @description Bad Request */

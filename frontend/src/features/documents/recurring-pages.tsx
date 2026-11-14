@@ -73,6 +73,8 @@ import {
   type SettingsField,
   type SettingsProblem,
 } from "@/features/documents/recurring-model";
+import { defaultUnitId } from "@/features/shared/unit-model";
+import { unitsQuery } from "@/features/shared/units-api";
 import { BackLink } from "@/features/shared/back-link";
 import { companyQuery, type Company } from "@/features/shared/company-api";
 import { FormAlert } from "@/features/shared/form-alert";
@@ -236,13 +238,17 @@ function useCompanyAndTexts(): {
   readonly company: Company | null | undefined;
   readonly ready: boolean;
   readonly error: unknown;
+  /** The unit of a new plan's first position: the first one offered (ADR 0046). */
+  readonly unit: string;
 } {
   const company = useQuery(companyQuery);
   const templates = useQuery(textTemplatesQuery);
+  const units = useQuery(unitsQuery);
   return {
     company: company.data,
-    ready: company.data !== undefined && !templates.isPending,
+    ready: company.data !== undefined && !templates.isPending && !units.isPending,
     error: company.error,
+    unit: defaultUnitId(units.data),
   };
 }
 
@@ -251,7 +257,7 @@ export function NewPlanPage({ fromDocument }: { readonly fromDocument?: string |
   const { t, locale } = useI18n();
   useDocumentTitle(t("app.pageTitle", { title: t("recurring.new") }));
   const errorMessage = useErrorMessage();
-  const { company, ready, error } = useCompanyAndTexts();
+  const { company, ready, error, unit } = useCompanyAndTexts();
   const templates = useQuery(textTemplatesQuery);
   const source = useQuery({
     ...documentQuery(fromDocument ?? ""),
@@ -265,7 +271,7 @@ export function NewPlanPage({ fromDocument }: { readonly fromDocument?: string |
   const defaults: DocumentFormValues =
     source.data === undefined
       ? {
-          ...emptyDocument(company),
+          ...emptyDocument(company, "", unit),
           ...defaultTexts(templates.data ?? [], "invoice", company.default_language),
         }
       : documentToPlanForm(source.data, locale);

@@ -5,6 +5,16 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Added
+- Own units per company (*Settings → Units*): each unit has the label the invoice prints, a
+  description for you, its code of the EN 16931 unit list for the e-invoice (UN/ECE
+  Recommendations 20 and 21, checked on saving) and, if you like, its own label on English,
+  French or Italian invoices. Every company starts with the units of before; *From catalogue …*
+  adds common ones by group, among them dz (Doppelzentner, DTN), hectare, carton and pallet.
+  The list sets the order of the selects, sorted by dragging, the arrows or Alt+↑/↓. *Remove*
+  deletes a unit nothing uses and hides one in use; issued documents keep the code and label
+  they were issued with (#95).
+
 ## [0.13.0] – 2026-11-13
 
 ### Added

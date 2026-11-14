@@ -5,6 +5,17 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+### Neu
+- Eigene Einheiten pro Firma (*Einstellungen → Einheiten*): Jede Einheit hat die Bezeichnung, die
+  auf der Rechnung steht, eine Beschreibung für Sie, ihren Code der Einheitenliste von EN 16931
+  für die E-Rechnung (UN/ECE-Empfehlungen 20 und 21, beim Speichern geprüft) und auf Wunsch eine
+  eigene Bezeichnung auf englischen, französischen oder italienischen Rechnungen. Jede Firma
+  beginnt mit den bisherigen Einheiten; *Aus Vorlage …* ergänzt gängige nach Gruppen, darunter dz
+  (Doppelzentner, DTN), Hektar, Karton und Palette. Die Liste bestimmt die Reihenfolge der
+  Auswahl, sortiert durch Ziehen, die Pfeile oder Alt+↑/↓. *Entfernen* löscht eine Einheit, die
+  nichts verwendet, und blendet eine verwendete aus; ausgestellte Dokumente behalten Code und
+  Bezeichnung, mit denen sie ausgestellt wurden (#95).
+
 ## [0.13.0] – 2026-11-13
 
 ### Neu

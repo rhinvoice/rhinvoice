@@ -118,6 +118,7 @@ export default defineConfig({
           page("invoices/bank-accounts", ["Bank accounts and payees", "Bankkonten und Zahlungsempfänger", "Comptes bancaires et bénéficiaires", "Conti bancari e beneficiari"]),
           page("invoices/print-templates", ["Print templates", "Druckvorlagen", "Mises en page d’impression", "Layout di stampa"]),
           page("invoices/tax-rates", ["Tax rates", "Steuersätze", "Taux de TVA", "Aliquote IVA"]),
+          page("invoices/units", ["Units", "Einheiten", "Unités", "Unità"]),
           page("invoices/recurring", ["Recurring invoices", "Wiederkehrende Rechnungen", "Factures récurrentes", "Fatture ricorrenti"]),
           page("invoices/e-invoice", ["E-invoices", "E-Rechnung", "Factures électroniques", "Fatture elettroniche"]),
         ]),

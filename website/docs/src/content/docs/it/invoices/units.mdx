@@ -1,0 +1,98 @@
+---
+title: Unità proprie e il loro codice per la fattura elettronica
+description: "Unità in Rhinvoice: denominazioni proprie come dz, ordine delle unità, modello con ettaro, cartone e pallet e il codice UN/ECE richiesto dalla fattura elettronica."
+faq:
+  - q: Come fatturo a quintali (100 kg)?
+    a: "In «Impostazioni → Unità → Dal modello …» riprendete «dz · quintale (100 kg)». Ha il codice DTN per la fattura elettronica e da quel momento figura nella scelta di ogni posizione."
+  - q: Quale codice serve a un’unità?
+    a: "Un codice della lista delle unità della norma EN 16931, cioè la raccomandazione 20 dell’UNECE con i codici di imballaggio della raccomandazione 21. Rhinvoice propone solo codici di questa lista, affinché nessuna fattura elettronica fallisca per l’unità. Più unità possono avere lo stesso codice."
+  - q: Le vecchie fatture cambiano se rinomino un’unità?
+    a: "No. L’emissione blocca codice e denominazione dell’unità su ogni posizione. Le bozze mostrano la denominazione attuale."
+  - q: Posso eliminare un’unità?
+    a: "«Rimuovi» elimina un’unità che nulla usa. Se posizioni, articoli o fatture ricorrenti la usano, Rhinvoice la nasconde. Questi la mantengono, le nuove posizioni non la propongono più e «Dal modello …» la riporta."
+  - q: Perché l’ettaro ha il codice H18?
+    a: "Il vecchio codice HAR è obsoleto dalla revisione 17 della raccomandazione 20 dell’UNECE e i programmi di verifica delle fatture elettroniche lo rifiutano. H18 è l’ettometro quadrato, cioè esattamente un ettaro."
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Ogni azienda in Rhinvoice ha **unità proprie**: una denominazione che figura sulla fattura, per esempio «dz» per il quintale, e un **codice per la fattura elettronica**, per esempio DTN. All’inizio sono le 21 unità che Rhinvoice ha sempre conosciuto. Altre le riprendete da un modello o le create voi, e l’ordine lo decidete voi.
+
+## Quali unità ha un’azienda
+
+*Impostazioni → Unità* elenca le unità nell’ordine in cui posizioni e articoli le propongono: la denominazione, sotto la descrizione, a destra il codice. Un clic su un’unità la apre. I nuovi articoli prendono la prima unità della lista, e così le nuove posizioni.
+
+All’inizio ogni azienda ha queste unità:
+
+| Gruppo | Unità (codice) |
+|---|---|
+| Quantità | Stk. (C62), Pauschal (LS), Set (SET), Paar (PR), Leistung (E48) |
+| Tempo | Std. (HUR), Min. (MIN), Tag (DAY), Woche (WEE), Monat (MON), Jahr (ANN) |
+| Peso | kg (KGM), g (GRM), t (TNE) |
+| Lunghezza, superficie, volume | m (MTR), km (KMT), m² (MTK), l (LTR), m³ (MTQ) |
+| Energia, imballaggio | kWh (KWH), Paket (XPK) |
+
+Le denominazioni sono in tedesco; le fatture in italiano, inglese e francese mostrano i termini consueti, per esempio «pz.», «pcs» e «pce» invece di «Stk.».
+
+## Ordinare
+
+Trascinate un’unità al suo nuovo posto, usate le frecce accanto o premete **Alt+↑** e **Alt+↓**. Posizioni e articoli propongono subito le unità nel nuovo ordine.
+
+## Riprendere dal modello
+
+**Dal modello …** elenca unità comuni che la vostra azienda non ha ancora, per gruppo e con una ricerca:
+
+| Gruppo | Unità del modello (codice) |
+|---|---|
+| Tempo | trimestre (QAN) |
+| Peso | dz, quintale di 100 kg (DTN) |
+| Lunghezza | mm (MMT), cm (CMT) |
+| Superficie | ha, ettaro (H18) |
+| Volume | ml (MLT), hl (HLT) |
+| Energia | MWh (MWH) |
+| Imballaggio | cartone (XCT), scatola (XBX), pallet (XPX), sacchetto (XBG), sacco (XSA), bottiglia (XBO) |
+
+Vi figurano anche le vostre unità nascoste: quelle del modello nel loro gruppo, le vostre sotto *Nascoste*. Sceglietene una o più e cliccate su **Riprendi**. Si aggiungono in fondo alla lista.
+
+## Creare un’unità
+
+<Steps>
+
+1. Aprite *Impostazioni → Unità* e cliccate su **Nuova unità**.
+2. Inserite la *Denominazione* che figura sulla fattura, al massimo 20 caratteri.
+3. Se volete, scrivete una *Descrizione*. È solo per voi e non figura sulla fattura.
+4. Scegliete il *Codice per la fattura elettronica*. Cercate per codice o per il nome inglese, per esempio «DTN» o «decitonne».
+5. Cliccate su **Salva**.
+
+</Steps>
+
+*Altra denominazione sulle fatture in inglese, francese o italiano* dà all’unità una denominazione propria per le fatture in queste lingue. Un campo vuoto significa: vale la denominazione sopra. Le denominazioni sono uniche, senza distinzione tra maiuscole e minuscole.
+
+## Il codice per la fattura elettronica
+
+La fattura elettronica secondo EN 16931 (ZUGFeRD, XRechnung) indica l’unità di ogni posizione come codice. Sono ammessi solo i codici della lista delle unità di EN 16931: la raccomandazione 20 dell’UNECE e i codici di imballaggio della raccomandazione 21, che iniziano con X. Rhinvoice propone esattamente questa lista e non salva nessuna unità con un altro codice.
+
+- Più unità possono avere lo stesso codice, per esempio «Std.» e «Stunde», entrambe HUR.
+- L’ettaro ha il codice **H18** (ettometro quadrato, esattamente un ettaro). Il vecchio codice HAR è obsoleto dalla revisione 17 della raccomandazione 20 e i programmi di verifica lo rifiutano.
+- Le posizioni senza unità figurano nella fattura elettronica con C62 (pezzo).
+
+<Aside type="note">
+Il codice figura solo nella fattura elettronica. Il PDF mostra la denominazione nella lingua del documento.
+</Aside>
+
+## Rimuovere
+
+**Rimuovi** nel dialogo di un’unità la elimina se nulla la usa. Se posizioni, articoli o fatture ricorrenti la usano, Rhinvoice la nasconde: *Impostazioni → Unità* non la elenca più, e nuove posizioni e nuovi articoli non la propongono più. Chi la usa la mantiene; la scelta la mostra lì con «(nascosta)». Il messaggio dice che cosa è successo. L’ultima unità della lista rimane.
+
+## Fatture emesse
+
+L’emissione blocca su ogni posizione il codice dell’unità e la sua denominazione nella lingua del documento. Rinominare o rimuovere un’unità non cambia né le fatture emesse, né gli storni, né i loro PDF. Le bozze mostrano l’unità attuale. Maggiori informazioni: [Emettere e stornare una fattura](/docs/it/invoices/issue-and-cancel/), [Fatture elettroniche](/docs/it/invoices/e-invoice/).
+
+## Importazione
+
+Nell’[importazione di articoli](/docs/it/moving/customers-and-articles/), Rhinvoice trova l’unità di una riga dalla sua denominazione in una delle quattro lingue, dal suo codice o da parole comuni come «Stunden» o «pauschal». Le unità nascoste non vengono trovate.
+
+## Domande frequenti
+
+<Faq />

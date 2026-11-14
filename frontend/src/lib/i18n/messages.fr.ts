@@ -864,7 +864,7 @@ export const fr: Catalog<MessageKey> = {
   "documentType.cancellation": "Facture d’annulation",
 
   "status.draft": "Brouillon",
-  "status.sent": "Envoyée",
+  "status.sent": "Ouverte",
   "status.accepted": "Acceptée",
   "status.declined": "Refusée",
   "status.expired": "Expirée",
@@ -885,7 +885,7 @@ export const fr: Catalog<MessageKey> = {
   "event.created": "Créé",
   "event.created_from": "Créé à partir de",
   "event.issued": "Émis",
-  "event.sent": "Envoyé",
+  "event.sent": "Finalisé",
   "event.accepted": "Accepté",
   "event.declined": "Refusé",
   "event.converted": "Converti en facture",
@@ -922,7 +922,7 @@ export const fr: Catalog<MessageKey> = {
   "documents.view.paid": "Payées",
   "documents.view.cancelled": "Annulées",
   "documents.view.written_off": "Passées en perte",
-  "documents.view.sent": "Envoyées",
+  "documents.view.sent": "Ouvertes",
   "documents.view.accepted": "Acceptées",
   "documents.view.declined": "Refusées",
   "documents.view.expired": "Expirées",
@@ -1208,12 +1208,12 @@ export const fr: Catalog<MessageKey> = {
   "documents.issueTitle": "Émettre la facture ?",
   "documents.issueDescription":
     "La facture reçoit son numéro définitif et ne peut plus être modifiée ensuite. Les corrections ne sont alors possibles que par une facture d’annulation.",
-  "documents.send": "Marquer comme envoyée",
-  "documents.sendTitle": "Marquer l’offre comme envoyée ?",
+  "documents.send": "Finaliser",
+  "documents.sendTitle": "Finaliser l’offre ?",
   "documents.sendDescription":
     "L’offre reçoit son numéro et ne peut plus être modifiée ensuite. Toute modification nécessite une nouvelle offre (Dupliquer).",
   "documents.issuedToast": "Facture {number} émise.",
-  "documents.sentToast": "Offre {number} marquée comme envoyée.",
+  "documents.sentToast": "Offre {number} finalisée.",
   "documents.draftSaved": "Brouillon enregistré.",
   "documents.leaveConfirm":
     "Certaines modifications ne sont pas enregistrées. Quitter tout de même la page ?",

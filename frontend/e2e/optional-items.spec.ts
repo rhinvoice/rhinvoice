@@ -121,10 +121,10 @@ test("a quote offers an alternative and an option; the invoice takes what was ch
   await page.getByRole("button", { name: "Übernehmen" }).click();
 
   // Sent, the quote is turned into an invoice with the items the customer took.
-  await page.getByRole("button", { name: "Als versendet markieren" }).click();
+  await page.getByRole("button", { name: "Fertigstellen" }).click();
   await page
-    .getByRole("alertdialog", { name: "Angebot als versendet markieren?" })
-    .getByRole("button", { name: "Als versendet markieren" })
+    .getByRole("alertdialog", { name: "Angebot fertigstellen?" })
+    .getByRole("button", { name: "Fertigstellen" })
     .click();
   await expect(page.getByRole("heading", { level: 1, name: /^Angebot \S+$/ })).toBeVisible();
   // Only a sent quote offers the conversion: wait for its actions before opening the menu.

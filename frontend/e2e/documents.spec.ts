@@ -283,10 +283,10 @@ test("a quote is sent, accepted and turned into an invoice", async ({ page }, te
 
   await page.goto(`/documents/${quote.id}`);
   await expect(page.getByRole("heading", { level: 1, name: "Angebot (Entwurf)" })).toBeVisible();
-  await page.getByRole("button", { name: "Als versendet markieren" }).click();
+  await page.getByRole("button", { name: "Fertigstellen" }).click();
   await page
-    .getByRole("alertdialog", { name: "Angebot als versendet markieren?" })
-    .getByRole("button", { name: "Als versendet markieren" })
+    .getByRole("alertdialog", { name: "Angebot fertigstellen?" })
+    .getByRole("button", { name: "Fertigstellen" })
     .click();
   await expect(page.getByRole("heading", { level: 1, name: /^Angebot \S+$/ })).toBeVisible();
   await page.getByRole("button", { name: "Angenommen" }).click();

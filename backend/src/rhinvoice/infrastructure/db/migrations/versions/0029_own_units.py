@@ -232,7 +232,8 @@ def downgrade() -> None:
         if line.get("unit_id") is not None
     )
     known = {code for code, *_ in START}
-    if any(codes[unit] not in known for unit in used):
+    # A plan may name a unit that is gone (its JSON has no foreign key): it had no code then.
+    if any(unit in codes and codes[unit] not in known for unit in used):
         msg = (
             "documents, articles or recurring plans use own units: they need version 0.14 or later"
         )
@@ -259,7 +260,7 @@ def downgrade() -> None:
         lines = [
             {
                 **{name: value for name, value in line.items() if name != "unit_id"},
-                "unit": None if line.get("unit_id") is None else codes[line["unit_id"]],
+                "unit": codes.get(line.get("unit_id") or ""),
             }
             for line in template["lines"]
         ]

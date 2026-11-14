@@ -119,7 +119,10 @@ class RecurringHandlers:
                 interval=command.interval,
                 start_date=command.start_date,
                 action=command.action,
-                template=to_template(command.template, uow.tax_rates.list(), uow.units.list()),
+                # Locked: plans keep their units in JSON, no foreign key stops a removal.
+                template=to_template(
+                    command.template, uow.tax_rates.list(), uow.units.list(for_update=True)
+                ),
                 today=self.clock.today(),
                 now=self.clock.now(),
                 end_date=command.end_date,
@@ -144,7 +147,7 @@ class RecurringHandlers:
                 template=to_template(
                     command.template,
                     uow.tax_rates.list(),
-                    uow.units.list(),
+                    uow.units.list(for_update=True),
                     previous.template.rate_ids,
                     previous.template.unit_ids,
                 ),

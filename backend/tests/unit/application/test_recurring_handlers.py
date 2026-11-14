@@ -542,9 +542,13 @@ def test_plans_keep_their_hidden_units(recurring: RecurringHandlers, store: Stor
     monthly = replace(HOSTING, unit_id=months)
     template = DraftInput(customer_id=CUSTOMER, currency=Currency.CHF, lines=(monthly,))
     plan = recurring.create(save(template=template)).plan
+    assert store.unit_locks == 1
     store.units = [replace(unit, hidden=unit.id == months) for unit in UNITS]
-    # The plan keeps the unit when it is saved again and when it writes the invoice.
+    # The plan keeps the unit when it is saved again and when it writes the invoice. The units
+    # are locked: no foreign key keeps a removal from taking a unit the plan names.
+    locks = store.unit_locks
     assert recurring.update(plan.id, save(template=template)).plan.template.unit_ids == (months,)
+    assert store.unit_locks == locks + 1
     [run] = recurring.run_due()
     assert run.document_id is not None
     invoice = store.documents[run.document_id].document

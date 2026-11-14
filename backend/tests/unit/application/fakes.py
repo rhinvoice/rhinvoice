@@ -139,6 +139,9 @@ class Store:
     """How often the rates were read for a change (locked in the database)."""
     units: list[Unit] = field(default_factory=lambda: list(factories.units().values()))
     """In their order; every installation starts with the units of before (migration 0029)."""
+    units_referenced_meanwhile: set[UUID] = field(default_factory=set[UUID])
+    """Units another transaction refers to without having committed yet: used_ids misses them,
+    the foreign keys of the database do not."""
     unit_locks: int = 0
     """How often the units were read for a change (locked in the database)."""
     legacy_categories: dict[UUID, str] = field(default_factory=dict[UUID, str])
@@ -353,8 +356,12 @@ class InMemoryUnitRepository:
     def update(self, unit: Unit) -> None:
         self.data = [unit if other.id == unit.id else other for other in self.data]
 
-    def delete(self, unit_id: UUID) -> None:
+    def delete(self, unit_id: UUID) -> bool:
+        if unit_id in self.store.units_referenced_meanwhile or unit_id in self.used_ids():
+            # Like the foreign keys of lines and articles.
+            return False
         self.data = [unit for unit in self.data if unit.id != unit_id]
+        return True
 
     def reorder(self, unit_ids: Sequence[UUID]) -> None:
         by_id = {unit.id: unit for unit in self.data}

@@ -129,11 +129,11 @@ class UnitHandlers:
                 raise ConflictError(
                     "the last unit offered for lines cannot be removed", code="unit_last_visible"
                 )
-            if unit_id in uow.units.used_ids():
+            # A line or an article saved meanwhile keeps the unit from going, too.
+            if unit_id in uow.units.used_ids() or not uow.units.delete(unit_id):
                 uow.units.update(replace(unit, hidden=True))
                 removal = Removal.HIDDEN
             else:
-                uow.units.delete(unit_id)
                 removal = Removal.DELETED
             uow.commit()
         return removal

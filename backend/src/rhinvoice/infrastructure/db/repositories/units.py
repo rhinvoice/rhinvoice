@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from sqlalchemy import bindparam, delete, func, insert, select, text, update
+from sqlalchemy.exc import IntegrityError
 
 from rhinvoice.domain.catalog.unit import Unit
 from rhinvoice.infrastructure.db.tables import articles, document_lines, units
@@ -40,8 +41,15 @@ class SqlUnitRepository:
     def update(self, unit: Unit) -> None:
         self._connection.execute(update(units).where(units.c.id == unit.id).values(_values(unit)))
 
-    def delete(self, unit_id: UUID) -> None:
-        self._connection.execute(delete(units).where(units.c.id == unit_id))
+    def delete(self, unit_id: UUID) -> bool:
+        # In a savepoint: a refused delete leaves the transaction usable, e.g. to hide the unit.
+        # Deleting a unit can only break a foreign key (lines and articles RESTRICT it).
+        try:
+            with self._connection.begin_nested():
+                self._connection.execute(delete(units).where(units.c.id == unit_id))
+        except IntegrityError:
+            return False
+        return True
 
     def reorder(self, unit_ids: Sequence[UUID]) -> None:
         if unit_ids:

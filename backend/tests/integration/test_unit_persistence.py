@@ -15,6 +15,7 @@ from rhinvoice.domain.document.document import DocumentType
 from rhinvoice.domain.document.lines import LineKind
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.identifier import new_id
+from rhinvoice.infrastructure.db.repositories.units import SqlUnitRepository
 from rhinvoice.infrastructure.db.uow import SqlUnitOfWork
 from tests.integration.test_document_persistence import setup
 from tests.integration.test_recurring_persistence import plan
@@ -48,7 +49,7 @@ def test_units_keep_their_order_and_labels(engine: Engine) -> None:
         uow.commit()
     with SqlUnitOfWork(engine) as uow:
         assert uow.units.list() == [shown, *reversed(START)]
-        uow.units.delete(START[0].id)
+        assert uow.units.delete(START[0].id) is True
         uow.units.add(START[0])
         uow.units.reorder([])
         uow.commit()
@@ -95,10 +96,41 @@ def test_units_in_use_are_hidden_not_deleted(
     assert {view.unit.id for view in units.units() if view.in_use} == used
     assert units.remove(factories.unit_id("HUR")) is Removal.HIDDEN
     assert units.remove(factories.unit_id("MIN")) is Removal.DELETED
-    # The database refuses what a caller should have checked.
+    # The foreign keys refuse what a caller should have checked; the transaction goes on.
     for code in ("HUR", "C62"):
-        with SqlUnitOfWork(engine) as uow, pytest.raises(IntegrityError):
-            uow.units.delete(factories.unit_id(code))
+        with SqlUnitOfWork(engine) as uow:
+            assert uow.units.delete(factories.unit_id(code)) is False
+            assert factories.unit_id(code) in {unit.id for unit in uow.units.list()}
+            uow.commit()
+
+
+def test_a_unit_used_meanwhile_is_hidden_not_deleted(
+    engine: Engine,
+    setup: tuple[DocumentHandlers, UUID, FixedClock],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A line saved while the unit is removed: its foreign key refuses the delete."""
+    documents, customer, clock = setup
+    hours, pieces = factories.unit_id("HUR"), factories.unit_id("C62")
+    line = LineInput(kind=LineKind.ITEM, description="Beratung", unit_price="80", unit_id=hours)
+    documents.create(DocumentType.INVOICE, DraftInput(customer_id=customer, lines=(line,)))
+    ArticleHandlers(uow=lambda: SqlUnitOfWork(engine), clock=clock).create(
+        SaveArticle(name="Kabel", unit_id=pieces)
+    )
+
+    # The draft and the article came after the remove looked for references.
+    def no_references(_self: SqlUnitRepository) -> frozenset[UUID]:
+        return frozenset()
+
+    monkeypatch.setattr(SqlUnitRepository, "used_ids", no_references)
+    units = UnitHandlers(uow=lambda: SqlUnitOfWork(engine))
+    assert units.remove(hours) is Removal.HIDDEN
+    assert units.remove(pieces) is Removal.HIDDEN
+    assert units.remove(factories.unit_id("MIN")) is Removal.DELETED
+    with SqlUnitOfWork(engine) as uow:
+        stored = {unit.id: unit for unit in uow.units.list()}
+    assert (stored[hours].hidden, stored[pieces].hidden) == (True, True)
+    assert factories.unit_id("MIN") not in stored
 
 
 def test_issued_lines_keep_their_unit(

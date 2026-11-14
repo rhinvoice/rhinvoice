@@ -157,6 +157,14 @@ def test_remove_deletes_or_hides(handlers: UnitHandlers, store: Store) -> None:
         handlers.remove(HOURS)
 
 
+def test_a_unit_used_meanwhile_is_hidden(handlers: UnitHandlers, store: Store) -> None:
+    """A line saved while the unit is removed: the database refuses the delete, it is hidden."""
+    store.units_referenced_meanwhile.add(HOURS)
+    assert handlers.remove(HOURS) is Removal.HIDDEN
+    assert next(unit for unit in store.units if unit.id == HOURS).hidden is True
+    assert handlers.remove(PIECES) is Removal.DELETED
+
+
 def test_units_used_by_lines_and_plans_are_hidden(
     handlers: UnitHandlers, store: Store, clock: FixedClock
 ) -> None:

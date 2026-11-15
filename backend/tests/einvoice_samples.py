@@ -18,6 +18,7 @@ from uuid import UUID
 from rhinvoice.application.document.einvoice import EInvoiceProfile, problems
 from rhinvoice.application.document.handlers import DocumentHandlers, DraftInput, LineInput
 from rhinvoice.application.document.printing import PrintHandlers
+from rhinvoice.domain.catalog.unit_presets import PRESETS
 from rhinvoice.domain.company.print_layout import (
     DEFAULT_INFO_BLOCK,
     InfoEntry,
@@ -65,14 +66,14 @@ CONSULTING = LineInput(
     description="Beratung",
     details="Workshop vor Ort",
     quantity="12.5",
-    unit="HUR",
+    unit_id=factories.unit_id("HUR"),
     unit_price="150",
 )
 DISCOUNTED = LineInput(
     kind=LineKind.ITEM,
     description="Lizenz",
     quantity="3",
-    unit="C62",
+    unit_id=factories.unit_id("C62"),
     unit_price="99.90",
     discount_percent="10",
 )
@@ -107,7 +108,7 @@ PRINTER = LineInput(
     kind=LineKind.ITEM,
     description="Etikettendrucker",
     quantity="2",
-    unit="C62",
+    unit_id=factories.unit_id("C62"),
     unit_price="450",
     discount_percent="5",
     supply=Supply.GOODS,
@@ -135,17 +136,18 @@ COPIES = LineInput(
     kind=LineKind.ITEM,
     description="Grundbuchauszüge",
     quantity="2",
-    unit="C62",
+    unit_id=factories.unit_id("C62"),
     unit_price="20",
     pass_through=True,
 )
-# German farmers and foresters charge the average rates of § 24 UStG (ADR 0044, #80).
+# German farmers and foresters charge the average rates of § 24 UStG (ADR 0044, #80),
+# grain by the Doppelzentner of 100 kg (DTN, a unit from the catalogue, ADR 0046, #95).
 GRAIN = LineInput(
     kind=LineKind.ITEM,
     description="Futtergerste",
-    quantity="40",
-    unit="KGM",
-    unit_price="0.45",
+    quantity="0.4",
+    unit_id=factories.unit_id("DTN"),
+    unit_price="45",
     tax_rate_id=factories.rate_id("de_24_other"),
 )
 TIMBER = LineInput(
@@ -159,7 +161,7 @@ CIDER = LineInput(
     kind=LineKind.ITEM,
     description="Apfelwein",
     quantity="12",
-    unit="C62",
+    unit_id=factories.unit_id("C62"),
     unit_price="4.20",
     tax_rate_id=factories.rate_id("de_24_beverages"),
 )
@@ -175,6 +177,8 @@ class Sample:
     layout: PrintLayout | None = None
     presets: tuple[str, ...] = ()
     """Presets of special schemes the company took over, besides its country's rates."""
+    units: tuple[str, ...] = ()
+    """Units the company took from the catalogue, besides those it starts with."""
 
 
 def _swiss() -> Company:
@@ -681,6 +685,7 @@ def samples() -> dict[str, Sample]:
             (berlin_account,),
             _draft((GRAIN, TIMBER, CIDER, CONSULTING)),
             presets=("de_24_other", "de_24_forestry", "de_24_beverages"),
+            units=("DTN",),
         ),
         "at-domestic": Sample(
             factories.company(
@@ -722,6 +727,11 @@ def issue(sample: Sample) -> tuple[PrintHandlers, UUID]:
         if preset.key in sample.presets
     ]
     store.tax_rates = [*factories.tax_rates(country, language).values(), *taken]
+    store.units += [
+        preset.to_unit(factories.unit_id(preset.key))
+        for preset in PRESETS
+        if preset.key in sample.units
+    ]
     store.customers[CUSTOMER] = sample.customer
     if sample.layout is not None:
         store.use_layout(sample.layout)

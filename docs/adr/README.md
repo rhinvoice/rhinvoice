@@ -49,3 +49,4 @@ Status: `accepted`, `superseded by NNNN` or `rejected`.
 - [0043 – Several print templates](0043-several-print-templates.md)
 - [0044 – Own tax rates](0044-own-tax-rates.md)
 - [0045 – Optional and alternative items](0045-optional-and-alternative-items.md)
+- [0046 – Own units](0046-own-units.md)

@@ -8,13 +8,6 @@ import { formatDecimalInput } from "@/lib/format";
 import type { T } from "@/lib/i18n";
 import type { Locale } from "@/lib/locale";
 
-export type UnitCode = NonNullable<ArticleRequest["unit"]>;
-
-/** Values come from a select with the API's unit list. */
-const unitCode = z.custom<UnitCode>(
-  (value) => typeof value === "string" && /^[A-Z0-9]{2,3}$/.test(value),
-);
-
 export const SUPPLIES = ["service", "goods"] as const;
 export const MAX_PRICE = 99_999_999.9999;
 
@@ -32,7 +25,8 @@ export function articleSchema(t: T, locale: Locale) {
     name: f.requiredText(120),
     description: f.optionalText(4000),
     group: f.optionalText(50),
-    unit: unitCode,
+    /** The id of one of the company's units (ADR 0046). */
+    unit: z.string().min(1, t("validation.required")),
     /** A rate id, PASS_THROUGH, or "" for the default rate (ADR 0044). */
     tax: taxChoice,
     supply: z.enum(SUPPLIES),
@@ -55,13 +49,14 @@ export const ARTICLE_FIELD_ORDER: readonly (keyof ArticleFormValues)[] = [
   "price_eur",
 ];
 
-export function emptyArticle(): ArticleFormValues {
+/** A new article in ``unit``, the first unit offered. */
+export function emptyArticle(unit = ""): ArticleFormValues {
   return {
     number: "",
     name: "",
     description: "",
     group: "",
-    unit: "C62",
+    unit,
     tax: "",
     supply: "service",
     price_chf: "",
@@ -79,7 +74,7 @@ export function articleToForm(article: Article, locale: Locale): ArticleFormValu
     name: article.name,
     description: article.description,
     group: article.group,
-    unit: article.unit,
+    unit: article.unit_id,
     tax: taxChoiceOf(article),
     supply: article.supply,
     price_chf: priceInput(article.prices["CHF"], locale),
@@ -96,7 +91,7 @@ export function formToRequest(values: ArticleFormValues, locale: Locale): Articl
     name: values.name,
     description: values.description,
     group: values.group,
-    unit: values.unit,
+    unit_id: values.unit,
     ...taxChoiceToRequest(values.tax),
     supply: values.supply,
     prices,
@@ -107,5 +102,6 @@ export function articleFieldFor(apiField: string): Path<ArticleFormValues> | nul
   if (apiField === "prices.CHF") return "price_chf";
   if (apiField === "prices.EUR") return "price_eur";
   if (apiField === "tax_rate_id" || apiField === "pass_through") return "tax";
+  if (apiField === "unit_id") return "unit";
   return apiField in emptyArticle() ? (apiField as Path<ArticleFormValues>) : null;
 }

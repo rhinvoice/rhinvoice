@@ -22,7 +22,6 @@ from rhinvoice.application.catalog.ports import ArticleQuery, ArticleSort
 from rhinvoice.application.common import Page, SortDirection
 from rhinvoice.application.customer.ports import CustomerQuery, CustomerSort
 from rhinvoice.domain.catalog.article import Article
-from rhinvoice.domain.catalog.unit import Unit
 from rhinvoice.domain.company.bank_account import BankAccount
 from rhinvoice.domain.company.company import Company
 from rhinvoice.domain.company.logo import Logo
@@ -521,7 +520,7 @@ class SqlArticleRepository:
             id=row["id"],
             number=row["number"],
             name=row["name"],
-            unit=Unit(row["unit"]),
+            unit_id=row["unit_id"],
             tax_category=stored_kind(row["tax_category"]),
             prices=prices,
             created_at=row["created_at"],
@@ -570,7 +569,7 @@ class SqlArticleRepository:
             "name": article.name,
             "description": article.description,
             "article_group": article.group,
-            "unit": article.unit.code,
+            "unit_id": article.unit_id,
             "tax_category": article.tax_category.value,
             "tax_rate_id": article.tax_rate_id,
             "supply": article.supply.value,

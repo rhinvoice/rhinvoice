@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
     from uuid import UUID
 
-    from rhinvoice.domain.catalog.unit import Unit
+    from rhinvoice.domain.catalog.unit import LineUnit
 
 MAX_DESCRIPTION = 500
 MAX_DETAILS = 4000
@@ -64,7 +64,10 @@ class DocumentLine:
     description: str
     details: str = ""
     quantity: Decimal = Decimal(1)
-    unit: Unit | None = None
+    unit_id: UUID | None = None
+    """The company's unit of a position (ADR 0046); None for text lines and positions without."""
+    unit: LineUnit | None = None
+    """The unit frozen when the document is issued (None while it is a draft: the current one)."""
     unit_price: Decimal = Decimal(0)
     discount_percent: Decimal = Decimal(0)
     tax_category: TaxCategory = TaxCategory.STANDARD
@@ -104,6 +107,8 @@ class DocumentLine:
                 raise ValidationError("description", "a text line needs a text")
             if self.tax_rate_id is not None:
                 raise ValidationError("tax_rate_id", "a text line has no tax rate")
+            if self.unit_id is not None:
+                raise ValidationError("unit_id", "a text line has no unit")
             if self.in_total is not InTotal.YES:
                 raise ValidationError(
                     "in_total", "a text line has no amount to leave out", code="text_line_in_total"

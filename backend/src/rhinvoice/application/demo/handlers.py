@@ -219,22 +219,31 @@ def customers_for(country: Country) -> tuple[SaveCustomer, ...]:
 
 
 ARTICLES: tuple[SaveArticle, ...] = (
-    SaveArticle(name="Beratung", unit="HUR", prices={Currency.CHF: "150", Currency.EUR: "140"}),
-    SaveArticle(name="Webdesign", unit="HUR", prices={Currency.CHF: "130", Currency.EUR: "120"}),
-    SaveArticle(name="Workshop", unit="DAY", prices={Currency.CHF: "1200", Currency.EUR: "1100"}),
-    SaveArticle(name="Hosting", unit="MON", prices={Currency.CHF: "29", Currency.EUR: "27"}),
-    SaveArticle(
-        name="Wartungspauschale", unit="LS", prices={Currency.CHF: "450", Currency.EUR: "420"}
-    ),
+    SaveArticle(name="Beratung", prices={Currency.CHF: "150", Currency.EUR: "140"}),
+    SaveArticle(name="Webdesign", prices={Currency.CHF: "130", Currency.EUR: "120"}),
+    SaveArticle(name="Workshop", prices={Currency.CHF: "1200", Currency.EUR: "1100"}),
+    SaveArticle(name="Hosting", prices={Currency.CHF: "29", Currency.EUR: "27"}),
+    SaveArticle(name="Wartungspauschale", prices={Currency.CHF: "450", Currency.EUR: "420"}),
     SaveArticle(
         name="Fachbuch «Gutes Design»",
-        unit="C62",
         prices={Currency.CHF: "38.50", Currency.EUR: "35"},
         supply=Supply.GOODS,
     ),
-    SaveArticle(name="Fotografie", unit="HUR", prices={Currency.CHF: "140", Currency.EUR: "130"}),
-    SaveArticle(name="Domain", unit="ANN", prices={Currency.CHF: "25", Currency.EUR: "23"}),
+    SaveArticle(name="Fotografie", prices={Currency.CHF: "140", Currency.EUR: "130"}),
+    SaveArticle(name="Domain", prices={Currency.CHF: "25", Currency.EUR: "23"}),
 )
+
+ARTICLE_UNITS: Mapping[str, str] = {
+    "Beratung": "HUR",
+    "Webdesign": "HUR",
+    "Workshop": "DAY",
+    "Hosting": "MON",
+    "Wartungspauschale": "LS",
+    "Fachbuch «Gutes Design»": "C62",
+    "Fotografie": "HUR",
+    "Domain": "ANN",
+}
+"""The catalogue entry of each article's unit (ADR 0046)."""
 
 ARTICLE_RATES: Mapping[str, str] = {"Fachbuch «Gutes Design»": REDUCED}
 """The preset of the rate of articles not sold at the standard rate (books are reduced)."""
@@ -429,11 +438,16 @@ class DemoHandlers:
         customers = [self.customers.create(command) for command in commands]
         with self.uow() as uow:
             by_preset = {rate.preset: rate.id for rate in uow.tax_rates.list()}
+            # A unit removed before takes the first one offered.
+            by_unit = {unit.preset: unit.id for unit in uow.units.list() if not unit.hidden}
         articles = [
             self.articles.create(
-                replace(command, tax_rate_id=by_preset[ARTICLE_RATES[command.name]])
-                if command.name in ARTICLE_RATES
-                else command
+                replace(
+                    replace(command, tax_rate_id=by_preset[ARTICLE_RATES[command.name]])
+                    if command.name in ARTICLE_RATES
+                    else command,
+                    unit_id=by_unit.get(ARTICLE_UNITS[command.name]),
+                )
             )
             for command in ARTICLES
         ]
@@ -627,7 +641,7 @@ def _draft(
                 kind=LineKind.ITEM,
                 description=articles[article].name,
                 quantity=quantity,
-                unit=articles[article].unit.code,
+                unit_id=articles[article].unit_id,
                 unit_price=str(articles[article].prices[currency]),
                 # The demo's articles all have a rate; none is passed through.
                 tax_rate_id=articles[article].tax_rate_id,

@@ -559,6 +559,16 @@ def test_average_rates_of_farmers() -> None:
     assert texts(root, f"{taxes}/ram:RateApplicablePercent") == ["7.8", "5.5", "19"]
     printed = model(samples()["de-average-rates"])
     assert printed.view.rate_notices == ("Besteuerung nach Durchschnittssätzen (§ 24 UStG)",)
+    # The grain is sold by the Doppelzentner of the catalogue: DTN (ADR 0046).
+    quantities = root.findall(
+        f"{LINES}/ram:SpecifiedLineTradeDelivery/ram:BilledQuantity", NAMESPACES
+    )
+    assert [(item.text, item.get("unitCode")) for item in quantities] == [
+        ("0.4", "DTN"),
+        ("6", "C62"),
+        ("12", "C62"),
+        ("12.5", "HUR"),
+    ]
 
 
 def found(

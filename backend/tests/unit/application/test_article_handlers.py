@@ -27,7 +27,11 @@ def handlers(store: Store, clock: FixedClock) -> ArticleHandlers:
 
 
 def command(**overrides: object) -> SaveArticle:
-    values: dict[str, object] = {"name": "Beratung", "unit": "HUR", "prices": {Currency.CHF: "150"}}
+    values: dict[str, object] = {
+        "name": "Beratung",
+        "unit_id": factories.unit_id("HUR"),
+        "prices": {Currency.CHF: "150"},
+    }
     values.update(overrides)
     return SaveArticle(**values)  # type: ignore[arg-type]  # test builder
 
@@ -43,7 +47,7 @@ def test_create_article(handlers: ArticleHandlers) -> None:
     )
     assert article.number == "1"
     assert article.prices == {Currency.CHF: Decimal("150.50")}
-    assert article.unit.code == "HUR"
+    assert article.unit_id == factories.unit_id("HUR")
     assert (article.tax_category, article.tax_rate_id) == (
         TaxCategory.STANDARD,
         factories.rate_id(REDUCED),
@@ -52,9 +56,12 @@ def test_create_article(handlers: ArticleHandlers) -> None:
     assert handlers.create(command()).number == "2"
 
 
-def test_defaults(handlers: ArticleHandlers) -> None:
+def test_defaults(handlers: ArticleHandlers, store: Store) -> None:
     article = handlers.create(SaveArticle(name="Kabel"))
-    assert article.unit.code == "C62"
+    # The first unit offered.
+    assert article.unit_id == factories.unit_id("C62")
+    store.units = [replace(unit, hidden=unit.code == "C62") for unit in store.units]
+    assert handlers.create(SaveArticle(name="Stecker")).unit_id == factories.unit_id("HUR")
     assert (article.tax_category, article.tax_rate_id) == (
         TaxCategory.STANDARD,
         factories.rate_id(STANDARD),
@@ -90,9 +97,24 @@ def test_invalid_input(handlers: ArticleHandlers, store: Store) -> None:
     with pytest.raises(ValidationError) as price:
         handlers.create(command(prices={Currency.CHF: "zehn"}))
     assert price.value.field == "prices.CHF"
-    with pytest.raises(ValidationError):
-        handlers.create(command(unit="XXX"))
+    with raises_exactly(ValidationError, "unknown unit") as unit:
+        handlers.create(command(unit_id=new_id()))
+    assert (unit.value.field, unit.value.code) == ("unit_id", "unit_unknown")
+    store.units = []
+    with raises_exactly(ValidationError, "a unit is required") as missing:
+        handlers.create(command(unit_id=None))
+    assert (missing.value.field, missing.value.code) == ("unit_id", "unit_missing")
     assert store.articles == {}
+
+
+def test_articles_keep_a_hidden_unit(handlers: ArticleHandlers, store: Store) -> None:
+    hours = factories.unit_id("HUR")
+    article = handlers.create(command())
+    store.units = [replace(unit, hidden=unit.id == hours) for unit in store.units]
+    assert handlers.update(article.id, command(name="Kurs")).unit_id == hours
+    with raises_exactly(ValidationError, "the unit is hidden") as hidden:
+        handlers.create(command())
+    assert (hidden.value.field, hidden.value.code) == ("unit_id", "unit_hidden")
 
 
 def test_numbers_are_unique_and_skip_manual_ones(handlers: ArticleHandlers) -> None:

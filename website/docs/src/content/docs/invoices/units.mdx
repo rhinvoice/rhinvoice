@@ -1,0 +1,99 @@
+---
+title: Own units and their code for the e-invoice
+description: "Units in Rhinvoice: own labels such as dz, their order, a catalogue with hectare, carton and pallet, and the UN/ECE code that the e-invoice requires for each unit."
+since: 0.14.0
+faq:
+  - q: How do I invoice by the Doppelzentner (dz)?
+    a: Under "Settings → Units → From catalogue …" take over "dz · decitonne (100 kg)". It has the code DTN for the e-invoice and is offered in every line item from then on.
+  - q: Which code does a unit need?
+    a: A code of the EN 16931 unit code list, that is UN/ECE Recommendation 20 with the packaging codes of Recommendation 21. Rhinvoice offers only codes of this list, so that no e-invoice fails on its unit. Several units may share a code.
+  - q: Do old invoices change when I rename a unit?
+    a: No. Issuing freezes the unit's code and label on every line item. Drafts show the current label.
+  - q: Can I delete a unit?
+    a: Yes, "Remove" deletes a unit that nothing uses. When line items, articles or recurring invoices use it, Rhinvoice hides it instead. They keep it, new line items no longer offer it, and "From catalogue …" brings it back.
+  - q: Why is the hectare's code H18?
+    a: The former code HAR is deprecated since revision 17 of UN/ECE Recommendation 20, and the e-invoice validators refuse it. H18 is the square hectometre, which is exactly one hectare.
+---
+
+import Faq from "../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Every company in Rhinvoice has **its own units**: a label that the invoice prints, such as "dz" for the Doppelzentner, and a **code for the e-invoice**, such as DTN. A company starts with the 21 units Rhinvoice has always known. You take further ones from a catalogue or add your own, and you decide their order.
+
+## Which units a company has
+
+*Settings → Units* lists the units in the order in which line items and articles offer them: the label, below it the description, the code on the right. A click on a unit opens it. New articles take the first unit of the list, and so do new line items.
+
+Every company starts with these units:
+
+| Group | Units (code) |
+|---|---|
+| Quantity | Stk. (C62), Pauschal (LS), Set (SET), Paar (PR), Leistung (E48) |
+| Time | Std. (HUR), Min. (MIN), Tag (DAY), Woche (WEE), Monat (MON), Jahr (ANN) |
+| Weight | kg (KGM), g (GRM), t (TNE) |
+| Length, area, volume | m (MTR), km (KMT), m² (MTK), l (LTR), m³ (MTQ) |
+| Energy, packaging | kWh (KWH), Paket (XPK) |
+
+The table names the German labels. When your company writes its documents in English, French or Italian, the label of that language is the main one, such as "pcs", "pce" or "pz." instead of "Stk.". Every invoice prints the usual word of its language.
+
+## Sorting
+
+Drag a unit to its new place, use the arrows next to it or press **Alt+↑** and **Alt+↓**. Line items and articles offer the units in the new order right away.
+
+## Taking over from the catalogue
+
+**From catalogue …** lists common units your company does not have yet, by group and with a search:
+
+| Group | Units in the catalogue (code) |
+|---|---|
+| Time | Quartal, quarter (QAN) |
+| Weight | dz, decitonne of 100 kg (DTN) |
+| Length | mm (MMT), cm (CMT) |
+| Area | ha, hectare (H18) |
+| Volume | ml (MLT), hl (HLT) |
+| Energy | MWh (MWH) |
+| Packaging | carton (XCT), box (XBX), pallet (XPX), bag (XBG), sack (XSA), bottle (XBO) |
+
+Your hidden units are listed as well: those from the catalogue in their group, your own under *Hidden*. Choose one or more and click **Take over**. They go to the end of the list.
+
+## Adding a unit of your own
+
+<Steps>
+
+1. Open *Settings → Units* and click **New unit**.
+2. Enter the *Label* the invoice prints, at most 20 characters.
+3. If you like, write a *Description*. It is for you only and not printed.
+4. Choose the *Code for the e-invoice*. Search by the code or its English name, such as "DTN" or "decitonne".
+5. Click **Save**.
+
+</Steps>
+
+*Another label on German, French or Italian invoices* gives the unit a label of its own for invoices in the other languages; the link names the languages other than your company's. An empty field means: the label above applies. Labels are unique, whatever their case.
+
+## The code for the e-invoice
+
+The e-invoice under EN 16931 (ZUGFeRD, XRechnung) names the unit of every line item as a code. Only the codes of the EN 16931 unit code list are allowed: UN/ECE Recommendation 20 and the packaging codes of Recommendation 21, which start with X. Rhinvoice offers exactly this list and does not save a unit with another code.
+
+- Several units may share a code, such as "Std." and "Stunde", both HUR.
+- The hectare's code is **H18** (square hectometre, exactly one hectare). The former code HAR is deprecated since revision 17 of Recommendation 20, and the validators refuse it.
+- Line items without a unit go into the e-invoice as C62 (one).
+
+<Aside type="note">
+The code is in the e-invoice only. The PDF prints the label in the language of the document.
+</Aside>
+
+## Removing
+
+**Remove** in the dialog of a unit deletes it when nothing uses it. When line items, articles or recurring invoices use it, Rhinvoice hides it: *Settings → Units* no longer lists it, and new line items and articles no longer offer it. Whatever has it keeps it; the select shows it there with "(hidden)". The message says what happened. The last unit of the list stays.
+
+## Issued invoices
+
+Issuing freezes the unit's code and its label in the document's language on every line item. Renaming or removing a unit does not change issued invoices, cancellations or their PDFs. Drafts show the current unit. More: [Issuing and cancelling](/docs/invoices/issue-and-cancel/), [E-invoices](/docs/invoices/e-invoice/).
+
+## Import
+
+When you [import articles](/docs/moving/customers-and-articles/), Rhinvoice finds a row's unit by its label in any of the four languages, by its code or by common words such as "Stunden" or "pauschal". Hidden units are not found.
+
+## Questions
+
+<Faq />

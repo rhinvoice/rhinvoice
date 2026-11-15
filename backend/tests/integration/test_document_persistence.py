@@ -52,7 +52,7 @@ HOURS = LineInput(
     kind=LineKind.ITEM,
     description="Beratung Müller-Projekt",
     quantity="10",
-    unit="HUR",
+    unit_id=factories.unit_id("HUR"),
     unit_price="150",
 )
 FOOD = LineInput(
@@ -60,7 +60,7 @@ FOOD = LineInput(
     description="Verpflegung",
     details="Kaffee und Gipfeli",
     quantity="3",
-    unit="C62",
+    unit_id=factories.unit_id("C62"),
     unit_price="12.35",
     tax_rate_id=factories.rate_id(REDUCED),
 )
@@ -170,7 +170,9 @@ def test_goods_are_persisted_with_their_treatment(
             vat_number="ATU12345678",
         ),
     )
-    printer = replace(HOURS, description="Drucker", unit="C62", supply=Supply.GOODS)
+    printer = replace(
+        HOURS, description="Drucker", unit_id=factories.unit_id("C62"), supply=Supply.GOODS
+    )
     created = handlers.create(
         DocumentType.INVOICE, draft(austrian.id, lines=(HOURS, printer))
     ).document

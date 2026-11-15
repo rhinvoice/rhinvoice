@@ -9,6 +9,7 @@ import {
   isoDaysFromToday,
   OVERDUE_CUSTOMER,
   post,
+  unitId,
 } from "./fixtures";
 
 const authFile = AUTH_FILE;
@@ -112,7 +113,14 @@ async function seedOverdueInvoice(page: Page): Promise<void> {
       customer_id: dunned,
       issue_date: isoDaysFromToday(-40),
       due_date: isoDaysFromToday(-20),
-      lines: [{ description: "Wartung", quantity: "2", unit: "HUR", unit_price: "100" }],
+      lines: [
+        {
+          description: "Wartung",
+          quantity: "2",
+          unit_id: await unitId(page, "HUR"),
+          unit_price: "100",
+        },
+      ],
     });
     await post(page, `/api/documents/${late.id}/issue`, {});
   }
@@ -122,7 +130,14 @@ async function seedOverdueInvoice(page: Page): Promise<void> {
     subject: "Altlast",
     issue_date: isoDaysFromToday(-40),
     due_date: isoDaysFromToday(-10),
-    lines: [{ description: "Beratung", quantity: "4", unit: "HUR", unit_price: "150" }],
+    lines: [
+      {
+        description: "Beratung",
+        quantity: "4",
+        unit_id: await unitId(page, "HUR"),
+        unit_price: "150",
+      },
+    ],
   });
   await post(page, `/api/documents/${invoice.id}/issue`, {});
 }

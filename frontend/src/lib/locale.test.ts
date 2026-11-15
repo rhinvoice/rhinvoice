@@ -11,7 +11,6 @@ import {
   numericMediumDates,
   SUPPORTED_LOCALES,
   textFor,
-  unitName,
 } from "@/lib/locale";
 
 describe("locale", () => {
@@ -86,11 +85,6 @@ describe("texts from the API", () => {
     expect(textFor("en", pieces)).toBe("pcs");
     expect(textFor("fr-CH", pieces)).toBe("pce");
     expect(textFor("it-CH", pieces)).toBe("pz.");
-  });
-
-  it("names a unit in the interface's language", () => {
-    const hour = { label_de: "Std.", label_en: "h", label_fr: "heure", label_it: "ora" };
-    expect(unitName("it-CH", hour)).toBe("ora");
   });
 
   it("marks French and Italian as machine translated", () => {

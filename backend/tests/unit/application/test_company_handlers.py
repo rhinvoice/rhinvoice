@@ -269,6 +269,18 @@ def test_a_new_company_gets_the_rates_of_its_country(
     assert len(store.tax_rates) == 5
 
 
+def test_a_new_company_words_its_units_in_its_language(
+    handlers: CompanyHandlers, store: Store
+) -> None:
+    """ADR 0046: the units speak the company's language from its first save on."""
+    handlers.save(company_command(default_language=Language.IT))
+    assert [unit.label for unit in store.units[:3]] == ["pz.", "h", "min"]
+    assert store.units[0].label_de == "Stk."
+    # Saving again, also in another language, changes nothing.
+    handlers.save(company_command(default_language=Language.EN))
+    assert store.units[0].label == "pz."
+
+
 def test_a_new_country_brings_its_rates_while_none_is_used(
     handlers: CompanyHandlers, store: Store
 ) -> None:

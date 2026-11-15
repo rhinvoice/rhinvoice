@@ -1,13 +1,13 @@
 ---
 title: Writing quotes and turning them into invoices
-description: Write quotes in Rhinvoice, mark them as sent, accepted or declined, and turn them into an invoice with one click. Free open-source invoicing for CH, LI, DE, AT.
+description: Write quotes in Rhinvoice, finalise them, mark them as accepted or declined, and turn them into an invoice with one click. Free open-source invoicing for CH, LI, DE, AT.
 faq:
   - q: How do I turn a quote into an invoice?
-    a: Open the sent or accepted quote and choose "Turn into invoice". Rhinvoice creates an invoice draft with the same lines, which you check and issue.
+    a: Open the open or accepted quote and choose "Turn into invoice". Rhinvoice creates an invoice draft with the same lines, which you check and issue.
   - q: How long is a quote valid?
     a: As long as you enter under "Valid until". Left empty, the quote is valid for 30 days from its date. After that Rhinvoice shows it as expired.
-  - q: Can I still change a quote once it is sent?
-    a: No. "Mark as sent" gives the quote its number and locks it. To change it, duplicate it and mark the copy as sent.
+  - q: Can I still change a quote once it is finalised?
+    a: No. "Finalise" gives the quote its number and locks it. To change it, duplicate it and finalise the copy.
   - q: Can a quote be turned into an invoice more than once?
     a: No, only once. If you delete the invoice draft it created, the quote can be turned into an invoice again.
   - q: Can a quote offer optional items or alternatives?
@@ -18,7 +18,7 @@ import Faq from "../../../components/Faq.astro";
 import Since from "../../../components/Since.astro";
 import { Aside, Steps } from "@astrojs/starlight/components";
 
-A quote in Rhinvoice goes from *Draft* to *Sent* and then to *Accepted*, *Declined* or *Expired*. A sent or accepted quote becomes an invoice draft with **Turn into invoice**, without entering anything twice.
+A quote in Rhinvoice goes from *Draft* to *Open* and then to *Accepted*, *Declined* or *Expired*. An open or accepted quote becomes an invoice draft with **Turn into invoice**, without entering anything twice.
 
 ## Writing a quote
 
@@ -27,14 +27,14 @@ A quote in Rhinvoice goes from *Draft* to *Sent* and then to *Accepted*, *Declin
 1. Open *Quotes → New quote*.
 2. Choose the customer and enter the lines. The preview on the right shows the quote as it will be printed.
 3. Under *Valid until*, enter how long the quote is valid. Left empty, it is 30 days from the date.
-4. Click **Mark as sent**. The quote gets its number and is locked from then on.
+4. Click **Finalise**. The quote gets its number and is locked from then on. Only now is it ready for the PDF and the e-mail to the customer.
 
 </Steps>
 
 A draft has no number yet. You can change it at any time, or remove it with *Delete draft* in the *More actions* menu (the button with three dots). The number follows the quote sequence under *Settings → Number sequences*; the preset pattern is `A{YYYY}{NNNN}`, for example A20260001.
 
-<Aside type="note" title="Sent means locked">
-From *Sent* on, a quote does not change any more. For a changed version choose *More actions → Duplicate*: the copy is a new draft with the same content.
+<Aside type="note" title="Finalised means locked">
+Once finalised, a quote does not change any more. For a changed version choose *More actions → Duplicate*: the copy is a new draft with the same content.
 </Aside>
 
 ## The states of a quote
@@ -42,12 +42,12 @@ From *Sent* on, a quote does not change any more. For a changed version choose *
 | State | Meaning |
 |---|---|
 | *Draft* | Being written, no number yet |
-| *Sent* | Number assigned, content locked |
+| *Open* | Finalised: number assigned, content locked, the customer's answer is pending |
 | *Accepted* | The customer said yes |
 | *Declined* | The customer said no |
-| *Expired* | Sent, but the date under *Valid until* has passed |
+| *Expired* | Open, but the date under *Valid until* has passed |
 
-You set *Accepted* and *Declined* yourself with the buttons of the same name on the sent quote. Nobody sets *Expired*: Rhinvoice derives it from the validity date. In the list under *Quotes*, *View* filters by each of these states.
+You set *Accepted* and *Declined* yourself with the buttons of the same name on the open quote. Nobody sets *Expired*: Rhinvoice derives it from the validity date. In the list under *Quotes*, *View* filters by each of these states.
 
 ## Optional and alternative items
 
@@ -65,12 +65,12 @@ In the PDF the items stay where they are, muted, with a small tag ("Optional", "
 
 ## Turning a quote into an invoice
 
-On a sent or accepted quote, choose *More actions → Turn into invoice*. Rhinvoice creates an **invoice draft**:
+On an open or accepted quote, choose *More actions → Turn into invoice*. Rhinvoice creates an **invoice draft**:
 
 - with the same lines, discounts and currency as the quote,
 - with the texts you wrote yourself; where the quote still has the standard texts for quotes, the draft gets the standard texts for invoices,
 - dated today, like a new invoice; the due date follows when it is issued,
-- with a link to the quote. A sent quote counts as *Accepted* from then on.
+- with a link to the quote. An open quote counts as *Accepted* from then on.
 
 Check the draft, complete it if needed and issue it like any other invoice ([issuing and cancelling](/docs/invoices/issue-and-cancel/)). The VAT rate then follows the invoice's date of supply, not the quote's.
 
@@ -80,7 +80,7 @@ A quote becomes an invoice only **once**. If you delete the invoice draft, the q
 
 ## PDF and sending
 
-On the quote, **PDF** opens the printed version in a new tab, **Download** saves it and **Print** prints it right away. When sending by e-mail is set up, **Send by e-mail** sends a sent quote with its PDF to the customer. The mail is then noted in the quote's *History*.
+On the quote, **PDF** opens the printed version in a new tab, **Download** saves it and **Print** prints it right away. When sending by e-mail is set up, **Send by e-mail** sends a finalised quote with its PDF to the customer. The mail is then noted in the quote's *History*.
 
 ## Questions
 

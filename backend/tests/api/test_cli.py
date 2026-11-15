@@ -323,7 +323,7 @@ def test_recurring_invoices_now(env: Engine, capsys: pytest.CaptureFixture[str])
                     lines=(
                         LineInput(
                             kind=LineKind.ITEM, description="Hosting", unit_price="29"
-                        ).to_domain(0, rates),
+                        ).to_domain(0, rates, uow.units.list()),
                     ),
                 ),
                 created_at=datetime.now(UTC),

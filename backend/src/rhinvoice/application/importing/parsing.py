@@ -14,7 +14,6 @@ from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from rhinvoice.domain.catalog.unit import UNITS
 from rhinvoice.domain.shared.country import CountryCode
 from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.language import Language
@@ -28,6 +27,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from uuid import UUID
 
+    from rhinvoice.domain.catalog.unit import Unit
     from rhinvoice.domain.tax.tax_rate import TaxRate
 
 _UMLAUTS = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"})
@@ -182,39 +182,52 @@ def parse_whole_number(text: str, field: str) -> int | None:
     return int(number)
 
 
-_UNIT_NAMES = (
-    {normalize(code): code for code in UNITS}
-    | {normalize(label): code for code, labels in UNITS.items() for label in labels}
-    | {
-        normalize(name): code
-        for code, names in {
-            "C62": ("Stück", "Stk", "St", "pc", "piece", "pieces", "Anzahl", "x"),
-            "HUR": ("Stunde", "Stunden", "Std", "h", "hour", "hours"),
-            "MIN": ("Minute", "Minuten", "minutes"),
-            "DAY": ("Tage", "days", "Tg", "täglich", "pro Tag", "daily"),
-            "WEE": ("Wochen", "weeks", "Wo", "wöchentlich", "pro Woche", "weekly"),
-            "MON": ("Monate", "months", "Mt", "Mon", "monatlich", "pro Monat", "monthly"),
-            "ANN": ("Jahre", "years", "J", "jährlich", "pro Jahr", "yearly", "annually"),
-            "LS": ("Psch", "pauschal", "pausch", "flat"),
-            "LTR": ("Liter", "litre", "liter"),
-            "MTR": ("Meter", "metre", "meter", "lfm"),
-            "KGM": ("Kilogramm", "kilogram"),
-            "PR": ("Paare", "pairs"),
-        }.items()
-        for name in names
-    }
-)
+_UNIT_WORDS = {
+    normalize(name): code
+    for code, names in {
+        "C62": ("Stück", "Stk", "St", "pc", "piece", "pieces", "Anzahl", "x"),
+        "HUR": ("Stunde", "Stunden", "Std", "h", "hour", "hours"),
+        "MIN": ("Minute", "Minuten", "minutes"),
+        "DAY": ("Tage", "days", "Tg", "täglich", "pro Tag", "daily"),
+        "WEE": ("Wochen", "weeks", "Wo", "wöchentlich", "pro Woche", "weekly"),
+        "MON": ("Monate", "months", "Mt", "Mon", "monatlich", "pro Monat", "monthly"),
+        "ANN": ("Jahre", "years", "J", "jährlich", "pro Jahr", "yearly", "annually"),
+        "LS": ("Psch", "pauschal", "pausch", "flat"),
+        "LTR": ("Liter", "litre", "liter"),
+        "MTR": ("Meter", "metre", "meter", "lfm"),
+        "KGM": ("Kilogramm", "kilogram"),
+        "PR": ("Paare", "pairs"),
+    }.items()
+    for name in names
+}
+"""Words other programs write for a unit, each finding the first unit offered with its code."""
 
 
-def parse_unit(text: str, default: str) -> str:
-    """UN/ECE code of a unit written as code or label ("Std.", "Stunden", "HUR")."""
-    value = text.strip()
+def parse_unit(text: str, units: Sequence[Unit]) -> UUID | None:
+    """Find the unit offered that a cell names ("Std.", "Stunden", "HUR"); None when empty.
+
+    A unit is found by its label in any language, then by its code, then by a common word
+    for its code (ADR 0046).
+    """
+    value = normalize(text)
     if not value:
-        return default
-    code = _UNIT_NAMES.get(normalize(value))
-    if code is None:
+        return None
+    offered = [unit for unit in units if not unit.hidden]
+    labelled = (
+        unit
+        for unit in offered
+        if value in {normalize(label) for label in (unit.label, *unit.translations.values())}
+    )
+    code = _UNIT_WORDS.get(value)
+    coded = (
+        unit
+        for unit in offered
+        if normalize(unit.code) == value or (code is not None and unit.code == code)
+    )
+    found = next(labelled, None) or next(coded, None)
+    if found is None:
         raise ValidationError("unit", f"'{text}' is not a known unit", code="unknown_unit")
-    return code
+    return found.id
 
 
 _RATE_NAMES = {

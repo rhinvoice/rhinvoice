@@ -106,7 +106,7 @@ class InvoiceTemplateLineResponse(ApiModel):
     description: str
     details: str
     quantity: str
-    unit: str | None
+    unit_id: UUID | None
     unit_price: str
     discount_percent: str
     tax_rate_id: UUID | None
@@ -147,7 +147,7 @@ class InvoiceTemplateResponse(ApiModel):
                     description=line.description,
                     details=line.details,
                     quantity=line.quantity,
-                    unit=line.unit,
+                    unit_id=line.unit_id,
                     unit_price=line.unit_price,
                     discount_percent=line.discount_percent,
                     tax_rate_id=line.tax_rate_id,

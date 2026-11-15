@@ -26,6 +26,8 @@ import { useDebouncedValue } from "@/components/use-debounced-value";
 import { useDocumentTitle } from "@/components/use-document-title";
 import { priceCurrencies } from "@/features/articles/article-form-model";
 import { articleListQuery, type ArticleSort } from "@/features/articles/api";
+import { unitLabelOf } from "@/features/shared/unit-model";
+import { unitsQuery } from "@/features/shared/units-api";
 import { companyQuery } from "@/features/shared/company-api";
 import { ariaSort, PAGE_SIZE, toggleSort, type ListSearch } from "@/features/shared/list-search";
 import { Pagination } from "@/features/shared/pagination";
@@ -33,7 +35,6 @@ import { FormAlert } from "@/features/shared/form-alert";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/format";
-import { textFor } from "@/lib/locale";
 
 interface ArticleListPageProps {
   readonly search: ListSearch<ArticleSort>;
@@ -46,6 +47,7 @@ export function ArticleListPage({ search, onSearchChange }: ArticleListPageProps
   const errorMessage = useErrorMessage();
   // The company's currency first; on narrow screens only that one.
   const currencies = priceCurrencies(useQuery(companyQuery).data?.default_currency);
+  const units = useQuery(unitsQuery).data;
   const [term, setTerm] = useState(search.q);
   const debounced = useDebouncedValue(term, 250);
   useEffect(() => {
@@ -229,12 +231,7 @@ export function ArticleListPage({ search, onSearchChange }: ArticleListPageProps
                   </TableCell>
                   <TableCell className="hidden md:table-cell">{article.group}</TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    {textFor(locale, {
-                      de: article.unit_label_de,
-                      en: article.unit_label_en,
-                      fr: article.unit_label_fr,
-                      it: article.unit_label_it,
-                    })}
+                    {unitLabelOf(units, article.unit_id)}
                   </TableCell>
                   {currencies.map((currency, index) => {
                     const price = article.prices[currency];

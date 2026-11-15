@@ -436,33 +436,17 @@
             ],
             "title": "Tax Rate Id"
           },
-          "unit": {
-            "default": "C62",
-            "enum": [
-              "ANN",
-              "C62",
-              "DAY",
-              "E48",
-              "GRM",
-              "HUR",
-              "KGM",
-              "KMT",
-              "KWH",
-              "LS",
-              "LTR",
-              "MIN",
-              "MON",
-              "MTK",
-              "MTQ",
-              "MTR",
-              "PR",
-              "SET",
-              "TNE",
-              "WEE",
-              "XPK"
+          "unit_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Unit",
-            "type": "string"
+            "title": "Unit Id"
           }
         },
         "required": [
@@ -532,47 +516,9 @@
             ],
             "title": "Tax Rate Id"
           },
-          "unit": {
-            "enum": [
-              "ANN",
-              "C62",
-              "DAY",
-              "E48",
-              "GRM",
-              "HUR",
-              "KGM",
-              "KMT",
-              "KWH",
-              "LS",
-              "LTR",
-              "MIN",
-              "MON",
-              "MTK",
-              "MTQ",
-              "MTR",
-              "PR",
-              "SET",
-              "TNE",
-              "WEE",
-              "XPK"
-            ],
-            "title": "Unit",
-            "type": "string"
-          },
-          "unit_label_de": {
-            "title": "Unit Label De",
-            "type": "string"
-          },
-          "unit_label_en": {
-            "title": "Unit Label En",
-            "type": "string"
-          },
-          "unit_label_fr": {
-            "title": "Unit Label Fr",
-            "type": "string"
-          },
-          "unit_label_it": {
-            "title": "Unit Label It",
+          "unit_id": {
+            "format": "uuid",
+            "title": "Unit Id",
             "type": "string"
           }
         },
@@ -582,11 +528,7 @@
           "name",
           "description",
           "group",
-          "unit",
-          "unit_label_de",
-          "unit_label_en",
-          "unit_label_fr",
-          "unit_label_it",
+          "unit_id",
           "tax_rate_id",
           "tax_category",
           "supply",
@@ -4077,16 +4019,17 @@
             ],
             "title": "Tax Rate Id"
           },
-          "unit": {
+          "unit_id": {
             "anyOf": [
               {
+                "format": "uuid",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Unit"
+            "title": "Unit Id"
           },
           "unit_price": {
             "title": "Unit Price",
@@ -4098,7 +4041,7 @@
           "description",
           "details",
           "quantity",
-          "unit",
+          "unit_id",
           "unit_price",
           "discount_percent",
           "tax_rate_id",
@@ -4477,40 +4420,17 @@
             ],
             "title": "Tax Rate Id"
           },
-          "unit": {
+          "unit_id": {
             "anyOf": [
               {
+                "format": "uuid",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "enum": [
-              "ANN",
-              "C62",
-              "DAY",
-              "E48",
-              "GRM",
-              "HUR",
-              "KGM",
-              "KMT",
-              "KWH",
-              "LS",
-              "LTR",
-              "MIN",
-              "MON",
-              "MTK",
-              "MTQ",
-              "MTR",
-              "PR",
-              "SET",
-              "TNE",
-              "WEE",
-              "XPK",
-              null
-            ],
-            "title": "Unit"
+            "title": "Unit Id"
           },
           "unit_price": {
             "default": "0",
@@ -4616,7 +4536,7 @@
             ],
             "title": "Tax Rate Id"
           },
-          "unit": {
+          "unit_code": {
             "anyOf": [
               {
                 "type": "string"
@@ -4625,7 +4545,30 @@
                 "type": "null"
               }
             ],
-            "title": "Unit"
+            "title": "Unit Code"
+          },
+          "unit_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Id"
+          },
+          "unit_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Label"
           },
           "unit_price": {
             "title": "Unit Price",
@@ -4638,7 +4581,9 @@
           "description",
           "details",
           "quantity",
-          "unit",
+          "unit_id",
+          "unit_code",
+          "unit_label",
           "unit_price",
           "discount_percent",
           "tax_rate_id",
@@ -5758,6 +5703,28 @@
         "title": "ReminderResponse",
         "type": "object"
       },
+      "Removal": {
+        "description": "What removing a unit did.",
+        "enum": [
+          "deleted",
+          "hidden"
+        ],
+        "title": "Removal",
+        "type": "string"
+      },
+      "RemovalResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "removal": {
+            "$ref": "#/components/schemas/Removal"
+          }
+        },
+        "required": [
+          "removal"
+        ],
+        "title": "RemovalResponse",
+        "type": "object"
+      },
       "RemovePaymentsRequest": {
         "additionalProperties": false,
         "properties": {
@@ -6310,6 +6277,31 @@
         "title": "SupportReportResponse",
         "type": "object"
       },
+      "TakeOverRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "keys": {
+            "items": {
+              "pattern": "^[0-9A-Z]{2,3}$",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Keys",
+            "type": "array"
+          },
+          "unit_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Unit Ids",
+            "type": "array"
+          }
+        },
+        "title": "TakeOverRequest",
+        "type": "object"
+      },
       "TaxCategory": {
         "description": "The kind of a line's tax: the category of its rate, or pass-through (ADR 0044).",
         "enum": [
@@ -6825,6 +6817,194 @@
         "title": "TotpSetupResponse",
         "type": "object"
       },
+      "UnitCodeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "UnitCodeResponse",
+        "type": "object"
+      },
+      "UnitGroup": {
+        "description": "How the catalogue groups its units.",
+        "enum": [
+          "time",
+          "quantity",
+          "weight",
+          "length",
+          "area",
+          "volume",
+          "energy",
+          "packaging"
+        ],
+        "title": "UnitGroup",
+        "type": "string"
+      },
+      "UnitLabels": {
+        "additionalProperties": false,
+        "description": "Labels of documents in a language; empty: the main label.",
+        "properties": {
+          "de": {
+            "default": "",
+            "maxLength": 20,
+            "title": "De",
+            "type": "string"
+          },
+          "en": {
+            "default": "",
+            "maxLength": 20,
+            "title": "En",
+            "type": "string"
+          },
+          "fr": {
+            "default": "",
+            "maxLength": 20,
+            "title": "Fr",
+            "type": "string"
+          },
+          "it": {
+            "default": "",
+            "maxLength": 20,
+            "title": "It",
+            "type": "string"
+          }
+        },
+        "title": "UnitLabels",
+        "type": "object"
+      },
+      "UnitOfferResponse": {
+        "additionalProperties": false,
+        "description": "A catalogue entry to add (``key``) or a hidden unit to show again (``unit_id``).",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "group": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UnitGroup"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "names": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Language"
+            },
+            "title": "Names",
+            "type": "object"
+          },
+          "unit_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Id"
+          }
+        },
+        "required": [
+          "key",
+          "unit_id",
+          "group",
+          "code",
+          "label",
+          "names",
+          "description"
+        ],
+        "title": "UnitOfferResponse",
+        "type": "object"
+      },
+      "UnitOrderRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "unit_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Unit Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "unit_ids"
+        ],
+        "title": "UnitOrderRequest",
+        "type": "object"
+      },
+      "UnitRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "pattern": "^[0-9A-Z]{2,3}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 100,
+            "title": "Description",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 20,
+            "pattern": "[^\\s\\x1c-\\x1f\\x85]",
+            "title": "Label",
+            "type": "string"
+          },
+          "labels": {
+            "$ref": "#/components/schemas/UnitLabels"
+          }
+        },
+        "required": [
+          "label",
+          "code"
+        ],
+        "title": "UnitRequest",
+        "type": "object"
+      },
       "UnitResponse": {
         "additionalProperties": false,
         "properties": {
@@ -6832,29 +7012,51 @@
             "title": "Code",
             "type": "string"
           },
-          "label_de": {
-            "title": "Label De",
+          "description": {
+            "title": "Description",
             "type": "string"
           },
-          "label_en": {
-            "title": "Label En",
+          "hidden": {
+            "title": "Hidden",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
             "type": "string"
           },
-          "label_fr": {
-            "title": "Label Fr",
+          "in_use": {
+            "title": "In Use",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
             "type": "string"
           },
-          "label_it": {
-            "title": "Label It",
-            "type": "string"
+          "labels": {
+            "$ref": "#/components/schemas/UnitLabels"
+          },
+          "preset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset"
           }
         },
         "required": [
+          "id",
           "code",
-          "label_de",
-          "label_en",
-          "label_fr",
-          "label_it"
+          "label",
+          "labels",
+          "description",
+          "preset",
+          "hidden",
+          "in_use"
         ],
         "title": "UnitResponse",
         "type": "object"
@@ -18430,97 +18632,6 @@
         ]
       }
     },
-    "/api/reference/units": {
-      "get": {
-        "description": "UN/ECE Recommendation 20 unit codes supported for document lines.",
-        "operationId": "reference_list_units",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/UnitResponse"
-                  },
-                  "title": "Response Reference List Units",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          }
-        },
-        "security": [
-          {
-            "APIKeyCookie": []
-          }
-        ],
-        "summary": "List Units",
-        "tags": [
-          "reference"
-        ]
-      }
-    },
     "/api/reminders/{reminder_id}/html": {
       "get": {
         "operationId": "dunning_reminder_html",
@@ -20315,6 +20426,881 @@
         "summary": "Move Text Template",
         "tags": [
           "texts"
+        ]
+      }
+    },
+    "/api/units": {
+      "get": {
+        "description": "Every unit of the company, hidden ones too, in their order.",
+        "operationId": "units_list_units",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UnitResponse"
+                  },
+                  "title": "Response Units List Units",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "List Units",
+        "tags": [
+          "units"
+        ]
+      },
+      "post": {
+        "description": "Add an own unit at the end of the list.\n\n422 unit_code_unknown; 409 unit_label_taken, too_many_units.",
+        "operationId": "units_create_unit",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Create Unit",
+        "tags": [
+          "units"
+        ]
+      }
+    },
+    "/api/units/codes": {
+      "get": {
+        "description": "List the EN 16931 unit codes (UN/ECE Recommendation 20 and 21) with their names.",
+        "operationId": "units_list_unit_codes",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UnitCodeResponse"
+                  },
+                  "title": "Response Units List Unit Codes",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "List Unit Codes",
+        "tags": [
+          "units"
+        ]
+      }
+    },
+    "/api/units/order": {
+      "put": {
+        "description": "Sort the units offered; the order is that of the unit selects.\n\n422 unit_order_incomplete.",
+        "operationId": "units_order_units",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnitOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UnitResponse"
+                  },
+                  "title": "Response Units Order Units",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Order Units",
+        "tags": [
+          "units"
+        ]
+      }
+    },
+    "/api/units/presets": {
+      "get": {
+        "description": "List the catalogue entries no unit comes from yet, then the hidden units.",
+        "operationId": "units_list_unit_presets",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UnitOfferResponse"
+                  },
+                  "title": "Response Units List Unit Presets",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "List Unit Presets",
+        "tags": [
+          "units"
+        ]
+      },
+      "post": {
+        "description": "Show hidden units again and add catalogue entries, at the end of the list.\n\n404 unit_preset_unknown; 409 unit_preset_taken, unit_label_taken, too_many_units.",
+        "operationId": "units_take_over_unit_presets",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TakeOverRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UnitResponse"
+                  },
+                  "title": "Response Units Take Over Unit Presets",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Take Over Unit Presets",
+        "tags": [
+          "units"
+        ]
+      }
+    },
+    "/api/units/{unit_id}": {
+      "put": {
+        "description": "Change label, code and texts; issued documents keep what they were issued with.\n\n422 unit_code_unknown; 409 unit_label_taken.",
+        "operationId": "units_save_unit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "unit_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Unit Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Save Unit",
+        "tags": [
+          "units"
+        ]
+      }
+    },
+    "/api/units/{unit_id}/remove": {
+      "post": {
+        "description": "Delete a unit nothing uses, else hide it.\n\n409 unit_last_visible: the last unit offered stays.",
+        "operationId": "units_remove_unit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "unit_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Unit Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RemovalResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Remove Unit",
+        "tags": [
+          "units"
+        ]
+      }
+    },
+    "/api/units/{unit_id}/show": {
+      "post": {
+        "description": "Offer a hidden unit again, at the end of the list.",
+        "operationId": "units_show_unit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "unit_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Unit Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Show Unit",
+        "tags": [
+          "units"
         ]
       }
     },

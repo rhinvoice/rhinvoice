@@ -34,6 +34,7 @@ from rhinvoice.api.routers import (
     support,
     tax_rates,
     texts,
+    units,
     updates,
 )
 from rhinvoice.api.schemas import ApiModel
@@ -57,6 +58,7 @@ API_ROUTERS: tuple[APIRouter, ...] = (
     onboarding.router,
     print_layout.router,
     tax_rates.router,
+    units.router,
     documents.router,
     dunning.router,
     e_invoices.router,

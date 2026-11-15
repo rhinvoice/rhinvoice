@@ -105,6 +105,8 @@ class InvoiceTemplate:
             raise ValidationError("lines", f"an invoice has at most {MAX_LINES} lines")
         if any(line.tax_rate is not None for line in self.lines):
             raise ValidationError("lines", "a template has no frozen tax rates")
+        if any(line.unit is not None for line in self.lines):
+            raise ValidationError("lines", "a template has no frozen units")
         require_counted(self.lines)
         object.__setattr__(
             self, "subject", clean_text(self.subject, "subject", max_length=MAX_SUBJECT)
@@ -124,6 +126,11 @@ class InvoiceTemplate:
         return tuple(
             dict.fromkeys(line.tax_rate_id for line in self.lines if line.tax_rate_id is not None)
         )
+
+    @property
+    def unit_ids(self) -> tuple[UUID, ...]:
+        """The units of the positions; hidden ones stay with the plan (ADR 0046)."""
+        return tuple(dict.fromkeys(line.unit_id for line in self.lines if line.unit_id is not None))
 
 
 @dataclass(frozen=True, slots=True)

@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from decimal import Decimal
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from rhinvoice.application.backup.ports import BackupReason
+from rhinvoice.application.catalog.units import chosen_unit
 from rhinvoice.application.company.handlers import check_print_layout
 from rhinvoice.application.document.bad_debts import BadDebtYear, bad_debts_by_year
 from rhinvoice.application.document.ports import DocumentIndex
@@ -15,7 +17,7 @@ from rhinvoice.application.errors import NotFoundError
 from rhinvoice.application.numbering.handlers import allocate_number
 from rhinvoice.application.tax.handlers import chosen_rate
 from rhinvoice.application.text.handlers import effective_notice
-from rhinvoice.domain.catalog.unit import Unit
+from rhinvoice.domain.catalog.unit import LineUnit, known_unit
 from rhinvoice.domain.company.bank_account import paying_account
 from rhinvoice.domain.company.print_layout import layout_for
 from rhinvoice.domain.country.registry import profile_of
@@ -60,9 +62,8 @@ from rhinvoice.domain.tax.treatment import (
 from rhinvoice.domain.text.template import TextKind
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Collection, Sequence
+    from collections.abc import Callable, Collection, Mapping, Sequence
     from datetime import date
-    from uuid import UUID
 
     from rhinvoice.application.common import Page
     from rhinvoice.application.document.ports import (
@@ -71,6 +72,7 @@ if TYPE_CHECKING:
         DocumentSummary,
     )
     from rhinvoice.application.uow import UnitOfWork, UnitOfWorkFactory
+    from rhinvoice.domain.catalog.unit import Unit
     from rhinvoice.domain.company.bank_account import BankAccount
     from rhinvoice.domain.company.company import Company
     from rhinvoice.domain.customer.customer import Customer
@@ -92,7 +94,8 @@ class LineInput:
     description: str
     details: str = ""
     quantity: str = "1"
-    unit: str | None = None
+    unit_id: UUID | None = None
+    """The company's unit of a position (ADR 0046); None: none."""
     unit_price: str = "0"
     discount_percent: str = "0"
     tax_rate_id: UUID | None = None
@@ -106,14 +109,19 @@ class LineInput:
     alternative_to: int | None = None
     """The index of the position an alternative replaces, among the draft's lines."""
 
-    def to_domain(
+    def to_domain(  # noqa: PLR0913 - the line and what it is built against
         self,
         index: int,
         rates: Sequence[TaxRate],
+        units: Sequence[Unit],
+        *,
         kept: Collection[UUID] = (),
         line_ids: Sequence[UUID] = (),
+        kept_units: Collection[UUID] = (),
     ) -> DocumentLine:
-        """Build the line; ``kept`` are hidden rates the stored line had (they stay).
+        """Build the line; ``kept`` and ``kept_units``: the stored lines' hidden rates and units.
+
+        They stay; hidden ones are not chosen anew.
 
         ``line_ids`` are the new ids of the draft's lines in their order; an alternative
         refers to its position by one of them.
@@ -121,18 +129,19 @@ class LineInput:
         prefix = f"lines.{index}"
         try:
             if self.kind is LineKind.TEXT:
-                category, rate_id = TaxCategory.STANDARD, None
+                category, rate_id, unit_id = TaxCategory.STANDARD, None, None
             else:
                 category, rate_id = chosen_rate(
                     rates, self.tax_rate_id, pass_through=self.pass_through, kept=kept
                 )
+                unit_id = chosen_unit(units, self.unit_id, kept=kept_units)
             return DocumentLine(
                 id=line_ids[index] if line_ids else new_id(),
                 kind=self.kind,
                 description=self.description,
                 details=self.details,
                 quantity=parse_decimal(self.quantity, "quantity"),
-                unit=None if self.kind is LineKind.TEXT or self.unit is None else Unit(self.unit),
+                unit_id=unit_id,
                 unit_price=parse_decimal(self.unit_price, "unit_price"),
                 discount_percent=parse_decimal(self.discount_percent, "discount_percent"),
                 tax_category=category,
@@ -224,6 +233,14 @@ class DocumentView:
     rates: tuple[FrozenRate, ...] = ()
     """The rates of the positions taxed in the company's country, for their notices and
     exemption reasons: as issued, the current ones for drafts (ADR 0044)."""
+    units: Mapping[UUID, LineUnit] = field(default_factory=dict[UUID, LineUnit])
+    """The current units of a draft's positions in its language (ADR 0046)."""
+
+    def unit_of(self, line: DocumentLine) -> LineUnit | None:
+        """Return the unit a line prints: frozen when issued, the current one in a draft."""
+        if line.unit is not None or line.unit_id is None:
+            return line.unit
+        return self.units[line.unit_id]
 
     @property
     def rate_notices(self) -> tuple[str, ...]:
@@ -317,14 +334,28 @@ class DocumentHandlers:
     # --- Drafts ------------------------------------------------------------------
 
     def create(
-        self, document_type: DocumentType, draft: DraftInput, *, kept_rates: Collection[UUID] = ()
+        self,
+        document_type: DocumentType,
+        draft: DraftInput,
+        *,
+        kept_rates: Collection[UUID] = (),
+        kept_units: Collection[UUID] = (),
     ) -> DocumentView:
-        """Create a draft; ``kept_rates``: hidden rates it may use (those of a recurring plan)."""
+        """Create a draft that may use the hidden ``kept_rates`` and ``kept_units``.
+
+        They are those of a recurring plan.
+        """
         with self.uow() as uow:
             company = self._company(uow)
             customer = self._customer(uow, draft.customer_id)
             content = self._content(
-                uow, company, customer, draft, previous=None, kept_rates=kept_rates
+                uow,
+                company,
+                customer,
+                draft,
+                previous=None,
+                kept_rates=kept_rates,
+                kept_units=kept_units,
             )
             document = Document.new_draft(
                 new_id(),
@@ -343,7 +374,7 @@ class DocumentHandlers:
         """Calculate a draft without saving it, for live totals in the editor.
 
         ``customer`` stands in for one that is not saved (the layout preview's sample).
-        Hidden rates are allowed: the draft being edited may have them from before.
+        Hidden rates and units are allowed: the draft being edited may have them from before.
         """
         with self.uow() as uow:
             company = self._company(uow)
@@ -357,6 +388,7 @@ class DocumentHandlers:
                 draft,
                 previous=None,
                 kept_rates=[rate.id for rate in rates],
+                kept_units=[unit.id for unit in uow.units.list()],
             )
             document = Document.new_draft(new_id(), document_type, content, self.clock.now())
             on = content.tax_date or self.clock.today()
@@ -392,6 +424,7 @@ class DocumentHandlers:
                 draft,
                 previous=document.content,
                 kept_rates=document.content.rate_ids,
+                kept_units=document.content.unit_ids,
             )
             document = document.edit(
                 content, self.clock.now(), override_reason=draft.override_reason
@@ -742,6 +775,7 @@ class DocumentHandlers:
             due_date=due_date,
             snapshot=snapshot,
             rates=rates,
+            units={unit.id: unit for unit in uow.units.list()},
             now=self.clock.now(),
         )
         # Committed together with the document: a refused issue requests nothing.
@@ -757,6 +791,7 @@ class DocumentHandlers:
         *,
         previous: DraftContent | None,
         kept_rates: Collection[UUID],
+        kept_units: Collection[UUID],
     ) -> DraftContent:
         currency = draft.currency or customer.default_currency or company.default_currency
         check_print_layout(uow, draft.print_layout_id)
@@ -775,7 +810,9 @@ class DocumentHandlers:
             currency=currency,
             language=draft.language or customer.default_language or company.default_language,
             price_mode=draft.price_mode,
-            lines=draft_lines(draft, uow.tax_rates.list(), kept_rates),
+            lines=draft_lines(
+                draft, uow.tax_rates.list(), uow.units.list(), kept_rates, kept_units
+            ),
             treatment=treatment,
             treatment_overridden=overridden,
             goods_treatment=_goods_treatment(treatment, company, customer, overridden=overridden),
@@ -823,6 +860,7 @@ class DocumentHandlers:
                 else frozen
             )
             notices.append((treatment, text))
+        units = {unit.id: unit for unit in uow.units.list()}
         return DocumentView(
             document=document,
             totals=totals,
@@ -831,6 +869,11 @@ class DocumentHandlers:
             notices=tuple(notices),
             company=company,
             rates=used,
+            units={
+                line.unit_id: known_unit(line.unit_id, units).frozen(content.language)
+                for line in content.lines
+                if line.unit is None and line.unit_id is not None
+            },
         )
 
     def save_in(self, uow: UnitOfWork, document: Document) -> DocumentView:
@@ -892,12 +935,21 @@ def chosen_account(uow: UnitOfWork, account_id: UUID | None, currency: Currency)
 
 
 def draft_lines(
-    draft: DraftInput, rates: Sequence[TaxRate], kept: Collection[UUID]
+    draft: DraftInput,
+    rates: Sequence[TaxRate],
+    units: Sequence[Unit],
+    kept: Collection[UUID],
+    kept_units: Collection[UUID],
 ) -> tuple[DocumentLine, ...]:
-    """Build the lines of the editor's content with the company's rates (ADR 0044)."""
+    """Build the lines of the editor's content with the company's rates and units.
+
+    ``kept`` and ``kept_units``: the hidden rates and units the stored lines had (ADR 0044,
+    0046).
+    """
     line_ids = tuple(new_id() for _ in draft.lines)
     return tuple(
-        line.to_domain(index, rates, kept, line_ids) for index, line in enumerate(draft.lines)
+        line.to_domain(index, rates, units, kept=kept, line_ids=line_ids, kept_units=kept_units)
+        for index, line in enumerate(draft.lines)
     )
 
 

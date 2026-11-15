@@ -71,6 +71,8 @@ Rhinvoice is in beta (0.x). Try it on a test installation before you write real 
 
 **Everyday work**
 - Customers and articles with archive and document history
+- Own units in your order, from a catalogue (e.g. dz, ha, carton, pallet) or added yourself, each
+  with its code of the EN 16931 unit list for the e-invoice
 - Import from CSV, XLSX and XLS with column mapping, test run and saved templates; old invoices
   come over with their original PDFs ([moving from another program](docs/import.md))
 - Dashboard: revenue against last year, open and overdue amounts, open quotes, best customers,

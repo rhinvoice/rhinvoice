@@ -33,7 +33,7 @@ Rhinvoice établit des **offres, des factures, des factures d’annulation et de
 - Séries de numéros avec votre propre modèle (`{YYYY}`, `{YY}`, `{MM}`, `{DD}`, `{NNNN}`), remise à zéro annuelle et aperçu du prochain numéro
 - Les documents émis sont verrouillés, aussi dans la base de données, et le PDF est conservé avec sa somme de contrôle SHA-256 (art. 958f CO, GoBD, BAO)
 - Corrections uniquement par une facture d’annulation avec son propre numéro
-- Marquer les offres comme envoyées, acceptées ou refusées; après leur validité (30 jours par défaut), elles sont expirées
+- Finaliser les offres et les marquer comme acceptées ou refusées; après leur validité (30 jours par défaut), elles sont expirées
 - Positions en option et variantes dans les offres : montant entre parenthèses, hors du total
 - *Convertir en facture* crée un brouillon de facture à partir d’une offre, avec les positions choisies par le client
 - *Dupliquer* crée une copie en brouillon
@@ -103,7 +103,7 @@ Guides : [Suisse](/docs/fr/countries/switzerland/), [Allemagne](/docs/fr/countri
 - XRechnung 3.0 (CII) en fichier XML pour les autorités publiques allemandes
 - Leitweg-ID ou référence acheteur fixe par client en Allemagne
 - Avant l’émission, Rhinvoice indique ce qui manque encore pour la facture électronique ou la XRechnung
-- Unités sous forme de codes UN/ECE (recommandation n° 20), comme l’exige EN 16931
+- Propres unités par entreprise, comme dz ou palette, chacune avec son code de la liste des unités de EN 16931 (recommandations 20 et 21 de la CEE-ONU)
 - Contrôlée dans les tests automatiques avec le validateur KoSIT et Mustang
 
 Guide : [Factures électroniques](/docs/fr/invoices/e-invoice/)
@@ -116,11 +116,12 @@ Guide : [Factures électroniques](/docs/fr/invoices/e-invoice/)
 - Numéro TVA du client; en Allemagne la Leitweg-ID
 - Page client avec « client depuis » et tous les documents du client
 - Articles avec numéro, nom, description, groupe, unité, taux de TVA et l’indication bien ou service
+- Propres unités dans votre ordre, depuis un modèle avec groupes (p. ex. dz, ha, carton, palette) ou créées vous-même
 - Prix des articles par monnaie (CHF et EUR)
 - Archiver et restaurer; les éléments archivés n’apparaissent plus dans les listes de sélection
 - Recherche par nom, numéro, localité, e-mail ou description
 
-Guide : [Clients et articles](/docs/fr/moving/customers-and-articles/)
+Guides : [Clients et articles](/docs/fr/moving/customers-and-articles/), [Propres unités](/docs/fr/invoices/units/)
 
 ## Textes et modèle d’impression
 

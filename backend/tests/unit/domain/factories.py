@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from uuid import NAMESPACE_URL, UUID, uuid5
 
 from rhinvoice.domain.catalog.article import Article
-from rhinvoice.domain.catalog.unit import Unit
+from rhinvoice.domain.catalog.unit_presets import START
 from rhinvoice.domain.company.bank_account import BankAccount
 from rhinvoice.domain.company.company import Company
 from rhinvoice.domain.country.registry import profile_of
@@ -24,6 +24,7 @@ from rhinvoice.domain.tax.presets import STANDARD
 from rhinvoice.domain.tax.vat_number import VatNumber
 
 if TYPE_CHECKING:
+    from rhinvoice.domain.catalog.unit import Unit
     from rhinvoice.domain.tax.tax_rate import TaxRate
 
 NOW = datetime(2026, 1, 15, 9, 0, tzinfo=UTC)
@@ -44,6 +45,16 @@ def tax_rates(
         rate_id(preset.key): preset.to_rate(rate_id(preset.key), language)
         for preset in profile_of(country).base_presets
     }
+
+
+def unit_id(code: str = "C62") -> UUID:
+    """Return the id of a unit of the start list in every test installation (by its code)."""
+    return uuid5(NAMESPACE_URL, f"rhinvoice-test-unit:{code}")
+
+
+def units() -> dict[UUID, Unit]:
+    """Return the units every installation starts with (ADR 0046), under :func:`unit_id`."""
+    return {unit_id(preset.key): preset.to_unit(unit_id(preset.key)) for preset in START}
 
 
 def address(**overrides: Any) -> Address:  # noqa: ANN401 - test builder
@@ -104,7 +115,7 @@ def article(**overrides: Any) -> Article:  # noqa: ANN401
         "id": new_id(),
         "number": "1",
         "name": "Beratung",
-        "unit": Unit("HUR"),
+        "unit_id": unit_id("HUR"),
         "tax_category": TaxCategory.STANDARD,
         "prices": {Currency.CHF: Decimal("150.00")},
         "created_at": NOW,

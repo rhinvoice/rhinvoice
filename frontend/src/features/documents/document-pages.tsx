@@ -82,6 +82,8 @@ import { PaperPreview } from "@/components/paper-preview";
 import { PaymentDialog } from "@/features/documents/payment-dialog";
 import { RemoveWriteOffDialog, WriteOffDialog } from "@/features/documents/write-off-dialog";
 import { canRemoveWriteOff, canWriteOff } from "@/features/documents/write-off-model";
+import { defaultUnitId } from "@/features/shared/unit-model";
+import { unitsQuery } from "@/features/shared/units-api";
 import { fetchFile, saveFile } from "@/features/shared/file-download";
 import { printPage } from "@/features/documents/print-page";
 import { BackLink } from "@/features/shared/back-link";
@@ -172,9 +174,11 @@ export function NewDocumentPage({
   const [pending, setPending] = useState<readonly File[]>([]);
   // New documents start with the default texts; without templates they start empty.
   const templates = useQuery(textTemplatesQuery);
+  // Their first position takes the first unit offered (ADR 0046).
+  const units = useQuery(unitsQuery);
 
   if (error !== null) return <FormAlert message={errorMessage(error)} />;
-  if (company === undefined || templates.isPending) return <PageSkeleton />;
+  if (company === undefined || templates.isPending || units.isPending) return <PageSkeleton />;
   return (
     <>
       <BackToList type={type} />
@@ -189,7 +193,7 @@ export function NewDocumentPage({
           isNew
           defaultValues={{
             // New documents start dated today; the date stays editable and may be cleared.
-            ...emptyDocument(company, todayIso()),
+            ...emptyDocument(company, todayIso(), defaultUnitId(units.data)),
             ...defaultTexts(templates.data ?? [], type, company.default_language),
             customer_id: customerId ?? "",
           }}

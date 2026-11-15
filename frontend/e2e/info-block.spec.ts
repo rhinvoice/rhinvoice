@@ -8,6 +8,7 @@ import {
   post,
   test,
   unique,
+  unitId,
 } from "./fixtures";
 
 test("the print template lists the facts top right, with fields for every invoice", async ({
@@ -59,7 +60,14 @@ test("the print template lists the facts top right, with fields for every invoic
     const draft = await post<{ id: string }>(page, "/api/documents", {
       type: "invoice",
       customer_id: customerId,
-      lines: [{ description: "Beratung", quantity: "2", unit: "HUR", unit_price: "150" }],
+      lines: [
+        {
+          description: "Beratung",
+          quantity: "2",
+          unit_id: await unitId(page, "HUR"),
+          unit_price: "150",
+        },
+      ],
     });
     await openApp(page, `/documents/${draft.id}`, "Rechnung (Entwurf)");
     const dates = page.getByRole("region", { name: "Daten" });
@@ -101,7 +109,14 @@ test("a hidden row is still asked for, with a hint that fits the document", asyn
       headers: HEADERS,
     });
     const customerId = await createCustomer(page, `Hinweis ${unique(testInfo.project.name)} AG`);
-    const lines = [{ description: "Beratung", quantity: "1", unit: "HUR", unit_price: "150" }];
+    const lines = [
+      {
+        description: "Beratung",
+        quantity: "1",
+        unit_id: await unitId(page, "HUR"),
+        unit_price: "150",
+      },
+    ];
 
     // The invoice still sends the reference in its e-invoice.
     const invoice = await post<{ id: string }>(page, "/api/documents", {

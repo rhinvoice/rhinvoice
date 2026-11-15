@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { createCustomer, expect, openApp, post, test, unique } from "./fixtures";
+import { createCustomer, expect, openApp, post, test, unique, unitId } from "./fixtures";
 
 // The mail catcher of the E2E stack (compose.e2e.yml), as in mail.spec.ts.
 const MAILPIT = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
@@ -25,7 +25,14 @@ async function issuedInvoice(page: Page, customerId: string): Promise<string> {
   const draft = await post<{ id: string }>(page, "/api/documents", {
     type: "invoice",
     customer_id: customerId,
-    lines: [{ description: "Beratung", quantity: "2", unit: "HUR", unit_price: "150" }],
+    lines: [
+      {
+        description: "Beratung",
+        quantity: "2",
+        unit_id: await unitId(page, "HUR"),
+        unit_price: "150",
+      },
+    ],
   });
   await post(page, `/api/documents/${draft.id}/issue`, {});
   return draft.id;

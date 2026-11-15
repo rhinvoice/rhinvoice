@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
+from rhinvoice.application.catalog.units import relabel_units
 from rhinvoice.application.common import AddressInput, optional_email, optional_vat_number
 from rhinvoice.application.errors import ConflictError, NotFoundError
 from rhinvoice.application.tax.handlers import adopt_rates, reseed_rates, seed_rates
@@ -92,6 +93,8 @@ class CompanyHandlers:
             # A company starts with the rates of its country (ADR 0044).
             if existing is None:
                 adopt_rates(uow, seed_rates(uow, company))
+                # Its units speak its language, too (ADR 0046).
+                relabel_units(uow, company)
             elif existing.country is not company.country:
                 reseed_rates(uow, company)
             uow.commit()

@@ -1,0 +1,99 @@
+---
+title: Eigene Einheiten und ihr Code für die E-Rechnung
+description: "Einheiten in Rhinvoice: eigene Bezeichnungen wie dz, Sortierung, Vorlage mit Hektar, Karton und Palette und der UN/ECE-Code, den die E-Rechnung verlangt."
+since: 0.14.0
+faq:
+  - q: Wie rechne ich in Doppelzentner (dz) ab?
+    a: Übernehmen Sie unter «Einstellungen → Einheiten → Aus Vorlage …» die Einheit «dz · Doppelzentner (100 kg)». Sie hat den Code DTN für die E-Rechnung und steht danach in der Auswahl jeder Position.
+  - q: Welchen Code braucht eine Einheit?
+    a: Einen Code der Einheitenliste von EN 16931, also UN/ECE-Empfehlung 20 mit den Verpackungscodes der Empfehlung 21. Rhinvoice bietet nur Codes dieser Liste an, damit keine E-Rechnung an der Einheit scheitert. Mehrere Einheiten dürfen denselben Code haben.
+  - q: Ändern sich alte Rechnungen, wenn ich eine Einheit umbenenne?
+    a: Nein. Beim Ausstellen friert Rhinvoice Code und Bezeichnung der Einheit bei jeder Position ein. Entwürfe zeigen die aktuelle Bezeichnung.
+  - q: Kann ich eine Einheit löschen?
+    a: «Entfernen» löscht eine Einheit, die nichts verwendet. Verwenden Positionen, Artikel oder wiederkehrende Rechnungen sie, blendet Rhinvoice sie aus. Sie behalten sie, neue Positionen bieten sie nicht mehr an. Über «Aus Vorlage …» holen Sie sie zurück.
+  - q: Warum hat Hektar den Code H18?
+    a: Der frühere Code HAR ist seit Revision 17 der UN/ECE-Empfehlung 20 veraltet und wird von den Prüfprogrammen für E-Rechnungen abgelehnt. H18 ist der Quadrathektometer, also genau ein Hektar.
+---
+
+import Faq from "../../../../components/Faq.astro";
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+Jede Firma in Rhinvoice hat **eigene Einheiten**: eine Bezeichnung, die auf der Rechnung steht, zum Beispiel «dz» für den Doppelzentner, und einen **Code für die E-Rechnung**, zum Beispiel DTN. Zu Beginn sind es die 21 Einheiten, die Rhinvoice schon immer kannte. Weitere übernehmen Sie aus einer Vorlage oder legen sie selbst an, und die Reihenfolge bestimmen Sie.
+
+## Welche Einheiten eine Firma hat
+
+Unter *Einstellungen → Einheiten* stehen die Einheiten in der Reihenfolge, in der die Auswahl in Positionen und Artikeln sie anbietet: die Bezeichnung, darunter die Beschreibung, rechts der Code. Ein Klick auf eine Einheit öffnet sie. Neue Artikel nehmen die erste Einheit der Liste, neue Positionen ebenso.
+
+Zu Beginn hat jede Firma diese Einheiten:
+
+| Gruppe | Einheiten (Code) |
+|---|---|
+| Menge | Stk. (C62), Pauschal (LS), Set (SET), Paar (PR), Leistung (E48) |
+| Zeit | Std. (HUR), Min. (MIN), Tag (DAY), Woche (WEE), Monat (MON), Jahr (ANN) |
+| Gewicht | kg (KGM), g (GRM), t (TNE) |
+| Länge, Fläche, Volumen | m (MTR), km (KMT), m² (MTK), l (LTR), m³ (MTQ) |
+| Energie, Verpackung | kWh (KWH), Paket (XPK) |
+
+Die Tabelle nennt die deutschen Bezeichnungen. Schreibt Ihre Firma ihre Dokumente auf Englisch, Französisch oder Italienisch, ist deren Bezeichnung die Hauptbezeichnung, zum Beispiel «pcs», «pce» oder «pz.» statt «Stk.». Jede Rechnung zeigt die gewohnte Bezeichnung ihrer Sprache.
+
+## Sortieren
+
+Ziehen Sie eine Einheit an ihren neuen Platz, nutzen Sie die Pfeile neben ihr oder drücken Sie **Alt+↑** und **Alt+↓**. Die Auswahl in Positionen und Artikeln folgt der neuen Reihenfolge sofort.
+
+## Aus der Vorlage übernehmen
+
+**Aus Vorlage …** listet gängige Einheiten, die Ihre Firma noch nicht hat, nach Gruppen geordnet und mit Suche:
+
+| Gruppe | Einheiten in der Vorlage (Code) |
+|---|---|
+| Zeit | Quartal (QAN) |
+| Gewicht | dz, Doppelzentner von 100 kg (DTN) |
+| Länge | mm (MMT), cm (CMT) |
+| Fläche | ha, Hektar (H18) |
+| Volumen | ml (MLT), hl (HLT) |
+| Energie | MWh (MWH) |
+| Verpackung | Karton (XCT), Schachtel (XBX), Palette (XPX), Beutel (XBG), Sack (XSA), Flasche (XBO) |
+
+Dazu kommen Ihre ausgeblendeten Einheiten: solche aus der Vorlage in ihrer Gruppe, eigene unter *Ausgeblendet*. Wählen Sie eine oder mehrere und klicken Sie auf **Übernehmen**. Sie stehen dann am Ende der Liste.
+
+## Eigene Einheit anlegen
+
+<Steps>
+
+1. Öffnen Sie *Einstellungen → Einheiten* und klicken Sie auf **Neue Einheit**.
+2. Geben Sie die *Bezeichnung* ein, die auf der Rechnung stehen soll, höchstens 20 Zeichen.
+3. Auf Wunsch schreiben Sie eine *Beschreibung*. Sie ist nur für Sie und steht nicht auf der Rechnung.
+4. Wählen Sie den *Code für die E-Rechnung*. Suchen Sie nach dem Code oder dem englischen Namen, zum Beispiel «DTN» oder «decitonne».
+5. Klicken Sie auf **Speichern**.
+
+</Steps>
+
+Mit *Andere Bezeichnung auf englischen, französischen oder italienischen Rechnungen* geben Sie der Einheit eine eigene Bezeichnung für Rechnungen in den anderen Sprachen; schreibt Ihre Firma etwa auf Französisch, heisst der Link *Andere Bezeichnung auf deutschen, englischen oder italienischen Rechnungen*. Ein leeres Feld heisst: Es gilt die Bezeichnung oben. Bezeichnungen sind eindeutig, gleich ob gross oder klein geschrieben.
+
+## Der Code für die E-Rechnung
+
+Die E-Rechnung nach EN 16931 (ZUGFeRD, XRechnung) nennt bei jeder Position die Einheit als Code. Erlaubt sind nur die Codes der Einheitenliste von EN 16931: die UN/ECE-Empfehlung 20 und die Verpackungscodes der Empfehlung 21, die mit X beginnen. Rhinvoice bietet genau diese Liste an und speichert keine Einheit mit einem anderen Code.
+
+- Mehrere Einheiten dürfen denselben Code haben, zum Beispiel «Std.» und «Stunde» beide HUR.
+- Der Hektar hat den Code **H18** (Quadrathektometer, genau ein Hektar). Der frühere Code HAR ist seit Revision 17 der Empfehlung 20 veraltet und wird von den Prüfprogrammen abgelehnt.
+- Positionen ohne Einheit gehen mit C62 (Stück) in die E-Rechnung.
+
+<Aside type="note">
+Der Code steht nur in der E-Rechnung. Auf dem PDF steht die Bezeichnung in der Sprache des Dokuments.
+</Aside>
+
+## Entfernen
+
+**Entfernen** im Dialog einer Einheit löscht sie, wenn nichts sie verwendet. Verwenden Positionen, Artikel oder wiederkehrende Rechnungen sie, blendet Rhinvoice sie aus: Die Liste unter *Einstellungen → Einheiten* zeigt sie nicht mehr, neue Positionen und Artikel bieten sie nicht mehr an. Wer sie schon hat, behält sie; die Auswahl zeigt sie dort mit «(ausgeblendet)». Die Meldung sagt, was geschehen ist. Die letzte Einheit der Liste bleibt.
+
+## Ausgestellte Rechnungen
+
+Beim Ausstellen friert Rhinvoice bei jeder Position Code und Bezeichnung der Einheit in der Sprache des Dokuments ein. Umbenennen oder Entfernen ändert ausgestellte Rechnungen, Stornos und ihre PDFs nicht. Entwürfe zeigen die aktuelle Einheit. Mehr dazu: [Rechnung ausstellen und stornieren](/docs/de/invoices/issue-and-cancel/), [E-Rechnung](/docs/de/invoices/e-invoice/).
+
+## Import
+
+Beim [Import von Artikeln](/docs/de/moving/customers-and-articles/) findet Rhinvoice die Einheit einer Zeile an ihrer Bezeichnung in einer der vier Sprachen, an ihrem Code oder an gängigen Wörtern wie «Stunden» oder «pauschal». Ausgeblendete Einheiten findet der Import nicht.
+
+## Häufige Fragen
+
+<Faq />

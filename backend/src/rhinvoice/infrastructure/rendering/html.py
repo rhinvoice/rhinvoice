@@ -63,6 +63,7 @@ if TYPE_CHECKING:
     from uuid import UUID
 
     from rhinvoice.application.document.printing import PrintModel, ReminderPrint
+    from rhinvoice.domain.catalog.unit import LineUnit
     from rhinvoice.domain.company.bank_account import BankAccount
     from rhinvoice.domain.company.company import Company
     from rhinvoice.domain.country.profile import CountryTerms
@@ -505,7 +506,7 @@ def _lines(model: PrintModel, setting: _Setting) -> list[PrintLine]:
                 position=str(positions[line.id]),
                 description=line.description,
                 details="\n".join(details),
-                quantity=_quantity(line, setting),
+                quantity=_quantity(line, model.view.unit_of(line), setting),
                 price=unit_price(line.unit_price, setting.locale),
                 rate=(percent(calculated.tax_rate, setting.locale) if content.charges_vat else ""),
                 amount=_line_amount(line, calculated.amount.amount, setting),
@@ -518,10 +519,9 @@ def _lines(model: PrintModel, setting: _Setting) -> list[PrintLine]:
     return lines
 
 
-def _quantity(line: DocumentLine, setting: _Setting) -> str:
-    unit = "" if line.unit is None else line.unit.label(setting.language)
+def _quantity(line: DocumentLine, unit: LineUnit | None, setting: _Setting) -> str:
     quantity = number(line.quantity, setting.locale)
-    return f"{quantity}{NO_BREAK_SPACE}{unit}" if unit else quantity
+    return quantity if unit is None else f"{quantity}{NO_BREAK_SPACE}{unit.label}"
 
 
 def _pass_through(model: PrintModel, setting: _Setting) -> list[TotalRow]:
@@ -542,7 +542,8 @@ def _pass_through(model: PrintModel, setting: _Setting) -> list[TotalRow]:
         label = line.description
         if line.quantity != 1 or line.discount_percent:
             price = unit_price(line.unit_price, setting.locale)
-            label += f" ({_quantity(line, setting)}{NO_BREAK_SPACE}{TIMES} {price}"
+            quantity = _quantity(line, model.view.unit_of(line), setting)
+            label += f" ({quantity}{NO_BREAK_SPACE}{TIMES} {price}"
             if line.discount_percent:
                 discount = percent(line.discount_percent, setting.locale)
                 label += ", " + setting.labels["discount_line"].format(percent=discount)

@@ -176,7 +176,7 @@ export function DocumentView({ document, taxName, onRemovePayment }: DocumentVie
                         )}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {formatNumber(line.quantity, locale, 4)} {line.unit ?? ""}
+                        {formatNumber(line.quantity, locale, 4)} {line.unit_label ?? ""}
                       </TableCell>
                       <TableCell className="hidden text-right tabular-nums md:table-cell">
                         {money(line.unit_price, 4)}

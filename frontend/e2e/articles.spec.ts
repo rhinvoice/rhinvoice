@@ -12,7 +12,7 @@ test("create an article with prices and find it", async ({ page, isMobile }, tes
   await expect(page.getByRole("heading", { level: 1, name: "Neuer Artikel" })).toBeVisible();
   await page.getByLabel("Bezeichnung").fill(name);
   await page.getByLabel("Beschreibung").fill("Stundenansatz Senior");
-  await page.getByLabel("Einheit").selectOption("HUR");
+  await page.getByLabel("Einheit").selectOption({ label: "Std." });
   await page.getByLabel("Preis in CHF").fill("1’234.5");
   await page.getByLabel("Preis in EUR").fill("1,2345");
   await page.getByLabel("Preis in EUR").blur();

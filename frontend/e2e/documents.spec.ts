@@ -11,6 +11,7 @@ import {
   test,
   unique,
   waitForToastsToClose,
+  unitId,
 } from "./fixtures";
 
 test.describe.configure({ mode: "serial" });
@@ -23,7 +24,7 @@ test("create, issue, pay and cancel an invoice", async ({ page, isMobile }, test
   await createCustomer(page, customerName);
   await post(page, "/api/articles", {
     name: `Wartung ${suffix}`,
-    unit: "HUR",
+    unit_id: await unitId(page, "HUR"),
     prices: { CHF: "120" },
   });
 
@@ -54,7 +55,7 @@ test("create, issue, pay and cancel an invoice", async ({ page, isMobile }, test
   await firstLine.fill(`Wartung ${suffix}`);
   await page.getByRole("option", { name: new RegExp(`Wartung ${suffix}`) }).click();
   await expect(page.locator("#lines-0-unit_price")).toHaveValue("120.00");
-  await expect(page.locator("#lines-0-unit")).toHaveValue("HUR");
+  await expect(page.locator("#lines-0-unit option:checked")).toHaveText("Std.");
   await page.locator("#lines-0-quantity").fill("2");
   await page.getByRole("button", { name: "Übernehmen" }).click();
   await expect(page.locator("#lines-0-description")).toHaveCount(0);
@@ -270,15 +271,22 @@ test("a quote is sent, accepted and turned into an invoice", async ({ page }, te
     type: "quote",
     customer_id: customerId,
     subject: "Neue Website",
-    lines: [{ description: "Konzept", quantity: "1", unit: "LS", unit_price: "2500" }],
+    lines: [
+      {
+        description: "Konzept",
+        quantity: "1",
+        unit_id: await unitId(page, "LS"),
+        unit_price: "2500",
+      },
+    ],
   });
 
   await page.goto(`/documents/${quote.id}`);
   await expect(page.getByRole("heading", { level: 1, name: "Angebot (Entwurf)" })).toBeVisible();
-  await page.getByRole("button", { name: "Als versendet markieren" }).click();
+  await page.getByRole("button", { name: "Fertigstellen" }).click();
   await page
-    .getByRole("alertdialog", { name: "Angebot als versendet markieren?" })
-    .getByRole("button", { name: "Als versendet markieren" })
+    .getByRole("alertdialog", { name: "Angebot fertigstellen?" })
+    .getByRole("button", { name: "Fertigstellen" })
     .click();
   await expect(page.getByRole("heading", { level: 1, name: /^Angebot \S+$/ })).toBeVisible();
   await page.getByRole("button", { name: "Angenommen" }).click();
@@ -347,7 +355,14 @@ test("lists filter by view and search, the customer shows its documents", async 
     type: "invoice",
     customer_id: customerId,
     subject: `Entwurf ${suffix}`,
-    lines: [{ description: "Beratung", quantity: "1", unit: "HUR", unit_price: "150" }],
+    lines: [
+      {
+        description: "Beratung",
+        quantity: "1",
+        unit_id: await unitId(page, "HUR"),
+        unit_price: "150",
+      },
+    ],
   });
 
   // The overdue invoice comes from the global setup: documents cannot be
@@ -406,7 +421,14 @@ test("the invoice list filters by year and customer and marks invoices as paid",
     const draft = await post<{ id: string }>(page, "/api/documents", {
       type: "invoice",
       customer_id: customerId,
-      lines: [{ description: "Beratung", quantity: "1", unit: "HUR", unit_price: price }],
+      lines: [
+        {
+          description: "Beratung",
+          quantity: "1",
+          unit_id: await unitId(page, "HUR"),
+          unit_price: price,
+        },
+      ],
     });
     const issued = await post<{ number: string }>(page, `/api/documents/${draft.id}/issue`, {});
     numbers.push(issued.number);
@@ -583,7 +605,14 @@ test("the PDF goes to the share sheet only where the browser can share files", a
   const invoice = await post<{ id: string; number: string }>(page, "/api/documents", {
     type: "invoice",
     customer_id: customerId,
-    lines: [{ description: "Beratung", quantity: "1", unit: "HUR", unit_price: "100" }],
+    lines: [
+      {
+        description: "Beratung",
+        quantity: "1",
+        unit_id: await unitId(page, "HUR"),
+        unit_price: "100",
+      },
+    ],
   });
   const issued = await post<{ number: string }>(page, `/api/documents/${invoice.id}/issue`, {});
   const heading = `Rechnung ${issued.number}`;

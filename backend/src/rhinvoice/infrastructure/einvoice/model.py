@@ -361,6 +361,7 @@ def _line(
     tax: tuple[VatCode, Decimal],
 ) -> Line:
     content = model.view.document.content
+    unit = model.view.unit_of(line)
     code, rate = tax
     sign = _sign(model)
     step = model.view.totals.currency.minor_step
@@ -386,7 +387,7 @@ def _line(
         name=line.description,
         description=line.details,
         quantity=quantity,
-        unit=DEFAULT_UNIT if line.unit is None else line.unit.code,
+        unit=DEFAULT_UNIT if unit is None else unit.code,
         net_price=price,
         allowance=allowance,
         discount=bool(line.discount_percent),

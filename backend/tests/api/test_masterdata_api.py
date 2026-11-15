@@ -217,7 +217,7 @@ def test_articles(user_client: TestClient) -> None:
         "/api/articles",
         json={
             "name": "Beratung",
-            "unit": "HUR",
+            "unit_id": str(factories.unit_id("HUR")),
             "prices": {"CHF": "150.00", "EUR": "160"},
             "group": "Dienstleistung",
         },
@@ -225,7 +225,7 @@ def test_articles(user_client: TestClient) -> None:
     assert created.status_code == 201, created.text
     article = created.json()
     assert article["number"] == "1"
-    assert article["unit_label_de"] == "Std."
+    assert article["unit_id"] == str(factories.unit_id("HUR"))
     assert article["prices"] == {"CHF": "150.00", "EUR": "160.00"}
     assert user_client.get(f"/api/articles/{article['id']}").json() == article
     assert (article["tax_category"], article["tax_rate_id"]) == (
@@ -250,7 +250,8 @@ def test_articles(user_client: TestClient) -> None:
     assert user_client.get(f"/api/articles/{precise.json()['id']}").json()["prices"] == {
         "CHF": "0.1234"
     }
-    assert updated.json()["unit"] == "C62"
+    # Without a unit, the first one offered.
+    assert updated.json()["unit_id"] == str(factories.unit_id("C62"))
     assert user_client.get("/api/articles", params={"q": "senior"}).json()["total"] == 1
     assert user_client.post(f"/api/articles/{article['id']}/archive").json()["archived"] is True
     assert user_client.get("/api/articles").json()["total"] == 3
@@ -281,9 +282,8 @@ def test_number_sequences(user_client: TestClient) -> None:
 
 
 def test_reference_data(user_client: TestClient) -> None:
-    units = user_client.get("/api/reference/units").json()
-    hours = {"code": "HUR", "label_de": "Std.", "label_en": "h", "label_fr": "h", "label_it": "h"}
-    assert hours in units
+    # The units are the company's now (GET /api/units).
+    assert user_client.get("/api/reference/units").status_code == 404
     countries = user_client.get("/api/reference/countries").json()
     assert "CH" in countries
     assert "LI" in countries

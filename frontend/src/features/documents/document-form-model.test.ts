@@ -122,8 +122,15 @@ describe("document form", () => {
     });
     expect(emptyDocument(COMPANY, "2026-10-29").issue_date).toBe("2026-10-29");
     expect(empty.lines).toHaveLength(1);
-    expect(emptyLine()).toMatchObject({ kind: "item", quantity: "1", unit: "C62" });
-    expect(emptyLine("text")).toMatchObject({ kind: "text", quantity: "", unit: "" });
+    expect(emptyLine()).toMatchObject({ kind: "item", quantity: "1", unit: "" });
+    // A position takes the first unit offered; a text line has none.
+    expect(emptyLine("item", "unit-pieces").unit).toBe("unit-pieces");
+    expect(emptyLine("text", "unit-pieces")).toMatchObject({
+      kind: "text",
+      quantity: "",
+      unit: "",
+    });
+    expect(emptyDocument(COMPANY, "", "unit-pieces").lines[0]?.unit).toBe("unit-pieces");
     expect(emptyLine().key).not.toBe(emptyLine().key);
   });
 
@@ -133,6 +140,9 @@ describe("document form", () => {
     expect(isBlankLine({ ...emptyLine(), description: "Beratung" })).toBe(false);
     expect(isBlankLine({ ...emptyLine(), quantity: "2" })).toBe(false);
     expect(isBlankLine({ ...emptyLine(), article_id: "a" })).toBe(false);
+    // Measured against the unit new lines take.
+    expect(isBlankLine(emptyLine("item", "unit-pieces"), "unit-pieces")).toBe(true);
+    expect(isBlankLine(emptyLine("item", "unit-hours"), "unit-pieces")).toBe(false);
   });
 
   it("accepts a valid draft", () => {
@@ -252,11 +262,7 @@ describe("customer and article defaults", () => {
       name: "Wartung",
       description: "pro Stunde",
       group: "",
-      unit: "HUR",
-      unit_label_de: "Std.",
-      unit_label_en: "h",
-      unit_label_fr: "h",
-      unit_label_it: "h",
+      unit_id: "unit-hours",
       tax_rate_id: RATE,
       tax_category: "standard",
       supply: "goods",
@@ -270,7 +276,7 @@ describe("customer and article defaults", () => {
       kind: "item",
       description: "Wartung",
       details: "pro Stunde",
-      unit: "HUR",
+      unit: "unit-hours",
       unit_price: "120.00",
       tax: RATE,
       supply: "goods",
@@ -286,7 +292,7 @@ describe("customer and article defaults", () => {
       key: "x",
       description: " Rasenpflege ",
       details: "pro Stunde",
-      unit: "HUR" as const,
+      unit: "unit-hours",
       unit_price: "1’085.5",
       supply: "service" as const,
     };
@@ -296,7 +302,7 @@ describe("customer and article defaults", () => {
       name: "Rasenpflege",
       description: "pro Stunde",
       group: "",
-      unit: "HUR",
+      unit_id: "unit-hours",
       tax_rate_id: null,
       pass_through: false,
       supply: "service",
@@ -306,7 +312,7 @@ describe("customer and article defaults", () => {
   });
 
   it("offers to save only typed positions with a name that fits and a unit", () => {
-    const line = { ...emptyLine(), key: "x", description: "Rasenpflege" };
+    const line = { ...emptyLine("item", "unit-hours"), key: "x", description: "Rasenpflege" };
     expect(canSaveAsArticle(line)).toBe(true);
     expect(canSaveAsArticle({ ...line, kind: "text" })).toBe(false);
     expect(canSaveAsArticle({ ...line, article_id: "a1" })).toBe(false);
@@ -339,7 +345,7 @@ describe("conversion", () => {
         description: "Beratung",
         details: "",
         quantity: "1,5",
-        unit: "HUR",
+        unit: "unit-hours",
         unit_price: "1234,50",
         discount_percent: "10",
         tax: RATE,
@@ -456,7 +462,7 @@ describe("conversion", () => {
         description: "Beratung",
         details: "",
         quantity: "1.5",
-        unit: "HUR",
+        unit_id: "unit-hours",
         unit_price: "1234.50",
         discount_percent: "10",
         tax_rate_id: RATE,
@@ -471,7 +477,7 @@ describe("conversion", () => {
         description: "Phase 2",
         details: "Details",
         quantity: "1",
-        unit: null,
+        unit_id: null,
         unit_price: "0",
         discount_percent: "0",
         tax_rate_id: null,
@@ -495,7 +501,11 @@ describe("conversion", () => {
       override_reason: "",
       bank_account_id: null,
     });
-    expect(plain.lines?.[0]).toMatchObject({ unit: null, unit_price: "0", discount_percent: "0" });
+    expect(plain.lines?.[0]).toMatchObject({
+      unit_id: null,
+      unit_price: "0",
+      discount_percent: "0",
+    });
   });
 
   it("names the line an alternative replaces by its index; without one it is optional", () => {
@@ -550,6 +560,7 @@ describe("errors", () => {
     expect(documentFieldFor("customer_id")).toBe("customer_id");
     expect(documentFieldFor("lines")).toBe("lines");
     expect(documentFieldFor("lines.3.quantity")).toBe("lines.3.quantity");
+    expect(documentFieldFor("lines.3.unit_id")).toBe("lines.3.unit");
     expect(documentFieldFor("lines.3.unknown")).toBeNull();
     expect(documentFieldFor("lines.3.tax_rate_id")).toBe("lines.3.tax");
     expect(documentFieldFor("lines.3.pass_through")).toBe("lines.3.tax");

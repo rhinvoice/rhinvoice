@@ -24,9 +24,11 @@ from rhinvoice.application.importing.parsing import (
     split_postal_city,
     split_street,
 )
+from rhinvoice.domain.catalog.unit import Unit
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.shared.country import Country
 from rhinvoice.domain.shared.errors import ValidationError
+from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.presets import EXEMPT, REDUCED, SPECIAL, STANDARD, ZERO
@@ -162,35 +164,58 @@ def test_whole_numbers() -> None:
         assert (caught.value.field, caught.value.code) == ("days", "invalid_number")
 
 
+UNITS = list(factories.units().values())
+
+
 @pytest.mark.parametrize(
     ("text", "expected"),
     [
-        ("", "C62"),
         ("HUR", "HUR"),
+        ("hur", "HUR"),
         ("Std.", "HUR"),
         ("Stunden", "HUR"),
         ("h", "HUR"),
         ("Stück", "C62"),
         ("Stk", "C62"),
         ("pcs", "C62"),
+        ("pz.", "C62"),
         ("Pauschal", "LS"),
+        ("forfait", "LS"),
         ("Psch.", "LS"),
         ("m²", "MTK"),
         ("Tag", "DAY"),
+        ("giorno", "DAY"),
         ("Monat", "MON"),
         ("monatlich", "MON"),
         ("pro Monat", "MON"),
         ("jährlich", "ANN"),
+        ("lfm", "MTR"),
     ],
 )
-def test_units_are_read_from_codes_and_labels(text: str, expected: str) -> None:
-    assert parse_unit(text, "C62") == expected
+def test_units_are_read_from_labels_codes_and_words(text: str, expected: str) -> None:
+    assert parse_unit(text, UNITS) == factories.unit_id(expected)
 
 
-def test_unknown_units_are_rejected() -> None:
-    with pytest.raises(ValidationError) as caught:
-        parse_unit("Fass", "C62")
-    assert (caught.value.field, caught.value.code) == ("unit", "unknown_unit")
+def test_units_are_those_of_the_company() -> None:
+    assert parse_unit(" ", UNITS) is None
+    quintal = Unit(id=new_id(), code="DTN", label="dz", label_fr="q")
+    hours = Unit(id=new_id(), code="HUR", label="Stunde", hidden=True)
+    hour = Unit(id=new_id(), code="HUR", label="h")
+    # By label in any language, then by code: a hidden unit is never found.
+    assert parse_unit("Dz", [hours, quintal]) == quintal.id
+    assert parse_unit("Q", [hours, quintal]) == quintal.id
+    assert parse_unit("DTN", [hours, quintal]) == quintal.id
+    assert parse_unit("Stunden", [hours, hour]) == hour.id
+    assert parse_unit("HUR", [hours, hour]) == hour.id
+    # A label wins over the code of an earlier unit.
+    metre = Unit(id=new_id(), code="MTR", label="Meter")
+    assert parse_unit("m", [metre, *UNITS]) == factories.unit_id("MTR")
+    assert parse_unit("mtr", [hour, metre]) == metre.id
+    for text, units in (("Fass", UNITS), ("Stunde", [hours]), ("dz", UNITS)):
+        with pytest.raises(ValidationError) as caught:
+            parse_unit(text, units)
+        assert (caught.value.field, caught.value.code) == ("unit", "unknown_unit")
+        assert caught.value.message == f"'{text}' is not a known unit"
 
 
 ON = date(2026, 3, 9)

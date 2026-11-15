@@ -31,7 +31,6 @@ import type { MessageKey, T } from "@/lib/i18n";
 import type { Locale } from "@/lib/locale";
 
 export type LineRequest = NonNullable<DraftRequest["lines"]>[number];
-export type UnitCode = NonNullable<LineRequest["unit"]>;
 export type Currency = "CHF" | "EUR";
 
 export const SUPPLIES = ["service", "goods"] as const;
@@ -52,10 +51,6 @@ export const MAX_PRICE = 99_999_999.9999;
 export const MAX_QUANTITY = 999_999_999.9999;
 export const MAX_DISCOUNT_AMOUNT = 9_999_999_999.99;
 
-/** Values come from a select with the API's unit list. */
-const unitCode = z.custom<UnitCode | "">(
-  (value) => typeof value === "string" && /^([A-Z0-9]{2,3})?$/.test(value),
-);
 const isoDate = z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/);
 
 export function documentSchema(t: T, locale: Locale) {
@@ -67,7 +62,8 @@ export function documentSchema(t: T, locale: Locale) {
       description: f.optionalText(500),
       details: f.optionalText(4000),
       quantity: f.decimal({ max: MAX_QUANTITY, decimals: 4, signed: true }),
-      unit: unitCode,
+      /** The id of one of the company's units, "" for none (ADR 0046). */
+      unit: z.string(),
       unit_price: f.decimal({ max: MAX_PRICE, decimals: 4 }),
       discount_percent: f.decimal({ max: 100, decimals: 2 }),
       /** A rate id, PASS_THROUGH, or "" for the default rate (ADR 0044). */
@@ -166,14 +162,15 @@ export function newLineKey(): string {
   return `new-${String(lineCounter)}`;
 }
 
-export function emptyLine(kind: "item" | "text" = "item"): LineFormValues {
+/** A new line; a position takes ``unit``, the first unit offered (ADR 0046). */
+export function emptyLine(kind: "item" | "text" = "item", unit = ""): LineFormValues {
   return {
     key: newLineKey(),
     kind,
     description: "",
     details: "",
     quantity: kind === "item" ? "1" : "",
-    unit: kind === "item" ? "C62" : "",
+    unit: kind === "item" ? unit : "",
     unit_price: "",
     discount_percent: "",
     tax: "",
@@ -184,18 +181,20 @@ export function emptyLine(kind: "item" | "text" = "item"): LineFormValues {
   };
 }
 
-/** Whether a line is still exactly as added: nothing typed, nothing picked. */
-export function isBlankLine(line: LineFormValues): boolean {
+/** Whether a line is still exactly as added with the default ``unit``: nothing typed or picked. */
+export function isBlankLine(line: LineFormValues, unit = ""): boolean {
   return (
-    JSON.stringify({ ...line, key: "" }) === JSON.stringify({ ...emptyLine(line.kind), key: "" })
+    JSON.stringify({ ...line, key: "" }) ===
+    JSON.stringify({ ...emptyLine(line.kind, unit), key: "" })
   );
 }
 
 /**
  * An empty document; ``issueDate`` preselects the date (new documents: today).
- * Empty still means "the day of issuing" (plans have no date at all).
+ * Empty still means "the day of issuing" (plans have no date at all). Its first line
+ * takes ``unit``, the first unit offered.
  */
-export function emptyDocument(company: Company, issueDate = ""): DocumentFormValues {
+export function emptyDocument(company: Company, issueDate = "", unit = ""): DocumentFormValues {
   return {
     customer_id: "",
     currency: company.default_currency,
@@ -217,7 +216,7 @@ export function emptyDocument(company: Company, issueDate = ""): DocumentFormVal
     discount_value: "",
     treatment: "",
     override_reason: "",
-    lines: [emptyLine()],
+    lines: [emptyLine("item", unit)],
   };
 }
 
@@ -249,7 +248,7 @@ export function lineFromArticle(
     kind: "item",
     description: article.name,
     details: article.description,
-    unit: article.unit,
+    unit: article.unit_id,
     unit_price: price === undefined ? line.unit_price : formatDecimalInput(price, locale),
     tax: taxChoiceOf(article),
     supply: article.supply,
@@ -284,7 +283,7 @@ export function articleFromLine(
     name: line.description.trim(),
     description: line.details.trim(),
     group: "",
-    unit: line.unit as ArticleRequest["unit"],
+    unit_id: line.unit,
     ...taxChoiceToRequest(line.tax),
     supply: line.supply,
     prices: price === "" ? {} : { [currency]: toApiDecimal(price, locale) },
@@ -380,7 +379,7 @@ type DocumentLine = DocumentDetail["lines"][number];
 /** What a stored line (of a document or a plan) says, as the form edits it; plans have no marks. */
 export type StoredLine = Omit<
   DocumentLine,
-  "id" | "tax_rate" | "amount" | "in_total" | "alternative_to"
+  "id" | "tax_rate" | "amount" | "in_total" | "alternative_to" | "unit_code" | "unit_label"
 > &
   Partial<Pick<DocumentLine, "in_total" | "alternative_to">>;
 
@@ -391,8 +390,7 @@ export function lineToForm(line: StoredLine, key: string, locale: Locale): LineF
     description: line.description,
     details: line.details,
     quantity: line.kind === "item" ? formatDecimalInput(line.quantity, locale, 0) : "",
-    // The API returns stored unit codes, which always come from the unit list.
-    unit: (line.unit ?? "") as UnitCode | "",
+    unit: line.unit_id ?? "",
     unit_price: line.kind === "item" ? decimalInput(line.unit_price, locale, 2) : "",
     discount_percent: decimalInput(line.discount_percent, locale),
     tax: taxChoiceOf(line),
@@ -420,7 +418,7 @@ function lineToRequest(line: LineFormValues, locale: Locale, target: number | nu
       description: line.description,
       details: line.details,
       quantity: "1",
-      unit: null,
+      unit_id: null,
       unit_price: "0",
       discount_percent: "0",
       tax_rate_id: null,
@@ -436,7 +434,7 @@ function lineToRequest(line: LineFormValues, locale: Locale, target: number | nu
     description: line.description,
     details: line.details,
     quantity: apiDecimal(line.quantity, locale),
-    unit: line.unit === "" ? null : line.unit,
+    unit_id: line.unit === "" ? null : line.unit,
     unit_price: apiDecimal(line.unit_price, locale),
     discount_percent: apiDecimal(line.discount_percent, locale),
     ...taxChoiceToRequest(line.tax),
@@ -531,6 +529,7 @@ const LINE_FIELDS = [
 const LINE_FIELD_ALIASES: Readonly<Record<string, (typeof LINE_FIELDS)[number]>> = {
   tax_rate_id: "tax",
   pass_through: "tax",
+  unit_id: "unit",
   alternative_to: "in_total",
 };
 

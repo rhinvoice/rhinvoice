@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { createCustomer, expect, openApp, post, test, unique } from "./fixtures";
+import { createCustomer, expect, openApp, post, test, unique, unitId } from "./fixtures";
 
 // Playwright's traces and frame locators inject scripts into the sandboxed paper frame,
 // which Chromium reports as blocked; without them only the app's own messages remain.
@@ -40,7 +40,14 @@ test("an issued invoice opens without script errors", async ({ page, isMobile },
   const draft = await post<{ id: string }>(page, "/api/documents", {
     type: "invoice",
     customer_id: customerId,
-    lines: [{ description: "Beratung", quantity: "1", unit: "HUR", unit_price: "100" }],
+    lines: [
+      {
+        description: "Beratung",
+        quantity: "1",
+        unit_id: await unitId(page, "HUR"),
+        unit_price: "100",
+      },
+    ],
   });
   const issued = await post<{ number: string }>(page, `/api/documents/${draft.id}/issue`, {});
   const problems = consoleErrors(page);

@@ -21,10 +21,12 @@ from rhinvoice.application.importing.results import (
     RowProblem,
     RowStatus,
 )
+from rhinvoice.domain.catalog.unit import Unit
 from rhinvoice.domain.customer.customer import CustomerKind
 from rhinvoice.domain.shared.clock import FixedClock
 from rhinvoice.domain.shared.country import CountryCode
 from rhinvoice.domain.shared.errors import ValidationError
+from rhinvoice.domain.shared.identifier import new_id
 from rhinvoice.domain.shared.language import Language
 from rhinvoice.domain.shared.money import Currency
 from rhinvoice.domain.tax.category import TaxCategory
@@ -454,11 +456,14 @@ def test_articles_are_imported(handlers: ImportHandlers, store: Store) -> None:
     ]
     saved = {article.number: article for article in store.articles.values()}
     service = saved["0021"]
-    assert (service.unit.code, service.tax_category) == ("HUR", TaxCategory.STANDARD)
+    assert (service.unit_id, service.tax_category) == (
+        factories.unit_id("HUR"),
+        TaxCategory.STANDARD,
+    )
     assert service.tax_rate_id == factories.rate_id(STANDARD)
     assert (service.description, service.group) == ("Beratung IT", "Beratung")
     assert service.prices == {Currency.CHF: Decimal("120.00")}
-    assert saved["1"].unit.code == "C62"
+    assert saved["1"].unit_id == factories.unit_id("C62")
 
 
 def test_articles_take_the_rate_of_their_percentage(handlers: ImportHandlers, store: Store) -> None:
@@ -509,7 +514,7 @@ def test_article_prices_per_currency(handlers: ImportHandlers, store: Store) -> 
     handlers.run(articles_request(content=content, commit=True))
     [article] = store.articles.values()
     assert article.prices == {Currency.CHF: Decimal(130), Currency.EUR: Decimal(120)}
-    assert article.unit.code == "C62"
+    assert article.unit_id == factories.unit_id("C62")
 
 
 def test_article_duplicates_by_number_or_name(handlers: ImportHandlers, store: Store) -> None:
@@ -531,6 +536,25 @@ def test_article_duplicates_by_number_or_name(handlers: ImportHandlers, store: S
     assert (updated.name, updated.description, updated.number) == ("Support", "Bleibt", "9")
     assert store.articles[by_number.id].name == "Dienstleistung"
     assert len(store.articles) == 2
+
+
+def test_updated_articles_keep_their_unit(handlers: ImportHandlers, store: Store) -> None:
+    """ADR 0046: without the column the unit stays, also a hidden one; a cell names another."""
+    quintal = Unit(id=new_id(), code="DTN", label="dz", hidden=True)
+    store.units.append(quintal)
+    grain = factories.article(number="7", name="Weizen", unit_id=quintal.id)
+    store.articles[grain.id] = grain
+    update = lines("Bezeichnung;Preis", "Weizen;45")
+    handlers.run(articles_request(content=update, duplicates=DuplicateStrategy.UPDATE, commit=True))
+    assert store.articles[grain.id].unit_id == quintal.id
+    store.units = [replace(unit, hidden=False) for unit in store.units]
+    by_label = lines("Bezeichnung;Einheit", "Weizen;Std.", "Gerste;DZ")
+    handlers.run(
+        articles_request(content=by_label, duplicates=DuplicateStrategy.UPDATE, commit=True)
+    )
+    assert store.articles[grain.id].unit_id == factories.unit_id("HUR")
+    barley = next(article for article in store.articles.values() if article.name == "Gerste")
+    assert barley.unit_id == quintal.id
 
 
 def test_article_duplicates_created_anew(handlers: ImportHandlers, store: Store) -> None:

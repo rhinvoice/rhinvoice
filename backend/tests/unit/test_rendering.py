@@ -37,7 +37,7 @@ HOURS = LineInput(
     description="Beratung",
     details="Konzept & <Umsetzung>",
     quantity="12.5",
-    unit="HUR",
+    unit_id=factories.unit_id("HUR"),
     unit_price="1200",
     discount_percent="10",
 )
@@ -202,7 +202,7 @@ COPIES = LineInput(
     kind=LineKind.ITEM,
     description="Grundbuchauszüge",
     quantity="2",
-    unit="C62",
+    unit_id=factories.unit_id("C62"),
     unit_price="20",
     discount_percent="10",
     pass_through=True,
@@ -567,7 +567,9 @@ def test_italian_documents_abroad(printing: PrintHandlers, store: Store) -> None
         address=factories.address(country=CountryCode("DE"), postal_code="10115", city="Berlin"),
         vat_number=VatNumber.parse("DE123456789"),
     )
-    piece = LineInput(kind=LineKind.ITEM, description="Libro", unit="C62", unit_price="20")
+    piece = LineInput(
+        kind=LineKind.ITEM, description="Libro", unit_id=factories.unit_id("C62"), unit_price="20"
+    )
     documents = printing.documents
     quote = documents.create(
         DocumentType.QUOTE, draft(language=Language.IT, lines=(piece,))

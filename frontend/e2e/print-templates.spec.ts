@@ -9,6 +9,7 @@ import {
   test,
   unique,
   type NamedLayout,
+  unitId,
 } from "./fixtures";
 
 test("several print templates: one per customer, chosen in the editor header", async ({
@@ -52,7 +53,14 @@ test("several print templates: one per customer, chosen in the editor header", a
     const draft = await post<{ id: string }>(page, "/api/documents", {
       type: "invoice",
       customer_id: customerId,
-      lines: [{ description: "Beratung", quantity: "1", unit: "HUR", unit_price: "100" }],
+      lines: [
+        {
+          description: "Beratung",
+          quantity: "1",
+          unit_id: await unitId(page, "HUR"),
+          unit_price: "100",
+        },
+      ],
     });
     await openApp(page, `/documents/${draft.id}`, "Rechnung (Entwurf)");
     if (isMobile) await page.getByRole("button", { name: "Vorschau" }).click();

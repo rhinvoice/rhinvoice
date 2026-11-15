@@ -8,6 +8,7 @@ import {
   test,
   unique,
   waitForToastsToClose,
+  unitId,
 } from "./fixtures";
 
 test.describe.configure({ mode: "serial" });
@@ -46,7 +47,12 @@ test("pass-through items print apart and third-party invoices go with the invoic
     type: "invoice",
     customer_id: customerId,
     lines: [
-      { description: "Buchhaltung", quantity: "4", unit: "HUR", unit_price: "120" },
+      {
+        description: "Buchhaltung",
+        quantity: "4",
+        unit_id: await unitId(page, "HUR"),
+        unit_price: "120",
+      },
       { description: "Gründungsgebühr Handelsregister", quantity: "1", unit_price: "250.35" },
     ],
   });

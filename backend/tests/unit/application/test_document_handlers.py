@@ -17,6 +17,7 @@ from rhinvoice.application.document.handlers import (
 )
 from rhinvoice.application.document.ports import DocumentQuery
 from rhinvoice.application.errors import NotFoundError
+from rhinvoice.domain.catalog.unit import LineUnit
 from rhinvoice.domain.customer.customer import CustomerKind
 from rhinvoice.domain.document.document import (
     DisplayStatus,
@@ -73,13 +74,17 @@ def handlers(store: Store, clock: FixedClock, units: list[InMemoryUnitOfWork]) -
 
 CUSTOMER = UUID(int=1)
 HOURS = LineInput(
-    kind=LineKind.ITEM, description="Beratung", quantity="10", unit="HUR", unit_price="150"
+    kind=LineKind.ITEM,
+    description="Beratung",
+    quantity="10",
+    unit_id=factories.unit_id("HUR"),
+    unit_price="150",
 )
 FOOD = LineInput(
     kind=LineKind.ITEM,
     description="Kaffee",
     quantity="3",
-    unit="C62",
+    unit_id=factories.unit_id("C62"),
     unit_price="12.35",
     tax_rate_id=factories.rate_id(REDUCED),
 )
@@ -145,8 +150,10 @@ def test_line_errors_name_the_line(handlers: DocumentHandlers) -> None:
         handlers.create(DocumentType.INVOICE, draft_input(lines=(HOURS, broken)))
     assert error.value.field == "lines.1.quantity"
     with pytest.raises(ValidationError) as unit:
-        handlers.create(DocumentType.INVOICE, draft_input(lines=(replace(HOURS, unit="XYZ"),)))
-    assert unit.value.field == "lines.0.unit"
+        handlers.create(
+            DocumentType.INVOICE, draft_input(lines=(replace(HOURS, unit_id=new_id()),))
+        )
+    assert (unit.value.field, unit.value.code) == ("lines.0.unit_id", "unit_unknown")
     for field, invalid in [
         ("unit_price", replace(HOURS, unit_price="abc")),
         ("discount_percent", replace(HOURS, discount_percent="abc")),
@@ -169,10 +176,10 @@ def test_line_input_is_taken_over(handlers: DocumentHandlers) -> None:
 
 
 def test_text_lines_have_no_unit(handlers: DocumentHandlers) -> None:
-    text = LineInput(kind=LineKind.TEXT, description="Phase 1", unit="HUR")
-    no_unit = replace(HOURS, unit=None)
+    text = LineInput(kind=LineKind.TEXT, description="Phase 1", unit_id=factories.unit_id("HUR"))
+    no_unit = replace(HOURS, unit_id=None)
     document = handlers.create(DocumentType.INVOICE, draft_input(lines=(text, no_unit))).document
-    assert [line.unit for line in document.content.lines] == [None, None]
+    assert [line.unit_id for line in document.content.lines] == [None, None]
 
 
 def test_treatment_is_determined_and_can_be_overridden(
@@ -1118,6 +1125,55 @@ def test_hidden_rates_stay_where_they_were_chosen(handlers: DocumentHandlers, st
     store.tax_rates = [replace(rate, hidden=rate.id == standard) for rate in store.tax_rates]
     fallback = handlers.create(DocumentType.INVOICE, draft_input(lines=(HOURS,)))
     assert fallback.document.content.lines[0].tax_rate_id == factories.rate_id(REDUCED)
+
+
+def test_hidden_units_stay_where_they_were_chosen(handlers: DocumentHandlers, store: Store) -> None:
+    created = handlers.create(DocumentType.INVOICE, draft_input()).document
+    pieces = factories.unit_id("C62")
+    store.units = [replace(unit, hidden=unit.id == pieces) for unit in store.units]
+    # The draft keeps its line in the hidden unit, also when saved again.
+    kept = handlers.update(created.id, draft_input()).document.content.lines[1]
+    assert kept.unit_id == pieces
+    # The editor's preview of that draft shows it too.
+    preview = handlers.preview(DocumentType.INVOICE, draft_input()).view
+    assert preview.unit_of(preview.document.content.lines[1]) == LineUnit("C62", "Stk.")
+    # New choices of the hidden unit are refused.
+    with raises_exactly(ValidationError, "the unit is hidden") as hidden:
+        handlers.create(DocumentType.INVOICE, draft_input())
+    assert (hidden.value.field, hidden.value.code) == ("lines.1.unit_id", "unit_hidden")
+    # Unless the caller keeps them, such as a recurring plan that had them before.
+    again = handlers.create(DocumentType.INVOICE, draft_input(), kept_units=(pieces,))
+    assert again.document.content.lines[1].unit_id == pieces
+
+
+def test_drafts_show_the_current_unit_issued_documents_theirs(
+    handlers: DocumentHandlers, store: Store
+) -> None:
+    hours = factories.unit_id("HUR")
+    text = LineInput(kind=LineKind.TEXT, description="Phase 1")
+    lines = (text, HOURS, replace(FOOD, unit_id=None))
+    view = handlers.create(DocumentType.INVOICE, draft_input(lines=lines, language=Language.EN))
+    assert [view.unit_of(line) for line in view.document.content.lines] == [
+        None,
+        LineUnit("HUR", "h"),
+        None,
+    ]
+    assert view.units == {hours: LineUnit("HUR", "h")}
+    store.units = [
+        replace(unit, label="Stunde", label_en="hour") if unit.id == hours else unit
+        for unit in store.units
+    ]
+    draft = handlers.get(view.document.id)
+    assert draft.unit_of(draft.document.content.lines[1]) == LineUnit("HUR", "hour")
+    issued = handlers.issue(view.document.id)
+    assert issued.document.content.lines[1].unit == LineUnit("HUR", "hour")
+    assert issued.units == {}
+    # Renaming the unit later changes nothing on the issued document.
+    store.units = [
+        replace(unit, label_en="hrs") if unit.id == hours else unit for unit in store.units
+    ]
+    again = handlers.get(view.document.id)
+    assert again.unit_of(again.document.content.lines[1]) == LineUnit("HUR", "hour")
 
 
 def test_issuing_freezes_the_rates_and_their_notices(

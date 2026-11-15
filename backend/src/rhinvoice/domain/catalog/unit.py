@@ -1,76 +1,115 @@
-"""Units of measure as UN/ECE Recommendation 20 codes (required by EN 16931)."""
+"""Units of measure owned by the company (ADR 0046).
+
+A unit has the label documents print, optionally another one per document language (German,
+English, French, Italian), and the code of the EN 16931 unit code list (UN/ECE
+Recommendation 20 with the Recommendation 21 codes, BT-130) that the e-invoice sends.
+Several units may share a code ("Std." and "Stunde" are both HUR). Issuing freezes code and
+label on each line.
+"""
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from importlib.resources import files
+from types import MappingProxyType
+from typing import TYPE_CHECKING
 
 from rhinvoice.domain.shared.errors import ValidationError
 from rhinvoice.domain.shared.language import Language
+from rhinvoice.domain.shared.text import clean_text
 
-# Code -> (German label, English label). A curated subset of Rec 20 / Rec 21.
-UNITS: dict[str, tuple[str, str]] = {
-    "C62": ("Stk.", "pcs"),
-    "HUR": ("Std.", "h"),
-    "MIN": ("Min.", "min"),
-    "DAY": ("Tag", "day"),
-    "WEE": ("Woche", "week"),
-    "MON": ("Monat", "month"),
-    "ANN": ("Jahr", "year"),
-    "LS": ("Pauschal", "lump sum"),
-    "KGM": ("kg", "kg"),
-    "GRM": ("g", "g"),
-    "TNE": ("t", "t"),
-    "LTR": ("l", "l"),
-    "MTR": ("m", "m"),
-    "KMT": ("km", "km"),
-    "MTK": ("m²", "m²"),
-    "MTQ": ("m³", "m³"),
-    "KWH": ("kWh", "kWh"),
-    "SET": ("Set", "set"),
-    "PR": ("Paar", "pair"),
-    "XPK": ("Paket", "package"),
-    "E48": ("Leistung", "service unit"),
-}
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+    from uuid import UUID
 
-# Code -> (French label, Italian label), as written in Switzerland; symbols stay as they are.
-_ROMANCE_UNITS: dict[str, tuple[str, str]] = {
-    "C62": ("pce", "pz."),
-    "HUR": ("h", "h"),
-    "DAY": ("jour", "giorno"),
-    "WEE": ("semaine", "settimana"),
-    "MON": ("mois", "mese"),
-    "ANN": ("année", "anno"),
-    "LS": ("forfait", "forfait"),
-    "SET": ("set", "set"),
-    "PR": ("paire", "paio"),
-    "XPK": ("paquet", "pacco"),
-    "E48": ("prestation", "prestazione"),
-}
+MAX_UNIT_LABEL = 20
+MAX_UNIT_DESCRIPTION = 100
+TRANSLATED = (Language.DE, Language.EN, Language.FR, Language.IT)
+"""The languages a unit may have a label of its own for; the others print the main label."""
 
-DEFAULT_UNIT_CODE = "C62"
+
+# The file names the source and the version of the list.
+_CODE_LIST = files("rhinvoice.domain.catalog").joinpath("unit_codes.json")
+UNIT_CODES: Mapping[str, str] = MappingProxyType(
+    json.loads(_CODE_LIST.read_text(encoding="utf-8"))["codes"]
+)
+"""Every code of the EN 16931 unit code list with its official English name."""
+
+
+def check_unit_code(code: str) -> None:
+    """Refuse a code the e-invoice validators would reject (BR-CL-23)."""
+    if code not in UNIT_CODES:
+        raise ValidationError(
+            "code", f"'{code}' is not in the EN 16931 unit code list", code="unit_code_unknown"
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class LineUnit:
+    """A unit as a line shows it: its code and its label in the document's language."""
+
+    code: str
+    label: str
 
 
 @dataclass(frozen=True, slots=True)
 class Unit:
+    id: UUID
     code: str
+    """The code of the EN 16931 unit code list, sent in the e-invoice."""
+    label: str
+    """Printed on documents, also in languages without a label of their own."""
+    label_de: str = ""
+    label_en: str = ""
+    label_fr: str = ""
+    label_it: str = ""
+    description: str = ""
+    """For the user only, e.g. "Doppelzentner (100 kg)"; never printed."""
+    preset: str | None = None
+    """The catalogue entry the unit was taken from (its key)."""
+    hidden: bool = False
+    """Not offered for new lines; lines, articles and plans that use it keep it."""
 
     def __post_init__(self) -> None:
-        if self.code not in UNITS:
-            raise ValidationError("unit", f"'{self.code}' is not a supported unit code")
+        check_unit_code(self.code)
+        object.__setattr__(
+            self, "label", clean_text(self.label, "label", max_length=MAX_UNIT_LABEL, required=True)
+        )
+        for language in TRANSLATED:
+            name = f"label_{language}"
+            object.__setattr__(
+                self, name, clean_text(getattr(self, name), name, max_length=MAX_UNIT_LABEL)
+            )
+        object.__setattr__(
+            self,
+            "description",
+            clean_text(self.description, "description", max_length=MAX_UNIT_DESCRIPTION),
+        )
 
     @property
-    def label_de(self) -> str:
-        return UNITS[self.code][0]
+    def translations(self) -> dict[Language, str]:
+        """The labels of its own the unit has for documents in some languages."""
+        own = {
+            Language.DE: self.label_de,
+            Language.EN: self.label_en,
+            Language.FR: self.label_fr,
+            Language.IT: self.label_it,
+        }
+        return {language: label for language, label in own.items() if label}
 
-    @property
-    def label_en(self) -> str:
-        return UNITS[self.code][1]
+    def label_in(self, language: Language) -> str:
+        """Return the label documents in ``language`` print."""
+        return self.translations.get(language, self.label)
 
-    def label(self, language: Language) -> str:
-        """Return the label printed on documents in ``language``."""
-        if language is Language.DE:
-            return self.label_de
-        if language is Language.EN:
-            return self.label_en
-        romance = _ROMANCE_UNITS.get(self.code, (self.label_en, self.label_en))
-        return romance[0] if language is Language.FR else romance[1]
+    def frozen(self, language: Language) -> LineUnit:
+        """Return what a line of a document in ``language`` keeps of the unit when issued."""
+        return LineUnit(code=self.code, label=self.label_in(language))
+
+
+def known_unit(unit_id: UUID, units: Mapping[UUID, Unit]) -> Unit:
+    """Return one of the company's units; a line cannot refer to an unknown one."""
+    unit = units.get(unit_id)
+    if unit is None:
+        raise ValidationError("unit_id", "unknown unit", code="unit_unknown")
+    return unit

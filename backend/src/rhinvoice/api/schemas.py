@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Annotated, Any
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, JsonValue
 
 from rhinvoice.application.common import MAX_PAGE_SIZE, AddressInput, PageRequest, SortDirection
-from rhinvoice.domain.catalog.unit import UNITS
 from rhinvoice.domain.company.print_layout import MAX_INFO_KEY
 from rhinvoice.domain.shared.country import ISO_3166_ALPHA2
 
@@ -43,7 +42,6 @@ ERROR_RESPONSES: dict[int | str, dict[str, object]] = {
 
 ISO_COUNTRY_CODES: list[str] = sorted(ISO_3166_ALPHA2)
 _COUNTRY_ENUM: list[JsonValue] = [*ISO_COUNTRY_CODES]
-UNIT_CODES: list[JsonValue] = [*sorted(UNITS)]
 
 
 def _known_country(value: str) -> str:

@@ -22,14 +22,14 @@ import { FormAlert } from "@/features/shared/form-alert";
 import { summaryItems } from "@/features/shared/form-errors";
 import { FormFooter } from "@/features/shared/form-footer";
 import { companyQuery } from "@/features/shared/company-api";
-import { unitsQuery } from "@/features/shared/reference-api";
+import { UnitSelect } from "@/features/shared/unit-select";
+import { unitsQuery } from "@/features/shared/units-api";
 import { applyServerErrors } from "@/features/shared/server-errors";
 import { percentsOn } from "@/features/shared/tax-rate-model";
 import { TaxRateSelect } from "@/features/shared/tax-rate-select";
 import { taxRatesQuery } from "@/features/shared/tax-rates-api";
 import { useErrorMessage } from "@/features/shared/use-error-message";
 import { todayIso } from "@/lib/dates";
-import { unitName } from "@/lib/locale";
 
 interface ArticleFormProps {
   readonly defaultValues: ArticleFormValues;
@@ -105,25 +105,22 @@ export function ArticleForm({ defaultValues, onSubmit }: ArticleFormProps) {
           >
             <Input id="group" {...form.register("group")} />
           </Field>
-          <Field label={t("articles.unit")} error={error("unit")}>
-            <NativeSelect id="unit" {...form.register("unit")}>
-              {(
-                units.data ?? [
-                  {
-                    code: defaultValues.unit,
-                    label_de: defaultValues.unit,
-                    label_en: defaultValues.unit,
-                    label_fr: defaultValues.unit,
-                    label_it: defaultValues.unit,
-                  },
-                ]
-              ).map((unit) => (
-                <option key={unit.code} value={unit.code}>
-                  {unitName(locale, unit)} ({unit.code})
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
+          <Controller
+            control={form.control}
+            name="unit"
+            render={({ field }) => (
+              <Field label={t("articles.unit")} error={error("unit")}>
+                <UnitSelect
+                  id="unit"
+                  ref={field.ref}
+                  value={field.value}
+                  units={units.data}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                />
+              </Field>
+            )}
+          />
           <Controller
             control={form.control}
             name="tax"

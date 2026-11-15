@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from rhinvoice.api.container import Container
 from tests.api.conftest import NOW
 from tests.api.test_documents_api import post
+from tests.unit.domain import factories
 
 TODAY = NOW.date()
 
@@ -23,7 +24,12 @@ def plan_body(customer_id: str, **fields: object) -> dict[str, object]:
         "template": {
             "currency": "CHF",
             "lines": [
-                {"description": "Hosting", "quantity": "1", "unit": "MON", "unit_price": "29"},
+                {
+                    "description": "Hosting",
+                    "quantity": "1",
+                    "unit_id": str(factories.unit_id("MON")),
+                    "unit_price": "29",
+                },
             ],
             "subject": "Hosting",
         },

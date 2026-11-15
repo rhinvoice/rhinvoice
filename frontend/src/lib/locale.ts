@@ -88,16 +88,3 @@ export function textFor(locale: Locale, texts: Texts): string {
 export function isMachineTranslated(locale: Locale): boolean {
   return locale === "fr-CH" || locale === "it-CH";
 }
-
-/** A unit's name as the API lists it, in the interface's language. */
-export function unitName(
-  locale: Locale,
-  unit: { label_de: string; label_en: string; label_fr: string; label_it: string },
-): string {
-  return textFor(locale, {
-    de: unit.label_de,
-    en: unit.label_en,
-    fr: unit.label_fr,
-    it: unit.label_it,
-  });
-}

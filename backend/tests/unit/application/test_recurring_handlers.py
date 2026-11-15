@@ -56,8 +56,13 @@ from tests.unit.domain import factories
 CUSTOMER = UUID(int=1)
 TODAY = NOW.date()
 RATES = list(factories.tax_rates().values())
+UNITS = list(factories.units().values())
 HOSTING = LineInput(
-    kind=LineKind.ITEM, description="Hosting", quantity="1", unit="MON", unit_price="29"
+    kind=LineKind.ITEM,
+    description="Hosting",
+    quantity="1",
+    unit_id=factories.unit_id("MON"),
+    unit_price="29",
 )
 MAILBOX = EmailAddress("buchhaltung@kunde.example")
 
@@ -167,6 +172,7 @@ def test_templates_keep_what_the_editor_sent() -> None:
             closing_text="Thanks",
         ),
         RATES,
+        UNITS,
     )
     assert template.discount is not None
     assert (template.discount.kind, template.discount.value) == (DiscountKind.AMOUNT, Decimal(5))
@@ -177,13 +183,13 @@ def test_templates_keep_what_the_editor_sent() -> None:
     )
     assert [line.supply for line in template.lines] == [Supply.SERVICE, Supply.GOODS]
     plain = to_template(
-        DraftInput(customer_id=CUSTOMER, currency=Currency.CHF, lines=(HOSTING,)), RATES
+        DraftInput(customer_id=CUSTOMER, currency=Currency.CHF, lines=(HOSTING,)), RATES, UNITS
     )
     assert plain.discount is None
     with raises_exactly(ValidationError, "a plan names its currency"):
-        to_template(DraftInput(customer_id=CUSTOMER, lines=(HOSTING,)), RATES)
+        to_template(DraftInput(customer_id=CUSTOMER, lines=(HOSTING,)), RATES, UNITS)
     with raises_exactly(ValidationError, "the invoice needs at least one position with an amount"):
-        to_template(DraftInput(customer_id=CUSTOMER, currency=Currency.CHF), RATES)
+        to_template(DraftInput(customer_id=CUSTOMER, currency=Currency.CHF), RATES, UNITS)
 
 
 def test_plans_need_their_customer(recurring: RecurringHandlers) -> None:
@@ -531,6 +537,28 @@ def test_plans_keep_their_hidden_rates(recurring: RecurringHandlers, store: Stor
     assert (hidden.value.field, hidden.value.code) == ("lines.0.tax_rate_id", "tax_rate_hidden")
 
 
+def test_plans_keep_their_hidden_units(recurring: RecurringHandlers, store: Store) -> None:
+    months = factories.unit_id("MON")
+    monthly = replace(HOSTING, unit_id=months)
+    template = DraftInput(customer_id=CUSTOMER, currency=Currency.CHF, lines=(monthly,))
+    plan = recurring.create(save(template=template)).plan
+    assert store.unit_locks == 1
+    store.units = [replace(unit, hidden=unit.id == months) for unit in UNITS]
+    # The plan keeps the unit when it is saved again and when it writes the invoice. The units
+    # are locked: no foreign key keeps a removal from taking a unit the plan names.
+    locks = store.unit_locks
+    assert recurring.update(plan.id, save(template=template)).plan.template.unit_ids == (months,)
+    assert store.unit_locks == locks + 1
+    [run] = recurring.run_due()
+    assert run.document_id is not None
+    invoice = store.documents[run.document_id].document
+    assert invoice.content.lines[0].unit_id == months
+    # A new plan does not choose it.
+    with raises_exactly(ValidationError, "the unit is hidden") as hidden:
+        recurring.create(save(template=template))
+    assert (hidden.value.field, hidden.value.code) == ("lines.0.unit_id", "unit_hidden")
+
+
 def test_a_plan_turns_into_the_invoice_it_was_given() -> None:
     draft = DraftInput(
         customer_id=CUSTOMER,
@@ -544,7 +572,7 @@ def test_a_plan_turns_into_the_invoice_it_was_given() -> None:
                 description="Server",
                 details="2 cores",
                 quantity="1.5",
-                unit="MON",
+                unit_id=factories.unit_id("MON"),
                 unit_price="29.9",
                 discount_percent="10",
                 tax_rate_id=factories.rate_id(REDUCED),
@@ -568,7 +596,7 @@ def test_a_plan_turns_into_the_invoice_it_was_given() -> None:
         interval=Interval.MONTHLY,
         start_date=TODAY,
         action=PlanAction.DRAFT,
-        template=to_template(draft, RATES),
+        template=to_template(draft, RATES, UNITS),
         today=TODAY,
         now=NOW,
     )
@@ -638,9 +666,12 @@ def test_the_period_is_marked_as_taken_while_it_is_written(
             draft: DraftInput,
             *,
             kept_rates: Collection[UUID] = (),
+            kept_units: Collection[UUID] = (),
         ) -> DocumentView:
             seen.extend(store.runs)
-            return super().create(document_type, draft, kept_rates=kept_rates)
+            return super().create(
+                document_type, draft, kept_rates=kept_rates, kept_units=kept_units
+            )
 
     documents = recurring.documents
     replace(recurring, documents=Watching(uow=documents.uow, clock=documents.clock)).run_due()

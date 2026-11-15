@@ -287,7 +287,7 @@ def test_articles(engine: Engine) -> None:
     beratung = handlers.create(
         SaveArticle(
             name="Beratung",
-            unit="HUR",
+            unit_id=factories.unit_id("HUR"),
             tax_rate_id=factories.rate_id(REDUCED),
             prices={Currency.CHF: "150.1234", Currency.EUR: "160"},
             description="Stundenansatz",
@@ -313,7 +313,10 @@ def test_articles(engine: Engine) -> None:
     )
 
     updated = handlers.update(
-        beratung.id, SaveArticle(name="Beratung", unit="HUR", prices={Currency.CHF: "170"})
+        beratung.id,
+        SaveArticle(
+            name="Beratung", unit_id=factories.unit_id("HUR"), prices={Currency.CHF: "170"}
+        ),
     )
     assert handlers.get(beratung.id).prices == {Currency.CHF: Decimal(170)}
     assert updated.prices == {Currency.CHF: Decimal(170)}

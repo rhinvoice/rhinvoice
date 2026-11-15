@@ -18,6 +18,7 @@ import { MailSettings } from "@/features/mail/mail-settings";
 import { NumberingSettings } from "@/features/numbering/numbering-settings";
 import { TaxRatesSettings } from "@/features/tax-rates/tax-rates-settings";
 import { TextsSettings } from "@/features/texts/texts-settings";
+import { UnitsSettings } from "@/features/units/units-settings";
 
 import { SETTINGS_TABS, type SettingsTab } from "@/app/pages/settings-tabs";
 import { NotInDemo } from "@/features/shared/not-in-demo";
@@ -36,6 +37,7 @@ export function SettingsPage({ user, tab, onTabChange }: SettingsPageProps) {
     company: t("settings.tabCompany"),
     "bank-accounts": t("settings.tabBankAccounts"),
     "tax-rates": t("settings.tabTaxRates"),
+    units: t("settings.tabUnits"),
     numbering: t("settings.tabNumbering"),
     texts: t("settings.tabTexts"),
     mail: t("settings.tabMail"),
@@ -78,6 +80,9 @@ export function SettingsPage({ user, tab, onTabChange }: SettingsPageProps) {
         </TabsContent>
         <TabsContent value="tax-rates">
           <TaxRatesSettings />
+        </TabsContent>
+        <TabsContent value="units">
+          <UnitsSettings />
         </TabsContent>
         <TabsContent value="numbering">
           <NumberingSettings />

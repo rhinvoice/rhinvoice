@@ -5,7 +5,7 @@ from uuid import UUID
 
 import pytest
 
-from rhinvoice.domain.catalog.unit import Unit
+from rhinvoice.domain.catalog.unit import LineUnit
 from rhinvoice.domain.document.document import (
     DisplayStatus,
     Document,
@@ -64,7 +64,7 @@ def line(
         kind=LineKind.ITEM,
         description="Beratung",
         quantity=Decimal(quantity),
-        unit=Unit("HUR"),
+        unit_id=factories.unit_id("HUR"),
         unit_price=Decimal(price),
         tax_category=PASS if rate_id is None else CH_RATES[rate_id].kind,
         supply=supply,
@@ -104,6 +104,7 @@ def issued(document_type: DocumentType = DocumentType.INVOICE, **overrides: obje
         due_date=TODAY + timedelta(days=30),
         snapshot=snapshot(),
         rates=CH_RATES,
+        units=factories.units(),
         now=NOW,
     )
 
@@ -305,6 +306,65 @@ def test_issue_freezes_rates_totals_and_parties() -> None:
     assert document.open_amount() == document.issued_totals.total
 
 
+def test_issue_freezes_the_unit_in_the_document_language() -> None:
+    hours = factories.unit_id("HUR")
+    text = DocumentLine(id=new_id(), kind=LineKind.TEXT, description="Phase 1")
+    no_unit = replace(line(), unit_id=None)
+    lines = (text, line(), no_unit)
+    assert [item.unit for item in issued(lines=lines).content.lines] == [
+        None,
+        LineUnit("HUR", "Std."),
+        None,
+    ]
+    english = issued(lines=lines, language=Language.EN).content.lines
+    assert english[1].unit == LineUnit("HUR", "h")
+    assert english[1].unit_id == hours
+    # A renamed unit does not change what an issued line keeps.
+    renamed = {**factories.units(), hours: replace(factories.units()[hours], label="Stunde")}
+    invoice = draft(lines=lines).issue(
+        number="R20260001",
+        issue_date=TODAY,
+        due_date=TODAY,
+        snapshot=snapshot(),
+        rates=CH_RATES,
+        units=renamed,
+        now=NOW,
+    )
+    assert invoice.content.lines[1].unit == LineUnit("HUR", "Stunde")
+    # A cancellation keeps the units of its invoice.
+    cancellation = invoice.cancellation_draft(new_id(), NOW).issue(
+        number="S20260001",
+        issue_date=TODAY,
+        due_date=TODAY,
+        snapshot=snapshot(),
+        rates=CH_RATES,
+        units=factories.units(),
+        now=NOW,
+    )
+    assert cancellation.content.lines[1].unit == LineUnit("HUR", "Stunde")
+    with raises_exactly(ValidationError, "unknown unit") as unknown:
+        draft(lines=lines).issue(
+            number="R20260002",
+            issue_date=TODAY,
+            due_date=TODAY,
+            snapshot=snapshot(),
+            rates=CH_RATES,
+            units={},
+            now=NOW,
+        )
+    assert unknown.value.code == "unit_unknown"
+
+
+def test_the_units_of_a_document() -> None:
+    hours, pieces = factories.unit_id("HUR"), factories.unit_id("C62")
+    text = DocumentLine(id=new_id(), kind=LineKind.TEXT, description="Phase 1")
+    lines = (text, line(), replace(line(), unit_id=pieces), line(), replace(line(), unit_id=None))
+    assert content(lines=lines).unit_ids == (hours, pieces)
+    with raises_exactly(ValidationError, "a text line has no unit") as error:
+        replace(text, unit_id=hours)
+    assert error.value.field == "unit_id"
+
+
 def test_text_lines_get_no_rate_and_euro_amounts_are_not_cash_rounded() -> None:
     text = DocumentLine(id=new_id(), kind=LineKind.TEXT, description="Phase 1")
     document = issued(lines=(text, line("1", "10.01")), currency=Currency.EUR)
@@ -324,6 +384,7 @@ def test_issue_requires_a_position_and_a_valid_due_date() -> None:
             due_date=TODAY,
             snapshot=snapshot(),
             rates=CH_RATES,
+            units=factories.units(),
             now=NOW,
         )
     assert lines.value.field == "lines"
@@ -334,6 +395,7 @@ def test_issue_requires_a_position_and_a_valid_due_date() -> None:
             due_date=TODAY - timedelta(days=1),
             snapshot=snapshot(),
             rates=CH_RATES,
+            units=factories.units(),
             now=NOW,
         )
     assert due.value.field == "due_date"
@@ -344,6 +406,7 @@ def test_issue_requires_a_position_and_a_valid_due_date() -> None:
             due_date=TODAY,
             snapshot=snapshot(),
             rates=CH_RATES,
+            units=factories.units(),
             now=NOW,
         )
 
@@ -358,6 +421,7 @@ def test_issued_documents_use_the_company_country_and_rounding_of_the_snapshot()
         due_date=TODAY,
         snapshot=IssueSnapshot(company=company, customer=factories.customer(), bank_account=None),
         rates=DE_RATES,
+        units=factories.units(),
         now=NOW,
     )
     assert [line.tax_rate for line in document.content.lines] == [Decimal(19), Decimal(7)]
@@ -426,6 +490,7 @@ def test_pass_through_lines_have_no_treatment_of_their_own() -> None:
         due_date=TODAY + timedelta(days=30),
         snapshot=snapshot(),
         rates=CH_RATES,
+        units=factories.units(),
         now=NOW,
     )
     assert [item.tax_rate for item in issued_one.content.lines] == [Decimal("8.1"), Decimal(0)]
@@ -494,6 +559,7 @@ def test_an_intra_community_supply_names_the_vat_id_of_the_company() -> None:
             due_date=TODAY,
             snapshot=IssueSnapshot(company=german, customer=customer, bank_account=None),
             rates=DE_RATES,
+            units=factories.units(),
             now=NOW,
         )
     assert (error.value.field, error.value.code) == ("company", "company_vat_id_missing")
@@ -512,6 +578,7 @@ def test_an_intra_community_supply_names_the_vat_id_of_the_company() -> None:
                 bank_account=None,
             ),
             rates=DE_RATES,
+            units=factories.units(),
             now=NOW,
         )
     assert (customer_error.value.field, customer_error.value.code) == (
@@ -525,6 +592,7 @@ def test_an_intra_community_supply_names_the_vat_id_of_the_company() -> None:
         due_date=TODAY,
         snapshot=IssueSnapshot(company=german, customer=customer, bank_account=None),
         rates=DE_RATES,
+        units=factories.units(),
         now=NOW,
     )
     assert quote.status is DocumentStatus.SENT
@@ -536,6 +604,7 @@ def test_an_intra_community_supply_names_the_vat_id_of_the_company() -> None:
         due_date=TODAY,
         snapshot=IssueSnapshot(company=german, customer=customer, bank_account=None),
         rates=DE_RATES,
+        units=factories.units(),
         now=NOW,
     )
     assert issued_services.status is DocumentStatus.ISSUED
@@ -597,6 +666,11 @@ def test_copy_as_draft_is_dated_today_without_rates() -> None:
     assert invoice.content.issue_date == tomorrow
     assert invoice.content.due_date is None
     assert all(line.tax_rate is None for line in invoice.content.lines)
+    # A copy is a draft: it takes the current units again.
+    assert all(line.unit is None for line in invoice.content.lines)
+    assert [line.unit_id for line in invoice.content.lines] == [
+        line.unit_id for line in quote.content.lines
+    ]
     copied_ids = [line.id for line in invoice.content.lines]
     assert all(isinstance(line_id, UUID) for line_id in copied_ids)
     assert set(copied_ids).isdisjoint(line.id for line in quote.content.lines)
@@ -676,7 +750,7 @@ def test_a_copy_as_quote_keeps_the_options() -> None:
         None,
         None,
     )
-    assert all(line.tax_rate is None for line in copy.content.lines)
+    assert all(line.tax_rate is None and line.unit is None for line in copy.content.lines)
 
 
 def test_an_invoice_takes_the_chosen_positions_as_ordinary_ones() -> None:
@@ -865,6 +939,7 @@ def test_cancellation_negates_the_invoice() -> None:
         due_date=TODAY,
         snapshot=snapshot(),
         rates=CH_RATES,
+        units=factories.units(),
         now=NOW,
     )
     assert cancellation.status is DocumentStatus.ISSUED
@@ -904,7 +979,13 @@ def test_cancellation_rules() -> None:
     partially = pay(invoice, "1")
     partially.cancel_check()
     cancellation = invoice.cancellation_draft(new_id(), NOW).issue(
-        number="S1", issue_date=TODAY, due_date=TODAY, snapshot=snapshot(), rates=CH_RATES, now=NOW
+        number="S1",
+        issue_date=TODAY,
+        due_date=TODAY,
+        snapshot=snapshot(),
+        rates=CH_RATES,
+        units=factories.units(),
+        now=NOW,
     )
     with raises_exactly(InvalidStateError, "a cancelled invoice cannot be cancelled"):
         invoice.cancel(cancellation, NOW).cancel_check()
@@ -943,6 +1024,7 @@ def test_a_cancellation_keeps_the_rates_of_its_invoice(
         due_date=invoice_date,
         snapshot=parties,
         rates=company_rates,
+        units=factories.units(),
         now=NOW,
     )
     assert [line.tax_rate for line in invoice.content.lines] == rates
@@ -952,6 +1034,7 @@ def test_a_cancellation_keeps_the_rates_of_its_invoice(
         due_date=cancellation_date,
         snapshot=parties,
         rates=company_rates,
+        units=factories.units(),
         now=NOW,
     )
     assert [line.tax_rate for line in cancellation.content.lines] == rates
@@ -987,6 +1070,7 @@ def test_issuing_checks_the_mandatory_information_of_invoices() -> None:
             due_date=TODAY,
             snapshot=unregistered,
             rates=CH_RATES,
+            units=factories.units(),
             now=NOW,
         )
     assert error.value.code == "company_vat_number_missing"
@@ -997,6 +1081,7 @@ def test_issuing_checks_the_mandatory_information_of_invoices() -> None:
         due_date=TODAY,
         snapshot=unregistered,
         rates=CH_RATES,
+        units=factories.units(),
         now=NOW,
     )
     assert quote.status is DocumentStatus.SENT
@@ -1008,6 +1093,7 @@ def test_issuing_checks_the_mandatory_information_of_invoices() -> None:
         due_date=TODAY,
         snapshot=unregistered,
         rates=CH_RATES,
+        units=factories.units(),
         now=NOW,
     )
     assert cancellation.status is DocumentStatus.ISSUED
@@ -1108,6 +1194,7 @@ def test_lines_refer_to_known_rates_of_their_kind() -> None:
             due_date=TODAY,
             snapshot=snapshot(),
             rates={},
+            units=factories.units(),
             now=NOW,
         )
 
@@ -1126,6 +1213,7 @@ def test_issuing_freezes_the_percentage_of_each_rate() -> None:
         due_date=TODAY,
         snapshot=snapshot(),
         rates={**CH_RATES, average.id: average},
+        units=factories.units(),
         now=NOW,
     )
     assert [item.tax_rate for item in document.content.lines] == [

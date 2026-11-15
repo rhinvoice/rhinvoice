@@ -30,6 +30,7 @@ from rhinvoice.infrastructure.db.repositories.texts import (
     SqlLegalNoticeRepository,
     SqlTextTemplateRepository,
 )
+from rhinvoice.infrastructure.db.repositories.units import SqlUnitRepository
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -69,6 +70,7 @@ class SqlUnitOfWork:
         self.tax_rates = SqlTaxRateRepository(self._connection)
         self.customers = SqlCustomerRepository(self._connection)
         self.articles = SqlArticleRepository(self._connection)
+        self.units = SqlUnitRepository(self._connection)
         self.sequences = SqlNumberSequenceRepository(self._connection)
         self.documents = SqlDocumentRepository(self._connection)
         self.text_templates = SqlTextTemplateRepository(self._connection)

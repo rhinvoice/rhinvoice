@@ -9,6 +9,7 @@ import {
   test,
   unique,
   waitForToastsToClose,
+  unitId,
 } from "./fixtures";
 
 test.describe.configure({ mode: "serial" });
@@ -126,7 +127,14 @@ test("own tax rates: checked as typed, changed from a date, chosen in a line, hi
   const draft = await post<{ id: string }>(page, "/api/documents", {
     type: "invoice",
     customer_id: customerId,
-    lines: [{ description: "Rebschnitt", quantity: "1", unit: "HUR", unit_price: "100" }],
+    lines: [
+      {
+        description: "Rebschnitt",
+        quantity: "1",
+        unit_id: await unitId(page, "HUR"),
+        unit_price: "100",
+      },
+    ],
   });
   await openApp(page, `/documents/${draft.id}`, "Rechnung (Entwurf)");
   const line = page.getByRole("button", { name: /^Position 1 bearbeiten/ });

@@ -60,7 +60,6 @@ from rhinvoice.application.importing.results import (
     RowStatus,
     error_outcome,
 )
-from rhinvoice.domain.catalog.unit import DEFAULT_UNIT_CODE
 from rhinvoice.domain.country.profile import NumberStyle
 from rhinvoice.domain.country.registry import profile_of
 from rhinvoice.domain.customer.customer import CustomerKind
@@ -78,6 +77,7 @@ if TYPE_CHECKING:
     from rhinvoice.application.importing.ports import TableReader
     from rhinvoice.application.uow import UnitOfWork, UnitOfWorkFactory
     from rhinvoice.domain.catalog.article import Article
+    from rhinvoice.domain.catalog.unit import Unit
     from rhinvoice.domain.company.company import Company
     from rhinvoice.domain.country.profile import CountryProfile
     from rhinvoice.domain.customer.customer import Customer
@@ -563,6 +563,7 @@ class _ArticleRows:
     by_number: dict[str, Article]
     by_name: dict[str, Article]
     rates: list[TaxRate]
+    units: list[Unit]
 
     @property
     def profile(self) -> CountryProfile:
@@ -572,7 +573,7 @@ class _ArticleRows:
     def load(
         cls, uow: UnitOfWork, clock: Clock, company: Company, duplicates: DuplicateStrategy
     ) -> _ArticleRows:
-        rows = cls(uow, clock, company, duplicates, {}, {}, uow.tax_rates.list())
+        rows = cls(uow, clock, company, duplicates, {}, {}, uow.tax_rates.list(), uow.units.list())
         for article in sorted(uow.articles.all(), key=lambda a: (a.created_at, a.number)):
             rows.remember(article)
         return rows
@@ -622,12 +623,19 @@ class _ArticleRows:
                 now=now,
                 existing=updating,
                 rates=self.rates,
+                units=self.units,
             )
             self.uow.articles.update(article)
             status = RowStatus.UPDATED
         else:
             probe = build_article(
-                new_id(), PLACEHOLDER_NUMBER, command, now=now, existing=None, rates=self.rates
+                new_id(),
+                PLACEHOLDER_NUMBER,
+                command,
+                now=now,
+                existing=None,
+                rates=self.rates,
+                units=self.units,
             )
             if not number or number in self.by_number:
                 number = next_free_article_number(self.uow, self.clock.today())
@@ -658,7 +666,7 @@ class _ArticleRows:
             name=cells.get("name", base.name),
             description=cells.get("description", base.description),
             group=cells.get("group", base.group),
-            unit=parse_unit(cells["unit"], DEFAULT_UNIT_CODE) if "unit" in cells else base.unit,
+            unit_id=parse_unit(cells["unit"], self.units) if "unit" in cells else base.unit_id,
             tax_rate_id=rate_id,
             pass_through=pass_through,
             supply=parse_supply(cells["supply"]) if "supply" in cells else base.supply,
@@ -675,7 +683,7 @@ def _article_command(article: Article) -> SaveArticle:
     return SaveArticle(
         name=article.name,
         number=article.number,
-        unit=article.unit.code,
+        unit_id=article.unit_id,
         tax_rate_id=article.tax_rate_id,
         pass_through=article.tax_category is TaxCategory.PASS_THROUGH,
         prices={currency: str(price) for currency, price in article.prices.items()},

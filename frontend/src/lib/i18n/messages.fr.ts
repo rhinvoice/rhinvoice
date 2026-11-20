@@ -486,6 +486,8 @@ export const fr: Catalog<MessageKey> = {
   "articles.pricesHint": "Laisser vide si l’article n’est pas proposé dans cette monnaie.",
   "articles.priceIn": "Prix en {currency}",
   "articles.created": "Article « {name} » créé.",
+  "articles.duplicate": "Dupliquer",
+  "articles.copyOf": "Copie de « {name} ». Le numéro est attribué à l’enregistrement.",
   "articles.archivedToast": "« {name} » archivé.",
   "articles.restoredToast": "« {name} » restauré.",
   "articles.archivedNotice":
@@ -1947,6 +1949,9 @@ export const fr: Catalog<MessageKey> = {
   "recurring.stateLabel.problem": "Problème",
   "recurring.create": "Créer le plan",
   "recurring.created": "Plan créé.",
+  "recurring.duplicate": "Dupliquer",
+  "recurring.copyOf":
+    "Copie de « {name} ». Il commence aujourd’hui et n’est enregistré qu’avec « Créer le plan ».",
   "recurring.planTitle": "Répétition",
   "recurring.planDescription": "Quand la facture est établie et ce qui se passe ensuite.",
   "recurring.startDate": "Première facture le",

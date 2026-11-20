@@ -210,7 +210,8 @@ test("own units: from the catalogue, sorted, renamed, chosen in a line, hidden a
     .getByRole("button", { name: "Entfernen" })
     .click();
   await expect(quintal).toHaveCount(0);
-  expect(await offered(page)).toEqual(before);
+  // The open dialogs hide the list from the accessibility tree, so ask the API until it is hidden.
+  await expect.poll(() => offered(page)).toEqual(before);
 });
 
 test("a unit's dialog", async ({ page }) => {

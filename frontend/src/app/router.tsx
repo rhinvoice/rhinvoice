@@ -312,12 +312,16 @@ const recurringRoute = createRoute({
 const newPlanRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/recurring/new",
-  // ?from=<invoice id>: repeat that invoice.
-  validateSearch: (search: Record<string, unknown>): { from?: string } =>
-    typeof search["from"] === "string" ? { from: search["from"] } : {},
+  // ?from=<invoice id>: repeat that invoice; ?copy=<plan id>: duplicate that plan.
+  validateSearch: (search: Record<string, unknown>): { from?: string; copy?: string } =>
+    typeof search["from"] === "string"
+      ? { from: search["from"] }
+      : typeof search["copy"] === "string"
+        ? { copy: search["copy"] }
+        : {},
   component: function NewPlanRoute() {
-    const { from } = newPlanRoute.useSearch();
-    return <NewPlanPage key={from} fromDocument={from} />;
+    const { from, copy } = newPlanRoute.useSearch();
+    return <NewPlanPage key={from ?? copy} fromDocument={from} fromPlan={copy} />;
   },
 });
 
@@ -404,7 +408,13 @@ const articlesRoute = createRoute({
 const newArticleRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/articles/new",
-  component: NewArticlePage,
+  // ?copy=<article id>: duplicate that article.
+  validateSearch: (search: Record<string, unknown>): { copy?: string } =>
+    typeof search["copy"] === "string" ? { copy: search["copy"] } : {},
+  component: function NewArticleRoute() {
+    const { copy } = newArticleRoute.useSearch();
+    return <NewArticlePage key={copy} fromArticle={copy} />;
+  },
 });
 
 const articleRoute = createRoute({

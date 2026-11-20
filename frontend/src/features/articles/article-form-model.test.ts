@@ -4,13 +4,30 @@ import {
   articleFieldFor,
   articleSchema,
   articleToForm,
+  copiedArticle,
   emptyArticle,
   formToRequest,
   priceCurrencies,
 } from "@/features/articles/article-form-model";
+import type { Article } from "@/features/articles/api";
 import { translatorFor } from "@/lib/i18n";
 
 const schema = articleSchema(translatorFor("de-DE"), "de-DE");
+
+const ARTICLE: Article = {
+  id: "1",
+  number: "1",
+  name: "Beratung",
+  description: "",
+  group: "",
+  unit_id: "unit-hours",
+  tax_rate_id: "0b5e2c4e-7f1a-4c1e-9d55-3a6f8e2b9c10",
+  tax_category: "standard",
+  supply: "goods",
+  prices: { CHF: "150.00" },
+  archived: false,
+  created_at: "2026-01-01T00:00:00Z",
+};
 
 describe("article form", () => {
   it("validates name and prices", () => {
@@ -47,28 +64,19 @@ describe("article form", () => {
   });
 
   it("formats prices for editing", () => {
-    const form = articleToForm(
-      {
-        id: "1",
-        number: "1",
-        name: "Beratung",
-        description: "",
-        group: "",
-        unit_id: "unit-hours",
-        tax_rate_id: "0b5e2c4e-7f1a-4c1e-9d55-3a6f8e2b9c10",
-        tax_category: "standard",
-        supply: "goods",
-        prices: { CHF: "150.00" },
-        archived: false,
-        created_at: "2026-01-01T00:00:00Z",
-      },
-      "de-DE",
-    );
+    const form = articleToForm(ARTICLE, "de-DE");
     expect(form.price_chf).toBe("150,00");
     expect(form.supply).toBe("goods");
     expect(form.unit).toBe("unit-hours");
     expect(form.tax).toBe("0b5e2c4e-7f1a-4c1e-9d55-3a6f8e2b9c10");
     expect(form.price_eur).toBe("");
+  });
+
+  it("copies an article without its number", () => {
+    expect(copiedArticle(ARTICLE, "de-DE")).toEqual({
+      ...articleToForm(ARTICLE, "de-DE"),
+      number: "",
+    });
   });
 
   it("maps API error fields", () => {

@@ -5,6 +5,13 @@ before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.15.0] – 2026-11-19
+
+### Added
+- *Duplicate* on articles and recurring invoices. It opens a new article or plan filled in with
+  the one you came from; nothing is saved until you save it. The copy of an article gets the next
+  number, the copy of a plan starts today and keeps an end date that is still ahead.
+
 ## [0.14.0] – 2026-11-14
 
 ### Added

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
-import { ArchiveIcon, ArchiveRestoreIcon } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ArchiveIcon, ArchiveRestoreIcon, CopyIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/components/i18n/use-i18n";
@@ -17,7 +17,12 @@ import {
   type Article,
 } from "@/features/articles/api";
 import { ArticleForm } from "@/features/articles/article-form";
-import { articleToForm, emptyArticle, formToRequest } from "@/features/articles/article-form-model";
+import {
+  articleToForm,
+  copiedArticle,
+  emptyArticle,
+  formToRequest,
+} from "@/features/articles/article-form-model";
 import { BackLink } from "@/features/shared/back-link";
 import { FormAlert } from "@/features/shared/form-alert";
 import { defaultUnitId } from "@/features/shared/unit-model";
@@ -26,22 +31,38 @@ import { useErrorMessage } from "@/features/shared/use-error-message";
 
 import { showUndoToast } from "@/features/shared/undo";
 
-export function NewArticlePage() {
+export function NewArticlePage({ fromArticle }: { readonly fromArticle?: string | undefined }) {
   const { t, locale } = useI18n();
   useDocumentTitle(t("app.pageTitle", { title: t("articles.new") }));
   const navigate = useNavigate();
+  const errorMessage = useErrorMessage();
   const create = useCreateArticle();
-  // A new article starts in the first unit offered.
+  // A new article starts in the first unit offered, a copy in the unit of its source.
   const units = useQuery(unitsQuery);
+  const source = useQuery({
+    ...articleQuery(fromArticle ?? ""),
+    enabled: fromArticle !== undefined,
+  });
   return (
     <>
       <BackLink to="/articles" label={t("articles.title")} />
-      <PageHeader title={t("articles.new")} />
-      {units.isPending ? (
+      <PageHeader
+        title={t("articles.new")}
+        {...(source.data === undefined
+          ? {}
+          : { description: t("articles.copyOf", { name: source.data.name }) })}
+      />
+      {source.isError ? (
+        <FormAlert message={errorMessage(source.error)} />
+      ) : units.isPending || (fromArticle !== undefined && source.isPending) ? (
         <Skeleton className="h-96 max-w-2xl" />
       ) : (
         <ArticleForm
-          defaultValues={emptyArticle(defaultUnitId(units.data))}
+          defaultValues={
+            source.data === undefined
+              ? emptyArticle(defaultUnitId(units.data))
+              : copiedArticle(source.data, locale)
+          }
           onSubmit={async (values) => {
             const article = await create.mutateAsync(formToRequest(values, locale));
             toast.success(t("articles.created", { name: article.name }));
@@ -102,14 +123,22 @@ function ArticleEditor({ article }: { readonly article: Article }) {
         title={article.name}
         description={`${t("articles.numberLabel")} ${article.number}`}
         actions={
-          <Button variant="outline" onClick={() => setArchived(!article.archived)}>
-            {article.archived ? (
-              <ArchiveRestoreIcon aria-hidden="true" />
-            ) : (
-              <ArchiveIcon aria-hidden="true" />
-            )}
-            {article.archived ? t("common.restore") : t("common.archive")}
-          </Button>
+          <>
+            <Button variant="outline" asChild>
+              <Link to="/articles/new" search={{ copy: article.id }}>
+                <CopyIcon aria-hidden="true" />
+                {t("articles.duplicate")}
+              </Link>
+            </Button>
+            <Button variant="outline" onClick={() => setArchived(!article.archived)}>
+              {article.archived ? (
+                <ArchiveRestoreIcon aria-hidden="true" />
+              ) : (
+                <ArchiveIcon aria-hidden="true" />
+              )}
+              {article.archived ? t("common.restore") : t("common.archive")}
+            </Button>
+          </>
         }
       />
       {article.archived ? (

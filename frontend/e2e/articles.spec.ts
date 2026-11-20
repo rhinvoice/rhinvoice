@@ -1,4 +1,4 @@
-import { expect, expectAccessible, openApp, test, unique } from "./fixtures";
+import { expect, expectAccessible, openApp, post, test, unique, unitId } from "./fixtures";
 
 test("create an article with prices and find it", async ({ page, isMobile }, testInfo) => {
   const suffix = unique(testInfo.project.name);
@@ -41,4 +41,32 @@ test("article prices are validated", async ({ page }) => {
   await page.getByLabel("Preis in CHF").blur();
   await expect(page.getByText("Höchstens 4 Nachkommastellen.")).toBeVisible();
   await expectAccessible(page);
+});
+
+test("an article is duplicated", async ({ page }, testInfo) => {
+  const suffix = unique(testInfo.project.name);
+  const name = `Kopierartikel ${suffix}`;
+  const article = await post<{ id: string; number: string }>(page, "/api/articles", {
+    name,
+    description: "Montage vor Ort",
+    unit_id: await unitId(page, "HUR"),
+    prices: { CHF: "120" },
+  });
+  await openApp(page, `/articles/${article.id}`, name);
+  await page.getByRole("link", { name: "Duplizieren", exact: true }).click();
+
+  // Everything but the number is copied; saving takes the next number.
+  await expect(page.getByRole("heading", { level: 1, name: "Neuer Artikel" })).toBeVisible();
+  await expect(page.getByText(`Kopie von «${name}».`)).toBeVisible();
+  await expect(page.getByLabel("Bezeichnung")).toHaveValue(name);
+  await expect(page.getByLabel("Beschreibung")).toHaveValue("Montage vor Ort");
+  await expect(page.getByLabel("Artikelnummer")).toHaveValue("");
+  await expect(page.getByLabel("Preis in CHF")).toHaveValue("120.00");
+  await expectAccessible(page);
+
+  await page.getByLabel("Bezeichnung").fill(`${name} gross`);
+  await page.getByRole("button", { name: "Speichern" }).click();
+  await expect(page.getByText(`Artikel «${name} gross» angelegt.`)).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: `${name} gross` })).toBeVisible();
+  await expect(page.getByLabel("Artikelnummer")).not.toHaveValue(article.number);
 });

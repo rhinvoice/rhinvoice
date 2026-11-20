@@ -82,6 +82,11 @@ export function articleToForm(article: Article, locale: Locale): ArticleFormValu
   };
 }
 
+/** A copy of the article without its number: saving takes the next one of the sequence. */
+export function copiedArticle(article: Article, locale: Locale): ArticleFormValues {
+  return { ...articleToForm(article, locale), number: "" };
+}
+
 export function formToRequest(values: ArticleFormValues, locale: Locale): ArticleRequest {
   const prices: ArticleRequest["prices"] = {};
   if (values.price_chf !== "") prices["CHF"] = toApiDecimal(values.price_chf, locale);

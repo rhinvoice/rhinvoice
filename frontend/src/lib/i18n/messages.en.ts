@@ -452,6 +452,8 @@ export const en: Catalog<MessageKey> = {
   "articles.pricesHint": "Leave empty if the article is not offered in this currency.",
   "articles.priceIn": "Price in {currency}",
   "articles.created": "Article “{name}” created.",
+  "articles.duplicate": "Duplicate",
+  "articles.copyOf": "A copy of “{name}”. It gets its number when you save it.",
   "articles.archivedToast": "“{name}” archived.",
   "articles.restoredToast": "“{name}” restored.",
   "articles.archivedNotice": "This article is archived and hidden from selection lists.",

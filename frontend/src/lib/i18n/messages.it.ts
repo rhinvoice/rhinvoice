@@ -481,6 +481,8 @@ export const it: Catalog<MessageKey> = {
   "articles.pricesHint": "Lasciare vuoto se l’articolo non è offerto in questa valuta.",
   "articles.priceIn": "Prezzo in {currency}",
   "articles.created": "Articolo «{name}» creato.",
+  "articles.duplicate": "Duplica",
+  "articles.copyOf": "Copia di «{name}». Il numero viene assegnato al salvataggio.",
   "articles.archivedToast": "«{name}» archiviato.",
   "articles.restoredToast": "«{name}» ripristinato.",
   "articles.archivedNotice":

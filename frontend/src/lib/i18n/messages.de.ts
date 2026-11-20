@@ -478,6 +478,8 @@ export const de = {
   "articles.pricesHint": "Leer lassen, wenn der Artikel in dieser Währung nicht angeboten wird.",
   "articles.priceIn": "Preis in {currency}",
   "articles.created": "Artikel «{name}» angelegt.",
+  "articles.duplicate": "Duplizieren",
+  "articles.copyOf": "Kopie von «{name}». Die Nummer wird beim Speichern vergeben.",
   "articles.archivedToast": "«{name}» archiviert.",
   "articles.restoredToast": "«{name}» wiederhergestellt.",
   "articles.archivedNotice":

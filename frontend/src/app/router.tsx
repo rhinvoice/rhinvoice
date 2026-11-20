@@ -404,7 +404,13 @@ const articlesRoute = createRoute({
 const newArticleRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/articles/new",
-  component: NewArticlePage,
+  // ?copy=<article id>: duplicate that article.
+  validateSearch: (search: Record<string, unknown>): { copy?: string } =>
+    typeof search["copy"] === "string" ? { copy: search["copy"] } : {},
+  component: function NewArticleRoute() {
+    const { copy } = newArticleRoute.useSearch();
+    return <NewArticlePage key={copy} fromArticle={copy} />;
+  },
 });
 
 const articleRoute = createRoute({

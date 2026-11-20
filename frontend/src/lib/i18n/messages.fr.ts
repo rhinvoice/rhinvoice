@@ -486,6 +486,8 @@ export const fr: Catalog<MessageKey> = {
   "articles.pricesHint": "Laisser vide si l’article n’est pas proposé dans cette monnaie.",
   "articles.priceIn": "Prix en {currency}",
   "articles.created": "Article « {name} » créé.",
+  "articles.duplicate": "Dupliquer",
+  "articles.copyOf": "Copie de « {name} ». Le numéro est attribué à l’enregistrement.",
   "articles.archivedToast": "« {name} » archivé.",
   "articles.restoredToast": "« {name} » restauré.",
   "articles.archivedNotice":

@@ -5,6 +5,14 @@ vor 1.0 können Minor-Versionen inkompatible Änderungen enthalten.
 
 ## [Unreleased]
 
+## [0.15.0] – 2026-11-19
+
+### Neu
+- *Duplizieren* bei Artikeln und wiederkehrenden Rechnungen. Es öffnet einen neuen Artikel oder
+  Plan, ausgefüllt mit dem, von dem Sie kommen; gespeichert wird erst, wenn Sie speichern. Die
+  Kopie eines Artikels bekommt die nächste Nummer, die Kopie eines Plans beginnt heute und behält
+  ein Enddatum, das noch bevorsteht.
+
 ## [0.14.0] – 2026-11-14
 
 ### Neu

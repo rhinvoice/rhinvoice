@@ -1915,6 +1915,9 @@ export const de = {
   "recurring.stateLabel.problem": "Problem",
   "recurring.create": "Plan anlegen",
   "recurring.created": "Plan angelegt.",
+  "recurring.duplicate": "Duplizieren",
+  "recurring.copyOf":
+    "Kopie von «{name}». Sie beginnt heute und wird erst mit «Plan anlegen» gespeichert.",
   "recurring.planTitle": "Wiederholung",
   "recurring.planDescription": "Wann die Rechnung geschrieben wird und was dann geschieht.",
   "recurring.startDate": "Erste Rechnung am",

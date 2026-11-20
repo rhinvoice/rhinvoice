@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   CircleAlertIcon,
   CircleStopIcon,
+  CopyIcon,
   type LucideIcon,
   PauseIcon,
   PlayIcon,
@@ -61,6 +62,7 @@ import {
 import {
   ACTIONS,
   INTERVALS,
+  copiedSettings,
   documentToPlanForm,
   emptySettings,
   planSettings,
@@ -252,8 +254,15 @@ function useCompanyAndTexts(): {
   };
 }
 
-/** A new plan, empty or repeating an invoice (``fromDocument``). */
-export function NewPlanPage({ fromDocument }: { readonly fromDocument?: string | undefined }) {
+/** A new plan, empty, repeating an invoice (``fromDocument``) or copying a plan (``fromPlan``). */
+interface NewPlanPageProps {
+  /** The invoice to repeat. */
+  readonly fromDocument?: string | undefined;
+  /** The plan to duplicate. */
+  readonly fromPlan?: string | undefined;
+}
+
+export function NewPlanPage({ fromDocument, fromPlan }: NewPlanPageProps) {
   const { t, locale } = useI18n();
   useDocumentTitle(t("app.pageTitle", { title: t("recurring.new") }));
   const errorMessage = useErrorMessage();
@@ -263,11 +272,29 @@ export function NewPlanPage({ fromDocument }: { readonly fromDocument?: string |
     ...documentQuery(fromDocument ?? ""),
     enabled: fromDocument !== undefined,
   });
-  if (error !== null) return <FormAlert message={errorMessage(error)} />;
-  if (!ready || company === undefined || (fromDocument !== undefined && source.isPending)) {
+  const copied = useQuery({ ...planQuery(fromPlan ?? ""), enabled: fromPlan !== undefined });
+  const failure = error ?? (copied.isError ? copied.error : null);
+  if (failure !== null) return <FormAlert message={errorMessage(failure)} />;
+  if (
+    !ready ||
+    company === undefined ||
+    (fromDocument !== undefined && source.isPending) ||
+    (fromPlan !== undefined && copied.isPending)
+  ) {
     return <PageSkeleton />;
   }
   if (company === null) return <FormAlert message={t("documents.companyMissing")} />;
+  if (copied.data !== undefined) {
+    return (
+      <PlanEditor
+        description={t("recurring.copyOf", { name: copied.data.name })}
+        company={company}
+        plan={null}
+        defaults={planToForm(copied.data, company, locale)}
+        settings={copiedSettings(copied.data, todayIso())}
+      />
+    );
+  }
   const defaults: DocumentFormValues =
     source.data === undefined
       ? {
@@ -313,13 +340,22 @@ export function PlanPage({ planId }: { readonly planId: string }) {
 interface PlanEditorProps {
   /** Something to know about the plan's starting point, shown above the editor. */
   readonly notice?: string | null | undefined;
+  /** What a new plan starts from, under its title. */
+  readonly description?: string | undefined;
   readonly company: Company;
   readonly plan: Plan | null;
   readonly defaults: DocumentFormValues;
   readonly settings: PlanSettings;
 }
 
-function PlanEditor({ notice, company, plan, defaults, settings: initial }: PlanEditorProps) {
+function PlanEditor({
+  notice,
+  description,
+  company,
+  plan,
+  defaults,
+  settings: initial,
+}: PlanEditorProps) {
   const [headerTools, setHeaderTools] = useState<HTMLElement | null>(null);
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -355,7 +391,9 @@ function PlanEditor({ notice, company, plan, defaults, settings: initial }: Plan
       <BackLink to="/recurring" label={t("recurring.title")} />
       <PageHeader
         title={plan === null ? t("recurring.new") : plan.name}
-        description={plan === null ? t("recurring.newDescription") : plan.customer_name}
+        description={
+          plan === null ? (description ?? t("recurring.newDescription")) : plan.customer_name
+        }
         actions={
           <>
             <div ref={setHeaderTools} className="contents" />
@@ -647,6 +685,12 @@ function PlanActions({ plan }: { readonly plan: Plan }) {
           {t("recurring.resume")}
         </Button>
       )}
+      <Button variant="outline" asChild>
+        <Link to="/recurring/new" search={{ copy: plan.id }}>
+          <CopyIcon aria-hidden="true" />
+          {t("recurring.duplicate")}
+        </Link>
+      </Button>
       <Button
         variant="outline"
         onClick={() => {

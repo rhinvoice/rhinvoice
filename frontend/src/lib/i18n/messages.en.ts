@@ -1853,6 +1853,8 @@ export const en: Catalog<MessageKey> = {
   "recurring.stateLabel.problem": "Problem",
   "recurring.create": "Create plan",
   "recurring.created": "Plan created.",
+  "recurring.duplicate": "Duplicate",
+  "recurring.copyOf": "A copy of “{name}”. It starts today and is saved only with “Create plan”.",
   "recurring.planTitle": "Repetition",
   "recurring.planDescription": "When the invoice is written and what happens then.",
   "recurring.startDate": "First invoice on",

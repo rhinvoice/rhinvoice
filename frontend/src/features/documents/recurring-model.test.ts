@@ -4,6 +4,7 @@ import type { DocumentDetail } from "@/features/documents/api";
 import { formToDraft } from "@/features/documents/document-form-model";
 import type { Plan } from "@/features/documents/recurring-api";
 import {
+  copiedSettings,
   documentToPlanForm,
   emptySettings,
   planSettings,
@@ -118,6 +119,20 @@ describe("recurring plans", () => {
     expect(
       settingsProblems({ ...emptySettings("2026-10-12"), name: "x", endDate: "2026-10-12" }).size,
     ).toBe(0);
+  });
+
+  it("starts a copy today and keeps an end date still ahead", () => {
+    const ending = { ...PLAN, end_date: "2027-12-31" };
+    expect(copiedSettings(ending, "2026-11-19")).toEqual({
+      ...planSettings(ending),
+      startDate: "2026-11-19",
+    });
+    // An end date already past would make the copy invalid.
+    expect(copiedSettings({ ...PLAN, end_date: "2026-11-18" }, "2026-11-19").endDate).toBe("");
+    expect(copiedSettings({ ...PLAN, end_date: "2026-11-19" }, "2026-11-19").endDate).toBe(
+      "2026-11-19",
+    );
+    expect(copiedSettings(PLAN, "2026-11-19").endDate).toBe("");
   });
 
   it("edits a stored plan in the document form", () => {

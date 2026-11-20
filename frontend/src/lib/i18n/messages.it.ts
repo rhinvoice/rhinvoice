@@ -1915,6 +1915,8 @@ export const it: Catalog<MessageKey> = {
   "recurring.stateLabel.problem": "Problema",
   "recurring.create": "Crea piano",
   "recurring.created": "Piano creato.",
+  "recurring.duplicate": "Duplica",
+  "recurring.copyOf": "Copia di «{name}». Inizia oggi e viene salvato solo con «Crea piano».",
   "recurring.planTitle": "Ripetizione",
   "recurring.planDescription": "Quando viene scritta la fattura e cosa succede poi.",
   "recurring.startDate": "Prima fattura il",

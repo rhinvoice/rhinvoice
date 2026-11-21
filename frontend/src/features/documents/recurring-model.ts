@@ -54,6 +54,16 @@ export function planSettings(plan: Plan): PlanSettings {
   };
 }
 
+/** A copy starts today, so it bills nothing past; an end date before that is dropped. */
+export function copiedSettings(plan: Plan, today: string): PlanSettings {
+  const settings = planSettings(plan);
+  return {
+    ...settings,
+    startDate: today,
+    endDate: settings.endDate !== "" && settings.endDate < today ? "" : settings.endDate,
+  };
+}
+
 export function settingsProblems(settings: PlanSettings): Map<SettingsField, SettingsProblem> {
   const found = new Map<SettingsField, SettingsProblem>();
   if (settings.name.trim() === "") found.set("name", "required");

@@ -478,6 +478,8 @@ export const de = {
   "articles.pricesHint": "Leer lassen, wenn der Artikel in dieser Währung nicht angeboten wird.",
   "articles.priceIn": "Preis in {currency}",
   "articles.created": "Artikel «{name}» angelegt.",
+  "articles.duplicate": "Duplizieren",
+  "articles.copyOf": "Kopie von «{name}». Die Nummer wird beim Speichern vergeben.",
   "articles.archivedToast": "«{name}» archiviert.",
   "articles.restoredToast": "«{name}» wiederhergestellt.",
   "articles.archivedNotice":
@@ -1913,6 +1915,9 @@ export const de = {
   "recurring.stateLabel.problem": "Problem",
   "recurring.create": "Plan anlegen",
   "recurring.created": "Plan angelegt.",
+  "recurring.duplicate": "Duplizieren",
+  "recurring.copyOf":
+    "Kopie von «{name}». Sie beginnt heute und wird erst mit «Plan anlegen» gespeichert.",
   "recurring.planTitle": "Wiederholung",
   "recurring.planDescription": "Wann die Rechnung geschrieben wird und was dann geschieht.",
   "recurring.startDate": "Erste Rechnung am",

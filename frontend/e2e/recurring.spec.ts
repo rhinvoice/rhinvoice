@@ -92,3 +92,49 @@ test("an invoice is made recurring", async ({ page }, testInfo) => {
   await page.getByRole("button", { name: "Plan anlegen" }).click();
   await expect(page.getByText("Plan angelegt.")).toBeVisible();
 });
+
+test("a recurring invoice is duplicated", async ({ page }, testInfo) => {
+  const suffix = unique(testInfo.project.name);
+  const customerId = await createCustomer(page, `Kopierkunde ${suffix} AG`);
+  const plan = await post<{ id: string }>(page, "/api/recurring", {
+    name: `Pflege ${suffix}`,
+    customer_id: customerId,
+    interval: "yearly",
+    start_date: "2030-01-01",
+    end_date: "2039-12-31",
+    action: "draft",
+    template: {
+      currency: "CHF",
+      lines: [
+        {
+          description: "Pflegepauschale",
+          quantity: "1",
+          unit_id: await unitId(page, "LS"),
+          unit_price: "450",
+        },
+      ],
+    },
+  });
+  await openApp(page, `/recurring/${plan.id}`, `Pflege ${suffix}`);
+  await page.getByRole("link", { name: "Duplizieren", exact: true }).click();
+
+  // The copy is filled in but not saved; it starts today and keeps its end date.
+  await expect(page.getByRole("heading", { level: 1, name: "Neuer Plan" })).toBeVisible();
+  await expect(page.getByText(`Kopie von «Pflege ${suffix}».`)).toBeVisible();
+  const name = page.getByLabel("Bezeichnung", { exact: true }).first();
+  await expect(name).toHaveValue(`Pflege ${suffix}`);
+  await expect(page.getByLabel("Intervall")).toHaveValue("yearly");
+  await expect(page.getByLabel("Erste Rechnung am")).not.toHaveValue("2030-01-01");
+  await expect(page.getByLabel("Letzte Rechnung bis")).toHaveValue("2039-12-31");
+  await expect(
+    page.getByRole("button", { name: "Position 1 bearbeiten: Pflegepauschale" }),
+  ).toBeVisible();
+  await expectAccessible(page);
+
+  await name.fill(`Pflege ${suffix} Kopie`);
+  await page.getByRole("button", { name: "Plan anlegen" }).click();
+  await expect(page.getByText("Plan angelegt.")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: `Pflege ${suffix} Kopie` }),
+  ).toBeVisible();
+});

@@ -180,4 +180,4 @@ when in doubt.
 Rhinvoice freely; if you offer a changed version as a service to others, you share your changes
 under the same licence.
 
-made by [webberz](https://www.webberz.ch) in the Swiss Rhine Valley.
+Made by [webberz](https://www.webberz.ch) in Balgach, Switzerland. We also make [Pano](https://getpano.app/?ref=rhinvoice), a clipboard manager for Mac and Windows.

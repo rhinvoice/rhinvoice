@@ -4,7 +4,7 @@ import Default from "@astrojs/starlight/components/Footer.astro";
 
 import { words } from "../lib/ui";
 
-const { legal, noTaxAdvice, legalLinks } = words(Astro.locals.starlightRoute.lang);
+const { legal, noTaxAdvice, legalLinks, pano } = words(Astro.locals.starlightRoute.lang);
 ---
 
 <Default />
@@ -13,6 +13,7 @@ const { legal, noTaxAdvice, legalLinks } = words(Astro.locals.starlightRoute.lan
   {legalLinks.map(([href, label]) => <a href={href}>{label}</a>)}
   <a href="https://www.webberz.ch/">made by webberz</a>
 </nav>
+<p class="also">{pano[0]} <a href={pano[1]}>Pano</a>{pano[2]}</p>
 
 <style>
   .legal-links {
@@ -28,10 +29,17 @@ const { legal, noTaxAdvice, legalLinks } = words(Astro.locals.starlightRoute.lan
   .legal-links span {
     margin-inline-end: auto;
   }
-  .legal-links a {
+  .also {
+    margin-top: 0.5rem;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-xs);
+  }
+  .legal-links a,
+  .also a {
     color: inherit;
   }
-  .legal-links a:hover {
+  .legal-links a:hover,
+  .also a:hover {
     color: var(--sl-color-white);
   }
 </style>

@@ -14,6 +14,8 @@ interface Words {
   readonly legal: string;
   readonly noTaxAdvice: string;
   readonly legalLinks: readonly (readonly [href: string, label: string])[];
+  /** The note on Pano, the maker's other program: text before the link, link, text after. */
+  readonly pano: readonly [before: string, href: string, after: string];
   readonly demoTitle: string;
   readonly demoText: string;
   /** Open Graph locale of the page and its image on rhinvoice.com/assets/img/. */
@@ -35,6 +37,11 @@ const WORDS: Record<"de" | "en" | "fr" | "it", Words> = {
       ["/legal-notice/", "Legal notice"],
       ["/privacy/", "Privacy"],
     ],
+    pano: [
+      "Also from us:",
+      "https://getpano.app/?ref=rhinvoice",
+      ", the clipboard manager for Mac and Windows →",
+    ],
     demoTitle: "Try the demo",
     demoText: "Write invoices without installing anything:",
     ogLocale: "en_US",
@@ -52,6 +59,11 @@ const WORDS: Record<"de" | "en" | "fr" | "it", Words> = {
     legalLinks: [
       ["/de/impressum/", "Impressum"],
       ["/de/datenschutz/", "Datenschutz"],
+    ],
+    pano: [
+      "Auch von uns:",
+      "https://getpano.app/de/?ref=rhinvoice",
+      ", der Clipboard-Manager für Mac und Windows →",
     ],
     demoTitle: "Demo ausprobieren",
     demoText: "Rechnungen schreiben, ohne etwas zu installieren:",
@@ -71,6 +83,11 @@ const WORDS: Record<"de" | "en" | "fr" | "it", Words> = {
       ["/fr/mentions-legales/", "Mentions légales"],
       ["/fr/protection-des-donnees/", "Protection des données"],
     ],
+    pano: [
+      "Également chez nous :",
+      "https://getpano.app/?ref=rhinvoice",
+      ", le gestionnaire de presse-papiers pour Mac et Windows →",
+    ],
     demoTitle: "Essayer la démo",
     demoText: "Écrire des factures sans rien installer :",
     ogLocale: "fr_CH",
@@ -88,6 +105,11 @@ const WORDS: Record<"de" | "en" | "fr" | "it", Words> = {
     legalLinks: [
       ["/it/note-legali/", "Note legali"],
       ["/it/protezione-dei-dati/", "Protezione dei dati"],
+    ],
+    pano: [
+      "Sempre da noi:",
+      "https://getpano.app/?ref=rhinvoice",
+      ", il gestore degli appunti per Mac e Windows →",
     ],
     demoTitle: "Provare la demo",
     demoText: "Scrivere fatture senza installare nulla:",
